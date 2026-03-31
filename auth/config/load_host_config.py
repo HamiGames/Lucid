@@ -1,6 +1,7 @@
 """
 File: /app/auth/config/load_host_config.py
 x-lucid-file-path: /app/auth/config/load_host_config.py
+x-lucid-file-directory: /app/auth/config
 x-lucid-file-type: python
 
 Load host config for Lucid Authentication Service.

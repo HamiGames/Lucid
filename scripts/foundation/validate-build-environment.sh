@@ -1,5 +1,9 @@
 #!/bin/bash
 # Build Environment Validation Script
+# File: /app/scripts/foundation/validate-build-environment.sh
+# x-lucid-file-path: /app/scripts/foundation/validate-build-environment.sh
+# x-lucid-file-directory: /app/scripts/foundation
+# x-lucid-file-type: shell
 # Implements Step 3 from docker-build-process-plan.md
 
 set -e

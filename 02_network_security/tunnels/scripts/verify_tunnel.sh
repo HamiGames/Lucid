@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 # Verify onion tunnel reachability via Tor SOCKS5 proxy
+# File: /app/02_network_security/tunnels/scripts/verify_tunnel.sh
+# x-lucid-file-path: /app/02_network_security/tunnels/scripts/verify_tunnel.sh
+# x-lucid-file-directory: /app/02_network_security/tunnels/scripts
+# x-lucid-file-type: shell
 # Path: 02_network_security/tunnels/scripts/verify_tunnel.sh
 # Defaults: TOR_PROXY from 02_network_security/tunnels/Dockerfile (tor-proxy:9050)
 

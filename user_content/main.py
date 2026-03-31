@@ -2,6 +2,7 @@
 """
 File: /app/user_content/main.py
 x-lucid-file-path: /app/user_content/main.py
+x-lucid-file-directory: /app/user_content
 x-lucid-file-type: python
 
 Lucid User Content Service

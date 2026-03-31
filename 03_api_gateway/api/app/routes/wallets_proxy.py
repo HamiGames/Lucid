@@ -2,6 +2,7 @@
 """
 File: /app/03_api_gateway/api/app/routes/wallets_proxy.py
 x-lucid-file-path: /app/03_api_gateway/api/app/routes/wallets_proxy.py
+x-lucid-file-directory: /app/03_api_gateway/api/app/routes
 x-lucid-file-type: python
 """
 

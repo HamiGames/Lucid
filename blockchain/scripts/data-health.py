@@ -2,6 +2,7 @@
 """
 File: /app/blockchain/scripts/data-health.py
 x-lucid-file-path: /app/blockchain/scripts/data-health.py
+x-lucid-file-directory: /app/blockchain/scripts
 x-lucid-file-type: python
 
 Data Health Check Script for Session-Anchoring and Data-Chain Services

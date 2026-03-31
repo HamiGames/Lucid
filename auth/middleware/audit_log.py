@@ -1,6 +1,7 @@
 """
 File: /app/auth/middleware/audit_log.py
 x-lucid-file-path: /app/auth/middleware/audit_log.py
+x-lucid-file-directory: /app/auth/middleware
 x-lucid-file-type: python
 
 Lucid Authentication Service - Audit Log Middleware

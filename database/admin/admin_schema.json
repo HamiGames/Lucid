@@ -1,0 +1,78 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "lucid:database/admin/admin_schema.json",
+  "title": "LucidAdminProfile",
+  "description": "Admin profile document for Lucid MongoDB and auth alignment. Service hostnames and ports mirror infrastructure/containers/host-config.yml (lucid_mongodb, lucid_auth_service, database_overlord, admin_overlord).",
+  "type": "object",
+  "required": ["role", "user_id"],
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Stable admin principal id (may match users.user_id)"
+    },
+    "email": {
+      "type": "string",
+      "format": "email",
+      "description": "Admin contact email"
+    },
+    "role": {
+      "type": "string",
+      "enum": ["admin", "super_admin"],
+      "description": "Matches database.models.user.UserRole admin variants"
+    },
+    "contact_profile_key": {
+      "type": ["string", "null"],
+      "description": "Optional overlay key; see common/profile_secrets_registry.yml"
+    },
+    "scopes": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Fine-grained admin capabilities"
+    },
+    "host_registry": {
+      "type": "object",
+      "description": "Pinned Docker DNS names from host-config.yml (defaults match lucid_* registry keys)",
+      "properties": {
+        "mongodb_service": {
+          "type": "string",
+          "default": "lucid-mongodb"
+        },
+        "mongodb_port": {
+          "type": "integer",
+          "default": 27017
+        },
+        "auth_service": {
+          "type": "string",
+          "default": "lucid-auth-service"
+        },
+        "auth_service_port": {
+          "type": "integer",
+          "default": 8089
+        },
+        "database_overlord_service": {
+          "type": "string",
+          "default": "database-overlord"
+        },
+        "database_overlord_port": {
+          "type": "integer",
+          "default": 8120
+        },
+        "admin_overlord_service": {
+          "type": "string",
+          "default": "admin-overlord"
+        },
+        "admin_overlord_port": {
+          "type": "integer",
+          "default": 8140
+        }
+      },
+      "additionalProperties": false
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": false
+}

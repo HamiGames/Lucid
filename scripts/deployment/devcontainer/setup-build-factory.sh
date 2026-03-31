@@ -1,5 +1,9 @@
 #!/bin/bash
 # Lucid Build Factory Setup Script
+# File: /app/scripts/deployment/devcontainer/setup-build-factory.sh
+# x-lucid-file-path: /app/scripts/deployment/devcontainer/setup-build-factory.sh
+# x-lucid-file-directory: /app/scripts/deployment/devcontainer
+# x-lucid-file-type: shell
 # Configures complete Docker-in-Docker build environment per SPEC-4 requirements
 # Path: .devcontainer/setup-build-factory.sh
 
@@ -159,7 +163,7 @@ success "Lucid Build Factory is ready for SPEC-4 container orchestration!"
 
 log "Available build commands:"
 echo "  • docker buildx build --builder $BUILDER_NAME --platform linux/amd64,linux/arm64 ..."
-echo "  • docker-compose -f 06-orchestration-runtime/compose/lucid-dev.yaml build"
+echo "  • docker compose -f infrastructure/compose/lucid-dev.yaml build"
 echo "  • ssh -p 2222 root@localhost (local access)"
 echo "  • ssh $SSH_HOST (Pi access)"
 

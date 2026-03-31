@@ -1,3 +1,8 @@
+# File: /app/electron_gui/electron-builder.yml
+# x-lucid-file-path: /app/electron_gui/electron-builder.yml
+# x-lucid-file-directory: /app/electron_gui
+# x-lucid-file-type: YAML
+
 appId: com.lucid.electron-gui
 productName: Lucid Desktop
 copyright: Copyright © 2024 Lucid Development Team

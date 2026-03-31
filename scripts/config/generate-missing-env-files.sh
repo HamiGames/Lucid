@@ -1,5 +1,9 @@
 #!/bin/bash
 # Path: scripts/config/generate-missing-env-files.sh
+# File: /app/scripts/config/generate-missing-env-files.sh
+# x-lucid-file-path: /app/scripts/config/generate-missing-env-files.sh
+# x-lucid-file-directory: /app/scripts/config
+# x-lucid-file-type: shell
 # Generate ONLY Missing .env.* Files (27 total)
 # Extracts ACTUAL values from source files (.env.secrets, .env.foundation, etc.)
 # Queries tor-proxy container for real onion URLs
@@ -7,8 +11,16 @@
 
 set -euo pipefail
 
-PROJECT_ROOT="/mnt/myssd/Lucid/Lucid"
-ENV_DIR="/mnt/myssd/Lucid/Lucid/configs/environment"
+_lucid_here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+_lucid_scripts="$_lucid_here"
+while [[ "$_lucid_scripts" != "/" && "$(basename "$_lucid_scripts")" != "scripts" ]]; do
+    _lucid_scripts="$(dirname "$_lucid_scripts")"
+done
+# shellcheck source=../lib/lucid-repo-paths.sh
+source "$_lucid_scripts/lib/lucid-repo-paths.sh"
+
+PROJECT_ROOT="$LUCID_REPO_ROOT"
+ENV_DIR="$LUCID_ENV_CONFIG_DIR"
 BUILD_TIMESTAMP=$(date '+%Y%m%d-%H%M%S')
 GIT_SHA=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 

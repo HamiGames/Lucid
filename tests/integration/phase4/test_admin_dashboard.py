@@ -1,4 +1,9 @@
 """
+File: /app/tests/integration/phase4/test_admin_dashboard.py
+x-lucid-file-path: /app/tests/integration/phase4/test_admin_dashboard.py
+x-lucid-file-directory: /app/tests/integration/phase4
+x-lucid-file-type: python
+
 Admin Dashboard Integration Tests
 
 This module tests the admin interface cluster (Cluster 06) functionality,

@@ -1,5 +1,9 @@
 #!/bin/bash
 # scripts/contracts/verify-deployment.sh
+# File: /app/scripts/contracts/verify-deployment.sh
+# x-lucid-file-path: /app/scripts/contracts/verify-deployment.sh
+# x-lucid-file-directory: /app/scripts/contracts
+# x-lucid-file-type: shell
 # Verify contract deployment and addresses on TRON network
 # LUCID-STRICT: TRON payment system isolation, distroless architecture
 

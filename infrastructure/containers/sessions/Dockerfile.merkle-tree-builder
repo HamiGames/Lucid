@@ -122,17 +122,18 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 # LUCID_X_FILES_SKELETON_BEGIN
 # Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
 RUN set -eux; \
-    mkdir -p '.' './blockchain' './configs' './database' './service_configs' './sessions' './blockchain/anchoring' './blockchain/api' './blockchain/chain-to-pay' './blockchain/chain_client' './blockchain/config' './blockchain/contracts' './blockchain/core' './blockchain/data' './blockchain/deployment' './blockchain/docs' './blockchain/evm' './blockchain/governance' './blockchain/manager' './blockchain/on_system_chain' './blockchain/scripts' './blockchain/tests' './blockchain/utils' './configs/.ssh' './configs/container' './configs/database' './configs/docker' './configs/environment' './configs/integration' './configs/logging' './configs/pi' './configs/secrets' './configs/security' './configs/tor' './database/api' './database/config' './database/elasticsearch' './database/models' './database/mongodb' './database/redis' './database/repositories' './database/schema' './database/schemas' './database/services' './service_configs/blockchain' './service_configs/distroless' './service_configs/logging' './service_configs/multi-stage' './service_configs/node' './service_configs/payment_services' './service_configs/rdp' './service_configs/security' './service_configs/service_mesh' './service_configs/sessions' './service_configs/x_lucid_cluster_calibration' './sessions/api' './sessions/config' './sessions/core' './sessions/encryption' './sessions/integration' './sessions/pipeline' './sessions/processor' './sessions/recorder' './sessions/security' './sessions/session_systems_control' './sessions/storage' './blockchain/api/app' './blockchain/data/api' './configs/container/admin' './configs/container/auth' './configs/container/base' './configs/container/blockchain' './configs/container/database' './configs/container/electron_gui' './configs/container/gui' './configs/container/node' './configs/container/payment_systems' './configs/container/rdp' './configs/container/server' './configs/container/sessions' './configs/container/storage' './configs/container/tor' './configs/database/elasticsearch' './configs/database/redis' './configs/docker/distroless' './configs/docker/docs' './configs/docker/multi-stage' './configs/environment/development' './configs/environment/pi' './configs/environment/production' './configs/environment/staging' './configs/pi/ssh' './database/services/backup' './database/services/migration' './database/services/monitoring' './sessions/api/config' './sessions/api/integration' './sessions/pipeline/integration' './sessions/processor/config' './sessions/processor/integration' './sessions/recorder/config' './sessions/recorder/integration' './sessions/storage/config' './blockchain/api/app/crypto' './blockchain/api/app/database' './blockchain/api/app/db' './blockchain/api/app/middleware' './blockchain/api/app/models' './blockchain/api/app/repo' './blockchain/api/app/routers' './blockchain/api/app/routes' './blockchain/api/app/schemas' './blockchain/api/app/services' './blockchain/api/app/database/repositories'; \
+    mkdir -p '.' './blockchain' './configs' './database' './rdp' './service_configs' './sessions' './storage' './blockchain/anchoring' './blockchain/api' './blockchain/chain_client' './blockchain/config' './blockchain/contracts' './blockchain/core' './blockchain/data' './blockchain/deployment' './blockchain/docs' './blockchain/evm' './blockchain/governance' './blockchain/manager' './blockchain/on_system_chain' './blockchain/scripts' './blockchain/tests' './blockchain/utils' './configs/.devcontainer' './configs/.ssh' './configs/admin' './configs/auth' './configs/base' './configs/blockchain' './configs/compose' './configs/container' './configs/database' './configs/docker' './configs/electron_gui' './configs/environment' './configs/gui' './configs/integration' './configs/logging' './configs/network' './configs/node' './configs/overlord' './configs/payment_systems' './configs/pi' './configs/rdp' './configs/secrets' './configs/security' './configs/server' './configs/tor' './configs/user' './database/admin' './database/api' './database/config' './database/elasticsearch' './database/models' './database/mongodb' './database/redis' './database/repositories' './database/schema' './database/schemas' './database/services' './rdp/client' './rdp/common' './rdp/config' './rdp/database' './rdp/monitoring' './rdp/protocol' './rdp/recorder' './rdp/resource_monitor' './rdp/scripts' './rdp/security' './rdp/server' './rdp/server_manager' './rdp/session_controller' './rdp/xrdp' './service_configs/blockchain' './service_configs/distroless' './service_configs/kubernetes' './service_configs/logging' './service_configs/multi-stage' './service_configs/node' './service_configs/payment_services' './service_configs/rdp' './service_configs/security' './service_configs/service_mesh' './service_configs/sessions' './service_configs/storage' './service_configs/tor' './service_configs/x_lucid_cluster_calibration' './sessions/api' './sessions/config' './sessions/core' './sessions/encryption' './sessions/integration' './sessions/pipeline' './sessions/processor' './sessions/recorder' './sessions/security' './sessions/session_systems_control' './sessions/storage' './storage/backups' './storage/cache' './storage/data' './blockchain/api/app' './blockchain/data/api' './configs/admin/admin-system-gateway' './configs/admin/config' './configs/blockchain/chain-to-pay' './configs/blockchain/config' './configs/container/admin' './configs/container/auth' './configs/container/base' './configs/container/blockchain' './configs/container/database' './configs/container/electron_gui' './configs/container/gui' './configs/container/node' './configs/container/payment_systems' './configs/container/rdp' './configs/container/server' './configs/container/sessions' './configs/container/storage' './configs/container/tor' './configs/database/elasticsearch' './configs/database/redis' './configs/docker/compose' './configs/docker/distroless' './configs/docker/docs' './configs/docker/multi-stage' './configs/docker/on-system-chain' './configs/environment/development' './configs/environment/pi' './configs/environment/production' './configs/environment/staging' './configs/node/config' './configs/node/node-system-gateway' './configs/overlord/runtime' './configs/pi/ssh' './database/services/backup' './database/services/migration' './database/services/monitoring' './rdp/common/governance' './rdp/monitoring/grafana' './rdp/resource_monitor/config' './rdp/server_manager/config' './rdp/session_controller/config' './rdp/session_controller/integration' './rdp/xrdp/config' './service_configs/kubernetes/01_configmaps' './service_configs/kubernetes/02-secrets' './service_configs/kubernetes/03-databases' './service_configs/kubernetes/04-auth' './service_configs/kubernetes/04-network' './service_configs/kubernetes/05-core' './service_configs/kubernetes/06-application' './service_configs/kubernetes/07-support' './service_configs/kubernetes/08-ingress' './service_configs/kubernetes/patches' './sessions/api/config' './sessions/api/integration' './sessions/pipeline/integration' './sessions/processor/config' './sessions/processor/integration' './sessions/recorder/config' './sessions/recorder/integration' './sessions/storage/config' './storage/backups/configs' './storage/backups/database' './storage/backups/user-data' './storage/cache/build' './storage/cache/docker' './storage/cache/temp' './storage/data/blockchain' './storage/data/logs' './storage/data/sessions' './blockchain/api/app/crypto' './blockchain/api/app/database' './blockchain/api/app/db' './blockchain/api/app/middleware' './blockchain/api/app/models' './blockchain/api/app/repo' './blockchain/api/app/routers' './blockchain/api/app/routes' './blockchain/api/app/schemas' './blockchain/api/app/services' './configs/docker/compose/mongodb' './configs/docker/compose/nats' './configs/docker/compose/nginx' './configs/docker/compose/redis' './configs/docker/compose/vault' './configs/docker/distroless/base' './rdp/monitoring/grafana/dashboards' './rdp/monitoring/grafana/datasources' './blockchain/api/app/database/repositories'; \
     for d in \
       '.' \
       './blockchain' \
       './configs' \
       './database' \
+      './rdp' \
       './service_configs' \
       './sessions' \
+      './storage' \
       './blockchain/anchoring' \
       './blockchain/api' \
-      './blockchain/chain-to-pay' \
       './blockchain/chain_client' \
       './blockchain/config' \
       './blockchain/contracts' \
@@ -147,17 +148,33 @@ RUN set -eux; \
       './blockchain/scripts' \
       './blockchain/tests' \
       './blockchain/utils' \
+      './configs/.devcontainer' \
       './configs/.ssh' \
+      './configs/admin' \
+      './configs/auth' \
+      './configs/base' \
+      './configs/blockchain' \
+      './configs/compose' \
       './configs/container' \
       './configs/database' \
       './configs/docker' \
+      './configs/electron_gui' \
       './configs/environment' \
+      './configs/gui' \
       './configs/integration' \
       './configs/logging' \
+      './configs/network' \
+      './configs/node' \
+      './configs/overlord' \
+      './configs/payment_systems' \
       './configs/pi' \
+      './configs/rdp' \
       './configs/secrets' \
       './configs/security' \
+      './configs/server' \
       './configs/tor' \
+      './configs/user' \
+      './database/admin' \
       './database/api' \
       './database/config' \
       './database/elasticsearch' \
@@ -168,8 +185,23 @@ RUN set -eux; \
       './database/schema' \
       './database/schemas' \
       './database/services' \
+      './rdp/client' \
+      './rdp/common' \
+      './rdp/config' \
+      './rdp/database' \
+      './rdp/monitoring' \
+      './rdp/protocol' \
+      './rdp/recorder' \
+      './rdp/resource_monitor' \
+      './rdp/scripts' \
+      './rdp/security' \
+      './rdp/server' \
+      './rdp/server_manager' \
+      './rdp/session_controller' \
+      './rdp/xrdp' \
       './service_configs/blockchain' \
       './service_configs/distroless' \
+      './service_configs/kubernetes' \
       './service_configs/logging' \
       './service_configs/multi-stage' \
       './service_configs/node' \
@@ -178,6 +210,8 @@ RUN set -eux; \
       './service_configs/security' \
       './service_configs/service_mesh' \
       './service_configs/sessions' \
+      './service_configs/storage' \
+      './service_configs/tor' \
       './service_configs/x_lucid_cluster_calibration' \
       './sessions/api' \
       './sessions/config' \
@@ -190,8 +224,15 @@ RUN set -eux; \
       './sessions/security' \
       './sessions/session_systems_control' \
       './sessions/storage' \
+      './storage/backups' \
+      './storage/cache' \
+      './storage/data' \
       './blockchain/api/app' \
       './blockchain/data/api' \
+      './configs/admin/admin-system-gateway' \
+      './configs/admin/config' \
+      './configs/blockchain/chain-to-pay' \
+      './configs/blockchain/config' \
       './configs/container/admin' \
       './configs/container/auth' \
       './configs/container/base' \
@@ -208,17 +249,39 @@ RUN set -eux; \
       './configs/container/tor' \
       './configs/database/elasticsearch' \
       './configs/database/redis' \
+      './configs/docker/compose' \
       './configs/docker/distroless' \
       './configs/docker/docs' \
       './configs/docker/multi-stage' \
+      './configs/docker/on-system-chain' \
       './configs/environment/development' \
       './configs/environment/pi' \
       './configs/environment/production' \
       './configs/environment/staging' \
+      './configs/node/config' \
+      './configs/node/node-system-gateway' \
+      './configs/overlord/runtime' \
       './configs/pi/ssh' \
       './database/services/backup' \
       './database/services/migration' \
       './database/services/monitoring' \
+      './rdp/common/governance' \
+      './rdp/monitoring/grafana' \
+      './rdp/resource_monitor/config' \
+      './rdp/server_manager/config' \
+      './rdp/session_controller/config' \
+      './rdp/session_controller/integration' \
+      './rdp/xrdp/config' \
+      './service_configs/kubernetes/01_configmaps' \
+      './service_configs/kubernetes/02-secrets' \
+      './service_configs/kubernetes/03-databases' \
+      './service_configs/kubernetes/04-auth' \
+      './service_configs/kubernetes/04-network' \
+      './service_configs/kubernetes/05-core' \
+      './service_configs/kubernetes/06-application' \
+      './service_configs/kubernetes/07-support' \
+      './service_configs/kubernetes/08-ingress' \
+      './service_configs/kubernetes/patches' \
       './sessions/api/config' \
       './sessions/api/integration' \
       './sessions/pipeline/integration' \
@@ -227,6 +290,15 @@ RUN set -eux; \
       './sessions/recorder/config' \
       './sessions/recorder/integration' \
       './sessions/storage/config' \
+      './storage/backups/configs' \
+      './storage/backups/database' \
+      './storage/backups/user-data' \
+      './storage/cache/build' \
+      './storage/cache/docker' \
+      './storage/cache/temp' \
+      './storage/data/blockchain' \
+      './storage/data/logs' \
+      './storage/data/sessions' \
       './blockchain/api/app/crypto' \
       './blockchain/api/app/database' \
       './blockchain/api/app/db' \
@@ -237,6 +309,14 @@ RUN set -eux; \
       './blockchain/api/app/routes' \
       './blockchain/api/app/schemas' \
       './blockchain/api/app/services' \
+      './configs/docker/compose/mongodb' \
+      './configs/docker/compose/nats' \
+      './configs/docker/compose/nginx' \
+      './configs/docker/compose/redis' \
+      './configs/docker/compose/vault' \
+      './configs/docker/distroless/base' \
+      './rdp/monitoring/grafana/dashboards' \
+      './rdp/monitoring/grafana/datasources' \
       './blockchain/api/app/database/repositories' \
     ; do \
       printf 'LUCID_X_FILES_SKELETON_%s' "$(date +%s)" > "$d/.keep"; \
@@ -254,29 +334,21 @@ RUN echo "=== Verifying pip installation (merkle tree builder / processor stack)
     pip list
 
 
-COPY sessions/pipeline/ ./sessions/pipeline/
-COPY sessions/processor/ ./sessions/processor/
-COPY sessions/recorder/ ./sessions/recorder/
-COPY sessions/storage/ ./sessions/storage/
-COPY sessions/api/ ./sessions/api/
-COPY sessions/config/ ./sessions/config/
-COPY sessions/integration/ ./sessions/integration/
-COPY sessions/security/ ./sessions/security/
-COPY sessions/core/ ./sessions/core/
-COPY sessions/encryption/ ./sessions/encryption/
-COPY sessions/__init__.py ./sessions/__init__.py
-
-COPY blockchain/ ./blockchain/
+COPY configs/ ./configs/
 COPY database/ ./database/
 COPY infrastructure/containers/services/ ./service_configs/
-COPY master-env-config.txt ./configs/.env.master
-COPY configs/environment/.env.secrets ./configs/.env.secrets
+COPY sessions/ ./sessions/
+COPY storage/ ./storage/
+COPY blockchain/ ./blockchain/
+COPY RDP/ ./rdp/
+COPY infrastructure/containers/services/ ./service_configs/
 COPY infrastructure/containers/host-config.yml ./service_configs/host-config.yml
 COPY infrastructure/containers/services/x_lucid_cluster_calibration/processing-cluster-host-alignment.yml ./service_configs/x_lucid_cluster_calibration/processing-cluster-host-alignment.yml
-RUN cp -f ./service_configs/session-management.yml ./config/session-management.yml
+RUN rm -rf ./configs/environment && \
+    echo ".env.* files removed"
 
-RUN test -d ./sessions/pipeline && test -d ./blockchain && test -f ./config/session-management.yml && \
-    python3.11 -c "import sys; sys.path.insert(0, '/build'); import os; assert os.path.isdir('/build/sessions/processor'); print('✅ Merkle builder source tree OK')"
+COPY master-env-config.txt ./configs/.env.master
+COPY configs/environment/.env.secrets ./configs/.env.secrets
 
 
 COPY <<'PY' /build/tmp/verify_runtime.py
@@ -320,27 +392,18 @@ FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12:latest
 
 WORKDIR /app
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 ARG BUILD_DATE
 ARG VCS_REF
 ARG VERSION=1.0.0
+# Lucid Tor egress / network isolation (PUBLIC_TOR_IP: master-env-config.txt; compose: lucid-tor-egress-network)
+ARG PUBLIC_TOR_IP=109.70.100.1
+ARG LUCID_INTERNAL_NETWORK_NAME=lucid-pi-network
+ARG LUCID_TOR_EGRESS_NETWORK_NAME=lucid-tor-egress-network
 
 LABEL maintainer="Lucid Development Team" \
+      com.lucid.network.internal="${LUCID_INTERNAL_NETWORK_NAME}" \
+      com.lucid.network.tor_egress="${LUCID_TOR_EGRESS_NETWORK_NAME}" \
+      com.lucid.tor.public_egress_ip="${PUBLIC_TOR_IP}" \
       org.opencontainers.image.title="Lucid Merkle Tree Builder" \
       org.opencontainers.image.description="Distroless Merkle tree builder for Lucid (chunk processor + pipeline stack)" \
       org.opencontainers.image.version="${VERSION}" \
@@ -349,9 +412,18 @@ LABEL maintainer="Lucid Development Team" \
       com.lucid.service="merkle-tree-builder" \
       com.lucid.platform="arm64" \
       com.lucid.cluster="processing" \
-      com.lucid.security="distroless"
+      com.lucid.expose="8392" \
+      com.lucid.tor.compatible="true" \
+      com.lucid.env.config=".env.secrets,.env.master" \
+      com.lucid.security="distroless" \
+      com.lucid.service_id="com.lucid.dockerfile.v1.88309208fd5b8f80.infrastructure.containers.sessions.Dockerfile.merkle-tree-builder" \
+      onion.lucid.service_id="lucid-88309208fd5b8f80-infrastructure-container" \
+      org.lucid.service_id="org.lucid.dockerfile.v1.88309208fd5b8f80:infrastructure/containers/sessions/Dockerfile.merkle-tree-builder" \
 
-ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
+ENV     PUBLIC_TOR_IP="${PUBLIC_TOR_IP}" \
+    LUCID_INTERNAL_NETWORK_NAME="${LUCID_INTERNAL_NETWORK_NAME}" \
+    LUCID_TOR_EGRESS_NETWORK_NAME="${LUCID_TOR_EGRESS_NETWORK_NAME}" \
+    PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONPATH=/app:/app/sessions/core:/app/usr/local/lib/python3.11/site-packages \
@@ -359,33 +431,40 @@ ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
     LUCID_HOST_CONFIG_PATH=/app/configs/host-config.yml \
-    LUCID_HOST_CONFIG_SERVICE_KEY=session_merkle_tree_builder \
+    LUCID_HOST_CONFIG_SERVICE_NAME=merkle-tree-builder \
     LUCID_SERVICE_HOST_IP=172.20.10.15 \
-    LUCID_SERVICE_HTTP_PATH=http://session-merkle-tree-builder:8092/app \
-    MERKLE_PORT=8092 \
-    SESSION_PROCESSOR_HOST=0.0.0.0 \
-    SESSION_PROCESSOR_PORT=8092
-# LUCID_RUNTIME_COPY_FROM_BUILD_BEGIN
-# Generated: same directory set as LUCID_X_FILES_SKELETON (./ under WORKDIR /build).
-COPY --from=builder --chown=65532:65532 /build/blockchain/ /app/blockchain/
-COPY --from=builder --chown=65532:65532 /build/configs/ /app/configs/
-COPY --from=builder --chown=65532:65532 /build/database/ /app/database/
-COPY --from=builder --chown=65532:65532 /build/service_configs/ /app/service_configs/
-COPY --from=builder --chown=65532:65532 /build/sessions/ /app/sessions/
-# LUCID_RUNTIME_COPY_FROM_BUILD_END
-
+    LUCID_SERVICE_HTTP_PATH=http://merkle-tree-builder:8392/app \
+    MERKLE_PORT=8392 \
+    MERKLE_TREE_BUILDER_HOST=0.0.0.0 \
+    MERKLE_TREE_BUILDER_PORT=8392 \
+    MERKLE_ALGORITHM=BLAKE3 \
+    MERKLE_URL=http://merkle-tree-builder:8392/app \
+    API_GATEWAY_URL=http://api-gateway:8080 \
+    MONGODB_URI=mongodb://lucid:lucid@mongodb:27017/lucid?authSource=admin \
+    REDIS_URL=redis://redis:6379/0
 # LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
 # Generated: apt + RUN scaffold (mkdir/printf/touch/chown) -> FHS (not ./ or /build/; lib_search_and_inject.py).
 COPY --from=builder --chown=65532:65532 /usr/lib/*/libffi.so* /app/usr/lib/
 COPY --from=builder --chown=65532:65532 /usr/lib/*/libssl.so* /app/usr/lib/
 COPY --from=builder --chown=65532:65532 /usr/lib/*/ossl-modules/ /app/usr/lib/
 COPY --from=builder --chown=65532:65532 /usr/lib/*/libcurl.so* /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /bin/ /app/bin/
 COPY --from=builder --chown=65532:65532 /etc/ssl/ /app/etc/ssl/
-COPY --from=builder --chown=65532:65532 /root/ /app/root/
 COPY --from=builder --chown=65532:65532 /usr/ /app/usr/
 COPY --from=builder --chown=65532:65532 /var/lib/ /app/var/lib/
 COPY --from=builder --chown=65532:65532 /var/run/ /app/var/run/
 # LUCID_RUNTIME_COPY_FROM_BUILDER_APT_END
+
+# LUCID_RUNTIME_COPY_FROM_BUILD_BEGIN
+# Generated: same directory set as LUCID_X_FILES_SKELETON (./ under WORKDIR /build).
+COPY --from=builder --chown=65532:65532 /build/blockchain/ /app/blockchain/
+COPY --from=builder --chown=65532:65532 /build/configs/ /app/configs/
+COPY --from=builder --chown=65532:65532 /build/database/ /app/database/
+COPY --from=builder --chown=65532:65532 /build/rdp/ /app/rdp/
+COPY --from=builder --chown=65532:65532 /build/service_configs/ /app/service_configs/
+COPY --from=builder --chown=65532:65532 /build/sessions/ /app/sessions/
+COPY --from=builder --chown=65532:65532 /build/storage/ /app/storage/
+# LUCID_RUNTIME_COPY_FROM_BUILD_END
 # LUCID_IMAGE_CONFIG: .env.secrets + .env.master (runtime)
 COPY --from=builder --chown=65532:65532 /build/configs/.env.secrets /app/configs/.env.secrets
 COPY --from=builder --chown=65532:65532 /build/configs/.env.master /app/configs/.env.master
@@ -418,13 +497,13 @@ print('✅ Merkle tree builder application paths verified')"]
 RUN ["/app/usr/bin/python3.11", "/app/tmp/verify_runtime.py"]
 RUN ["rm", "-f", "/app/tmp/verify_runtime.py"]
 
-EXPOSE 8092
+EXPOSE 8392
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD ["/app/usr/bin/python3.11", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8092/health', timeout=2).read()"]
+    CMD ["/app/usr/bin/python3.11", "-c", "import urllib.request; urllib.request.urlopen('http://merkle-tree-builder:8392/health', timeout=2).read()"]
 
 USER 65532:65532
 
 ENTRYPOINT ["/app/usr/bin/tini", "--"]
 
-CMD ["/app/usr/bin/python3.11", "-m", "sessions.processor.main"]
+CMD ["/app/usr/bin/python3.11", "-m", "sessions.processor.merkle_builder"]

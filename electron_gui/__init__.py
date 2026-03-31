@@ -4,6 +4,7 @@
 """
 File: /app/electron_gui/__init__.py
 x-lucid-file-path: /app/electron_gui/__init__.py
+x-lucid-file-directory: /app/electron_gui
 x-lucid-file-type: python
 
 Electron GUI package for Lucid RDP.

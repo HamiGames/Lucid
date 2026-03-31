@@ -5,6 +5,7 @@
 """
 File: /app/admin/system/admin_controller.py
 x-lucid-file-path: /app/admin/system/admin_controller.py
+x-lucid-file-directory: /app/admin/system
 x-lucid-file-type: python
 """
 

@@ -1,6 +1,7 @@
 """
 File: /app/blockchain/manager/service.py
 x-lucid-file-path: /app/blockchain/manager/service.py
+x-lucid-file-directory: /app/blockchain/manager
 x-lucid-file-type: python
 
 Block Manager Service

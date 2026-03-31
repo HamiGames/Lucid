@@ -5,6 +5,7 @@
 """
 File: /app/node/worker/__init__.py
 x-lucid-file-path: /app/node/worker/__init__.py
+x-lucid-file-directory: /app/node/worker
 x-lucid-file-type: python
 
 Worker module for Lucid node operations.

@@ -1,6 +1,7 @@
 """
 File: /app/admin/key_rotation/key_rotation.py
 x-lucid-file-path: /app/admin/key_rotation/key_rotation.py
+x-lucid-file-directory: /app/admin/key_rotation
 x-lucid-file-type: python
 
 Key Rotation for Lucid SPEC-1C Key Rotation System

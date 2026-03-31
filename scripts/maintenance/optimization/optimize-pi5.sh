@@ -1,5 +1,9 @@
 #!/bin/bash
 # Raspberry Pi 5 Optimization Script for Lucid RDP
+# File: /app/scripts/maintenance/optimization/optimize-pi5.sh
+# x-lucid-file-path: /app/scripts/maintenance/optimization/optimize-pi5.sh
+# x-lucid-file-directory: /app/scripts/maintenance/optimization
+# x-lucid-file-type: shell
 # Configures Pi 5 for optimal ARM64 performance and Docker deployment
 # Based on LUCID-STRICT requirements
 

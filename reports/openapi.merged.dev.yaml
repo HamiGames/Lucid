@@ -1,4 +1,9 @@
-﻿openapi: 3.0.3
+﻿# File: /app/reports/openapi.merged.dev.yaml
+# x-lucid-file-path: /app/reports/openapi.merged.dev.yaml
+# x-lucid-file-directory: /app/reports
+# x-lucid-file-type: YAML
+
+openapi: 3.0.3
 info:
   title: Lucid RDP API
   version: 0.1.0

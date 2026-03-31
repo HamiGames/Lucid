@@ -1,5 +1,5 @@
 #!/bin/bash
-# Path: infrastructure/docker/admin/build-env.sh
+# Path: configs/docker/admin/build-env.sh
 # Build Environment Script for Lucid Admin UI Services
 # Generates .env files for admin interface containers
 

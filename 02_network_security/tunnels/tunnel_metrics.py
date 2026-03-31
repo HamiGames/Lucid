@@ -2,6 +2,7 @@
 """
 File: /app/02_network_security/tunnels/tunnel_metrics.py
 x-lucid-file-path: /app/02_network_security/tunnels/tunnel_metrics.py
+x-lucid-file-directory: /app/02_network_security/tunnels
 x-lucid-file-type: python
 
 Tunnel Tools Metrics Collection Module

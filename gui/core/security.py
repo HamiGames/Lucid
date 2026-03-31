@@ -1,8 +1,10 @@
 # Path: gui/core/security.py
 """
-file: /app/gui/core/security.py
+File: /app/gui/core/security.py
 x-lucid-file-path: /app/gui/core/security.py
+x-lucid-file-directory: /app/gui/core
 x-lucid-file-type: python
+
 Certificate pinning and security utilities for Lucid RDP GUI.
 Provides comprehensive security features including certificate validation, 
 onion address verification, and cryptographic utilities.

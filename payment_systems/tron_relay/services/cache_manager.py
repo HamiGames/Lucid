@@ -1,6 +1,7 @@
 """
 File: /app/payment_systems/tron_relay/services/cache_manager.py
 x-lucid-file-path: /app/payment_systems/tron_relay/services/cache_manager.py
+x-lucid-file-directory: /app/payment_systems/tron_relay/services
 x-lucid-file-type: python
 
 LUCID TRON Relay - Cache Manager

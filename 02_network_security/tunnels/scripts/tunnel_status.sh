@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 # Path: 02_network_security/tunnels/scripts/tunnel_status.sh
+# File: /app/02_network_security/tunnels/scripts/tunnel_status.sh
+# x-lucid-file-path: /app/02_network_security/tunnels/scripts/tunnel_status.sh
+# x-lucid-file-directory: /app/02_network_security/tunnels/scripts
+# x-lucid-file-type: shell
 # Defaults: TOR_PROXY from 02_network_security/tunnels/Dockerfile
 
 set -euo pipefail

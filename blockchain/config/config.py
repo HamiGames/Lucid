@@ -1,5 +1,7 @@
 """
+File: /app/blockchain/config/config.py
 x-lucid-file-path: /app/blockchain/config/config.py
+x-lucid-file-directory: /app/blockchain/config
 x-lucid-file-type: python
 
 Comprehensive blockchain configuration loader.

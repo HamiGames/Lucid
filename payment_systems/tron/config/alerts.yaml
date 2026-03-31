@@ -1,3 +1,8 @@
+# File: /app/payment_systems/tron/config/alerts.yaml
+# x-lucid-file-path: /app/payment_systems/tron/config/alerts.yaml
+# x-lucid-file-directory: /app/payment_systems/tron/config
+# x-lucid-file-type: YAML
+
 # LUCID TRON Client - Prometheus Alert Rules
 # File: payment-systems/tron/config/alerts.yaml
 # Purpose: Define alert rules for tron-client service monitoring

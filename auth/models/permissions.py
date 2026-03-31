@@ -1,6 +1,7 @@
 """
 File: /app/auth/models/permissions.py
 x-lucid-file-path: /app/auth/models/permissions.py
+x-lucid-file-directory: /app/auth/models
 x-lucid-file-type: python
 
 Lucid Authentication Service - Permissions Model

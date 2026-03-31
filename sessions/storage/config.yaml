@@ -1,3 +1,8 @@
+# File: /app/sessions/storage/config.yaml
+# x-lucid-file-path: /app/sessions/storage/config.yaml
+# x-lucid-file-directory: /app/sessions/storage
+# x-lucid-file-type: YAML
+
 # Lucid Session Storage - Configuration File
 # Optional YAML configuration for session storage service
 # File: sessions/storage/config.yaml

@@ -1,3 +1,8 @@
+# File: /app/service_configs/kubernetes/04-network/lucid-network-policies.yaml
+# x-lucid-file-path: /app/service_configs/kubernetes/04-network/lucid-network-policies.yaml
+# x-lucid-file-directory: /app/service_configs/kubernetes/04-network
+# x-lucid-file-type: YAML
+
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:

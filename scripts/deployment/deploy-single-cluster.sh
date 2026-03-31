@@ -1,5 +1,9 @@
 #!/bin/bash
 # Lucid Single Cluster Deployment Script
+# File: /app/scripts/deployment/deploy-single-cluster.sh
+# x-lucid-file-path: /app/scripts/deployment/deploy-single-cluster.sh
+# x-lucid-file-directory: /app/scripts/deployment
+# x-lucid-file-type: shell
 # Deploys a specific cluster for focused development and testing
 # Based on Step 50 requirements from BUILD_REQUIREMENTS_GUIDE.md
 

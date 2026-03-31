@@ -5,6 +5,7 @@
 """
 File: /app/node/api/pools.py
 x-lucid-file-path: /app/node/api/pools.py
+x-lucid-file-directory: /app/node/api
 x-lucid-file-type: python
 
 Pool management API endpoints for Lucid system.

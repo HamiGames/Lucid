@@ -1,3 +1,8 @@
+# File: /app/02_network_security/tunnels/config/tunnel-config.yaml
+# x-lucid-file-path: /app/02_network_security/tunnels/config/tunnel-config.yaml
+# x-lucid-file-directory: /app/02_network_security/tunnels/config
+# x-lucid-file-type: YAML
+
 # Lucid Tunnel Tools - Tunnel Configuration
 # Optional YAML configuration for tunnel and onion service management
 # File: 02_network_security/tunnels/config/tunnel-config.yaml

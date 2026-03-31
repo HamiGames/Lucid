@@ -1,7 +1,10 @@
-"""Auth Service Client
-file: /app/gui_api_bridge/gui_api_bridge/integration/auth_service_client.py
+"""
+File: /app/gui_api_bridge/gui_api_bridge/integration/auth_service_client.py
 x-lucid-file-path: /app/gui_api_bridge/gui_api_bridge/integration/auth_service_client.py
+x-lucid-file-directory: /app/gui_api_bridge/gui_api_bridge/integration
+x-lucid-file-type: python
 
+Auth Service Client
 """
 from ...gui_api_bridge.integration.service_base import ServiceBaseClient
 

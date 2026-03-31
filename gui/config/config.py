@@ -1,7 +1,10 @@
-""" Configuration for Lucid GUI services 
-file: /app/gui/config/config.py
+"""
+File: /app/gui/config/config.py
 x-lucid-file-path: /app/gui/config/config.py
+x-lucid-file-directory: /app/gui/config
 x-lucid-file-type: python
+
+Configuration for Lucid GUI services 
 
 about this script:
 - hosts the core Classes for the GUI services
@@ -16,7 +19,6 @@ about this script:
 - calls the node-config for the GUI services
 - calls the wallet-config for the GUI services
 - calls the electron-config for the GUI services
-
 """
 
 #load imports

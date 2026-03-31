@@ -1,4 +1,9 @@
 """
+File: /app/tests/integration/phase2/test_rate_limiting.py
+x-lucid-file-path: /app/tests/integration/phase2/test_rate_limiting.py
+x-lucid-file-directory: /app/tests/integration/phase2
+x-lucid-file-type: python
+
 Phase 2 Integration Tests: Rate Limiting Integration
 
 This module tests the rate limiting integration across all Phase 2 services

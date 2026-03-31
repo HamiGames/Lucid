@@ -1,6 +1,7 @@
 """
 File: /app/payment_systems/tron/utils/circuit_breaker.py
 x-lucid-file-path: /app/payment_systems/tron/utils/circuit_breaker.py
+x-lucid-file-directory: /app/payment_systems/tron/utils
 x-lucid-file-type: python
 
 LUCID Payment Systems - TRON Client Circuit Breaker Module

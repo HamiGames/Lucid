@@ -1,5 +1,9 @@
 #!/bin/bash
 # Build CORE SUPPORT Services Script
+# File: /app/scripts/deployment/devcontainer/build-core-support.sh
+# x-lucid-file-path: /app/scripts/deployment/devcontainer/build-core-support.sh
+# x-lucid-file-directory: /app/scripts/deployment/devcontainer
+# x-lucid-file-type: shell
 # Builds infrastructure services from lucid-dev.yaml within the devcontainer
 # Path: .devcontainer/build-core-support.sh
 
@@ -13,8 +17,8 @@ BLUE='\033[0;34m'
 CYAN='\033[0;36m'
 NC='\033[0m'
 
-# Configuration
-LUCID_DEV_COMPOSE="06-orchestration-runtime/compose/lucid-dev.yaml"
+# Configuration (align with infrastructure/containers/services/container-runtime-layout.yml + infrastructure/compose/)
+LUCID_DEV_COMPOSE="infrastructure/compose/lucid-dev.yaml"
 NETWORK_NAME="lucid-dev_lucid_net"
 CORE_SUPPORT_SERVICES=(
     "tor-proxy"
@@ -41,7 +45,7 @@ success "Found CORE SUPPORT compose file: $LUCID_DEV_COMPOSE"
 
 # 2. Create .env file for CORE SUPPORT services
 log "Setting up environment for CORE SUPPORT services..."
-ENV_FILE="06-orchestration-runtime/compose/.env"
+ENV_FILE="infrastructure/compose/.env"
 
 if [[ ! -f "$ENV_FILE" ]]; then
     log "Creating environment file: $ENV_FILE"
@@ -83,12 +87,12 @@ EOF
     
     success "Environment file created with .onion secrets"
 else
-    info "Environment file already exists: $ENV_FILE"
+    log "Environment file already exists: $ENV_FILE"
 fi
 
 # 3. Build CORE SUPPORT services
 log "Building CORE SUPPORT infrastructure services..."
-cd "06-orchestration-runtime/compose"
+cd "infrastructure/compose"
 
 # Build services with profile targeting
 for service in "${CORE_SUPPORT_SERVICES[@]}"; do

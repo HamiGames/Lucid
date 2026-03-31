@@ -1,5 +1,9 @@
 #!/bin/bash
 # Timelock Governance Deployment Script for Linux/Pi
+# File: /app/blockchain/governance/deploy_timelock.sh
+# x-lucid-file-path: /app/blockchain/governance/deploy_timelock.sh
+# x-lucid-file-directory: /app/blockchain/governance
+# x-lucid-file-type: shell
 # This script deploys the timelock governance service on Linux/Pi
 
 set -e

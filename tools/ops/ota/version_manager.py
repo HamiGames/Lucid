@@ -1,6 +1,7 @@
 """
 File: /app/tools/ops/ota/version_manager.py
 x-lucid-file-path: /app/tools/ops/ota/version_manager.py
+x-lucid-file-directory: /app/tools/ops/ota
 x-lucid-file-type: python
 
 Version tracking and management for Lucid RDP.

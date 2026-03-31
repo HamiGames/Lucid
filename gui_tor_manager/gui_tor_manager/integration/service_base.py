@@ -1,6 +1,7 @@
 """
 File: /app/gui_tor_manager/gui_tor_manager/integration/service_base.py
 x-lucid-file-path: /app/gui_tor_manager/gui_tor_manager/integration/service_base.py
+x-lucid-file-directory: /app/gui_tor_manager/gui_tor_manager/integration
 x-lucid-file-type: python
 
 Base Service Client for GUI Tor Manager

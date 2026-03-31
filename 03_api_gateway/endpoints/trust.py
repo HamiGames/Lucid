@@ -1,6 +1,7 @@
 """
 File: /app/03_api_gateway/endpoints/trust.py
 x-lucid-file-path: /app/03_api_gateway/endpoints/trust.py
+x-lucid-file-directory: /app/03_api_gateway/endpoints
 x-lucid-file-type: python
 
 Trust Policy Endpoints Module

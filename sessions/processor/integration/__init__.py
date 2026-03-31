@@ -2,6 +2,7 @@
 """
 File: /app/sessions/processor/integration/__init__.py
 x-lucid-file-path: /app/sessions/processor/integration/__init__.py
+x-lucid-file-directory: /app/sessions/processor/integration
 x-lucid-file-type: python
 
 Session Processor Integration Module

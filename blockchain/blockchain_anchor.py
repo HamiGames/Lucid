@@ -1,6 +1,7 @@
 """
 File: /app/blockchain/blockchain_anchor.py
 x-lucid-file-path: /app/blockchain/blockchain_anchor.py
+x-lucid-file-directory: /app/blockchain
 x-lucid-file-type: python
 
 Lucid RDP Blockchain Anchor System

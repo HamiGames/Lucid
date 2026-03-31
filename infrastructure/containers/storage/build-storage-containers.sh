@@ -1,5 +1,9 @@
 #!/bin/bash
 # infrastructure/containers/storage/build-storage-containers.sh
+# File: /app/configs/storage/build-storage-containers.sh
+# x-lucid-file-path: /app/configs/storage/build-storage-containers.sh
+# x-lucid-file-directory: /app/configs/storage
+# x-lucid-file-type: shell
 # Build Lucid STORAGE PLANE images (capacity + durability paths). Context = repository root.
 
 set -e

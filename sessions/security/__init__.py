@@ -1,6 +1,7 @@
 """
 File: /app/sessions/security/__init__.py
 x-lucid-file-path: /app/sessions/security/__init__.py
+x-lucid-file-directory: /app/sessions/security
 x-lucid-file-type: python
 
 LUCID Session Security Components

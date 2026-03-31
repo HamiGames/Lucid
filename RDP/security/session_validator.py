@@ -5,6 +5,7 @@
 """
 File: /app/RDP/security/session_validator.py
 x-lucid-file-path: /app/RDP/security/session_validator.py
+x-lucid-file-directory: /app/RDP/security
 x-lucid-file-type: python
 """
 

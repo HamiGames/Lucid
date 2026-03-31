@@ -1,10 +1,15 @@
+# File: /app/configs/docker/docker-compose.gui-integration.yml
+# x-lucid-file-path: /app/configs/docker/docker-compose.gui-integration.yml
+# x-lucid-file-directory: /app/configs/docker
+# x-lucid-file-type: YAML
+
 # GUI-Docker Integration Configuration
 # Integrates Electron GUI with Docker backend services
 # Step 33: GUI Environment Configuration from lucid-container-build-plan.plan.md
 
 # Lucid — aligned with infrastructure/containers/**/Dockerfile* (build context: repo root),
 # x-files-listing.txt (packaged paths under /app/configs/docker/…),
-# infrastructure/containers/host-config.yml (→ /app/service_configs/host-config.yml),
+# infrastructure/containers/host-config.yml (→ /app/configs/host-config.yml),
 # infrastructure/containers/services/ (→ /app/service_configs/, container-runtime-layout.yml).
 # Host data/logs: ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/…  Override on non-Pi hosts.
 # Image env files: master-env-config.txt → /app/configs/.env.master ; configs/environment/.env.secrets → /app/configs/.env.secrets (bind-mount or image COPY). Do not list master-env-config.txt in env_file (Compose interpolates ${…} and fails on required placeholders).
@@ -34,6 +39,7 @@ services:
       - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/gui-api-bridge:/app/data
     networks:
       - lucid-pi-network
+      - lucid-tor-egress-network
       - lucid-gui-network
     depends_on:
       api-gateway:
@@ -86,6 +92,7 @@ services:
       - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/gui-docker-manager:/app/data
     networks:
       - lucid-pi-network
+      - lucid-tor-egress-network
       - lucid-gui-network
     depends_on:
       lucid-mongodb:
@@ -142,6 +149,7 @@ services:
     networks:
       - lucid-gui-network
       - lucid-pi-network # ADDED: To connect to tor-proxy
+      - lucid-tor-egress-network
     depends_on:
       tor-proxy: # ADDED: Dependency on foundation tor-proxy
         condition: service_started
@@ -192,6 +200,7 @@ services:
       - /run/usb-devices:/run/usb:rw
     networks:
       - lucid-pi-network
+      - lucid-tor-egress-network
       - lucid-gui-network
     depends_on:
       tor-proxy:
@@ -258,6 +267,7 @@ services:
       - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/admin-interface:/app/data
     networks:
       - lucid-pi-network
+      - lucid-tor-egress-network
       - lucid-gui-network
     depends_on:
       gui-api-bridge:
@@ -303,6 +313,7 @@ services:
       - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/user-interface:/app/data
     networks:
       - lucid-pi-network
+      - lucid-tor-egress-network
       - lucid-gui-network
     depends_on:
       gui-api-bridge:
@@ -348,6 +359,7 @@ services:
       - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/node-interface:/app/data
     networks:
       - lucid-pi-network
+      - lucid-tor-egress-network
       - lucid-gui-network
     depends_on:
       gui-api-bridge:
@@ -390,6 +402,10 @@ networks:
   # Main Pi network (external)
   lucid-pi-network:
     name: lucid-pi-network
+    external: true
+
+  lucid-tor-egress-network:
+    name: lucid-tor-egress-network
     external: true
 
   # GUI-specific network for secure communication

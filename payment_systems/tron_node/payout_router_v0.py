@@ -1,6 +1,7 @@
 """
 File: /app/payment_systems/tron_node/payout_router_v0.py
 x-lucid-file-path: /app/payment_systems/tron_node/payout_router_v0.py
+x-lucid-file-directory: /app/payment_systems/tron_node
 x-lucid-file-type: python
 
 LUCID Payment Systems - PayoutRouterV0 Integration

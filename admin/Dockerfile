@@ -159,21 +159,29 @@ LABEL maintainer="Lucid Development Team" \
       org.opencontainers.image.version="${VERSION}" \
       org.opencontainers.image.revision="${VCS_REF}" \
       org.opencontainers.image.created="${BUILD_DATE}" \
-      com.lucid.service="admin-interface" \
+      com.lucid.plane="ops" \
+      com.lucid.service="admin-ui-backend" \
+      com.lucid.layer="1" \
+      org.lucid.layer="1" \
       com.lucid.platform="arm64" \
-      com.lucid.cluster="support" \
-      com.lucid.security="distroless"
+      com.lucid.architecture="linux/arm64" \
+      com.lucid.security="distroless" \
+      com.lucid.vulnerabilities="zero" \
+      com.lucid.expose="8120" \
+      com.lucid.cluster="core" \
+      com.lucid.tor.compatible="true" \
+      com.lucid.env.config=".env.foundation,.env.secrets"
 
-ENV PATH=/usr/local/bin:/usr/bin:/bin \
-    PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONPATH=/app:/usr/local/lib/python3.11/site-packages \
-    PYTHONHOME="" \
-    PYTHONIOENCODING=utf-8 \
-    LANG=C.UTF-8 \
-    LC_ALL=C.UTF-8 \
-    ADMIN_INTERFACE_PORT=8120 \
-    ADMIN_INTERFACE_HOST=0.0.0.0
+ENV PATH="/usr/local/bin:/usr/bin:/bin" \
+    PYTHONUNBUFFERED="1" \
+    PYTHONDONTWRITEBYTECODE="1" \
+    PYTHONPATH="/app:/usr/local/lib/python3.11/site-packages" \
+    PYTHONIOENCODING="utf-8" \
+    LANG="C.UTF-8" \
+    LC_ALL="C.UTF-8" \
+    ADMIN_INTERFACE_HOST="0.0.0.0" \
+    ADMIN_INTERFACE_PORT="8120" \
+    PYTHONHOME=""
 
 WORKDIR /app
 

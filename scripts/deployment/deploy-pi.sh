@@ -1,10 +1,22 @@
 #!/bin/bash
 # LUCID RASPBERRY PI DEPLOYMENT SCRIPT
+# File: /app/scripts/deployment/deploy-pi.sh
+# x-lucid-file-path: /app/scripts/deployment/deploy-pi.sh
+# x-lucid-file-directory: /app/scripts/deployment
+# x-lucid-file-type: shell
 # Deploys Lucid system to Raspberry Pi with staging environment
 # Path: /mnt/myssd/Lucid/Lucid/scripts/deployment/deploy-pi.sh
 # MUST RUN ON PI CONSOLE - NOT FROM WINDOWS
 
 set -euo pipefail
+
+_lucid_here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+_lucid_scripts="$_lucid_here"
+while [[ "$_lucid_scripts" != "/" && "$(basename "$_lucid_scripts")" != "scripts" ]]; do
+    _lucid_scripts="$(dirname "$_lucid_scripts")"
+done
+# shellcheck source=../lib/lucid-repo-paths.sh
+source "$_lucid_scripts/lib/lucid-repo-paths.sh"
 
 # Colors for output
 RED='\033[0;31m'
@@ -15,20 +27,20 @@ CYAN='\033[0;36m'
 BOLD='\033[1m'
 NC='\033[0m'
 
-# Global Configuration - Pi Native Paths
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-LUCID_ROOT="/mnt/myssd/Lucid/Lucid"
-PROJECT_ROOT="/mnt/myssd/Lucid/Lucid"
-CONFIGS_DIR="/mnt/myssd/Lucid/Lucid/configs"
-ENV_DIR="/mnt/myssd/Lucid/Lucid/configs/environment"
-SCRIPTS_DIR="/mnt/myssd/Lucid/Lucid/scripts"
+# Global Configuration (repo root from master-env-config.txt)
+SCRIPT_DIR="$_lucid_here"
+LUCID_ROOT="$LUCID_REPO_ROOT"
+PROJECT_ROOT="$LUCID_REPO_ROOT"
+CONFIGS_DIR="$PROJECT_ROOT/configs"
+ENV_DIR="$LUCID_ENV_CONFIG_DIR"
+SCRIPTS_DIR="$LUCID_SCRIPTS_DIR"
 PI_HOST="pickme@192.168.0.75"
 PI_DEPLOY_DIR="/opt/lucid/staging"
 DOCKER_REGISTRY="ghcr.io/hamigames/lucid"
 
-# Pi-specific mount validation
+# Pi SSD mount (optional); checkout may live at PROJECT_ROOT instead
 PI_MOUNT_POINT="/mnt/myssd"
-LUCID_MOUNT_PATH="/mnt/myssd/Lucid/Lucid"
+LUCID_MOUNT_PATH="${LUCID_PI_CHECKOUT:-$PROJECT_ROOT}"
 
 # Pi-specific service configuration
 declare -A PI_SERVICES=(
@@ -210,17 +222,18 @@ setup_pi_fallbacks() {
     # Create fallback environment file if it doesn't exist
     if [ ! -f "$ENV_DIR/.env.pi" ]; then
         log "Creating fallback Pi environment file"
-        cat > "$ENV_DIR/.env.pi" << 'EOF'
+        cat > "$ENV_DIR/.env.pi" << EOF
 # LUCID Pi Environment Configuration
 LUCID_ENV=pi
 LUCID_PLANE=pi
 CLUSTER_ID=pi-cluster
 
-# Pi-specific paths
-LUCID_ROOT=/mnt/myssd/Lucid/Lucid
-CONFIGS_DIR=/mnt/myssd/Lucid/Lucid/configs
-ENV_DIR=/mnt/myssd/Lucid/Lucid/configs/environment
-SCRIPTS_DIR=/mnt/myssd/Lucid/Lucid/scripts
+# Pi-specific paths (repo checkout)
+LUCID_ROOT=$PROJECT_ROOT
+CONFIGS_DIR=$PROJECT_ROOT/configs
+ENV_DIR=$ENV_DIR
+SCRIPTS_DIR=$SCRIPTS_DIR
+# Container runtime (Dockerfiles): master-env-config.txt -> ${LUCID_IMAGE_MASTER_ENV}; host-config -> ${LUCID_IMAGE_HOST_CONFIG}; service_configs -> ${LUCID_IMAGE_SERVICE_CONFIGS}
 
 # Network Configuration
 LUCID_NETWORK=lucid-pi

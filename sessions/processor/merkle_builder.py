@@ -1,6 +1,7 @@
 """
 File: /app/sessions/processor/merkle_builder.py
 x-lucid-file-path: /app/sessions/processor/merkle_builder.py
+x-lucid-file-directory: /app/sessions/processor
 x-lucid-file-type: python
 
 Merkle Tree Builder Module

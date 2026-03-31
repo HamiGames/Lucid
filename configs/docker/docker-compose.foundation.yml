@@ -1,6 +1,11 @@
+# File: /app/configs/docker/docker-compose.foundation.yml
+# x-lucid-file-path: /app/configs/docker/docker-compose.foundation.yml
+# x-lucid-file-directory: /app/configs/docker
+# x-lucid-file-type: YAML
+
 # Lucid — aligned with infrastructure/containers/**/Dockerfile* (build context: repo root),
 # x-files-listing.txt (packaged paths under /app/configs/docker/…),
-# infrastructure/containers/host-config.yml (→ /app/service_configs/host-config.yml),
+# infrastructure/containers/host-config.yml (→ /app/configs/host-config.yml),
 # infrastructure/containers/services/ (→ /app/service_configs/, container-runtime-layout.yml).
 # Host data/logs: ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/…  Override on non-Pi hosts.
 # Image env files: master-env-config.txt → /app/configs/.env.master ; configs/environment/.env.secrets → /app/configs/.env.secrets (bind-mount or image COPY). Do not list master-env-config.txt in env_file (Compose interpolates ${…} and fails on required placeholders).
@@ -16,7 +21,9 @@ services:
       - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.foundation
       - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.secrets
     networks:
-      - lucid-pi-network
+      lucid-pi-network: {}
+      lucid-tor-egress-network:
+        ipv4_address: ${LUCID_TOR_EGRESS_TOR_PROXY_IPV4:-172.31.0.2}
     ports:
       - "${TOR_PROXY_SOCKS_PORT:-9050}:${TOR_PROXY_SOCKS_PORT:-9050}"
       - "${TOR_PROXY_CONTROL_PORT:-9051}:${TOR_PROXY_CONTROL_PORT:-9051}"
@@ -297,8 +304,6 @@ services:
       - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.authentication
       - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.secrets
       - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.distroless
-    networks:
-      - lucid-pi-network
     ports:
       - "${AUTH_SERVICE_PORT:-8089}:${AUTH_SERVICE_PORT:-8089}"
     depends_on:
@@ -336,6 +341,9 @@ services:
     read_only: true
     tmpfs:
       - /tmp:noexec,nosuid,size=100m
+    networks:
+      - lucid-pi-network
+      - lucid-tor-egress-network
     volumes:
       - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/auth:/app/logs:rw
       - auth-cache:/tmp/auth
@@ -380,3 +388,6 @@ networks:
   lucid-pi-network:
     external: true
     name: lucid-pi-network
+  lucid-tor-egress-network:
+    external: true
+    name: lucid-tor-egress-network

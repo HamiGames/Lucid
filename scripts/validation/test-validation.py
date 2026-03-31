@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 """
+File: /app/scripts/validation/test-validation.py
+x-lucid-file-path: /app/scripts/validation/test-validation.py
+x-lucid-file-directory: /app/scripts/validation
+x-lucid-file-type: python
+
 Test script for LUCID validation scripts
 
 This script tests the validation scripts to ensure they work correctly.

@@ -100,22 +100,30 @@ LABEL maintainer="Lucid Development Team" \
       org.opencontainers.image.version="${VERSION}" \
       org.opencontainers.image.revision="${VCS_REF}" \
       org.opencontainers.image.created="${BUILD_DATE}" \
+      com.lucid.plane="ops" \
       com.lucid.service="api-server" \
+      com.lucid.layer="1" \
+      org.lucid.layer="1" \
       com.lucid.platform="arm64" \
+      com.lucid.architecture="linux/arm64" \
+      com.lucid.security="distroless" \
+      com.lucid.vulnerabilities="zero" \
+      com.lucid.expose="" \
       com.lucid.cluster="core" \
-      com.lucid.security="distroless"
+      com.lucid.tor.compatible="true" \
+      com.lucid.env.config=".env.foundation,.env.secrets"
 
-ENV PATH=/usr/local/bin:/usr/bin:/bin \
-    PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONPATH=/app:/usr/local/lib/python3.11/site-packages \
-    PYTHONIOENCODING=utf-8 \
-    LANG=C.UTF-8 \
-    LC_ALL=C.UTF-8 \
-    UVICORN_HOST=0.0.0.0 \
-    UVICORN_PORT=8081 \
-    TOR_ONION_SERVICE_DIR=/app/run/lucid/onion \
-    TOR_COOKIE_TARGETS=/app/run/lucid/onion/control_auth_cookie
+ENV PATH="/usr/local/bin:/usr/bin:/bin" \
+    PYTHONUNBUFFERED="1" \
+    PYTHONDONTWRITEBYTECODE="1" \
+    PYTHONPATH="/app:/usr/local/lib/python3.11/site-packages" \
+    PYTHONIOENCODING="utf-8" \
+    LANG="C.UTF-8" \
+    LC_ALL="C.UTF-8" \
+    TOR_COOKIE_TARGETS="/app/run/lucid/onion/control_auth_cookie" \
+    TOR_ONION_SERVICE_DIR="/app/run/lucid/onion" \
+    UVICORN_HOST="0.0.0.0" \
+    UVICORN_PORT="8081"
 
 WORKDIR /app
 

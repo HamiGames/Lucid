@@ -1,5 +1,5 @@
 #!/bin/bash
-# Path: infrastructure/docker/vm/build-env.sh
+# Path: configs/docker/vm/build-env.sh
 # Build Environment Script for Lucid VM Services
 # Generates .env files for virtual machine management containers
 

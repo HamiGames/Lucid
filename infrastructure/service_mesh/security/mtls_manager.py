@@ -1,7 +1,7 @@
 """
 File: /app/service_mesh/security/mtls_manager.py
 x-lucid-file-path: /app/service_mesh/security/mtls_manager.py
-x-lucid-file-directory: /app/service_mesh
+x-lucid-file-directory: /app/service_mesh/security
 x-lucid-file-type: python
 
 Lucid Service Mesh - mTLS Manager

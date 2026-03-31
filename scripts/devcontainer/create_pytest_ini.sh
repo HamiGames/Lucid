@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 # Path: create_pytest_ini.sh
+# File: /app/scripts/devcontainer/create_pytest_ini.sh
+# x-lucid-file-path: /app/scripts/devcontainer/create_pytest_ini.sh
+# x-lucid-file-directory: /app/scripts/devcontainer
+# x-lucid-file-type: shell
 # Create pytest.ini at repo root for Lucid RDP project
 
 set -euo pipefail

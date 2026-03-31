@@ -1,4 +1,9 @@
 """
+File: /app/tests/integration/phase3/test_rdp_creation.py
+x-lucid-file-path: /app/tests/integration/phase3/test_rdp_creation.py
+x-lucid-file-directory: /app/tests/integration/phase3
+x-lucid-file-type: python
+
 Phase 3 Integration Tests - RDP Server Dynamic Creation
 
 This module tests RDP server dynamic creation and management:

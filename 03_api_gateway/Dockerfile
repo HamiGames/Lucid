@@ -171,10 +171,10 @@ RUN mkdir -p ./api ./api/app ./api/app/db ./api/app/services ./api/app/db && \
     echo "api/app/routers/.keep, api/app/utils/.keep, api/app/middleware/.keep, api/app/database/.keep, api/app/scripts/.keep, api/app/models/.keep, api/app/routes/.keep, api/app/security/.keep created" && \
     printf "LUCID_API_GATEWAY_INFRAStrUCTURE_$(date +%s)" > ./infrastructure/.keep && \
     touch ./infrastructure/.keep && \
-    printf "LUCID_API_GATEWAY_INFRAStrUCTURE_KUBERNETES_$(date +%s)" > ./infrastructure/kubernetes/.keep && \
-    touch ./infrastructure/kubernetes/.keep && \
-    touch ./infrastructure/.keep ./infrastructure/kubernetes/.keep && \
-    echo "infrastructure/kubernetes/.keep created" && \
+    printf "LUCID_API_GATEWAY_INFRAStrUCTURE_KUBERNETES_$(date +%s)" > ./service_configs/kubernetes/.keep && \
+    touch ./service_configs/kubernetes/.keep && \
+    touch ./infrastructure/.keep ./service_configs/kubernetes/.keep && \
+    echo "service_configs/kubernetes/.keep created" && \
     printf "LUCID_COMMON_$(date +%s)" > ./common/.keep && \
     touch ./common/.keep && \
     printf "LUCID_API_COMMON_TOR_$(date +%s)" > ./common/tor/.keep && \
@@ -237,7 +237,7 @@ RUN echo "=== Checking if api/ was copied ===" && \
     ls -la /build/api/* && \
     echo "api/ was copied"
 COPY 03_api_gateway/utils/ ./utils/
-COPY infrastructure/kubernetes/01_configmaps/ ./infrastructure/kubernetes/
+COPYservice_configs/kubernetes/01_configmaps/ ./service_configs/kubernetes/
 COPY 03_api_gateway/api/app/ ./api/app/
 RUN echo "=== Checking if api/app/ was copied ===" && \
     ls -la ./api/app/* && \
@@ -315,20 +315,28 @@ LABEL maintainer="Lucid Development Team" \
       org.opencontainers.image.version="${VERSION}" \
       org.opencontainers.image.revision="${VCS_REF}" \
       org.opencontainers.image.created="${BUILD_DATE}" \
+      com.lucid.plane="ops" \
       com.lucid.service="api-gateway" \
+      com.lucid.layer="1" \
+      org.lucid.layer="1" \
       com.lucid.platform="arm64" \
+      com.lucid.architecture="linux/arm64" \
+      com.lucid.security="distroless" \
+      com.lucid.vulnerabilities="zero" \
+      com.lucid.expose="8080" \
       com.lucid.cluster="core" \
-      com.lucid.security="distroless"
+      com.lucid.tor.compatible="true" \
+      com.lucid.env.config=".env.foundation,.env.secrets"
 
 ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
-    PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONPATH=/app/api:/app:/app/usr/local/lib/python3.11/site-packages \
-    PYTHONIOENCODING=utf-8 \
-    LANG=C.UTF-8 \
-    LC_ALL=C.UTF-8 \
-    API_GATEWAY_PORT=8080 \
-    API_GATEWAY_HOST=api-gateway
+    PYTHONUNBUFFERED="1" \
+    PYTHONDONTWRITEBYTECODE="1" \
+    PYTHONPATH="/app/api:/app:/app/usr/local/lib/python3.11/site-packages" \
+    PYTHONIOENCODING="utf-8" \
+    LANG="C.UTF-8" \
+    LC_ALL="C.UTF-8" \
+    API_GATEWAY_HOST="api-gateway" \
+    API_GATEWAY_PORT="8080"
 
 # System directories & certificates
 COPY --from=builder /root/.rustup/        /app/rust/
@@ -350,7 +358,7 @@ COPY --from=builder --chown=65532:65532 /build/wheels/         /app/wheels/
 COPY --from=builder --chown=65532:65532 /build/common/__init__.py         /app/common/__init__.py
 COPY --from=builder --chown=65532:65532 /build/common/tor/         /app/common/tor/
 #kubernetes configmaps
-COPY --from=builder --chown=65532:65532 /build/infrastructure/kubernetes/api-gateway-config.yaml     /app/infrastructure/kubernetes/api-gateway-config.yaml
+COPY --from=builder --chown=65532:65532 /build/service_configs/kubernetes/api-gateway-config.yaml     /app/service_configs/kubernetes/api-gateway-config.yaml
 COPY --from=builder --chown=65532:65532 /build/api/app/            /app/api/app/
 COPY --from=builder --chown=65532:65532 /build/api/app/middleware/ /app/api/app/middleware/
 COPY --from=builder --chown=65532:65532 /build/api/app/utils/ /app/api/app/utils/

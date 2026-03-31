@@ -1,5 +1,12 @@
 # Path: tests/test_blockchain_service.py
 
+"""
+File: /app/tests/test_blockchain_service.py
+x-lucid-file-path: /app/tests/test_blockchain_service.py
+x-lucid-file-directory: /app/tests
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 import asyncio

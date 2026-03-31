@@ -1,3 +1,8 @@
+# File: /app/.github/workflows/build-phase1.yml
+# x-lucid-file-path: /app/.github/workflows/build-phase1.yml
+# x-lucid-file-directory: /app/.github/workflows
+# x-lucid-file-type: YAML
+
 name: Phase 1 - Foundation Services Build
 
 on:

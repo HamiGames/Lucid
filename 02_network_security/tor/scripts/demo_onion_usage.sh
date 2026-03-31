@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 # Lucid Onion Management Demo - Shows both static multi-onion and dynamic onion capabilities
+# File: /app/02_network_security/tor/scripts/demo_onion_usage.sh
+# x-lucid-file-path: /app/02_network_security/tor/scripts/demo_onion_usage.sh
+# x-lucid-file-directory: /app/02_network_security/tor/scripts
+# x-lucid-file-type: shell
 # This script demonstrates the full onion creation workflow
 
 set -Eeuo pipefail

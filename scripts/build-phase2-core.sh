@@ -1,5 +1,9 @@
 #!/bin/bash
 # Phase 2 Core Services Build Script
+# File: /app/scripts/build-phase2-core.sh
+# x-lucid-file-path: /app/scripts/build-phase2-core.sh
+# x-lucid-file-directory: /app/scripts
+# x-lucid-file-type: shell
 # Builds: API Gateway, Service Mesh Controller, Blockchain Core containers
 # Target: Raspberry Pi (linux/arm64)
 # Registry: pickme/lucid namespace

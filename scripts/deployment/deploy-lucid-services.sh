@@ -1,10 +1,22 @@
 #!/bin/bash
 # Path: scripts/deployment/deploy-lucid-services.sh
+# File: /app/scripts/deployment/deploy-lucid-services.sh
+# x-lucid-file-path: /app/scripts/deployment/deploy-lucid-services.sh
+# x-lucid-file-directory: /app/scripts/deployment
+# x-lucid-file-type: shell
 # Deploy Lucid Services Using Pre-Built Distroless Images
 # Deploys Foundation → Core → Application → Support → GUI in order
 # MUST RUN ON PI CONSOLE
 
 set -euo pipefail
+
+_lucid_here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+_lucid_scripts="$_lucid_here"
+while [[ "$_lucid_scripts" != "/" && "$(basename "$_lucid_scripts")" != "scripts" ]]; do
+    _lucid_scripts="$(dirname "$_lucid_scripts")"
+done
+# shellcheck source=../lib/lucid-repo-paths.sh
+source "$_lucid_scripts/lib/lucid-repo-paths.sh"
 
 # Colors for output
 RED='\033[0;31m'
@@ -20,7 +32,7 @@ log_warning() { echo -e "${YELLOW}[WARNING]${NC} $1"; }
 log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 
 # Project root
-PROJECT_ROOT="${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}"
+PROJECT_ROOT="${PROJECT_ROOT:-$LUCID_REPO_ROOT}"
 
 echo ""
 log_info "========================================"
@@ -28,10 +40,10 @@ log_info "Deploying Lucid Services (Distroless)"
 log_info "========================================"
 echo ""
 
-# Check if we're in the right directory
-if [ ! -f "configs/docker/docker-compose.foundation.yml" ]; then
-    log_error "Not in project root directory!"
-    log_error "Please run from: $PROJECT_ROOT"
+# x-files-listing host paths: LUCID_HOST_COMPOSE_*
+if [ ! -f "$LUCID_HOST_COMPOSE_FOUNDATION" ]; then
+    log_error "Foundation compose missing: $LUCID_HOST_COMPOSE_FOUNDATION"
+    log_error "Expected repo checkout with configs/docker per x-files-listing.txt"
     exit 1
 fi
 
@@ -158,7 +170,7 @@ echo ""
 
 if ! deploy_phase \
     "Phase 1 - Foundation" \
-    "configs/docker/docker-compose.foundation.yml" \
+    "$LUCID_HOST_COMPOSE_FOUNDATION" \
     "configs/environment/.env.foundation" \
     "MongoDB, Redis, Elasticsearch, and Auth Service using pre-built distroless images" \
     90; then
@@ -177,7 +189,7 @@ echo ""
 
 if ! deploy_phase \
     "Phase 2 - Core" \
-    "configs/docker/docker-compose.core.yml" \
+    "$LUCID_HOST_COMPOSE_CORE" \
     "configs/environment/.env.foundation configs/environment/.env.core" \
     "API Gateway, Blockchain Core, and Service Mesh using pre-built distroless images" \
     60; then
@@ -197,7 +209,7 @@ echo ""
 
 if ! deploy_phase \
     "Phase 3 - Application" \
-    "configs/docker/docker-compose.application.yml" \
+    "$LUCID_HOST_COMPOSE_APPLICATION" \
     "configs/environment/.env.foundation configs/environment/.env.application" \
     "Session Management, RDP Services, and Node Management using pre-built distroless images" \
     60; then
@@ -217,7 +229,7 @@ echo ""
 
 if ! deploy_phase \
     "Phase 4 - Support" \
-    "configs/docker/docker-compose.support.yml" \
+    "$LUCID_HOST_COMPOSE_SUPPORT" \
     "configs/environment/.env.foundation configs/environment/.env.support" \
     "Admin Interface and TRON Payment System (isolated) using pre-built distroless images" \
     60; then
@@ -240,7 +252,7 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
     
     if ! deploy_phase \
         "GUI Integration" \
-        "configs/docker/docker-compose.gui-integration.yml" \
+        "$LUCID_HOST_COMPOSE_GUI_INTEGRATION" \
         "configs/environment/.env.foundation configs/environment/.env.gui" \
         "Electron GUI integration services using pre-built distroless images" \
         60; then

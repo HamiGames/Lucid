@@ -355,19 +355,24 @@ LABEL maintainer="Lucid Development Team" \
       org.opencontainers.image.created="${BUILD_DATE}" \
       com.lucid.plane="ops" \
       com.lucid.service="tor-proxy" \
+      com.lucid.layer="0" \
+      org.lucid.layer="0" \
       com.lucid.platform="arm64" \
       com.lucid.architecture="linux/arm64" \
       com.lucid.security="distroless" \
-      com.lucid.tor.inherent="true" \
-      com.lucid.tor.system="built-in" \
+      com.lucid.vulnerabilities="zero" \
       com.lucid.expose="9050,9051,8888" \
-      com.lucid.cluster="foundation"
+      com.lucid.cluster="foundation" \
+      com.lucid.tor.compatible="true" \
+      com.lucid.env.config=".env.tunnel-tools,.env.secrets,.env.foundation" \
+      com.lucid.tor.inherent="true" \
+      com.lucid.tor.system="built-in"
 
-ENV PATH=/run/lucid/tor/bin:/opt/bin:/opt/sbin:/bin \
-    LD_LIBRARY_PATH=/opt/lib \
-    TOR_SOCKS_PORT=9050 \
-    TOR_CONTROL_PORT=9051 \
-    TOR_DATA_DIR=/opt/lib/tor
+ENV PATH="/run/lucid/tor/bin:/opt/bin:/opt/sbin:/bin" \
+    LD_LIBRARY_PATH="/opt/lib" \
+    TOR_CONTROL_PORT="9051" \
+    TOR_DATA_DIR="/opt/lib/tor" \
+    TOR_SOCKS_PORT="9050"
 
 # ── Verification gate ──────────────────────────────────────────────────────
 

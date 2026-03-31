@@ -1,3 +1,8 @@
+# File: /app/configs/container/rdp/docker-compose.rdp-system.yml
+# x-lucid-file-path: /app/configs/container/rdp/docker-compose.rdp-system.yml
+# x-lucid-file-directory: /app/configs/container/rdp
+# x-lucid-file-type: YAML
+
 # LUCID RDP SYSTEM
 # Path: infrastructure/containers/rdp/docker-compose.rdp-system.yml
 #

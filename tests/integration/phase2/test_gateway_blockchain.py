@@ -1,4 +1,9 @@
 """
+File: /app/tests/integration/phase2/test_gateway_blockchain.py
+x-lucid-file-path: /app/tests/integration/phase2/test_gateway_blockchain.py
+x-lucid-file-directory: /app/tests/integration/phase2
+x-lucid-file-type: python
+
 Phase 2 Integration Tests: API Gateway → Blockchain Proxy
 
 This module tests the integration between API Gateway and Blockchain Core

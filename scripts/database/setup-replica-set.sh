@@ -1,5 +1,9 @@
 #!/bin/bash
 # scripts/database/setup-replica-set.sh
+# File: /app/scripts/database/setup-replica-set.sh
+# x-lucid-file-path: /app/scripts/database/setup-replica-set.sh
+# x-lucid-file-directory: /app/scripts/database
+# x-lucid-file-type: shell
 # Setup MongoDB replica set for high availability
 # LUCID-STRICT: Distroless build method, API compliant
 

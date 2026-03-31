@@ -1,3 +1,8 @@
+# File: /app/configs/services/database.yml
+# x-lucid-file-path: /app/configs/services/database.yml
+# x-lucid-file-directory: /app/configs/services
+# x-lucid-file-type: YAML
+
 # Database Service Configuration
 # This file contains configuration for all database services in the Lucid system
 

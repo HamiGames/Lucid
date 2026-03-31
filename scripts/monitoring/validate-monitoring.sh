@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# File: /app/scripts/monitoring/validate-monitoring.sh
+# x-lucid-file-path: /app/scripts/monitoring/validate-monitoring.sh
+# x-lucid-file-directory: /app/scripts/monitoring
+# x-lucid-file-type: shell
 # Lucid RDP Monitoring Validation Script - Step 48
 # Comprehensive monitoring validation for all Lucid services
 

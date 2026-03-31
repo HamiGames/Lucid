@@ -1,3 +1,8 @@
+# File: /app/docs/api/swagger-ui-config.yaml
+# x-lucid-file-path: /app/docs/api/swagger-ui-config.yaml
+# x-lucid-file-directory: /app/docs/api
+# x-lucid-file-type: YAML
+
 # Swagger UI Configuration for Lucid API Documentation
 # This file configures the Swagger UI interface for all service APIs
 

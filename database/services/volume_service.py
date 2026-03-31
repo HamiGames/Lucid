@@ -1,6 +1,7 @@
 """
 File: /app/database/services/volume_service.py
 x-lucid-file-path: /app/database/services/volume_service.py
+x-lucid-file-directory: /app/database/services
 x-lucid-file-type: python
 
 Volume Service for Lucid Database Infrastructure

@@ -1,3 +1,9 @@
+# File: /app/service_configs/sessions/storage-config.yaml
+# x-lucid-file-path: /app/service_configs/sessions/storage-config.yaml
+# x-lucid-file-directory: /app/service_configs/sessions
+# x-lucid-file-type: YAML
+# Lucid alignment: host_registry=infrastructure/containers/host-config.yml (container /app/configs/host-config.yml); path_index=x-files.json section_to_canonical
+
 # Runtime (container): /app/service_configs/sessions/storage-config.yaml — see ../container-runtime-layout.yml
 # Lucid Session Storage — reference configuration (sessions/config/storage-config.yaml)
 # Canonical registry: infrastructure/containers/host-config.yml (generated; do not hand-edit registry).

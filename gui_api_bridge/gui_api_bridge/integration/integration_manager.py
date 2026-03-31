@@ -1,7 +1,10 @@
 """
-Integration Manager for Backend Services
 File: /app/gui_api_bridge/gui_api_bridge/integration/integration_manager.py
 x-lucid-file-path: /app/gui_api_bridge/gui_api_bridge/integration/integration_manager.py
+x-lucid-file-directory: /app/gui_api_bridge/gui_api_bridge/integration
+x-lucid-file-type: python
+
+Integration Manager for Backend Services
 Pattern: Follow sessions/pipeline/integration/ structure
 Lazy initialization of all backend service clients
 """

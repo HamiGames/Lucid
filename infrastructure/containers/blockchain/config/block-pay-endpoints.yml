@@ -1,3 +1,8 @@
+# File: /app/configs/blockchain/config/block-pay-endpoints.yml
+# x-lucid-file-path: /app/configs/blockchain/config/block-pay-endpoints.yml
+# x-lucid-file-directory: /app/configs/blockchain/config
+# x-lucid-file-type: YAML
+
 # infrastructure/containers/blockchain/config/block-pay-endpoints.yml
 # Payment / TRON plane — host-config.yml wallet cluster
 # HTTP path template: http://${service_name}:${port}/app

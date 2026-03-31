@@ -6,6 +6,7 @@
 """
 File: /app/RDP/client/connection_manager.py
 x-lucid-file-path: /app/RDP/client/connection_manager.py
+x-lucid-file-directory: /app/RDP/client
 x-lucid-file-type: python
 """
 

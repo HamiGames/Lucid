@@ -1,6 +1,7 @@
 """
 File: /app/RDP/session_controller/__init__.py
 x-lucid-file-path: /app/RDP/session_controller/__init__.py
+x-lucid-file-directory: /app/RDP/session_controller
 x-lucid-file-type: python
 
 Lucid RDP Session Controller Service

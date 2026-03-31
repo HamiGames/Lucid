@@ -1,6 +1,7 @@
 """
 File: /app/blockchain/api/app/models/block.py
 x-lucid-file-path: /app/blockchain/api/app/models/block.py
+x-lucid-file-directory: /app/blockchain/api/app/models
 x-lucid-file-type: python
 
 Block Data Models

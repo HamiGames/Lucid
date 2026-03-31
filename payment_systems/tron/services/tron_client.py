@@ -1,6 +1,7 @@
 """
 File: /app/payment_systems/tron/services/tron_client.py
 x-lucid-file-path: /app/payment_systems/tron/services/tron_client.py
+x-lucid-file-directory: /app/payment_systems/tron/services
 x-lucid-file-type: python
 
 LUCID Payment Systems - TRON Network Client Service

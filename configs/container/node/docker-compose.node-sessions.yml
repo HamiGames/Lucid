@@ -1,3 +1,8 @@
+# File: /app/configs/container/node/docker-compose.node-sessions.yml
+# x-lucid-file-path: /app/configs/container/node/docker-compose.node-sessions.yml
+# x-lucid-file-directory: /app/configs/container/node
+# x-lucid-file-type: YAML
+
 # LUCID NODE + SESSION stack (node-worker + session plane)
 # Path: infrastructure/containers/node/docker-compose.node-sessions.yml
 #

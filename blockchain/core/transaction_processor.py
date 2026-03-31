@@ -6,6 +6,7 @@
 """
 File: /app/blockchain/core/transaction_processor.py
 x-lucid-file-path: /app/blockchain/core/transaction_processor.py
+x-lucid-file-directory: /app/blockchain/core
 x-lucid-file-type: python
 """
 

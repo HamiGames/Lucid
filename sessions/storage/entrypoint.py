@@ -3,6 +3,7 @@
 """
 File: /app/sessions/storage/entrypoint.py
 x-lucid-file-path: /app/sessions/storage/entrypoint.py
+x-lucid-file-directory: /app/sessions/storage
 x-lucid-file-type: python
 
 Session Storage Service Entrypoint

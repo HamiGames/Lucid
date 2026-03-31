@@ -1,3 +1,8 @@
+# File: /app/ops/monitoring/grafana/datasources.yml
+# x-lucid-file-path: /app/ops/monitoring/grafana/datasources.yml
+# x-lucid-file-directory: /app/ops/monitoring/grafana
+# x-lucid-file-type: YAML
+
 # Grafana datasources configuration for Lucid RDP system
 apiVersion: 1
 

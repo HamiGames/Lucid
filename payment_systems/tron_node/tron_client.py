@@ -1,6 +1,7 @@
 """
 File: /app/payment_systems/tron_node/tron_client.py
 x-lucid-file-path: /app/payment_systems/tron_node/tron_client.py
+x-lucid-file-directory: /app/payment_systems/tron_node
 x-lucid-file-type: python
 """
 

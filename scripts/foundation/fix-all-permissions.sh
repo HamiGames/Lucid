@@ -1,5 +1,9 @@
 #!/bin/bash
 # scripts/foundation/fix-all-permissions.sh
+# File: /app/scripts/foundation/fix-all-permissions.sh
+# x-lucid-file-path: /app/scripts/foundation/fix-all-permissions.sh
+# x-lucid-file-directory: /app/scripts/foundation
+# x-lucid-file-type: shell
 # Comprehensive permission fix for Lucid project - Windows and Pi compatible
 
 set -e

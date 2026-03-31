@@ -6,6 +6,7 @@
 """
 File: /app/blockchain/core/block_manager.py
 x-lucid-file-path: /app/blockchain/core/block_manager.py
+x-lucid-file-directory: /app/blockchain/core
 x-lucid-file-type: python
 """
 

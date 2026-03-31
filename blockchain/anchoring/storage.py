@@ -1,6 +1,7 @@
 """
 File: /app/blockchain/anchoring/storage.py
 x-lucid-file-path: /app/blockchain/anchoring/storage.py
+x-lucid-file-directory: /app/blockchain/anchoring
 x-lucid-file-type: python
 
 Anchoring Storage Module

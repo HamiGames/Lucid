@@ -2,6 +2,7 @@
 """
 File: /app/blockchain/on_system_chain/chain_client.py
 x-lucid-file-path: /app/blockchain/on_system_chain/chain_client.py
+x-lucid-file-directory: /app/blockchain/on_system_chain
 x-lucid-file-type: python
 
 LUCID On-System Data Chain Client - SPEC-1B Implementation

@@ -2,6 +2,7 @@
 """
 File: /app/sessions/core/logging.py
 x-lucid-file-path: /app/sessions/core/logging.py
+x-lucid-file-directory: /app/sessions/core
 x-lucid-file-type: python
 
 Logging utilities for Lucid Session services

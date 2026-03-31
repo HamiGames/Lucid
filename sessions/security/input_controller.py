@@ -6,6 +6,7 @@
 """
 File: /app/sessions/security/input_controller.py
 x-lucid-file-path: /app/sessions/security/input_controller.py
+x-lucid-file-directory: /app/sessions/security
 x-lucid-file-type: python
 """
 

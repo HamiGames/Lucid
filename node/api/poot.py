@@ -5,6 +5,7 @@
 """
 File: /app/node/api/poot.py
 x-lucid-file-path: /app/node/api/poot.py
+x-lucid-file-directory: /app/node/api
 x-lucid-file-type: python
 
 PoOT (Proof of Output) validation API endpoints for Lucid system.

@@ -1,5 +1,9 @@
 
 #!/bin/bash
+# File: /app/node/build-node-management.sh
+# x-lucid-file-path: /app/node/build-node-management.sh
+# x-lucid-file-directory: /app/node
+# x-lucid-file-type: shell
 # Lucid Node Management Container - Build Script
 # Port: 8095
 # Features: Node pool management, PoOT calculation, payout threshold (10 USDT), max 100 nodes

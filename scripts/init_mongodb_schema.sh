@@ -1,5 +1,9 @@
 #!/bin/bash
 # MongoDB Schema Initialization Script
+# File: /app/scripts/init_mongodb_schema.sh
+# x-lucid-file-path: /app/scripts/init_mongodb_schema.sh
+# x-lucid-file-directory: /app/scripts
+# x-lucid-file-type: shell
 # LUCID-STRICT Layer 1 Core Infrastructure
 # Generated: 2025-10-04
 

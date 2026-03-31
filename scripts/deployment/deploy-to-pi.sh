@@ -1,5 +1,9 @@
 #!/bin/bash
 # LUCID CORE SUPPORT SERVICES - Pi Deployment Script
+# File: /app/scripts/deployment/deploy-to-pi.sh
+# x-lucid-file-path: /app/scripts/deployment/deploy-to-pi.sh
+# x-lucid-file-directory: /app/scripts/deployment
+# x-lucid-file-type: shell
 # Deploys core infrastructure services to Raspberry Pi
 # GENIUS-LEVEL implementation with LUCID-STRICT compliance
 # Path: scripts/deployment/deploy-to-pi.sh

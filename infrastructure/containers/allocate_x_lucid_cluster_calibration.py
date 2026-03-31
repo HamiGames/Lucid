@@ -1,4 +1,10 @@
-"""Map cluster calibration YAMLs to Dockerfiles and Python modules.
+"""
+File: /app/configs/allocate_x_lucid_cluster_calibration.py
+x-lucid-file-path: /app/configs/allocate_x_lucid_cluster_calibration.py
+x-lucid-file-directory: /app/configs
+x-lucid-file-type: python
+
+Map cluster calibration YAMLs to Dockerfiles and Python modules.
 
 Uses infrastructure/containers/host-config.yml (authoritative for clusters),
 x-files-listing.txt (Python paths under /app/...), and the same prefix rules as

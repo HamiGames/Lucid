@@ -1,6 +1,7 @@
 """
 File: /app/database/config/load_host_config.py
 x-lucid-file-path: /app/database/config/load_host_config.py
+x-lucid-file-directory: /app/database/config
 x-lucid-file-type: python
 
 Loads host config for Lucid database services.

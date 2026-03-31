@@ -5,6 +5,7 @@
 """
 File: /app/admin/ui/admin_ui.py
 x-lucid-file-path: /app/admin/ui/admin_ui.py
+x-lucid-file-directory: /app/admin/ui
 x-lucid-file-type: python
 """
 

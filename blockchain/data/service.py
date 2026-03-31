@@ -1,6 +1,7 @@
 """
 File: /app/blockchain/data/service.py
 x-lucid-file-path: /app/blockchain/data/service.py
+x-lucid-file-directory: /app/blockchain/data
 x-lucid-file-type: python
 
 Data Chain Service

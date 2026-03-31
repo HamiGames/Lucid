@@ -1,6 +1,7 @@
 """
 File: /app/blockchain/block.py
 x-lucid-file-path: /app/blockchain/block.py
+x-lucid-file-directory: /app/blockchain
 x-lucid-file-type: python
 """
 

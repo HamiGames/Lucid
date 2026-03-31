@@ -5,6 +5,7 @@
 """
 File: /app/node/shards/shard_host_management.py
 x-lucid-file-path: /app/node/shards/shard_host_management.py
+x-lucid-file-directory: /app/node/shards
 x-lucid-file-type: python
 """
 

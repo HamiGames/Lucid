@@ -2,6 +2,7 @@
 """
 File: /app/auth/healthcheck.py
 x-lucid-file-path: /app/auth/healthcheck.py
+x-lucid-file-directory: /app/auth
 x-lucid-file-type: python
 
 Authentication Service Health Check Script for Distroless Container

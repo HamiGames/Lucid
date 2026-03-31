@@ -5,6 +5,7 @@
 """
 File: /app/node/poot/poot_calculator.py
 x-lucid-file-path: /app/node/poot/poot_calculator.py
+x-lucid-file-directory: /app/node/poot
 x-lucid-file-type: python
 """
 

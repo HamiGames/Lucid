@@ -1,4 +1,9 @@
 """
+File: /app/tests/security/test_tron_isolation.py
+x-lucid-file-path: /app/tests/security/test_tron_isolation.py
+x-lucid-file-directory: /app/tests/security
+x-lucid-file-type: python
+
 TRON Isolation Security Tests
 
 Tests TRON payment system isolation from blockchain core,

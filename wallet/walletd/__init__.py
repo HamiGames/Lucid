@@ -1,6 +1,7 @@
 """
 File: /app/wallet/walletd/__init__.py
 x-lucid-file-path: /app/wallet/walletd/__init__.py
+x-lucid-file-directory: /app/wallet/walletd
 x-lucid-file-type: python
 
 Wallet Daemon Module

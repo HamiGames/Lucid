@@ -1,6 +1,7 @@
 """
 File: /app/server/launch_server.py
 x-lucid-file-path: /app/server/launch_server.py
+x-lucid-file-directory: /app/server
 x-lucid-file-type: python
 
 Start the uvicorn process with host-config-derived bind address.

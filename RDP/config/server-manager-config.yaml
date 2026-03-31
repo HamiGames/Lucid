@@ -1,3 +1,8 @@
+# File: /app/RDP/config/server-manager-config.yaml
+# x-lucid-file-path: /app/RDP/config/server-manager-config.yaml
+# x-lucid-file-directory: /app/RDP/config
+# x-lucid-file-type: YAML
+
 # Lucid RDP Server Manager - Configuration File
 # Optional YAML configuration for RDP server management
 # File: RDP/config/server-manager-config.yaml

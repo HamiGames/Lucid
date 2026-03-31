@@ -1,6 +1,7 @@
 """
 File: /app/gui_hardware_manager/gui_hardware_manager/integration/__init__.py
 x-lucid-file-path: /app/gui_hardware_manager/gui_hardware_manager/integration/__init__.py
+x-lucid-file-directory: /app/gui_hardware_manager/gui_hardware_manager/integration
 x-lucid-file-type: python
 
 Integration module initialization

@@ -1,13 +1,14 @@
-"""Loads host config for Lucid GUI services.
-
-file: /app/gui/config/load_host_config.py
+"""
+File: /app/gui/config/load_host_config.py
 x-lucid-file-path: /app/gui/config/load_host_config.py
+x-lucid-file-directory: /app/gui/config
 x-lucid-file-type: python
+
+Loads host config for Lucid GUI services.
 
 Uses /app/configs/host-config.yml (or LUCID_HOST_CONFIG_PATH) plus optional
 GUI endpoint YAML (gui-endpoints.yml under LUCID_GUI_SERVICE_CONFIG_DIR —
 default ``/app/configs/services`` — or beside this package).
-File: gui/config/load_host_config.py
 """
 
 from __future__ import annotations

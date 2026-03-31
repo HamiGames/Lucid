@@ -1,5 +1,9 @@
 #!/bin/bash
 # Phase 4 Support Services Build Script
+# File: /app/scripts/build-phase4-support.sh
+# x-lucid-file-path: /app/scripts/build-phase4-support.sh
+# x-lucid-file-directory: /app/scripts
+# x-lucid-file-type: shell
 # Builds: Admin Interface, TRON Payment System (Isolated) containers
 # Target: Raspberry Pi (linux/arm64)
 # Registry: pickme/lucid namespace

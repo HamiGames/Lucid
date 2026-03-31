@@ -1,8 +1,20 @@
 #!/bin/bash
 # Fix MongoDB Authentication - Creates/Updates MongoDB user with password from .env.secrets
+# File: /app/scripts/database/fix-mongodb-auth.sh
+# x-lucid-file-path: /app/scripts/database/fix-mongodb-auth.sh
+# x-lucid-file-directory: /app/scripts/database
+# x-lucid-file-type: shell
 # This script fixes authentication issues where MongoDB user doesn't exist or has wrong password
 
 set -e
+
+_lucid_here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+_lucid_scripts="$_lucid_here"
+while [[ "$_lucid_scripts" != "/" && "$(basename "$_lucid_scripts")" != "scripts" ]]; do
+    _lucid_scripts="$(dirname "$_lucid_scripts")"
+done
+# shellcheck source=../lib/lucid-repo-paths.sh
+source "$_lucid_scripts/lib/lucid-repo-paths.sh"
 
 # Colors for output
 RED='\033[0;31m'
@@ -14,7 +26,7 @@ echo -e "${GREEN}🔧 Fixing MongoDB Authentication${NC}"
 echo "========================================"
 
 # Get password from .env.secrets
-ENV_SECRETS_FILE="/mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets"
+ENV_SECRETS_FILE="$LUCID_ENV_CONFIG_DIR/.env.secrets"
 if [ ! -f "$ENV_SECRETS_FILE" ]; then
     echo -e "${RED}❌ Error: .env.secrets file not found at $ENV_SECRETS_FILE${NC}"
     exit 1

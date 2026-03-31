@@ -6,6 +6,7 @@
 """
 File: /app/common/governance/timelock.py
 x-lucid-file-path: /app/common/governance/timelock.py
+x-lucid-file-directory: /app/common/governance
 x-lucid-file-type: python
 """
 

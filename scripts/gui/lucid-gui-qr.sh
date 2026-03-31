@@ -1,5 +1,9 @@
 #!/bin/bash
 # Lucid GUI QR Code Bootstrap Script
+# File: /app/scripts/gui/lucid-gui-qr.sh
+# x-lucid-file-path: /app/scripts/gui/lucid-gui-qr.sh
+# x-lucid-file-directory: /app/scripts/gui
+# x-lucid-file-type: shell
 # Generates QR codes for all GUI services
 
 set -euo pipefail

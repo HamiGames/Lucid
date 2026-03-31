@@ -1,5 +1,9 @@
 #!/bin/bash
 set -e
+# File: /app/02_network_security/tor/tor-health.sh
+# x-lucid-file-path: /app/02_network_security/tor/tor-health.sh
+# x-lucid-file-directory: /app/02_network_security/tor
+# x-lucid-file-type: shell
 
 COOKIE="${TOR_DATA_DIR:-/app/var/lib/tor}/control_auth_cookie"
 CTRL_HOST="${TOR_CONTROL_HOST:-127.0.0.1}"

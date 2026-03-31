@@ -1,6 +1,7 @@
 """
 File: /app/gui_tor_manager/gui_tor_manager/models/tor.py
 x-lucid-file-path: /app/gui_tor_manager/gui_tor_manager/models/tor.py
+x-lucid-file-directory: /app/gui_tor_manager/gui_tor_manager/models
 x-lucid-file-type: python
 
 Tor operation models for GUI Tor Manager

@@ -1,4 +1,9 @@
 """
+File: /app/tests/integration/phase3/test_session_lifecycle.py
+x-lucid-file-path: /app/tests/integration/phase3/test_session_lifecycle.py
+x-lucid-file-directory: /app/tests/integration/phase3
+x-lucid-file-type: python
+
 Phase 3 Integration Tests - Session Lifecycle
 
 This module tests the complete session lifecycle from creation to anchoring:

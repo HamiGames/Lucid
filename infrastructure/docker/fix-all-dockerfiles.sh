@@ -1,5 +1,9 @@
 #!/bin/bash
 # Fix all Dockerfiles to include build-env.sh script execution and WSL2 support
+# File: /app/configs/docker//fix-all-dockerfiles.sh
+# x-lucid-file-path: /app/configs/docker//fix-all-dockerfiles.sh
+# x-lucid-file-directory: /app/configs/docker/
+# x-lucid-file-type: shell
 # This script updates all Dockerfiles in the infrastructure/docker directory
 
 set -euo pipefail

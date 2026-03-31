@@ -1,4 +1,9 @@
 """
+File: /app/tests/security/test_input_validation.py
+x-lucid-file-path: /app/tests/security/test_input_validation.py
+x-lucid-file-directory: /app/tests/security
+x-lucid-file-type: python
+
 Input Validation Security Tests
 
 Tests input validation security, SQL injection protection,

@@ -1,6 +1,7 @@
 """
 File: /app/sessions/api/integration/rdp_controller_client.py
 x-lucid-file-path: /app/sessions/api/integration/rdp_controller_client.py
+x-lucid-file-directory: /app/sessions/api/integration
 x-lucid-file-type: python
 
 RDP Controller Client

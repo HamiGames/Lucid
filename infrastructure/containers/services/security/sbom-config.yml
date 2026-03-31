@@ -1,3 +1,9 @@
+# File: /app/service_configs/security/sbom-config.yml
+# x-lucid-file-path: /app/service_configs/security/sbom-config.yml
+# x-lucid-file-directory: /app/service_configs/security
+# x-lucid-file-type: YAML
+# Lucid alignment: host_registry=infrastructure/containers/host-config.yml (container /app/configs/host-config.yml); path_index=x-files.json section_to_canonical
+
 # Runtime (container): /app/service_configs/security/sbom-config.yml — see ../container-runtime-layout.yml
 # Lucid API - SBOM Configuration
 # Configuration for Software Bill of Materials generation

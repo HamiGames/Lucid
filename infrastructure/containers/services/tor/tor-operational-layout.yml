@@ -1,11 +1,17 @@
+# File: /app/service_configs/tor/tor-operational-layout.yml
+# x-lucid-file-path: /app/service_configs/tor/tor-operational-layout.yml
+# x-lucid-file-directory: /app/service_configs/tor
+# x-lucid-file-type: YAML
+# Lucid alignment: host_registry=infrastructure/containers/host-config.yml (container /app/configs/host-config.yml); path_index=x-files.json section_to_canonical
+
 # =============================================================================
 # Tor + tunnel-tools — canonical operational paths (single source of truth)
 # =============================================================================
 # Read-only alignment with (do not duplicate those files here):
 #   - infrastructure/containers/services/container-runtime-layout.yml
 #       → lucid_services_config_root: /app/service_configs
-#   - x-files-listing.txt (repo root)
-#       → host-config.yml canonical in-image: /app/service_configs/host-config.yml
+#   - x-files-listing.txt + x-files.json (repo root)
+#       → host-config.yml canonical in-image: /app/configs/host-config.yml; repo→container paths in section_to_canonical
 #
 # tunnel-tools (pickme/lucid-tunnel-tools) calls create_ephemeral_onion.sh from
 #   02_network_security/tunnels/scripts/rotate_onion.sh via SCRIPT_DIR — that file
@@ -35,3 +41,11 @@ image_tor_control_cookie_default: /app/var/lib/tor/control_auth_cookie
 # Optional env hints (set in Compose, not required)
 env_hint_tor_operations_bin: LUCID_TOR_OPERATIONS_BIN
 env_hint_tunnel_scripts: LUCID_TUNNEL_SCRIPTS
+
+# Docker bridges: internal (lucid-pi-network) vs Tor egress (lucid-tor-egress-network). IPs align with master-env-config.txt LUCID_TOR_EGRESS_*.
+docker_network_internal_name: lucid-pi-network
+docker_network_tor_egress_name: lucid-tor-egress-network
+docker_tor_egress_tor_proxy_ipv4: "172.31.0.2"
+docker_tor_egress_tunnel_tools_ipv4: "172.31.0.3"
+master_env_public_tor: PUBLIC_TOR_IP
+master_env_public_tor_egress_announce: PUBLIC_TOR_EGRESS_ANNOUNCE_IP

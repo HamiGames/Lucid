@@ -1,6 +1,7 @@
 """
 File: /app/gui_docker_manager/gui_docker_manager/routers/health.py
 x-lucid-file-path: /app/gui_docker_manager/gui_docker_manager/routers/health.py
+x-lucid-file-directory: /app/gui_docker_manager/gui_docker_manager/routers
 x-lucid-file-type: python
 
 Health and Status Routers

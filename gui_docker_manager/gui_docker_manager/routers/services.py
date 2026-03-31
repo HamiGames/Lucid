@@ -1,6 +1,7 @@
 """
 File: /app/gui_docker_manager/gui_docker_manager/routers/services.py
 x-lucid-file-path: /app/gui_docker_manager/gui_docker_manager/routers/services.py
+x-lucid-file-directory: /app/gui_docker_manager/gui_docker_manager/routers
 x-lucid-file-type: python
 
 Service Group Management Routers

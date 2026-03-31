@@ -4,6 +4,7 @@
 """
 File: /app/apps/gui_admin/__init__.py
 x-lucid-file-path: /app/apps/gui_admin/__init__.py
+x-lucid-file-directory: /app/apps/gui_admin
 x-lucid-file-type: python
 
 GUI Admin package for Lucid RDP.

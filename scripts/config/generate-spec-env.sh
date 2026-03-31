@@ -1,31 +1,29 @@
 #!/bin/bash
 
+# File: /app/scripts/config/generate-spec-env.sh
+# x-lucid-file-path: /app/scripts/config/generate-spec-env.sh
+# x-lucid-file-directory: /app/scripts/config
+# x-lucid-file-type: shell
 # generate-spec-env.sh
 # Generate Service-Specific Environment Files for Lucid Project
 # Based on constants from plan/constants/path_plan.md
 # All values are real and usable - NO PLACEHOLDERS
 #
-# IMPORTANT: This script is designed for Pi environment deployment only
-# Requires: /mnt/myssd mount point and Pi-specific paths
-# Target: Raspberry Pi with SSD mount at /mnt/myssd/Lucid/Lucid/
+# IMPORTANT: Pi hardware validation below; generated env paths use x-lucid /app layout.
+# Optional Pi storage: /mnt/myssd (see validate_pi_environment).
 
 set -euo pipefail
 
-# CRITICAL: Immediate Pi environment check - MUST fail on non-Pi systems
 if [[ ! -d "/mnt/myssd" ]]; then
-    echo "❌ CRITICAL ERROR: This script is designed ONLY for Pi environment deployment"
-    echo "❌ Required Pi mount point not found: /mnt/myssd"
-    echo "❌ Current system: $(uname -a)"
-    echo "❌ This script MUST be run on Raspberry Pi with SSD mounted at /mnt/myssd"
-    echo "❌ Expected Pi environment: /mnt/myssd/Lucid/Lucid/"
-    echo "❌ Please run this script ONLY on the target Raspberry Pi (192.168.0.75)"
-    exit 1
+    echo "NOTE: /mnt/myssd not mounted — continuing (outputs use /app/configs)."
 fi
 
-# Script configuration - Pi Environment Paths from path_plan.md
+# Script configuration — x-lucid generation targets (override with LUCID_IMAGE_*)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="/mnt/myssd/Lucid/Lucid"
-ENV_DIR="/mnt/myssd/Lucid/Lucid/configs/environment"
+LUCID_IMAGE_APP_ROOT="${LUCID_IMAGE_APP_ROOT:-/app}"
+LUCID_IMAGE_CONFIG_DIR="${LUCID_IMAGE_CONFIG_DIR:-/app/configs}"
+PROJECT_ROOT="$LUCID_IMAGE_APP_ROOT"
+ENV_DIR="$LUCID_IMAGE_CONFIG_DIR"
 BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 GIT_COMMIT=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 
@@ -40,16 +38,10 @@ ENVIRONMENT="production"
 validate_pi_environment() {
     log_info "Validating Pi environment..."
     
-    # CRITICAL: Check Pi mount point - MUST exist for Pi deployment
     if [[ ! -d "/mnt/myssd" ]]; then
-        log_error "❌ CRITICAL ERROR: This script is designed ONLY for Pi environment"
-        log_error "❌ Required Pi mount point not found: /mnt/myssd"
-        log_error "❌ Current system: $(uname -a)"
-        log_error "❌ This script MUST be run on Raspberry Pi with SSD mounted at /mnt/myssd"
-        log_error "❌ Expected Pi environment: /mnt/myssd/Lucid/Lucid/"
-        exit 1
+        log_warning "⚠️  /mnt/myssd not mounted (optional Pi SSD); outputs go to $ENV_DIR"
     fi
-    
+
     # CRITICAL: Check if running on Pi hardware - MUST be Pi
     if [[ -f "/proc/device-tree/model" ]]; then
         local model=$(cat /proc/device-tree/model 2>/dev/null | tr -d '\0')
@@ -80,14 +72,12 @@ validate_pi_environment() {
         log_success "✅ Pi architecture compatible (ARM64)"
     fi
     
-    # CRITICAL: Check Pi-specific paths exist
-    if [[ ! -d "/mnt/myssd/Lucid/Lucid" ]]; then
-        log_error "❌ CRITICAL ERROR: Pi project path not found"
-        log_error "❌ Expected path: /mnt/myssd/Lucid/Lucid"
-        log_error "❌ Please ensure the Lucid project is properly mounted on Pi"
+    mkdir -p "$ENV_DIR" "$PROJECT_ROOT" 2>/dev/null || true
+    if [[ ! -d "$ENV_DIR" ]] || [[ ! -w "$ENV_DIR" ]]; then
+        log_error "❌ Environment output directory missing or not writable: $ENV_DIR"
         exit 1
     fi
-    
+
     log_success "✅ Pi environment validation completed - Pi deployment ready"
 }
 
@@ -896,7 +886,7 @@ LOG_LEVEL=DEBUG
 # Project Configuration
 PROJECT_NAME=Lucid
 PROJECT_VERSION=0.1.0
-PROJECT_ROOT=/mnt/myssd/Lucid/Lucid
+PROJECT_ROOT=/app
 
 # Network Configuration
 LUCID_PI_NETWORK=lucid-dev-network
@@ -956,7 +946,7 @@ LOG_LEVEL=INFO
 # Project Configuration
 PROJECT_NAME=Lucid
 PROJECT_VERSION=0.1.0
-PROJECT_ROOT=/mnt/myssd/Lucid/Lucid
+PROJECT_ROOT=/app
 
 # Network Configuration
 LUCID_PI_NETWORK=lucid-staging-network
@@ -1027,7 +1017,7 @@ LOG_LEVEL=INFO
 # Project Configuration
 PROJECT_NAME=Lucid
 PROJECT_VERSION=0.1.0
-PROJECT_ROOT=/mnt/myssd/Lucid/Lucid
+PROJECT_ROOT=/app
 
 # Network Configuration
 LUCID_PI_NETWORK=lucid-pi-network
@@ -1077,7 +1067,7 @@ ALERT_MEMORY_THRESHOLD=85
 BACKUP_ENABLED=true
 BACKUP_SCHEDULE="0 2 * * *"
 BACKUP_RETENTION_DAYS=30
-BACKUP_PATH=/mnt/myssd/Lucid/Lucid/backups
+BACKUP_PATH=/app/backups
 
 # Docker Configuration
 DOCKER_BUILDKIT=1
@@ -1107,7 +1097,7 @@ LOG_LEVEL=DEBUG
 # Project Configuration
 PROJECT_NAME=Lucid
 PROJECT_VERSION=0.1.0
-PROJECT_ROOT=/mnt/myssd/Lucid/Lucid
+PROJECT_ROOT=/app
 
 # Network Configuration
 LUCID_PI_NETWORK=lucid-test-network
@@ -1174,7 +1164,7 @@ LOG_LEVEL=INFO
 # Project Configuration
 PROJECT_NAME=Lucid
 PROJECT_VERSION=0.1.0
-PROJECT_ROOT=/mnt/myssd/Lucid/Lucid
+PROJECT_ROOT=/app
 PI_USER=pickme
 PI_HOST=192.168.0.75
 
@@ -1243,7 +1233,7 @@ ALERT_MEMORY_THRESHOLD=85
 BACKUP_ENABLED=true
 BACKUP_SCHEDULE="0 2 * * *"
 BACKUP_RETENTION_DAYS=30
-BACKUP_PATH=/mnt/myssd/Lucid/Lucid/backups
+BACKUP_PATH=/app/backups
 
 # Pi Docker Configuration
 DOCKER_BUILDKIT=1
@@ -2126,7 +2116,7 @@ generate_master_env() {
 # Project Configuration
 PROJECT_NAME=Lucid
 PROJECT_VERSION=0.1.0
-PROJECT_ROOT=/mnt/myssd/Lucid/Lucid
+PROJECT_ROOT=/app
 ENVIRONMENT=production
 DEBUG=false
 LOG_LEVEL=INFO
@@ -2249,9 +2239,10 @@ main() {
     validate_pi_environment
     
     # Validate project structure
+    mkdir -p "$PROJECT_ROOT" 2>/dev/null || true
     if [[ ! -d "$PROJECT_ROOT" ]]; then
         log_error "Project root directory not found: $PROJECT_ROOT"
-        log_error "Please ensure the Lucid project is properly mounted at /mnt/myssd/Lucid/Lucid"
+        log_error "Ensure x-lucid app root exists or export LUCID_IMAGE_APP_ROOT"
         exit 1
     fi
     

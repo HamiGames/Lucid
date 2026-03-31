@@ -2,6 +2,7 @@
 """
 File: /app/database/elasticsearch/healthcheck.py
 x-lucid-file-path: /app/database/elasticsearch/healthcheck.py
+x-lucid-file-directory: /app/database/elasticsearch
 x-lucid-file-type: python
 
 Elasticsearch Health Check Script for Distroless Container

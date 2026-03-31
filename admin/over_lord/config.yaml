@@ -1,3 +1,8 @@
+# File: /app/admin/over_lord/config.yaml
+# x-lucid-file-path: /app/admin/over_lord/config.yaml
+# x-lucid-file-directory: /app/admin/over_lord
+# x-lucid-file-type: YAML
+
 # Lucid admin plane — reference metadata for admin-overlord bundle
 # Path: admin/over_lord/config.yaml
 # Compose and image paths: admin/over_lord/docker-compose.yml

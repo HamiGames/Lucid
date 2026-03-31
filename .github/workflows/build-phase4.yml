@@ -1,3 +1,8 @@
+# File: /app/.github/workflows/build-phase4.yml
+# x-lucid-file-path: /app/.github/workflows/build-phase4.yml
+# x-lucid-file-directory: /app/.github/workflows
+# x-lucid-file-type: YAML
+
 name: Phase 4 - Support Services Build
 
 on:

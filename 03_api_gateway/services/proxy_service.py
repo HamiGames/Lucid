@@ -1,6 +1,7 @@
 """
 File: /app/03_api_gateway/services/proxy_service.py
 x-lucid-file-path: /app/03_api_gateway/services/proxy_service.py
+x-lucid-file-directory: /app/03_api_gateway/services
 x-lucid-file-type: python
 
 Lucid API Gateway - Proxy Service

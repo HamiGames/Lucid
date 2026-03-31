@@ -116,36 +116,38 @@ ARG VERSION
 LABEL maintainer="Lucid Development Team" \
       version="${VERSION}" \
       description="Lucid TRON Relay service (distroless)" \
-      org.opencontainers.image.created="${BUILD_DATE}" \
-      org.opencontainers.image.revision="${VCS_REF}" \
-      org.opencontainers.image.version="${VERSION}" \
       org.opencontainers.image.title="Lucid TRON Relay" \
       org.opencontainers.image.description="TRON blockchain relay service for Lucid platform (read-only)" \
-      org.opencontainers.image.source="https://github.com/HamiGames/Lucid" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.created="${BUILD_DATE}" \
       com.lucid.plane="support" \
       com.lucid.service="tron-relay" \
+      com.lucid.layer="4" \
+      org.lucid.layer="4" \
       com.lucid.platform="arm64" \
       com.lucid.architecture="linux/arm64" \
       com.lucid.security="distroless" \
       com.lucid.vulnerabilities="zero" \
       com.lucid.expose="8098,9098" \
       com.lucid.cluster="payment" \
+      com.lucid.tor.compatible="true" \
       com.lucid.env.config=".env.support,.env.tron-relay,.env.secrets,.env.foundation" \
-      com.lucid.deployment.path="/mnt/myssd/Lucid/Lucid" \
-      com.lucid.tor.compatible="true"
+      org.opencontainers.image.source="https://github.com/HamiGames/Lucid" \
+      com.lucid.deployment.path="/mnt/myssd/Lucid/Lucid"
 
 # Environment configuration
-ENV PATH=/opt/venv/bin:/usr/local/bin:/usr/bin:/bin \
-    PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONPATH=/app:/opt/venv/lib/python3.11/site-packages \
-    PYTHONIOENCODING=utf-8 \
-    LANG=C.UTF-8 \
-    LC_ALL=C.UTF-8 \
-    SERVICE_PORT=8098 \
-    WORKERS=1 \
-    SERVICE_HOST=0.0.0.0 \
-    LOG_LEVEL=INFO
+ENV PATH="/opt/venv/bin:/usr/local/bin:/usr/bin:/bin" \
+    PYTHONUNBUFFERED="1" \
+    PYTHONDONTWRITEBYTECODE="1" \
+    PYTHONPATH="/app:/opt/venv/lib/python3.11/site-packages" \
+    PYTHONIOENCODING="utf-8" \
+    LANG="C.UTF-8" \
+    LC_ALL="C.UTF-8" \
+    LOG_LEVEL="INFO" \
+    SERVICE_HOST="0.0.0.0" \
+    SERVICE_PORT="8098" \
+    WORKERS="1"
 
 WORKDIR /app
 

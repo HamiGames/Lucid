@@ -1,3 +1,8 @@
+# File: /app/03_api_gateway/config/rate-limit-config.yaml
+# x-lucid-file-path: /app/03_api_gateway/config/rate-limit-config.yaml
+# x-lucid-file-directory: /app/03_api_gateway/config
+# x-lucid-file-type: YAML
+
 # Lucid API Gateway - Rate Limiting Configuration
 # Optional YAML configuration for advanced rate limiting rules
 # File: 03-api-gateway/config/rate-limit-config.yaml

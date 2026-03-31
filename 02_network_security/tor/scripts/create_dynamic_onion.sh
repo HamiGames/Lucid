@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 # Lucid Dynamic Onion Creator - Create new .onion addresses on-the-fly
+# File: /app/02_network_security/tor/scripts/create_dynamic_onion.sh
+# x-lucid-file-path: /app/02_network_security/tor/scripts/create_dynamic_onion.sh
+# x-lucid-file-directory: /app/02_network_security/tor/scripts
+# x-lucid-file-type: shell
 # Supports wallet operations and runtime service expansion
 # Cookie authentication with ED25519-V3 keys for security
 

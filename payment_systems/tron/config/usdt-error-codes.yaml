@@ -1,3 +1,8 @@
+# File: /app/payment_systems/tron/config/usdt-error-codes.yaml
+# x-lucid-file-path: /app/payment_systems/tron/config/usdt-error-codes.yaml
+# x-lucid-file-directory: /app/payment_systems/tron/config
+# x-lucid-file-type: YAML
+
 # Lucid TRON USDT Manager - Error Codes Configuration
 # File: payment-systems/tron/config/usdt-error-codes.yaml
 # Purpose: Define USDT manager specific error codes, recovery actions, and retry policies

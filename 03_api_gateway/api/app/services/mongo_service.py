@@ -2,6 +2,7 @@
 """
 File: /app/03_api_gateway/api/app/services/mongo_service.py
 x-lucid-file-path: /app/03_api_gateway/api/app/services/mongo_service.py
+x-lucid-file-directory: /app/03_api_gateway/api/app/services
 x-lucid-file-type: python
 """
 

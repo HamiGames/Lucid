@@ -1,3 +1,9 @@
+# File: /app/service_configs/multi-stage/multi-stage-testing-config.yml
+# x-lucid-file-path: /app/service_configs/multi-stage/multi-stage-testing-config.yml
+# x-lucid-file-directory: /app/service_configs/multi-stage
+# x-lucid-file-type: YAML
+# Lucid alignment: host_registry=infrastructure/containers/host-config.yml (container /app/configs/host-config.yml); path_index=x-files.json section_to_canonical
+
 # Runtime (container): /app/service_configs/multi-stage/multi-stage-testing-config.yml — see ../container-runtime-layout.yml
 # Multi-Stage Testing Configuration for Lucid Project
 # Container-hosted: named volumes for src/tests/logs/coverage/artifacts; no host SSD paths.

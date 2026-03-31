@@ -1,3 +1,8 @@
+# File: /app/configs/base/build.config.yml
+# x-lucid-file-path: /app/configs/base/build.config.yml
+# x-lucid-file-directory: /app/configs/base
+# x-lucid-file-type: YAML
+
 # Lucid Base Images Build Configuration
 # YAML configuration for distroless base image builds
 

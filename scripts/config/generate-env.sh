@@ -1,5 +1,9 @@
 #!/bin/bash
 # =============================================================================
+# File: /app/scripts/config/generate-env.sh
+# x-lucid-file-path: /app/scripts/config/generate-env.sh
+# x-lucid-file-directory: /app/scripts/config
+# x-lucid-file-type: shell
 # Lucid Environment Configuration Generator - Pi Console Native
 # =============================================================================
 # This script generates environment configuration files for the Lucid project
@@ -18,16 +22,23 @@ set -euo pipefail
 # =============================================================================
 # GLOBAL PATH CONFIGURATION
 # =============================================================================
-# Set global path variables for consistent file management across all scripts
-PROJECT_ROOT="/mnt/myssd/Lucid/Lucid"
-ENV_CONFIG_DIR="$PROJECT_ROOT/configs/environment"
+_lucid_here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+_lucid_scripts="$_lucid_here"
+while [[ "$_lucid_scripts" != "/" && "$(basename "$_lucid_scripts")" != "scripts" ]]; do
+    _lucid_scripts="$(dirname "$_lucid_scripts")"
+done
+# shellcheck source=../lib/lucid-repo-paths.sh
+source "$_lucid_scripts/lib/lucid-repo-paths.sh"
+
+PROJECT_ROOT="$LUCID_REPO_ROOT"
+ENV_CONFIG_DIR="$LUCID_ENV_CONFIG_DIR"
 SCRIPTS_CONFIG_DIR="$PROJECT_ROOT/scripts/config"
-SCRIPTS_DIR="$PROJECT_ROOT/scripts"
+SCRIPTS_DIR="$LUCID_SCRIPTS_DIR"
 TEMPLATES_DIR="$PROJECT_ROOT/configs/templates"
 BACKUP_DIR="$PROJECT_ROOT/configs/backups"
 
 # Current script directory (for relative operations)
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="$_lucid_here"
 
 # Build configuration
 BUILD_TIMESTAMP=$(date '+%Y%m%d-%H%M%S')
@@ -396,10 +407,10 @@ LUCID_CLUSTER_ID=pi-production
 # Database Configuration
 MONGODB_HOST=lucid-mongodb
 MONGODB_PORT=27017
-MONGODB_DATABASE=lucid_production
+MONGODB_DATABASE=lucid
 MONGODB_USERNAME=lucid
 MONGODB_PASSWORD=$mongodb_password
-MONGODB_URI=mongodb://lucid:$mongodb_password@lucid-mongodb:27017/lucid_production?authSource=admin
+MONGODB_URI=mongodb://lucid:$mongodb_password@lucid-mongodb:27017/lucid?authSource=admin
 MONGODB_AUTH_SOURCE=admin
 MONGODB_POOL_SIZE=50
 
@@ -469,7 +480,7 @@ MEMORY_LIMIT=2G
 # Logging Configuration
 LOG_LEVEL=INFO
 LOG_FORMAT=json
-LOG_FILE=/var/log/lucid/lucid.log
+LOG_FILE=/app/var/log/lucid/lucid.log
 LOG_MAX_SIZE=100MB
 LOG_MAX_FILES=10
 LOG_COMPRESS=true
@@ -494,7 +505,7 @@ BACKUP_SCHEDULE=0 2 * * *
 BACKUP_RETENTION_DAYS=30
 BACKUP_COMPRESSION=true
 BACKUP_ENCRYPTION=true
-BACKUP_STORAGE_PATH=/var/backups/lucid
+BACKUP_STORAGE_PATH=/app/var/backups/lucid
 
 # Alerting Configuration
 ALERTING_ENABLED=true
@@ -507,6 +518,10 @@ ALERT_ERROR_RATE_THRESHOLD=5
 EOF
 
     log_success "Master environment file generated: $ENV_CONFIG_DIR/.env.master"
+    if [[ -f "$LUCID_MASTER_ENV_SOURCE" ]]; then
+        log_info "Dockerfiles copy master-env-config.txt -> ${LUCID_IMAGE_MASTER_ENV} (repo: $LUCID_MASTER_ENV_SOURCE)"
+    fi
+    log_info "Host registry in-image (x-files-listing canonical): ${LUCID_IMAGE_HOST_CONFIG}; alt ${LUCID_IMAGE_HOST_CONFIG_ALT}; service configs root: ${LUCID_IMAGE_SERVICE_CONFIGS}; listing: ${LUCID_X_FILES_LISTING}"
     
     # Save secrets to secure file
     cat > "$ENV_CONFIG_DIR/.env.secrets" << EOF
@@ -583,10 +598,10 @@ LUCID_CLUSTER_ID=pi-production
 # Database Configuration
 MONGODB_HOST=lucid-mongodb
 MONGODB_PORT=27017
-MONGODB_DATABASE=lucid_production
+MONGODB_DATABASE=lucid
 MONGODB_USERNAME=lucid
 MONGODB_PASSWORD=$MONGODB_PASSWORD
-MONGODB_URI=mongodb://lucid:$MONGODB_PASSWORD@lucid-mongodb:27017/lucid_production?authSource=admin
+MONGODB_URI=mongodb://lucid:$MONGODB_PASSWORD@lucid-mongodb:27017/lucid?authSource=admin
 MONGODB_AUTH_SOURCE=admin
 MONGODB_POOL_SIZE=50
 

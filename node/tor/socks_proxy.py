@@ -1,6 +1,7 @@
 """
 File: /app/node/tor/socks_proxy.py
 x-lucid-file-path: /app/node/tor/socks_proxy.py
+x-lucid-file-directory: /app/node/tor
 x-lucid-file-type: python
 
 LUCID Node Tor - SOCKS Proxy Management

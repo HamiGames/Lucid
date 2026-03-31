@@ -5,6 +5,7 @@
 """
 File: /app/node/payouts/tron_client.py
 x-lucid-file-path: /app/node/payouts/tron_client.py
+x-lucid-file-directory: /app/node/payouts
 x-lucid-file-type: python
 """
 

@@ -5,6 +5,7 @@
 """
 File: /app/node/governance/node_vote_systems.py
 x-lucid-file-path: /app/node/governance/node_vote_systems.py
+x-lucid-file-directory: /app/node/governance
 x-lucid-file-type: python
 """
 

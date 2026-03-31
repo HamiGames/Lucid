@@ -2,6 +2,7 @@
 """
 File: /app/sessions/pipeline/state_machine.py
 x-lucid-file-path: /app/sessions/pipeline/state_machine.py
+x-lucid-file-directory: /app/sessions/pipeline
 x-lucid-file-type: python
 
 Lucid Session Management Pipeline State Machine

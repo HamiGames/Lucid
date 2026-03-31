@@ -1,3 +1,8 @@
+# File: /app/electron_gui/configs/electron-endpoints.yml
+# x-lucid-file-path: /app/electron_gui/configs/electron-endpoints.yml
+# x-lucid-file-directory: /app/electron_gui/configs
+# x-lucid-file-type: YAML
+
 # electron_gui/configs/electron-endpoints.yml
 # Container runtime paths use /app/*; host registry: infrastructure/containers/host-config.yml
 # Load via electron_gui utils / container: /app/electron-gui/utils/load_host_config.py

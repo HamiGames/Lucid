@@ -1,5 +1,9 @@
 #!/bin/bash
 # Phase 3 Application Services Build Script
+# File: /app/scripts/build-phase3-application.sh
+# x-lucid-file-path: /app/scripts/build-phase3-application.sh
+# x-lucid-file-directory: /app/scripts
+# x-lucid-file-type: shell
 # Builds: Session Management, RDP Services, Node Management containers
 # Target: Raspberry Pi (linux/arm64)
 # Registry: pickme/lucid namespace

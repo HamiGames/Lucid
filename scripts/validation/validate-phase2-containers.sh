@@ -1,5 +1,9 @@
 #!/bin/bash
 # File: scripts/validation/validate-phase2-containers.sh
+# File: /app/scripts/validation/validate-phase2-containers.sh
+# x-lucid-file-path: /app/scripts/validation/validate-phase2-containers.sh
+# x-lucid-file-directory: /app/scripts/validation
+# x-lucid-file-type: shell
 # Purpose: Validate all Phase 2 containers operational on lucid-dev network
 # Build Host: Windows 11 console
 # Target Host: Raspberry Pi (via SSH)

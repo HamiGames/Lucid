@@ -1,3 +1,8 @@
+# File: /app/docs/api/docker-compose.yml
+# x-lucid-file-path: /app/docs/api/docker-compose.yml
+# x-lucid-file-directory: /app/docs/api
+# x-lucid-file-type: YAML
+
 version: "3.8"
 
 services:

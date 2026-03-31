@@ -2,6 +2,7 @@
 """
 File: /app/admin/emergency/controls.py
 x-lucid-file-path: /app/admin/emergency/controls.py
+x-lucid-file-directory: /app/admin/emergency
 x-lucid-file-type: python
 
 Lucid Admin Interface - Emergency Controls

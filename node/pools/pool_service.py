@@ -5,6 +5,7 @@
 """
 File: /app/node/pools/pool_service.py
 x-lucid-file-path: /app/node/pools/pool_service.py
+x-lucid-file-directory: /app/node/pools
 x-lucid-file-type: python
 """
 

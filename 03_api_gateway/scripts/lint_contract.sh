@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 # Lucid RDP — lint OpenAPI contract
+# File: /app/03_api_gateway/scripts/lint_contract.sh
+# x-lucid-file-path: /app/03_api_gateway/scripts/lint_contract.sh
+# x-lucid-file-directory: /app/03_api_gateway/scripts
+# x-lucid-file-type: shell
 # Path: 03-api-gateway/scripts/lint_contract.sh
 
 set -euo pipefail

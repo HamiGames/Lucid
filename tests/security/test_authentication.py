@@ -1,4 +1,9 @@
 """
+File: /app/tests/security/test_authentication.py
+x-lucid-file-path: /app/tests/security/test_authentication.py
+x-lucid-file-directory: /app/tests/security
+x-lucid-file-type: python
+
 Authentication Security Tests
 
 Tests JWT token security, token validation, expiration handling,

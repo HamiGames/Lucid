@@ -1,5 +1,9 @@
 #!/bin/bash
 # LUCID CORE SUPPORT SERVICES - Build & Push Script
+# File: /app/scripts/deployment/devcontainer/build-and-push-core-support.sh
+# x-lucid-file-path: /app/scripts/deployment/devcontainer/build-and-push-core-support.sh
+# x-lucid-file-directory: /app/scripts/deployment/devcontainer
+# x-lucid-file-type: shell
 # Builds and pushes all core infrastructure services from lucid-dev.yaml
 # GENIUS-LEVEL implementation with LUCID-STRICT compliance
 # Path: scripts/devcontainer/build-and-push-core-support.sh

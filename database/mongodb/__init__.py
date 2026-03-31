@@ -1,6 +1,7 @@
 """
 File: /app/database/mongodb/__init__.py
 x-lucid-file-path: /app/database/mongodb/__init__.py
+x-lucid-file-directory: /app/database/mongodb
 x-lucid-file-type: python
 
 Database MongoDB Initialization and Configuration 

@@ -2,6 +2,7 @@
 """
 File: /app/admin/api/audit.py
 x-lucid-file-path: /app/admin/api/audit.py
+x-lucid-file-directory: /app/admin/api
 x-lucid-file-type: python
 
 Lucid Admin Interface - Audit API Endpoints

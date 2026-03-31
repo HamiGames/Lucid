@@ -1,22 +1,45 @@
 #!/bin/bash
 # =============================================================================
+# File: /app/sessions/core/generate-env.sh
+# x-lucid-file-path: /app/sessions/core/generate-env.sh
+# x-lucid-file-directory: /app/sessions/core
+# x-lucid-file-type: shell
 # Lucid Session Core Environment Generator - Pi Console Native
 # =============================================================================
 # This script generates environment configuration files for Session Core services
 # Uses the master environment generator with Pi console native optimizations
+# Content targets: LUCID_IMAGE_* from x-files-listing.txt via scripts/lib/lucid-repo-paths.sh (x-lucid-file-path lines).
 # =============================================================================
 
 set -euo pipefail
 
+# When run from a repo checkout, load paths from x-files-listing.txt (same as scripts under scripts/).
+_lucid_walk="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+_lucid_repo_paths_loaded=0
+while [[ "$_lucid_walk" != "/" ]]; do
+    if [[ -f "$_lucid_walk/scripts/lib/lucid-repo-paths.sh" ]]; then
+        # shellcheck disable=SC1091
+        source "$_lucid_walk/scripts/lib/lucid-repo-paths.sh" || exit 1
+        _lucid_repo_paths_loaded=1
+        break
+    fi
+    _lucid_walk="$(dirname "$_lucid_walk")"
+done
+unset _lucid_walk
+
 # =============================================================================
-# GLOBAL PATH CONFIGURATION
+# GLOBAL PATH CONFIGURATION (in-image targets; defaults if no checkout / listing)
 # =============================================================================
-# Set global path variables for consistent file management
-PROJECT_ROOT="/mnt/myssd/Lucid/Lucid"
-ENV_CONFIG_DIR="$PROJECT_ROOT/configs/environment"
-SCRIPTS_CONFIG_DIR="$PROJECT_ROOT/scripts/config"
-SCRIPTS_DIR="$PROJECT_ROOT/scripts"
-SESSION_CORE_DIR="$PROJECT_ROOT/sessions/core"
+if [[ "$_lucid_repo_paths_loaded" -eq 0 ]]; then
+    LUCID_IMAGE_APP_ROOT="${LUCID_IMAGE_APP_ROOT:-/app}"
+    LUCID_IMAGE_CONFIG_DIR="${LUCID_IMAGE_CONFIG_DIR:-/app/configs}"
+fi
+unset _lucid_repo_paths_loaded
+PROJECT_ROOT="$LUCID_IMAGE_APP_ROOT"
+ENV_CONFIG_DIR="$LUCID_IMAGE_CONFIG_DIR"
+SCRIPTS_DIR="$LUCID_IMAGE_APP_ROOT/scripts"
+SCRIPTS_CONFIG_DIR="$SCRIPTS_DIR/config"
+SESSION_CORE_DIR="$LUCID_IMAGE_APP_ROOT/sessions/core"
 
 # Current script directory (for relative operations)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -259,10 +282,10 @@ LUCID_CLUSTER_ID=pi-production
 # Database Configuration
 MONGODB_HOST=lucid-mongodb
 MONGODB_PORT=27017
-MONGODB_DATABASE=lucid_production
+MONGODB_DATABASE=lucid
 MONGODB_USERNAME=lucid
 MONGODB_PASSWORD=$MONGODB_PASSWORD
-MONGODB_URI=mongodb://lucid:$MONGODB_PASSWORD@lucid-mongodb:27017/lucid_production?authSource=admin
+MONGODB_URI=mongodb://lucid:$MONGODB_PASSWORD@lucid-mongodb:27017/lucid?authSource=admin
 MONGODB_AUTH_SOURCE=admin
 MONGODB_POOL_SIZE=50
 

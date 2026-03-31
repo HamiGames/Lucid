@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 """
+File: /app/configs/inject_dockerfile_x_files_skeleton.py
+x-lucid-file-path: /app/configs/inject_dockerfile_x_files_skeleton.py
+x-lucid-file-directory: /app/configs
+x-lucid-file-type: python
+
 Inject (1) directory skeleton under WORKDIR /build in builder stage 1, and (2) pip wheel + offline
 install for requirements when missing.
 
@@ -39,7 +44,7 @@ RDP → ``rdp``. Bare ``./infrastructure`` (alone) is still omitted from skeleto
 
 Default listing path: repo-root ``x-files-listing.txt``; override with ``--listing``.
 
-Scans (by default) ``infrastructure/containers/**`` and ``infrastructure/docker/**`` for
+Scans (by default) ``infrastructure/containers/**`` and ``configs/docker/**`` for
 ``Dockerfile`` / ``Dockerfile.*`` / ``dockerfile.*``. Extra ``--containers-root`` paths are **merged**
 with the default trees (so ``infrastructure/containers/database/`` stays scanned). Use
 ``--scan-roots-only`` to scan **only** the paths you pass.
@@ -115,7 +120,9 @@ import shlex
 import sys
 from pathlib import Path, PurePosixPath
 
+from dockerfile_alignment import load_alignment_criteria, normalize_repo_rel, validate_alignment
 from lib_search_and_inject import (
+    expand_infrastructure_docker_sibling_roots,
     find_insert_after_workdir_arg_label_env_runtime,
     normalize_glued_lucid_marker_lines,
     resolve_path_from_repo,
@@ -239,7 +246,7 @@ canonical skeleton paths under WORKDIR /build):
   ./hosts/...           -> ./configs/...
   ./configs/services/... -> ./service_configs/...
   ./configs/operations/... -> ./service_configs/...
-  ./infrastructure/kubernetes/... -> ./service_configs/kubernetes/...
+  ./service_configs/kubernetes/... -> ./service_configs/kubernetes/...
   ./kubernetes/...     -> ./service_configs/kubernetes/...
   ./kurbernetes/...     -> ./service_configs/kubernetes/...   (common typo)
 
@@ -1518,7 +1525,7 @@ def inject_runtime_copy_from_build_block(content: str, dirs: list[str], builder_
     trees as the block about to be injected (optional ``--chown``; ``./`` sources allowed),
     then insert a new block after the last ``ENV`` (or last ``LABEL`` if no ``ENV``) in the last
     runtime stage — same insert rule as ``lib_search_and_inject.inject_apt_fhs_block_content``.
-    No-op if there is no multi-stage runtime with ``WORKDIR /app``.
+    No-op if there is no multi-stage runtime with a valid insert point (ENV/LABEL or WORKDIR+ARG).
     """
     text = strip_marked_block(content, MARK_RUNTIME_COPY_BEGIN, MARK_RUNTIME_COPY_END)
     plain = text.splitlines(keepends=False)
@@ -2310,7 +2317,17 @@ def main() -> int:
         action="store_true",
         help=(
             "Use only --containers-root paths (do not merge the default trees). "
-            "Requires at least one --containers-root."
+            "Requires at least one --containers-root. "
+            "If you pass infrastructure/containers only, infrastructure/docker is still added unless "
+            "--no-include-infrastructure-docker-sibling is set."
+        ),
+    )
+    ap.add_argument(
+        "--no-include-infrastructure-docker-sibling",
+        action="store_true",
+        help=(
+            "With --scan-roots-only: do not auto-append infrastructure/docker when "
+            "infrastructure/containers is among --containers-root paths."
         ),
     )
     ap.add_argument(
@@ -2389,6 +2406,15 @@ def main() -> int:
         action="store_true",
         help="Print one line per Dockerfile (unchanged or updated).",
     )
+    ap.add_argument(
+        "--validate-service-alignment-config",
+        default=None,
+        metavar="PATH",
+        help=(
+            "Optional config-listings.json path to validate service_name/service_id labels for "
+            "the selected Dockerfiles (repo-relative or absolute)."
+        ),
+    )
     args = ap.parse_args()
 
     if args.only is not None:
@@ -2408,6 +2434,8 @@ def main() -> int:
                 )
                 return 1
             scan_roots = [resolve_path_from_repo(p, root) for p in args.containers_roots]
+            if not args.no_include_infrastructure_docker_sibling:
+                scan_roots = expand_infrastructure_docker_sibling_roots(scan_roots)
         elif args.containers_roots is None:
             scan_roots = default_resolved
         else:
@@ -2608,6 +2636,28 @@ def main() -> int:
         )
     elif dry_run:
         print("Note: add --apply to write.", file=sys.stderr)
+
+    if args.validate_service_alignment_config:
+        cfg = Path(args.validate_service_alignment_config)
+        cfg = cfg if cfg.is_absolute() else (root / cfg).resolve()
+        if not cfg.is_file():
+            print(f"error: --validate-service-alignment-config not found: {cfg}", file=sys.stderr)
+            return 1
+        align_map = load_alignment_criteria(cfg)
+        mismatches = 0
+        checked = 0
+        for df in dockerfiles:
+            rel = normalize_repo_rel(str(df.relative_to(root) if df.is_relative_to(root) else df))
+            criteria = align_map.get(rel)
+            if criteria is None:
+                continue
+            checked += 1
+            text = df.read_text(encoding="utf-8", errors="replace")
+            problems = validate_alignment(text, criteria)
+            if problems:
+                mismatches += 1
+                print(f"[alignment] {rel}: {', '.join(problems)}", file=sys.stderr)
+        print(f"# alignment check: {checked} matched, {mismatches} mismatched")
     return 0
 
 

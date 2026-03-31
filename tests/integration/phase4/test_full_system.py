@@ -1,4 +1,9 @@
 """
+File: /app/tests/integration/phase4/test_full_system.py
+x-lucid-file-path: /app/tests/integration/phase4/test_full_system.py
+x-lucid-file-directory: /app/tests/integration/phase4
+x-lucid-file-type: python
+
 Full System Integration Tests
 
 This module tests the complete system integration across all 10 clusters,

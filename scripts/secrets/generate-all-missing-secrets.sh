@@ -1,5 +1,9 @@
 #!/bin/bash
 # Complete Secret Generation Script for Lucid Project
+# File: /app/scripts/secrets/generate-all-missing-secrets.sh
+# x-lucid-file-path: /app/scripts/secrets/generate-all-missing-secrets.sh
+# x-lucid-file-directory: /app/scripts/secrets
+# x-lucid-file-type: shell
 # Generates ALL missing secrets that generate-secrets.sh expects
 # Aligned with config directory structure
 # Generated: 2025-01-27

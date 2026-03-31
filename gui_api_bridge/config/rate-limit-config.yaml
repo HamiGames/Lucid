@@ -1,3 +1,8 @@
+# File: /app/gui_api_bridge/config/rate-limit-config.yaml
+# x-lucid-file-path: /app/gui_api_bridge/config/rate-limit-config.yaml
+# x-lucid-file-directory: /app/gui_api_bridge/config
+# x-lucid-file-type: YAML
+
 # Lucid GUI API Bridge - Rate Limiting Configuration
 # File: gui-api-bridge/config/rate-limit-config.yaml
 # Purpose: Define rate limiting tiers, endpoint-specific limits, and bypass rules

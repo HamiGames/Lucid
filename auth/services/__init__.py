@@ -1,6 +1,7 @@
 """
 File: /app/auth/services/__init__.py
 x-lucid-file-path: /app/auth/services/__init__.py
+x-lucid-file-directory: /app/auth/services
 x-lucid-file-type: python
 
 Lucid Authentication Service - Service Orchestration Package

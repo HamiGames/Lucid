@@ -1,5 +1,9 @@
 #!/bin/bash
 # Step 4: Distroless Base Image Preparation
+# File: /app/configs/base/build-step4-base-images.sh
+# x-lucid-file-path: /app/configs/base/build-step4-base-images.sh
+# x-lucid-file-directory: /app/configs/base
+# x-lucid-file-type: shell
 # Build foundation distroless base images for all service types
 # Raspberry Pi ARM64 deployment optimized
 

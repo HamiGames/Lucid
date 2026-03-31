@@ -1,5 +1,9 @@
 #!/bin/bash
 # scripts/hardware/configure-gpu.sh
+# File: /app/scripts/hardware/configure-gpu.sh
+# x-lucid-file-path: /app/scripts/hardware/configure-gpu.sh
+# x-lucid-file-directory: /app/scripts/hardware
+# x-lucid-file-type: shell
 # Configure Pi 5 GPU for video encoding with distroless containers
 # LUCID-STRICT: Pi 5 GPU configuration for hardware acceleration
 

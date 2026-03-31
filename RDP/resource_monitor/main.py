@@ -1,6 +1,7 @@
 """
 File: /app/RDP/resource_monitor/main.py
 x-lucid-file-path: /app/RDP/resource_monitor/main.py
+x-lucid-file-directory: /app/RDP/resource_monitor
 x-lucid-file-type: python
 
 RDP Resource Monitor - Main Entry Point

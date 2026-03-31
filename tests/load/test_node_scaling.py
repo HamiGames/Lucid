@@ -1,4 +1,9 @@
 """
+File: /app/tests/load/test_node_scaling.py
+x-lucid-file-path: /app/tests/load/test_node_scaling.py
+x-lucid-file-directory: /app/tests/load
+x-lucid-file-type: python
+
 Node Scaling Load Testing
 
 Tests the system's ability to handle 500 worker nodes

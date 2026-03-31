@@ -3,6 +3,7 @@
 """
 File: /app/node/peer_discovery.py
 x-lucid-file-path: /app/node/peer_discovery.py
+x-lucid-file-directory: /app/node
 x-lucid-file-type: python
 """
 

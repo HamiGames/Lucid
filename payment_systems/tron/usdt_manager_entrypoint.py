@@ -3,6 +3,7 @@
 """
 File: /app/payment_systems/tron/usdt_manager_entrypoint.py
 x-lucid-file-path: /app/payment_systems/tron/usdt_manager_entrypoint.py
+x-lucid-file-directory: /app/payment_systems/tron
 x-lucid-file-type: python
 
 USDT Manager Service Entrypoint

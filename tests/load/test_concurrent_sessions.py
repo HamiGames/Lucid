@@ -1,4 +1,9 @@
 """
+File: /app/tests/load/test_concurrent_sessions.py
+x-lucid-file-path: /app/tests/load/test_concurrent_sessions.py
+x-lucid-file-directory: /app/tests/load
+x-lucid-file-type: python
+
 Concurrent Sessions Load Testing
 
 Tests the system's ability to handle 100 concurrent session operations

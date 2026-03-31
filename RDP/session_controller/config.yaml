@@ -1,3 +1,8 @@
+# File: /app/RDP/session_controller/config.yaml
+# x-lucid-file-path: /app/RDP/session_controller/config.yaml
+# x-lucid-file-directory: /app/RDP/session_controller
+# x-lucid-file-type: YAML
+
 # RDP Controller - Configuration
 # Optional YAML configuration for RDP Controller service
 # File: RDP/session-controller/config.yaml

@@ -1,6 +1,7 @@
 """
 File: /app/blockchain/api/app/schemas/__init__.py
 x-lucid-file-path: /app/blockchain/api/app/schemas/__init__.py
+x-lucid-file-directory: /app/blockchain/api/app/schemas
 x-lucid-file-type: python
 
 Schema Models Package

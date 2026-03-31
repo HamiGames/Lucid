@@ -1,14 +1,27 @@
 #!/bin/bash
-# Path: scripts/deploy-lucid-pi.sh
+# Full path: scripts/deployment/pi/deploy-lucid-pi.sh
+# File: /app/scripts/deployment/pi/deploy-lucid-pi.sh
+# x-lucid-file-path: /app/scripts/deployment/pi/deploy-lucid-pi.sh
+# x-lucid-file-directory: /app/scripts/deployment/pi
+# x-lucid-file-type: shell
 # Lucid RDP deployment script for Raspberry Pi 5 (Ubuntu Server ARM64)
+# Stack compose aligns with infrastructure/containers/services/container-runtime-layout.yml (configs/docker/*.yml).
 
 set -euo pipefail
 
+
+# x-files-listing.txt → LUCID_HOST_COMPOSE_* (scripts/lib/lucid-repo-paths.sh)
+_LUCID_W="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+while [[ "$_LUCID_W" != "/" && "$(basename "$_LUCID_W")" != "scripts" ]]; do _LUCID_W="$(dirname "$_LUCID_W")"; done
+# shellcheck source=lib/lucid-repo-paths.sh
+source "${_LUCID_W}/lib/lucid-repo-paths.sh"
 # Configuration
 LUCID_HOME="/opt/lucid"
 LUCID_USER="lucid"
 LUCID_SERVICE="lucid-rdp"
-DOCKER_COMPOSE_FILE="$LUCID_HOME/infrastructure/compose/docker-compose.yml"
+# Phased stack on Pi: mirror repo configs/docker/docker-compose.foundation.yml (host rel path = LUCID_HOST_REL_COMPOSE_FOUNDATION in lucid-x-file-paths.sh / x-files-listing.txt).
+LUCID_COMPOSE_DIR="$LUCID_HOME/configs/docker"
+LUCID_COMPOSE_FILE="$LUCID_COMPOSE_DIR/docker-compose.foundation.yml"
 ENV_FILE="$LUCID_HOME/.env"
 
 # Logging function
@@ -108,9 +121,19 @@ EOF
 deploy_application() {
     log "INFO" "Deploying Lucid RDP application..."
     
-    # Copy application files
-    if [[ -d "./06-orchestration-runtime/compose" ]]; then
-        cp -r ./06-orchestration-runtime/compose/* "$LUCID_HOME/" || error_exit "Failed to copy compose files"
+    # Copy stack compose + env layout (same tree as repo: configs/docker, configs/environment)
+    if [[ -d "./configs/docker" ]]; then
+        mkdir -p "$LUCID_HOME/configs"
+        cp -r ./configs/docker "$LUCID_HOME/configs/" || error_exit "Failed to copy configs/docker"
+    fi
+    if [[ -d "./configs/environment" ]]; then
+        mkdir -p "$LUCID_HOME/configs"
+        cp -r ./configs/environment "$LUCID_HOME/configs/" || true
+    fi
+    # Optional dev slice (infrastructure/compose/lucid-dev.yaml) for non-phased bring-up
+    if [[ -d "./infrastructure/compose" ]]; then
+        mkdir -p "$LUCID_HOME/infrastructure"
+        cp -r ./infrastructure/compose "$LUCID_HOME/infrastructure/" || true
     fi
     
     # Copy environment configuration
@@ -152,10 +175,10 @@ Type=oneshot
 RemainAfterExit=yes
 User=$LUCID_USER
 Group=$LUCID_USER
-WorkingDirectory=$LUCID_HOME
-ExecStart=/usr/bin/docker-compose up -d
-ExecStop=/usr/bin/docker-compose down
-ExecReload=/usr/bin/docker-compose restart
+WorkingDirectory=$LUCID_COMPOSE_DIR
+ExecStart=/usr/bin/docker-compose -f docker-compose.foundation.yml --env-file $ENV_FILE up -d
+ExecStop=/usr/bin/docker-compose -f docker-compose.foundation.yml --env-file $ENV_FILE down
+ExecReload=/usr/bin/docker-compose -f docker-compose.foundation.yml --env-file $ENV_FILE restart
 TimeoutStartSec=300
 Restart=on-failure
 RestartSec=10
@@ -257,7 +280,7 @@ stop_services() {
     log "INFO" "Stopping Lucid RDP services..."
     
     systemctl stop "$LUCID_SERVICE" || true
-    docker-compose -f "$DOCKER_COMPOSE_FILE" down || true
+    docker-compose -f "$LUCID_COMPOSE_FILE" --env-file "$ENV_FILE" down || true
     
     log "INFO" "Services stopped"
 }
@@ -291,7 +314,7 @@ update_application() {
     systemctl stop "$LUCID_SERVICE" || true
     
     # Pull latest images
-    docker-compose -f "$DOCKER_COMPOSE_FILE" pull || error_exit "Failed to pull latest images"
+    docker-compose -f "$LUCID_COMPOSE_FILE" --env-file "$ENV_FILE" pull || error_exit "Failed to pull latest images"
     
     # Start services
     systemctl start "$LUCID_SERVICE" || error_exit "Failed to start services after update"

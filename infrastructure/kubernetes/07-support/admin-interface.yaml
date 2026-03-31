@@ -1,3 +1,8 @@
+# File: /app/service_configs/kubernetes/07-support/admin-interface.yaml
+# x-lucid-file-path: /app/service_configs/kubernetes/07-support/admin-interface.yaml
+# x-lucid-file-directory: /app/service_configs/kubernetes/07-support
+# x-lucid-file-type: YAML
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:

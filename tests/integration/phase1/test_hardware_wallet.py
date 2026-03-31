@@ -1,4 +1,9 @@
 """
+File: /app/tests/integration/phase1/test_hardware_wallet.py
+x-lucid-file-path: /app/tests/integration/phase1/test_hardware_wallet.py
+x-lucid-file-directory: /app/tests/integration/phase1
+x-lucid-file-type: python
+
 Lucid API - Phase 1 Integration Test: Hardware Wallet
 Tests hardware wallet integration with authentication service
 """

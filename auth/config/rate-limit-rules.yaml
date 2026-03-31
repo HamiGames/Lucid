@@ -1,3 +1,8 @@
+# File: /app/auth/config/rate-limit-rules.yaml
+# x-lucid-file-path: /app/auth/config/rate-limit-rules.yaml
+# x-lucid-file-directory: /app/auth/config
+# x-lucid-file-type: YAML
+
 # Lucid Authentication Service - Rate Limiting Rules Configuration
 # Optional YAML configuration for advanced rate limiting
 # File: auth/config/rate-limit-rules.yaml

@@ -3,6 +3,7 @@
 """
 File: /app/wallet/wallet_manager.py
 x-lucid-file-path: /app/wallet/wallet_manager.py
+x-lucid-file-directory: /app/wallet
 x-lucid-file-type: python
 """
 

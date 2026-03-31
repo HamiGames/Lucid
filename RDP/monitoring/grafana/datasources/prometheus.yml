@@ -1,3 +1,8 @@
+# File: /app/RDP/monitoring/grafana/datasources/prometheus.yml
+# x-lucid-file-path: /app/RDP/monitoring/grafana/datasources/prometheus.yml
+# x-lucid-file-directory: /app/RDP/monitoring/grafana/datasources
+# x-lucid-file-type: YAML
+
 apiVersion: 1
 
 datasources:

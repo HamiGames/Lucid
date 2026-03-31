@@ -1,3 +1,8 @@
+# File: /app/configs/database/docker-compose.database-system.yml
+# x-lucid-file-path: /app/configs/database/docker-compose.database-system.yml
+# x-lucid-file-directory: /app/configs/database
+# x-lucid-file-type: YAML
+
 # LUCID DATABASE SYSTEM — foundation data plane + database-overlord + system storage
 # Path: infrastructure/containers/database/docker-compose.database-system.yml
 #

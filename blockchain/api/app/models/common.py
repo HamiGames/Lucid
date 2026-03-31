@@ -1,6 +1,7 @@
 """
 File: /app/blockchain/api/app/models/common.py
 x-lucid-file-path: /app/blockchain/api/app/models/common.py
+x-lucid-file-directory: /app/blockchain/api/app/models
 x-lucid-file-type: python
 
 Common Data Models

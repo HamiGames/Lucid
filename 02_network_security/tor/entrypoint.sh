@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 # tor_entrypoint.sh — Tor Proxy Container Entrypoint v5.1.0
+# File: /app/02_network_security/tor/entrypoint.sh
+# x-lucid-file-path: /app/02_network_security/tor/entrypoint.sh
+# x-lucid-file-directory: /app/02_network_security/tor
+# x-lucid-file-type: shell
 # Distroless busybox compatible.
 # No return statements — all flow control is if/else/exit.
 # All arithmetic increments use pre-increment (( ++var )) || true to survive set -e.

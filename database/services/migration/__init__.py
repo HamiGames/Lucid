@@ -3,6 +3,7 @@
 """
 File: /app/database/services/migration/__init__.py
 x-lucid-file-path: /app/database/services/migration/__init__.py
+x-lucid-file-directory: /app/database/services/migration
 x-lucid-file-type: python
 """
 

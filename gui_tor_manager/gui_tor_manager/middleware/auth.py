@@ -1,6 +1,7 @@
 """
 File: /app/gui_tor_manager/gui_tor_manager/middleware/auth.py
 x-lucid-file-path: /app/gui_tor_manager/gui_tor_manager/middleware/auth.py
+x-lucid-file-directory: /app/gui_tor_manager/gui_tor_manager/middleware
 x-lucid-file-type: python
 
 Authentication Middleware for GUI Tor Manager

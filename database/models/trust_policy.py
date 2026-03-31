@@ -1,6 +1,7 @@
 """
 File: /app/database/models/trust_policy.py
 x-lucid-file-path: /app/database/models/trust_policy.py
+x-lucid-file-directory: /app/database/models
 x-lucid-file-type: python
 
 Trust Policy Data Models

@@ -1,3 +1,8 @@
+# File: /app/payment_systems/tron/config/usdt-manager-config.yaml
+# x-lucid-file-path: /app/payment_systems/tron/config/usdt-manager-config.yaml
+# x-lucid-file-directory: /app/payment_systems/tron/config
+# x-lucid-file-type: YAML
+
 # LUCID TRON USDT Manager Configuration
 # USDT token management, staking, swapping, and bridge operations
 

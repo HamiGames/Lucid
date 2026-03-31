@@ -1,3 +1,9 @@
+# File: /app/service_configs/gui-hardware-manager.yml
+# x-lucid-file-path: /app/service_configs/gui-hardware-manager.yml
+# x-lucid-file-directory: /app/service_configs
+# x-lucid-file-type: YAML
+# Lucid alignment: host_registry=infrastructure/containers/host-config.yml (container /app/configs/host-config.yml); path_index=x-files.json section_to_canonical
+
 # Runtime (container): /app/service_configs/gui-hardware-manager.yml — see container-runtime-layout.yml
 # GUI Hardware Manager Service Configuration
 # Manages hardware wallets (Ledger, Trezor, KeepKey) for Lucid Electron GUI

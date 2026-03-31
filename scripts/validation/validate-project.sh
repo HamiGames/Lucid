@@ -1,5 +1,9 @@
 #!/bin/bash
 # LUCID Project Validation Script
+# File: /app/scripts/validation/validate-project.sh
+# x-lucid-file-path: /app/scripts/validation/validate-project.sh
+# x-lucid-file-directory: /app/scripts/validation
+# x-lucid-file-type: shell
 # 
 # This script runs comprehensive validation for the LUCID project
 # including Python build alignment and Electron GUI alignment checks.

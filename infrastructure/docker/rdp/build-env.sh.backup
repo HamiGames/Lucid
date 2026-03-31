@@ -1,5 +1,5 @@
 #!/bin/bash
-# Path: infrastructure/docker/rdp/build-env.sh
+# Path: configs/docker/rdp/build-env.sh
 # Build Environment Script for Lucid RDP Services
 # Generates .env files for Remote Desktop Protocol containers
 

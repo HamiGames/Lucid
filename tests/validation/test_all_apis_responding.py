@@ -1,4 +1,9 @@
 """
+File: /app/tests/validation/test_all_apis_responding.py
+x-lucid-file-path: /app/tests/validation/test_all_apis_responding.py
+x-lucid-file-directory: /app/tests/validation
+x-lucid-file-type: python
+
 Test All APIs Responding
 
 Validates that all 47+ API endpoints across all 10 Lucid clusters are responding correctly.

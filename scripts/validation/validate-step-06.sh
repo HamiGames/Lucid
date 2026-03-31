@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# File: /app/scripts/validation/validate-step-06.sh
+# x-lucid-file-path: /app/scripts/validation/validate-step-06.sh
+# x-lucid-file-directory: /app/scripts/validation
+# x-lucid-file-type: shell
 # ============================================================================
 # Step 6: Authentication Container Build - Validation Script
 # ============================================================================

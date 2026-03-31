@@ -1,6 +1,7 @@
 """
 File: /app/gui_docker_manager/gui_docker_manager/utils/__init__.py
 x-lucid-file-path: /app/gui_docker_manager/gui_docker_manager/utils/__init__.py
+x-lucid-file-directory: /app/gui_docker_manager/gui_docker_manager/utils
 x-lucid-file-type: python
 
 Utility modules for Docker Manager

@@ -5,6 +5,7 @@
 """
 File: /app/node/api/nodes.py
 x-lucid-file-path: /app/node/api/nodes.py
+x-lucid-file-directory: /app/node/api
 x-lucid-file-type: python
 
 Node management API endpoints for Lucid system.

@@ -1,5 +1,9 @@
 #!/bin/bash
 # RDP/scripts/prepare-distroless-image.sh
+# File: /app/RDP/scripts/prepare-distroless-image.sh
+# x-lucid-file-path: /app/RDP/scripts/prepare-distroless-image.sh
+# x-lucid-file-directory: /app/RDP/scripts
+# x-lucid-file-type: shell
 # Script to pre-pull and prepare distroless image for transfer to Pi
 # Run this on a machine with internet access
 

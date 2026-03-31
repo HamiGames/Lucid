@@ -1,5 +1,9 @@
 #!/bin/bash
 # Lucid RDP OTA Update Script
+# File: /app/ops/ota/update.sh
+# x-lucid-file-path: /app/ops/ota/update.sh
+# x-lucid-file-directory: /app/ops/ota
+# x-lucid-file-type: shell
 # Handles over-the-air updates with rollback capability
 
 set -euo pipefail

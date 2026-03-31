@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# File: /app/scripts/docs/generate-openapi.sh
+# x-lucid-file-path: /app/scripts/docs/generate-openapi.sh
+# x-lucid-file-directory: /app/scripts/docs
+# x-lucid-file-type: shell
 # Lucid OpenAPI Generation Script
 # Generates OpenAPI specifications and documentation for all service clusters
 

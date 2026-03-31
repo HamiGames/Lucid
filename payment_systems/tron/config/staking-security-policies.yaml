@@ -1,3 +1,8 @@
+# File: /app/payment_systems/tron/config/staking-security-policies.yaml
+# x-lucid-file-path: /app/payment_systems/tron/config/staking-security-policies.yaml
+# x-lucid-file-directory: /app/payment_systems/tron/config
+# x-lucid-file-type: YAML
+
 # LUCID TRON Staking Service - Security Policies Configuration
 # File: payment-systems/tron/config/staking-security-policies.yaml
 # Purpose: Security, compliance, and operational policies for staking service

@@ -2600,7 +2600,7 @@ HEALTH_CHECK_TIMEOUT=10s
 HEALTH_CHECK_RETRIES=3
 
 # Service Health Endpoints (use container names for Docker DNS resolution)
-MONGODB_HEALTH_URL=mongodb://lucid:${MONGODB_PASSWORD:?MONGODB_PASSWORD not set}@lucid-mongodb:27017/lucid_dev?authSource=admin
+MONGODB_HEALTH_URL=mongodb://lucid:${MONGODB_PASSWORD:?MONGODB_PASSWORD not set}@lucid-mongodb:27017/lucid?authSource=admin
 REDIS_HEALTH_URL=redis://:${REDIS_PASSWORD:?REDIS_PASSWORD not set}@lucid-redis:6379
 ELASTICSEARCH_HEALTH_URL=http://elastic:${ELASTICSEARCH_PASSWORD:?ELASTICSEARCH_PASSWORD not set}@lucid-elasticsearch:9200/_cluster/health
 
@@ -3208,10 +3208,10 @@ LUCID_CLUSTER_ID=pi-production
 # Database Configuration
 MONGODB_HOST=lucid-mongodb
 MONGODB_PORT=27017
-MONGODB_DATABASE=lucid_production
+MONGODB_DATABASE=lucid
 MONGODB_USERNAME=lucid
 MONGODB_PASSWORD=RzENjKTj4G1V2Ohfd8HdsbaiBpzOo97x
-MONGODB_URI=mongodb://lucid:XxLaAsy76XNGYCMlGYq0lLv7lC9aDYc/BJe97S/OmSY=@lucid-mongodb:27017/lucid_production?authSource=admin
+MONGODB_URI=mongodb://lucid:XxLaAsy76XNGYCMlGYq0lLv7lC9aDYc/BJe97S/OmSY=@lucid-mongodb:27017/lucid?authSource=admin
 MONGODB_AUTH_SOURCE=admin
 MONGODB_POOL_SIZE=50
 
@@ -5467,9 +5467,9 @@ PORT=8113
 # MongoDB Connection - REQUIRED
 # Note: MONGODB_URL typically comes from .env.foundation or .env.secrets
 # Alternative: MONGO_URL
-MONGODB_URL=mongodb://lucid_session:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin
-MONGO_URL=${MONGODB_URL:-http://lucid:${MONGODO_PASSWORD}@lucid-mongodb:21017}
-MONGO_DB=lucid_session
+MONGODB_URL=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin
+MONGO_URL=${MONGODB_URL:-http://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017}
+MONGO_DB=lucid_sessions
 DATABASE_NAME=lucid
 
 # MongoDB Connection Settings

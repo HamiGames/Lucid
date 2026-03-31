@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# File: /app/scripts/verify-env-permissions.sh
+# x-lucid-file-path: /app/scripts/verify-env-permissions.sh
+# x-lucid-file-directory: /app/scripts
+# x-lucid-file-type: shell
 # =============================================================================
 # LUCID Environment File Permission Verification Script
 # =============================================================================
@@ -8,11 +12,19 @@
 # based on security requirements and file sensitivity.
 #
 # Target Platform: Raspberry Pi (linux/arm64)
-# Base Path: /mnt/myssd/Lucid/Lucid/
+# Project root: scripts/lib/lucid-repo-paths.sh
 #
 # =============================================================================
 
 set -euo pipefail
+
+_lucid_here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+_lucid_scripts="$_lucid_here"
+while [[ "$_lucid_scripts" != "/" && "$(basename "$_lucid_scripts")" != "scripts" ]]; do
+    _lucid_scripts="$(dirname "$_lucid_scripts")"
+done
+# shellcheck source=lib/lucid-repo-paths.sh
+source "$_lucid_scripts/lib/lucid-repo-paths.sh"
 
 # Color codes for output
 RED='\033[0;31m'
@@ -22,9 +34,9 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Script configuration
-PROJECT_ROOT="/mnt/myssd/Lucid/Lucid"
-ENV_DIR="/mnt/myssd/Lucid/Lucid/configs/environment"
-SECRETS_DIR="/mnt/myssd/Lucid/Lucid/configs/secrets"
+PROJECT_ROOT="$LUCID_REPO_ROOT"
+ENV_DIR="$LUCID_ENV_CONFIG_DIR"
+SECRETS_DIR="$PROJECT_ROOT/configs/secrets"
 
 # Expected permissions
 REGULAR_PERMISSIONS="664"

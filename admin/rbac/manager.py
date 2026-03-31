@@ -2,6 +2,7 @@
 """
 File: /app/admin/rbac/manager.py
 x-lucid-file-path: /app/admin/rbac/manager.py
+x-lucid-file-directory: /app/admin/rbac
 x-lucid-file-type: python
 
 Lucid Admin Interface - RBAC Manager

@@ -1,4 +1,9 @@
 """
+File: /app/tests/performance/__init__.py
+x-lucid-file-path: /app/tests/performance/__init__.py
+x-lucid-file-directory: /app/tests/performance
+x-lucid-file-type: python
+
 Performance Testing Package for Lucid API System
 
 This package contains performance tests to validate system benchmarks:

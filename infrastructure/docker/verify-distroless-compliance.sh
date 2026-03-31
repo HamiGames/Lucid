@@ -1,5 +1,9 @@
 #!/bin/bash
 # LUCID Distroless Compliance Verification Script
+# File: /app/configs/docker//verify-distroless-compliance.sh
+# x-lucid-file-path: /app/configs/docker//verify-distroless-compliance.sh
+# x-lucid-file-directory: /app/configs/docker/
+# x-lucid-file-type: shell
 # Verifies all Dockerfiles meet distroless standards
 
 set -euo pipefail

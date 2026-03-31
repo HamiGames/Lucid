@@ -1,7 +1,27 @@
-# Path: infrastructure/docker/compose/docker-compose.yml
-# Main infrastructure Docker Compose file for Lucid project
-# Production-ready configuration with all 35 distroless services
-# Uses path_plan.md network configurations
+# File: /app/configs/docker/compose/docker-compose.yml
+# x-lucid-file-path: /app/configs/docker/compose/docker-compose.yml
+# x-lucid-file-directory: /app/configs/docker/compose
+# x-lucid-file-type: YAML
+#
+# Repo path: infrastructure/docker/compose/docker-compose.yml
+# x-files.json section_to_canonical: infrastructure/docker/compose/docker-compose.yml → /app/configs/docker/compose/docker-compose.yml
+# Host registry: infrastructure/containers/host-config.yml (in_container_path /app/configs/host-config.yml).
+# host_ip / service-ip.txt (172.20.10.1–172.20.10.76): operator + master-env-config.txt discovery — NOT Docker bridge ipv4_address (static 172.20.10.x on lucid-pi-network causes pool/subnet runtime errors).
+# Intra-compose traffic: use this file’s service keys (e.g. lucid-mongodb, lucid-api-gateway) as hostnames on lucid-pi-network — aligns with host-config `service_name` / ports.
+# Bridge / subnet reference: infrastructure/containers/network/network.txt → /app/configs/network/network.txt (lucid-pi-network 172.20.0.0/16).
+# Compose keys use lucid-* service names; host-config `service_name` is the canonical DNS hostname for discovery — align ports and labels with that file.
+# host-config collision_notes: remap host publishes when co-hosting services that share container ports (8080, 8090, 8092, 8099, 8101, 8600).
+
+# Main infrastructure Docker Compose — distroless pickme/lucid-* images; networks: lucid-pi-network (external), lucid-tor-egress-network (external), lucid-tron-isolated, lucid-gui-network.
+
+x-lucid-host-config:
+  file: ../../containers/host-config.yml
+  repo_path: infrastructure/containers/host-config.yml
+  version: "1.0"
+  description: Lucid container host registry for Docker DNS hostnames, ports, discovery URLs, and static host IPs.
+  http_path_template: "http://{service_name}:{port}/app"
+  host_ip_range: "172.20.10.1–172.20.10.76"
+  in_container_path: /app/configs/host-config.yml
 
 services:
   # ============================================================================
@@ -19,8 +39,7 @@ services:
       - mongodb_data:/data/db
       - mongodb_config:/data/configdb
     networks:
-      lucid-pi-network:
-        ipv4_address: 172.20.0.11
+      lucid-pi-network: {}
     environment:
       - MONGO_INITDB_ROOT_USERNAME=lucid
       - MONGO_INITDB_ROOT_PASSWORD=${MONGODB_PASSWORD:?MONGODB_PASSWORD not set}
@@ -28,7 +47,7 @@ services:
       - MONGODB_PASSWORD=${MONGODB_PASSWORD:?MONGODB_PASSWORD not set}
       - MONGODB_PORT=27017
     healthcheck:
-      test: ["CMD", "/usr/bin/python3", "/usr/local/bin/healthcheck.py"]
+      test: ["CMD", "/app/usr/bin/python3", "/app/usr/local/bin/healthcheck.py"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -44,8 +63,7 @@ services:
     volumes:
       - redis_data:/data
     networks:
-      lucid-pi-network:
-        ipv4_address: 172.20.0.12
+      lucid-pi-network: {}
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 30s
@@ -61,16 +79,23 @@ services:
       - "9200:9200"
       - "9300:9300"
     volumes:
-      - elasticsearch_data:/usr/share/elasticsearch/data
+      # Aligned with configs/database/elasticsearch/elasticsearch.yml path.data and Dockerfile ES_HOME (/app/usr/share/elasticsearch)
+      - elasticsearch_data:/app/usr/share/elasticsearch/data
     networks:
-      lucid-pi-network:
-        ipv4_address: 172.20.0.13
+      lucid-pi-network: {}
     environment:
       - discovery.type=single-node
       - xpack.security.enabled=false
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9200/_cluster/health"]
+      # Distroless image: curl at /app/usr/bin/curl (see infrastructure/containers/database/Dockerfile.elasticsearch HEALTHCHECK)
+      test:
+        [
+          "CMD",
+          "/app/usr/bin/curl",
+          "-f",
+          "http://lucid-elasticsearch:9200/_cluster/health",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -87,11 +112,10 @@ services:
       - auth_logs:/app/logs
       - auth_data:/app/data
     networks:
-      lucid-pi-network:
-        ipv4_address: 172.20.0.14
+      lucid-pi-network: {}
     environment:
-      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:?MONGODB_PASSWORD not set}@172.20.0.11:27017/lucid?authSource=admin
-      - REDIS_URL=redis://172.20.0.12:6379/0
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:?MONGODB_PASSWORD not set}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URL=redis://lucid-redis:6379/0
       - JWT_SECRET_KEY=${JWT_SECRET_KEY}
       - JWT_ALGORITHM=HS256
       - JWT_ACCESS_TOKEN_EXPIRE_MINUTES=15
@@ -123,13 +147,12 @@ services:
       - api_logs:/app/logs
       - api_data:/app/data
     networks:
-      lucid-pi-network:
-        ipv4_address: 172.20.0.10
+      lucid-pi-network: {}
     environment:
-      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:-lucid}@172.20.0.11:27017/lucid?authSource=admin
-      - REDIS_URL=redis://172.20.0.12:6379/0
-      - ELASTICSEARCH_URI=http://172.20.0.13:9200
-      - AUTH_SERVICE_URL=http://172.20.0.14:8089
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:-lucid}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URL=redis://lucid-redis:6379/0
+      - ELASTICSEARCH_URI=http://lucid-elasticsearch:9200
+      - AUTH_SERVICE_URL=http://lucid-auth-service:8089
       - RATE_LIMIT_ENABLED=true
       - RATE_LIMIT_REQUESTS_PER_MINUTE=100
     depends_on:
@@ -160,11 +183,10 @@ services:
       - service_mesh_data:/app/data
       - service_mesh_logs:/app/logs
     networks:
-      lucid-pi-network:
-        ipv4_address: 172.20.0.19
+      lucid-pi-network: {}
     environment:
-      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:-lucid}@172.20.0.11:27017/lucid?authSource=admin
-      - REDIS_URL=redis://172.20.0.12:6379/0
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:-lucid}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URL=redis://lucid-redis:6379/0
       - CONSUL_BIND_INTERFACE=eth0
     depends_on:
       lucid-mongodb:
@@ -188,11 +210,10 @@ services:
       - blockchain_data:/app/blockchain
       - blockchain_logs:/app/logs
     networks:
-      lucid-pi-network:
-        ipv4_address: 172.20.0.15
+      lucid-pi-network: {}
     environment:
-      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:-lucid}@172.20.0.11:27017/lucid?authSource=admin
-      - REDIS_URL=redis://172.20.0.12:6379/0
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:-lucid}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URL=redis://lucid-redis:6379/0
       - BLOCKCHAIN_NETWORK=lucid-mainnet
       - BLOCKCHAIN_CONSENSUS=PoOT
       - ANCHORING_ENABLED=true
@@ -219,12 +240,11 @@ services:
       - anchoring_data:/app/anchoring
       - anchoring_logs:/app/logs
     networks:
-      lucid-pi-network:
-        ipv4_address: 172.20.0.16
+      lucid-pi-network: {}
     environment:
-      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:-lucid}@172.20.0.11:27017/lucid?authSource=admin
-      - REDIS_URL=redis://172.20.0.12:6379/0
-      - BLOCKCHAIN_ENGINE_URL=http://172.20.0.15:8084
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:-lucid}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URL=redis://lucid-redis:6379/0
+      - BLOCKCHAIN_ENGINE_URL=http://lucid-blockchain-engine:8084
     depends_on:
       lucid-blockchain-engine:
         condition: service_healthy
@@ -245,12 +265,11 @@ services:
       - block_manager_data:/app/blocks
       - block_manager_logs:/app/logs
     networks:
-      lucid-pi-network:
-        ipv4_address: 172.20.0.17
+      lucid-pi-network: {}
     environment:
-      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:-lucid}@172.20.0.11:27017/lucid?authSource=admin
-      - REDIS_URL=redis://172.20.0.12:6379/0
-      - BLOCKCHAIN_ENGINE_URL=http://172.20.0.15:8084
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:-lucid}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URL=redis://lucid-redis:6379/0
+      - BLOCKCHAIN_ENGINE_URL=http://lucid-blockchain-engine:8084
     depends_on:
       lucid-blockchain-engine:
         condition: service_healthy
@@ -271,17 +290,22 @@ services:
       - data_chain_data:/app/chain
       - data_chain_logs:/app/logs
     networks:
-      lucid-pi-network:
-        ipv4_address: 172.20.0.18
+      lucid-pi-network: {}
     environment:
-      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:-lucid}@172.20.0.11:27017/lucid?authSource=admin
-      - REDIS_URL=redis://172.20.0.12:6379/0
-      - BLOCKCHAIN_ENGINE_URL=http://172.20.0.15:8084
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:-lucid}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URL=redis://lucid-redis:6379/0
+      - BLOCKCHAIN_ENGINE_URL=http://lucid-blockchain-engine:8084
     depends_on:
       lucid-blockchain-engine:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "/usr/bin/python3", "-c", "import os, urllib.request; port = os.getenv('DATA_CHAIN_PORT', '8087'); urllib.request.urlopen(f'http://localhost:{port}/health', timeout=5).read(); exit(0)"]
+      test:
+        [
+          "CMD",
+          "/usr/bin/python3",
+          "-c",
+          "import os, urllib.request; port = os.getenv('DATA_CHAIN_PORT', '8087'); urllib.request.urlopen(f'http://localhost:{port}/health', timeout=5).read(); exit(0)",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -296,23 +320,22 @@ services:
     restart: unless-stopped
     platform: linux/arm64
     ports:
-      - "8089:8089"
+      - "8083:8083"
     volumes:
       - session_pipeline_data:/app/pipeline
       - session_pipeline_logs:/app/logs
     networks:
-      lucid-pi-network:
-        ipv4_address: 172.20.0.33
+      lucid-pi-network: {}
     environment:
-      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:-lucid}@172.20.0.11:27017/lucid?authSource=admin
-      - REDIS_URL=redis://172.20.0.12:6379/0
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:-lucid}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URL=redis://lucid-redis:6379/0
       - SESSION_CHUNK_SIZE=10485760
       - SESSION_COMPRESSION_LEVEL=6
     depends_on:
       lucid-api-gateway:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8089/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8083/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -328,11 +351,10 @@ services:
       - session_recorder_data:/app/recordings
       - session_recorder_logs:/app/logs
     networks:
-      lucid-pi-network:
-        ipv4_address: 172.20.0.34
+      lucid-pi-network: {}
     environment:
-      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:-lucid}@172.20.0.11:27017/lucid?authSource=admin
-      - REDIS_URL=redis://172.20.0.12:6379/0
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:-lucid}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URL=redis://lucid-redis:6379/0
       - SESSION_TIMEOUT=1800
     depends_on:
       lucid-session-pipeline:
@@ -349,21 +371,20 @@ services:
     restart: unless-stopped
     platform: linux/arm64
     ports:
-      - "8091:8091"
+      - "8010:8010"
     volumes:
       - chunk_processor_data:/app/chunks
       - chunk_processor_logs:/app/logs
     networks:
-      lucid-pi-network:
-        ipv4_address: 172.20.0.35
+      lucid-pi-network: {}
     environment:
-      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:-lucid}@172.20.0.11:27017/lucid?authSource=admin
-      - REDIS_URL=redis://172.20.0.12:6379/0
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:-lucid}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URL=redis://lucid-redis:6379/0
     depends_on:
       lucid-session-pipeline:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8091/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8010/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -380,13 +401,12 @@ services:
       - session_storage_data:/app/storage
       - session_storage_logs:/app/logs
     networks:
-      lucid-pi-network:
-        ipv4_address: 172.20.0.36
+      lucid-pi-network: {}
     environment:
-      - MONGODB_URL=mongodb://lucid:${MONGODB_PASSWORD:-lucid}@172.20.0.11:27017/lucid?authSource=admin
-      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:-lucid}@172.20.0.11:27017/lucid?authSource=admin
-      - REDIS_URL=redis://172.20.0.12:6379/0
-      - ELASTICSEARCH_URI=http://172.20.0.13:9200
+      - MONGODB_URL=mongodb://lucid:${MONGODB_PASSWORD:-lucid}@lucid-mongodb:27017/lucid?authSource=admin
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:-lucid}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URL=redis://lucid-redis:6379/0
+      - ELASTICSEARCH_URI=http://lucid-elasticsearch:9200
     depends_on:
       lucid-session-pipeline:
         condition: service_healthy
@@ -408,21 +428,20 @@ services:
     restart: unless-stopped
     platform: linux/arm64
     ports:
-      - "8093:8093"
+      - "8113:8113"
     volumes:
       - session_api_data:/app/sessions
       - session_api_logs:/app/logs
     networks:
-      lucid-pi-network:
-        ipv4_address: 172.20.0.20
+      lucid-pi-network: {}
     environment:
-      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:-lucid}@172.20.0.11:27017/lucid?authSource=admin
-      - REDIS_URL=redis://172.20.0.12:6379/0
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:-lucid}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URL=redis://lucid-redis:6379/0
     depends_on:
       lucid-session-pipeline:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8093/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8113/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -433,23 +452,23 @@ services:
     restart: unless-stopped
     platform: linux/arm64
     ports:
-      - "3389:3389"
+      - "8090:8090"
+      - "8001:8001"
     volumes:
       - rdp_server_data:/app/rdp
       - rdp_server_logs:/app/logs
     networks:
-      lucid-pi-network:
-        ipv4_address: 172.20.0.21
+      lucid-pi-network: {}
     environment:
-      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:-lucid}@172.20.0.11:27017/lucid?authSource=admin
-      - REDIS_URL=redis://172.20.0.12:6379/0
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:-lucid}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URL=redis://lucid-redis:6379/0
     depends_on:
       lucid-mongodb:
         condition: service_healthy
       lucid-redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3389/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8090/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -466,11 +485,10 @@ services:
       - rdp_xrdp_data:/app/xrdp
       - rdp_xrdp_logs:/app/logs
     networks:
-      lucid-pi-network:
-        ipv4_address: 172.20.0.22
+      lucid-pi-network: {}
     environment:
-      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:-lucid}@172.20.0.11:27017/lucid?authSource=admin
-      - REDIS_URL=redis://172.20.0.12:6379/0
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:-lucid}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URL=redis://lucid-redis:6379/0
     depends_on:
       lucid-rdp-server-manager:
         condition: service_healthy
@@ -486,11 +504,10 @@ services:
     restart: unless-stopped
     platform: linux/arm64
     env_file:
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.application
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.rdp-controller
+      - /app/configs/.env.master
+      - /app/configs/.env.application
+      - /app/configs/.env.secrets
+      - /app/configs/.env.rdp-controller
     ports:
       - "${RDP_CONTROLLER_PORT:-8092}:${RDP_CONTROLLER_PORT:-8092}"
     volumes:
@@ -498,8 +515,8 @@ services:
       - /mnt/myssd/Lucid/Lucid/logs/rdp-controller:/app/logs:rw
       - rdp-controller-cache:/tmp/controller
     networks:
-      lucid-pi-network:
-        ipv4_address: 172.20.0.23
+      lucid-pi-network: {}
+      lucid-tor-egress-network: {}
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
@@ -509,8 +526,8 @@ services:
       - RDP_CONTROLLER_URL=http://rdp-controller:${RDP_CONTROLLER_PORT:-8092}
       - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
       - REDIS_URL=${REDIS_URL:?REDIS_URL not set}
-      - RDP_SERVER_MANAGER_URL=${RDP_SERVER_MANAGER_URL:-http://rdp-server-manager:8081}
-      - SESSION_RECORDER_URL=${SESSION_RECORDER_URL:-http://session-recorder:8090}
+      - RDP_SERVER_MANAGER_URL=${RDP_SERVER_MANAGER_URL:-http://lucid-rdp-server-manager:8090}
+      - SESSION_RECORDER_URL=${SESSION_RECORDER_URL:-http://lucid-session-recorder:8090}
       - SESSION_PROCESSOR_URL=${SESSION_PROCESSOR_URL:-http://session-processor:8091}
     user: "65532:65532"
     security_opt:
@@ -522,7 +539,13 @@ services:
     tmpfs:
       - /tmp:noexec,nosuid,size=100m
     healthcheck:
-      test: ["CMD", "/usr/bin/python3.11", "-c", "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', 8092)); s.close(); exit(0 if result == 0 else 1)"]
+      test:
+        [
+          "CMD",
+          "/usr/bin/python3.11",
+          "-c",
+          "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', 8092)); s.close(); exit(0 if result == 0 else 1)",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -534,13 +557,11 @@ services:
       - "lucid.security=hardened"
       - "lucid.cluster=application"
     depends_on:
-      tor-proxy:
-        condition: service_started
       lucid-mongodb:
         condition: service_healthy
       lucid-redis:
         condition: service_healthy
-      rdp-server-manager:
+      lucid-rdp-server-manager:
         condition: service_healthy
 
   lucid-rdp-monitor:
@@ -549,23 +570,22 @@ services:
     restart: unless-stopped
     platform: linux/arm64
     ports:
-      - "8095:8095"
+      - "8201:8201"
     volumes:
       - rdp_monitor_data:/app/monitor
       - rdp_monitor_logs:/app/logs
     networks:
-      lucid-pi-network:
-        ipv4_address: 172.20.0.24
+      lucid-pi-network: {}
     environment:
-      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:-lucid}@172.20.0.11:27017/lucid?authSource=admin
-      - REDIS_URL=redis://172.20.0.12:6379/0
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:-lucid}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URL=redis://lucid-redis:6379/0
       - HEALTH_CHECK_ENABLED=true
       - HEALTH_CHECK_INTERVAL=30
     depends_on:
       lucid-rdp-server-manager:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8095/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8201/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -581,8 +601,7 @@ services:
       - node_management_data:/app/nodes
       - node_management_logs:/app/logs
     networks:
-      lucid-pi-network:
-        ipv4_address: 172.20.0.25
+      lucid-pi-network: {}
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
@@ -590,8 +609,8 @@ services:
       - NODE_MANAGEMENT_HOST=lucid-node-management
       - NODE_MANAGEMENT_PORT=8095
       - NODE_MANAGEMENT_URL=http://lucid-node-management:8095
-      - MONGODB_URL=mongodb://lucid:${MONGODB_PASSWORD:-lucid}@172.20.0.11:27017/lucid?authSource=admin
-      - REDIS_URL=redis://172.20.0.12:6379/0
+      - MONGODB_URL=mongodb://lucid:${MONGODB_PASSWORD:-lucid}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URL=redis://lucid-redis:6379/0
       - MAX_NODES_PER_POOL=100
       - PAYOUT_THRESHOLD_USDT=10.0
       - NODE_ADDRESS=${NODE_ADDRESS}
@@ -617,12 +636,16 @@ services:
       lucid-redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "/usr/bin/python3.11", "-c", "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', 8095)); s.close(); exit(0 if result == 0 else 1)"]
+      test:
+        [
+          "CMD",
+          "/usr/bin/python3.11",
+          "-c",
+          "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', 8095)); s.close(); exit(0 if result == 0 else 1)",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 40s
-      start_period: 40s
 
   # ============================================================================
   # PHASE 5: SUPPORT SERVICES (7 images)
@@ -634,23 +657,22 @@ services:
     restart: unless-stopped
     platform: linux/arm64
     ports:
-      - "8083:8083"
+      - "8120:8120"
     volumes:
       - admin_interface_data:/app/admin
       - admin_interface_logs:/app/logs
     networks:
-      lucid-pi-network:
-        ipv4_address: 172.20.0.26
-      lucid-gui-network:
+      lucid-pi-network: {}
+      lucid-gui-network: {}
     environment:
-      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:-lucid}@172.20.0.11:27017/lucid?authSource=admin
-      - REDIS_URL=redis://172.20.0.12:6379/0
-      - API_GATEWAY_URL=http://172.20.0.10:8080
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:-lucid}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URL=redis://lucid-redis:6379/0
+      - API_GATEWAY_URL=http://lucid-api-gateway:8080
     depends_on:
       lucid-api-gateway:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8083/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8120/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -661,16 +683,16 @@ services:
     restart: unless-stopped
     platform: linux/arm64
     ports:
-      - "8097:8097"
+      - "8091:8091"
     volumes:
       - tron_client_data:/app/tron
       - tron_client_logs:/app/logs
     networks:
-      lucid-tron-isolated:
-        ipv4_address: 172.26.0.27
+      lucid-tron-isolated: {}
+      lucid-pi-network: {}
     environment:
-      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:-lucid}@172.20.0.11:27017/lucid?authSource=admin
-      - REDIS_URL=redis://172.20.0.12:6379/0
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:-lucid}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URL=redis://lucid-redis:6379/0
       - TRON_NETWORK=mainnet
       - TRON_API_KEY=${TRON_API_KEY}
     depends_on:
@@ -679,7 +701,7 @@ services:
       lucid-redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8097/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8091/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -690,22 +712,22 @@ services:
     restart: unless-stopped
     platform: linux/arm64
     ports:
-      - "8098:8098"
+      - "8092:8092"
     volumes:
       - payout_router_data:/app/payouts
       - payout_router_logs:/app/logs
     networks:
-      lucid-tron-isolated:
-        ipv4_address: 172.26.0.28
+      lucid-tron-isolated: {}
+      lucid-pi-network: {}
     environment:
-      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:-lucid}@172.20.0.11:27017/lucid?authSource=admin
-      - REDIS_URL=redis://172.20.0.12:6379/0
-      - TRON_CLIENT_URL=http://172.26.0.27:8097
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:-lucid}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URL=redis://lucid-redis:6379/0
+      - TRON_CLIENT_URL=http://lucid-tron-client:8091
     depends_on:
       lucid-tron-client:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8098/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8092/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -716,22 +738,22 @@ services:
     restart: unless-stopped
     platform: linux/arm64
     ports:
-      - "8099:8099"
+      - "8093:8093"
     volumes:
       - wallet_manager_data:/app/wallets
       - wallet_manager_logs:/app/logs
     networks:
-      lucid-tron-isolated:
-        ipv4_address: 172.26.0.29
+      lucid-tron-isolated: {}
+      lucid-pi-network: {}
     environment:
-      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:-lucid}@172.20.0.11:27017/lucid?authSource=admin
-      - REDIS_URL=redis://172.20.0.12:6379/0
-      - TRON_CLIENT_URL=http://172.26.0.27:8097
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URL=redis://lucid-redis:6379/0
+      - TRON_CLIENT_URL=http://lucid-tron-client:8091
     depends_on:
       lucid-tron-client:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8099/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8093/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -742,25 +764,24 @@ services:
     restart: unless-stopped
     platform: linux/arm64
     ports:
-      - "8100:8100"
+      - "8094:8094"
     volumes:
       - usdt_manager_data:/app/usdt
       - usdt_manager_logs:/app/logs
     networks:
-      lucid-tron-isolated:
-        ipv4_address: 172.26.0.30
+      lucid-tron-isolated: {}
+      lucid-pi-network: {}
     environment:
-      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:-lucid}@172.20.0.11:27017/lucid?authSource=admin
-      - REDIS_URL=redis://172.20.0.12:6379/0
-      - USDT_CONTRACT_ADDRESS=TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URL=redis://lucid-redis:6379/0
+      - USDT_CONTRACT_ADDRESS=${USDT_CONTRACT_ADDRESS}
     depends_on:
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
       lucid-tron-client:
         condition: service_healthy
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8100/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
 
   lucid-trx-staking:
     image: pickme/lucid-trx-staking:latest-arm64
@@ -770,23 +791,15 @@ services:
     ports:
       - "8101:8101"
     volumes:
-      - trx_staking_data:/app/staking
-      - trx_staking_logs:/app/logs
+      - trx_staking_data:/app/payment_systems/tron/staking
+      - trx_staking_logs:/app/payment_systems/tron/logs
     networks:
-      lucid-tron-isolated:
-        ipv4_address: 172.26.0.31
+      lucid-tron-isolated: {}
+      lucid-pi-network: {}
     environment:
-      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:-lucid}@172.20.0.11:27017/lucid?authSource=admin
-      - REDIS_URL=redis://172.20.0.12:6379/0
-      - TRON_CLIENT_URL=http://172.26.0.27:8097
-    depends_on:
-      lucid-tron-client:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8101/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URL=redis://lucid-redis:6379/0
+      - TRON_CLIENT_URL=http://lucid-tron-client:8091
 
   lucid-payment-gateway:
     image: pickme/lucid-payment-system-gateway:latest-arm64
@@ -799,13 +812,13 @@ services:
       - payment_gateway_data:/app/payments
       - payment_gateway_logs:/app/logs
     networks:
-      lucid-tron-isolated:
-        ipv4_address: 172.26.0.32
+      lucid-tron-isolated: {}
+      lucid-pi-network: {}
     environment:
-      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:-lucid}@172.20.0.11:27017/lucid?authSource=admin
-      - MONGODB_URL=mongodb://lucid:${MONGODB_PASSWORD:-lucid}@172.20.0.11:27017/lucid?authSource=admin
-      - REDIS_URL=redis://172.20.0.12:6379/0
-      - TRON_CLIENT_URL=http://172.26.0.27:8097
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:-lucid}@lucid-mongodb:27017/lucid?authSource=admin
+      - MONGODB_URL=mongodb://lucid:${MONGODB_PASSWORD:-lucid}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URL=redis://lucid-redis:6379/0
+      - TRON_CLIENT_URL=http://lucid-tron-client:8091
       - SERVICE_PORT=8097
       - PAYMENT_GATEWAY_PORT=8097
     depends_on:
@@ -838,12 +851,12 @@ services:
       - gui_data:/app/gui
       - gui_logs:/app/logs
     networks:
-      lucid-gui-network:
-        ipv4_address: 172.27.0.10
+      lucid-gui-network: {}
+      lucid-pi-network: {}
     environment:
-      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:-lucid}@172.20.0.11:27017/lucid?authSource=admin
-      - REDIS_URL=redis://172.20.0.12:6379/0
-      - API_GATEWAY_URL=http://172.20.0.10:8080
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:-lucid}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URL=redis://lucid-redis:6379/0
+      - API_GATEWAY_URL=http://lucid-api-gateway:8080
     depends_on:
       lucid-api-gateway:
         condition: service_healthy
@@ -859,16 +872,15 @@ services:
     restart: unless-stopped
     platform: linux/arm64
     ports:
-      - "8103:8103"
+      - "8107:8107"
     volumes:
       - vm_data:/app/vm
       - vm_logs:/app/logs
     networks:
-      lucid-pi-network:
-        ipv4_address: 172.20.0.37
+      lucid-pi-network: {}
     environment:
-      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:-lucid}@172.20.0.11:27017/lucid?authSource=admin
-      - REDIS_URL=redis://172.20.0.12:6379/0
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:-lucid}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URL=redis://lucid-redis:6379/0
       - HARDWARE_ACCELERATION=true
       - V4L2_ENABLED=true
     depends_on:
@@ -877,7 +889,7 @@ services:
       lucid-redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8103/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8107/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -893,10 +905,9 @@ services:
       - lucid_database_data:/app/db
       - lucid_database_logs:/app/logs
     networks:
-      lucid-pi-network:
-        ipv4_address: 172.20.0.38
+      lucid-pi-network: {}
     environment:
-      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:-lucid}@172.20.0.11:27017/lucid?authSource=admin
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:-lucid}@lucid-mongodb:27017/lucid?authSource=admin
       - BACKUP_ENABLED=true
       - BACKUP_SCHEDULE="0 2 * * *"
     depends_on:
@@ -914,24 +925,23 @@ services:
     restart: unless-stopped
     platform: linux/arm64
     ports:
-      - "8104:8104"
+      - "9900:9900"
     volumes:
       - storage_data:/app/storage
       - storage_logs:/app/logs
     networks:
-      lucid-pi-network:
-        ipv4_address: 172.20.0.39
+      lucid-pi-network: {}
     environment:
-      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:-lucid}@172.20.0.11:27017/lucid?authSource=admin
-      - REDIS_URL=redis://172.20.0.12:6379/0
-      - ELASTICSEARCH_URI=http://172.20.0.13:9200
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:-lucid}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URL=redis://lucid-redis:6379/0
+      - ELASTICSEARCH_URI=http://lucid-elasticsearch:9200
     depends_on:
       lucid-mongodb:
         condition: service_healthy
       lucid-redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8104/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:9900/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -940,10 +950,15 @@ services:
 # NETWORKS - Path Plan Configuration
 # ============================================================================
 networks:
-  # Primary Network - All services (path_plan.md)
+  # Primary network: 172.20.0.0/16 (gateway 172.20.0.1). host_ip 172.20.10.1–.76 = service-ip.txt / host-config.yml (off-bridge registry); containers use dynamic bridge IPs + embedded DNS.
   lucid-pi-network:
     external: true
     name: lucid-pi-network
+
+  # Tor egress lane (manual create: infrastructure/containers/network/network.txt → /app/configs/network/network.txt; master-env LUCID_TOR_EGRESS_*)
+  lucid-tor-egress-network:
+    external: true
+    name: lucid-tor-egress-network
 
   # TRON Isolation Network (path_plan.md)
   lucid-tron-isolated:

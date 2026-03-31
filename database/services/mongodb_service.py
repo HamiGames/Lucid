@@ -1,6 +1,7 @@
 """
 File: /app/database/services/mongodb_service.py
 x-lucid-file-path: /app/database/services/mongodb_service.py
+x-lucid-file-directory: /app/database/services
 x-lucid-file-type: python
 
 MongoDB Service for Lucid Database Infrastructure

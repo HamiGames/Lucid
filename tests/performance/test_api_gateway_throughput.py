@@ -1,4 +1,9 @@
 """
+File: /app/tests/performance/test_api_gateway_throughput.py
+x-lucid-file-path: /app/tests/performance/test_api_gateway_throughput.py
+x-lucid-file-directory: /app/tests/performance
+x-lucid-file-type: python
+
 API Gateway Throughput Performance Tests
 
 Tests API Gateway performance benchmarks:

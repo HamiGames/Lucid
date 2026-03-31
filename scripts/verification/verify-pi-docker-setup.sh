@@ -1,11 +1,23 @@
 #!/bin/bash
 ################################################################################
+# File: /app/scripts/verification/verify-pi-docker-setup.sh
+# x-lucid-file-path: /app/scripts/verification/verify-pi-docker-setup.sh
+# x-lucid-file-directory: /app/scripts/verification
+# x-lucid-file-type: shell
 # Lucid Pi Docker Setup Verification Script
 # Location: /mnt/myssd/Lucid/Lucid/scripts/verification/verify-pi-docker-setup.sh
 # Purpose: Verify all Docker images, networks, buildx, and .env scripts on Pi
 ################################################################################
 
 set -e
+
+_lucid_here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+_lucid_scripts="$_lucid_here"
+while [[ "$_lucid_scripts" != "/" && "$(basename "$_lucid_scripts")" != "scripts" ]]; do
+    _lucid_scripts="$(dirname "$_lucid_scripts")"
+done
+# shellcheck source=../lib/lucid-repo-paths.sh
+source "$_lucid_scripts/lib/lucid-repo-paths.sh"
 
 # Color codes for output
 RED='\033[0;31m'
@@ -15,7 +27,7 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Project base directory
-PROJECT_DIR="/mnt/myssd/Lucid/Lucid"
+PROJECT_DIR="$LUCID_REPO_ROOT"
 
 echo -e "${BLUE}========================================${NC}"
 echo -e "${BLUE}Lucid Pi Docker Setup Verification${NC}"

@@ -1,5 +1,9 @@
 #!/bin/bash
 # Database Restore from Backup Script
+# File: /app/scripts/database/restore-from-backup.sh
+# x-lucid-file-path: /app/scripts/database/restore-from-backup.sh
+# x-lucid-file-directory: /app/scripts/database
+# x-lucid-file-type: shell
 # LUCID-STRICT Layer 1 Core Infrastructure
 # Purpose: Restore MongoDB database from backup for disaster recovery
 # Compatibility: Distroless, API compliant

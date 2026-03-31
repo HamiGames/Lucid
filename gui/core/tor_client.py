@@ -1,8 +1,10 @@
 # Path: gui/core/tor_client.py
 """
-file: /app/gui/core/tor_client.py
+File: /app/gui/core/tor_client.py
 x-lucid-file-path: /app/gui/core/tor_client.py
+x-lucid-file-directory: /app/gui/core
 x-lucid-file-type: python
+
 Tor integration and SOCKS5 proxy management for Lucid RDP GUI.
 Provides secure Tor connectivity with health checks and process management.
 """

@@ -1,4 +1,9 @@
 """
+File: /app/tests/unit/blockchain/test_session_anchoring.py
+x-lucid-file-path: /app/tests/unit/blockchain/test_session_anchoring.py
+x-lucid-file-directory: /app/tests/unit/blockchain
+x-lucid-file-type: python
+
 Unit tests for session anchoring to On-System Chain.
 
 Tests LucidAnchors contract integration, event-based anchoring, and status monitoring

@@ -2,6 +2,7 @@
 """
 File: /app/sessions/pipeline/integration/auth_service_client.py
 x-lucid-file-path: /app/sessions/pipeline/integration/auth_service_client.py
+x-lucid-file-directory: /app/sessions/pipeline/integration
 x-lucid-file-type: python
 
 Auth Service Integration Client

@@ -119,21 +119,28 @@ LABEL maintainer="Lucid Development Team" \
       org.opencontainers.image.version="${VERSION}" \
       org.opencontainers.image.revision="${VCS_REF}" \
       org.opencontainers.image.created="${BUILD_DATE}" \
+      com.lucid.plane="ops" \
       com.lucid.service="service_mesh-controller" \
+      com.lucid.layer="1" \
+      org.lucid.layer="1" \
       com.lucid.platform="arm64" \
-      com.lucid.cluster="core" \
+      com.lucid.architecture="linux/arm64" \
       com.lucid.security="distroless" \
-      com.lucid.expose="8500,8501,8502,8600,8088"
+      com.lucid.vulnerabilities="zero" \
+      com.lucid.expose="8500,8501,8502,8600,8088" \
+      com.lucid.cluster="core" \
+      com.lucid.tor.compatible="true" \
+      com.lucid.env.config=".env.foundation,.env.secrets"
 
 # Environment variables (per dockerfile-design.md)
-ENV PATH=/usr/local/bin:/usr/bin:/bin \
-    PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONPATH=/app/service_mesh:/usr/local/lib/python3.11/site-packages \
-    PYTHONIOENCODING=utf-8 \
-    LANG=C.UTF-8 \
-    LC_ALL=C.UTF-8 \
-    TZ=UTC
+ENV PATH="/usr/local/bin:/usr/bin:/bin" \
+    PYTHONUNBUFFERED="1" \
+    PYTHONDONTWRITEBYTECODE="1" \
+    PYTHONPATH="/app/service_mesh:/usr/local/lib/python3.11/site-packages" \
+    PYTHONIOENCODING="utf-8" \
+    LANG="C.UTF-8" \
+    LC_ALL="C.UTF-8" \
+    TZ="UTC"
 
 # Service Configuration (from .env.* files)
 ENV SERVICE_NAME=service_mesh-controller \

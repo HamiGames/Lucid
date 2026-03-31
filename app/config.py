@@ -1,6 +1,7 @@
 """
 File: /app/app/config.py
 x-lucid-file-path: /app/app/config.py
+x-lucid-file-directory: /app/app
 x-lucid-file-type: python
 """
 

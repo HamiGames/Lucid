@@ -2,6 +2,7 @@
 """
 File: /app/storage/__init__.py
 x-lucid-file-path: /app/storage/__init__.py
+x-lucid-file-directory: /app/storage
 x-lucid-file-type: python
 
 Lucid storage package: storage plane (capacity / layout) plus optional database helpers.

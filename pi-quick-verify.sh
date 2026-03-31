@@ -1,5 +1,9 @@
 #!/bin/bash
 ################################################################################
+# File: /app/pi-quick-verify.sh
+# x-lucid-file-path: /app/pi-quick-verify.sh
+# x-lucid-file-directory: /app
+# x-lucid-file-type: shell
 # Quick Pi Verification - One Command Execution
 # Copy this entire script to Pi and run: bash pi-quick-verify.sh
 ################################################################################
@@ -9,8 +13,19 @@ echo "Lucid Pi Quick Verification"
 echo "============================================"
 echo ""
 
-# Ensure we're in the correct directory
-cd /mnt/myssd/Lucid/Lucid || { echo "ERROR: Cannot access project directory"; exit 1; }
+# Repo root: prefer x-lucid /app layout, then common Pi SSD checkout
+REPO_ROOT=""
+for d in /app "/mnt/myssd/Lucid/Lucid"; do
+  if [[ -f "$d/master-env-config.txt" ]] || [[ -f "$d/infrastructure/containers/host-config.yml" ]]; then
+    REPO_ROOT="$d"
+    break
+  fi
+done
+if [[ -z "$REPO_ROOT" ]]; then
+  echo "ERROR: Lucid repo not found under /app or /mnt/myssd/Lucid/Lucid (need master-env-config.txt or host-config.yml)"
+  exit 1
+fi
+cd "$REPO_ROOT" || { echo "ERROR: Cannot cd to $REPO_ROOT"; exit 1; }
 echo "Working directory: $(pwd)"
 echo ""
 

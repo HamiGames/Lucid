@@ -1,7 +1,7 @@
 """
 File: /app/service_mesh/communication/grpc_client.py
 x-lucid-file-path: /app/service_mesh/communication/grpc_client.py
-x-lucid-file-directory: /app/service_mesh
+x-lucid-file-directory: /app/service_mesh/communication
 x-lucid-file-type: python
 
 Lucid Service Mesh - gRPC Client

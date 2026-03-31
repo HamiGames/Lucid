@@ -1,3 +1,8 @@
+# File: /app/service_configs/kubernetes/00-namespace.yaml
+# x-lucid-file-path: /app/service_configs/kubernetes/00-namespace.yaml
+# x-lucid-file-directory: /app/service_configs/kubernetes
+# x-lucid-file-type: YAML
+
 apiVersion: v1
 kind: Namespace
 metadata:

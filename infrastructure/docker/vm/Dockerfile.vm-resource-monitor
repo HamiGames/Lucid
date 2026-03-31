@@ -1,17 +1,24 @@
 # LUCID RDP VM Resource Monitor - VM Performance Monitoring
 # SPEC-4 Compliant: Resource tracking, performance metrics, alerting
 #
-# Layout registry: infrastructure/containers/host-config.yml → canonical runtime /app/service_configs/host-config.yml
+# Layout registry: infrastructure/containers/host-config.yml → canonical runtime /app/configs/host-config.yml
 # Service config root: infrastructure/containers/services/container-runtime-layout.yml (lucid_services_config_root: /app/service_configs)
 # Path equivalences: x-files-listing.txt (repository root)
 
-FROM pickme/lucid:devcontainer-dind as base
+FROM --platform=$TARGETPLATFORM python:3.11-slim-bookworm AS builder
 
-LABEL org.lucid.plane="ops"
-LABEL org.lucid.service="vm-resource-monitor"
-LABEL org.lucid.stage="2"
+ARG BUILDPLATFORM
+ARG TARGETPLATFORM
+ARG PYTHON_VERSION
 
-WORKDIR /workspaces/Lucid
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_PREFER_BINARY=1 \
+    DEBIAN_FRONTEND=noninteractive
+
+WORKDIR /build
 
 # Install monitoring tools
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
@@ -29,25 +36,244 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
       python3-wheel \
       python3-dev \
       curl \
+      build-essential \
+      gcc \
+      g++ \
+      libffi-dev \
+      libssl-dev \
+      pkg-config \
+      openssl \
       ca-certificates \
+      tini \
+      python3-wheel \
+      python3-dev \
+      python3-pip \
+      python3-setuptools \
+      rustc \
+      cargo \
+      bash \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
+
+# LUCID_PIP_WHEELS_BEGIN
+# requirements: /build/vm/requirements.vm.txt
 RUN --mount=type=cache,target=/root/.cache/pip \
     mkdir -p /build/wheels && \
-    pip install --upgrade pip setuptools wheel && \
-    pip --version && \
+    printf "LUCID_VM_RESOURCE_MONITOR_WHEELS_$(date +%s)" > /build/wheels/.keep && \
+    touch /build/wheels/.keep && \
+    pip install --upgrade pip setuptools wheel
+
+COPY vm/requirements.vm.txt /build/vm/requirements.vm.txt
+RUN --mount=type=cache,target=/root/.cache/pip \
+    mkdir -p /build/wheels && \
+    echo "building wheels from source" && \
+    pip wheel --no-cache-dir --wheel-dir /build/wheels -r /build/vm/requirements.vm.txt && \
+    echo "wheel build complete" && \
+    echo "total wheels built: $(ls -1 /build/wheels/ | wc -l)"
+# LUCID_PIP_WHEELS_END
+# LUCID_X_FILES_SKELETON_BEGIN
+# Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
+RUN set -eux; \
+    mkdir -p '.' './configs' './gui_api_bridge' './gui_hardware_manager' './scripts' './service_configs' './service_mesh' './vm' './configs/.devcontainer' './configs/.ssh' './configs/admin' './configs/auth' './configs/base' './configs/blockchain' './configs/compose' './configs/container' './configs/database' './configs/docker' './configs/electron_gui' './configs/environment' './configs/gui' './configs/integration' './configs/logging' './configs/network' './configs/node' './configs/overlord' './configs/payment_systems' './configs/pi' './configs/rdp' './configs/secrets' './configs/security' './configs/server' './configs/tor' './configs/user' './gui_api_bridge/config' './gui_api_bridge/gui_api_bridge' './gui_api_bridge/scripts' './gui_hardware_manager/gui_hardware_manager' './scripts/build' './scripts/compliance' './scripts/config' './scripts/contracts' './scripts/database' './scripts/deployment' './scripts/devcontainer' './scripts/docs' './scripts/foundation' './scripts/gui' './scripts/hardware' './scripts/integration' './scripts/lib' './scripts/load' './scripts/logging' './scripts/maintenance' './scripts/migration' './scripts/monitoring' './scripts/network' './scripts/registry' './scripts/secrets' './scripts/security' './scripts/services' './scripts/testing' './scripts/validation' './scripts/verification' './service_configs/blockchain' './service_configs/distroless' './service_configs/kubernetes' './service_configs/logging' './service_configs/multi-stage' './service_configs/node' './service_configs/payment_services' './service_configs/rdp' './service_configs/security' './service_configs/service_mesh' './service_configs/sessions' './service_configs/storage' './service_configs/tor' './service_configs/x_lucid_cluster_calibration' './service_mesh/communication' './service_mesh/config' './service_mesh/controller' './service_mesh/discovery' './service_mesh/docs' './service_mesh/security' './service_mesh/sidecar' './configs/admin/admin-system-gateway' './configs/admin/config' './configs/blockchain/chain-to-pay' './configs/blockchain/config' './configs/container/admin' './configs/container/auth' './configs/container/base' './configs/container/blockchain' './configs/container/database' './configs/container/electron_gui' './configs/container/gui' './configs/container/node' './configs/container/payment_systems' './configs/container/rdp' './configs/container/server' './configs/container/sessions' './configs/container/storage' './configs/container/tor' './configs/database/elasticsearch' './configs/database/redis' './configs/docker/compose' './configs/docker/distroless' './configs/docker/docs' './configs/docker/multi-stage' './configs/docker/on-system-chain' './configs/environment/development' './configs/environment/pi' './configs/environment/production' './configs/environment/staging' './configs/node/config' './configs/node/node-system-gateway' './configs/overlord/runtime' './configs/pi/ssh' './gui_api_bridge/gui_api_bridge/config' './gui_api_bridge/gui_api_bridge/integration' './gui_api_bridge/gui_api_bridge/middleware' './gui_api_bridge/gui_api_bridge/models' './gui_api_bridge/gui_api_bridge/routers' './gui_api_bridge/gui_api_bridge/services' './gui_api_bridge/gui_api_bridge/utils' './gui_api_bridge/gui_api_bridge/{config,middleware,routers,services,integration,models,utils}' './gui_hardware_manager/gui_hardware_manager/integration' './gui_hardware_manager/gui_hardware_manager/middleware' './gui_hardware_manager/gui_hardware_manager/models' './gui_hardware_manager/gui_hardware_manager/routers' './gui_hardware_manager/gui_hardware_manager/services' './gui_hardware_manager/gui_hardware_manager/utils' './scripts/build/components' './scripts/build/core' './scripts/build/distroless' './scripts/build/utils' './scripts/compliance/distroless' './scripts/compliance/general' './scripts/deployment/devcontainer' './scripts/deployment/distroless' './scripts/deployment/pi' './scripts/deployment/utils' './scripts/maintenance/cleanup' './scripts/maintenance/optimization' './scripts/maintenance/recovery' './scripts/network/diagnostics' './scripts/network/security' './scripts/network/setup' './scripts/testing/integration' './scripts/testing/unit' './scripts/testing/utils' './service_configs/kubernetes/01_configmaps' './service_configs/kubernetes/02-secrets' './service_configs/kubernetes/03-databases' './service_configs/kubernetes/04-auth' './service_configs/kubernetes/04-network' './service_configs/kubernetes/05-core' './service_configs/kubernetes/06-application' './service_configs/kubernetes/07-support' './service_configs/kubernetes/08-ingress' './service_configs/kubernetes/patches' './service_mesh/config/policies' './service_mesh/config/services' './service_mesh/sidecar/envoy' './service_mesh/sidecar/proxy' './configs/docker/compose/mongodb' './configs/docker/compose/nats' './configs/docker/compose/nginx' './configs/docker/compose/redis' './configs/docker/compose/vault' './configs/docker/distroless/base' './service_mesh/sidecar/envoy/config'; \
+    for d in \
+      '.' \
+      './configs' \
+      './gui_api_bridge' \
+      './gui_hardware_manager' \
+      './scripts' \
+      './service_configs' \
+      './service_mesh' \
+      './vm' \
+      './configs/.devcontainer' \
+      './configs/.ssh' \
+      './configs/admin' \
+      './configs/auth' \
+      './configs/base' \
+      './configs/blockchain' \
+      './configs/compose' \
+      './configs/container' \
+      './configs/database' \
+      './configs/docker' \
+      './configs/electron_gui' \
+      './configs/environment' \
+      './configs/gui' \
+      './configs/integration' \
+      './configs/logging' \
+      './configs/network' \
+      './configs/node' \
+      './configs/overlord' \
+      './configs/payment_systems' \
+      './configs/pi' \
+      './configs/rdp' \
+      './configs/secrets' \
+      './configs/security' \
+      './configs/server' \
+      './configs/tor' \
+      './configs/user' \
+      './gui_api_bridge/config' \
+      './gui_api_bridge/gui_api_bridge' \
+      './gui_api_bridge/scripts' \
+      './gui_hardware_manager/gui_hardware_manager' \
+      './scripts/build' \
+      './scripts/compliance' \
+      './scripts/config' \
+      './scripts/contracts' \
+      './scripts/database' \
+      './scripts/deployment' \
+      './scripts/devcontainer' \
+      './scripts/docs' \
+      './scripts/foundation' \
+      './scripts/gui' \
+      './scripts/hardware' \
+      './scripts/integration' \
+      './scripts/lib' \
+      './scripts/load' \
+      './scripts/logging' \
+      './scripts/maintenance' \
+      './scripts/migration' \
+      './scripts/monitoring' \
+      './scripts/network' \
+      './scripts/registry' \
+      './scripts/secrets' \
+      './scripts/security' \
+      './scripts/services' \
+      './scripts/testing' \
+      './scripts/validation' \
+      './scripts/verification' \
+      './service_configs/blockchain' \
+      './service_configs/distroless' \
+      './service_configs/kubernetes' \
+      './service_configs/logging' \
+      './service_configs/multi-stage' \
+      './service_configs/node' \
+      './service_configs/payment_services' \
+      './service_configs/rdp' \
+      './service_configs/security' \
+      './service_configs/service_mesh' \
+      './service_configs/sessions' \
+      './service_configs/storage' \
+      './service_configs/tor' \
+      './service_configs/x_lucid_cluster_calibration' \
+      './service_mesh/communication' \
+      './service_mesh/config' \
+      './service_mesh/controller' \
+      './service_mesh/discovery' \
+      './service_mesh/docs' \
+      './service_mesh/security' \
+      './service_mesh/sidecar' \
+      './configs/admin/admin-system-gateway' \
+      './configs/admin/config' \
+      './configs/blockchain/chain-to-pay' \
+      './configs/blockchain/config' \
+      './configs/container/admin' \
+      './configs/container/auth' \
+      './configs/container/base' \
+      './configs/container/blockchain' \
+      './configs/container/database' \
+      './configs/container/electron_gui' \
+      './configs/container/gui' \
+      './configs/container/node' \
+      './configs/container/payment_systems' \
+      './configs/container/rdp' \
+      './configs/container/server' \
+      './configs/container/sessions' \
+      './configs/container/storage' \
+      './configs/container/tor' \
+      './configs/database/elasticsearch' \
+      './configs/database/redis' \
+      './configs/docker/compose' \
+      './configs/docker/distroless' \
+      './configs/docker/docs' \
+      './configs/docker/multi-stage' \
+      './configs/docker/on-system-chain' \
+      './configs/environment/development' \
+      './configs/environment/pi' \
+      './configs/environment/production' \
+      './configs/environment/staging' \
+      './configs/node/config' \
+      './configs/node/node-system-gateway' \
+      './configs/overlord/runtime' \
+      './configs/pi/ssh' \
+      './gui_api_bridge/gui_api_bridge/config' \
+      './gui_api_bridge/gui_api_bridge/integration' \
+      './gui_api_bridge/gui_api_bridge/middleware' \
+      './gui_api_bridge/gui_api_bridge/models' \
+      './gui_api_bridge/gui_api_bridge/routers' \
+      './gui_api_bridge/gui_api_bridge/services' \
+      './gui_api_bridge/gui_api_bridge/utils' \
+      './gui_api_bridge/gui_api_bridge/{config,middleware,routers,services,integration,models,utils}' \
+      './gui_hardware_manager/gui_hardware_manager/integration' \
+      './gui_hardware_manager/gui_hardware_manager/middleware' \
+      './gui_hardware_manager/gui_hardware_manager/models' \
+      './gui_hardware_manager/gui_hardware_manager/routers' \
+      './gui_hardware_manager/gui_hardware_manager/services' \
+      './gui_hardware_manager/gui_hardware_manager/utils' \
+      './scripts/build/components' \
+      './scripts/build/core' \
+      './scripts/build/distroless' \
+      './scripts/build/utils' \
+      './scripts/compliance/distroless' \
+      './scripts/compliance/general' \
+      './scripts/deployment/devcontainer' \
+      './scripts/deployment/distroless' \
+      './scripts/deployment/pi' \
+      './scripts/deployment/utils' \
+      './scripts/maintenance/cleanup' \
+      './scripts/maintenance/optimization' \
+      './scripts/maintenance/recovery' \
+      './scripts/network/diagnostics' \
+      './scripts/network/security' \
+      './scripts/network/setup' \
+      './scripts/testing/integration' \
+      './scripts/testing/unit' \
+      './scripts/testing/utils' \
+      './service_configs/kubernetes/01_configmaps' \
+      './service_configs/kubernetes/02-secrets' \
+      './service_configs/kubernetes/03-databases' \
+      './service_configs/kubernetes/04-auth' \
+      './service_configs/kubernetes/04-network' \
+      './service_configs/kubernetes/05-core' \
+      './service_configs/kubernetes/06-application' \
+      './service_configs/kubernetes/07-support' \
+      './service_configs/kubernetes/08-ingress' \
+      './service_configs/kubernetes/patches' \
+      './service_mesh/config/policies' \
+      './service_mesh/config/services' \
+      './service_mesh/sidecar/envoy' \
+      './service_mesh/sidecar/proxy' \
+      './configs/docker/compose/mongodb' \
+      './configs/docker/compose/nats' \
+      './configs/docker/compose/nginx' \
+      './configs/docker/compose/redis' \
+      './configs/docker/compose/vault' \
+      './configs/docker/distroless/base' \
+      './service_mesh/sidecar/envoy/config' \
+    ; do \
+      printf 'LUCID_X_FILES_SKELETON_%s' "$(date +%s)" > "$d/.keep"; \
+      touch "$d/.keep"; \
+    done
+# LUCID_X_FILES_SKELETON_END
+
+RUN --mount=type=cache,target=/root/.cache/pip \
+    mkdir -p /build/wheels && \
+    pip install --no-cache-dir --no-index --find-links /build/wheels --upgrade pip setuptools wheel && \
+    pip install -r requirements.vm.txt && \
     python3 -m wheel version
+COPY scripts/ ./scripts/
+COPY infrastructure/containers/services/ ./service_configs/
+COPY infrastructure/containers/host-config.yml ./service_configs/host-config.yml
+COPY infrastructure/containers/services/x_lucid_cluster_calibration/vm-cluster-host-alignment.yml ./service_configs/x_lucid_cluster_calibration/vm-cluster-host-alignment.yml
+COPY vm/ ./vm/
+COPY gui_hardware_manager/ ./gui_hardware_manager/
+COPY infrastructure/service_mesh/ ./service_mesh/
+COPY configs/ ./configs/
+RUN rm -rf ./configs/environment
+COPY configs/environment/.env.secrets ./configs/.env.secrets
+COPY master-env-config.txt ./configs/.env.master
+COPY gui_api_bridge/ ./gui_api_bridge/
 
-COPY vm/__init__.py /workspaces/Lucid/vm/
 
-# Install Python dependencies
-RUN pip install \
-    psutil==5.9.6 \
-    prometheus-client==0.19.0 \
-    influxdb-client==1.38.0 \
-    matplotlib==3.8.2 \
-    pandas==2.1.4
 
 # Create monitoring configuration
 COPY <<EOF /etc/lucid/vm-monitor.conf
@@ -66,7 +292,7 @@ enable_network_metrics = true
 enable_vm_specific_metrics = true
 
 [storage]
-influxdb_url = http://influxdb:8086
+influxdb_url = http://influxdb:8186
 influxdb_token = lucid-vm-monitor-token
 influxdb_org = lucid
 influxdb_bucket = vm-metrics
@@ -77,12 +303,84 @@ enable_webhook_alerts = true
 webhook_url = http://alertmanager:9093/api/v1/alerts
 EOF
 
+FROM gcr.io/distroless/python3-debian12:latest
+
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION=1.0.0
+
+LABEL maintainer="Lucid Development Team" \
+      org.opencontainers.image.title="Lucid VM Resource Monitor" \
+      org.opencontainers.image.description="Distroless VM Resource Monitor for Lucid project" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.created="${BUILD_DATE}" \
+      com.lucid.plane="ops" \
+      com.lucid.service="vm-resource-monitor" \
+      com.lucid.layer="3" \
+      org.lucid.expose="8187" \
+      com.lucid.platform="arm64" \
+      com.lucid.architecture="linux/arm64" \
+      com.lucid.security="distroless" \
+      com.lucid.vulnerabilities="zero" \
+      com.lucid.tor.compatible="true" \
+      com.lucid.env.config=".env.master,.env.secrets" \
+      com.lucid.service_id="com.lucid.dockerfile.v1.3d45c0194733900b.infrastructure.docker.vm.Dockerfile.vm-resource-monitor" \
+      onion.lucid.service_id="lucid-3d45c0194733900b-infrastructure-docker-vm" \
+      org.lucid.service_id="org.lucid.dockerfile.v1.3d45c0194733900b:infrastructure/docker/vm/Dockerfile.vm-resource-monitor" \
+
+
+ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
+    PYTHONUNBUFFERED="1" \
+    PYTHONDONTWRITEBYTECODE="1" \
+    PYTHONPATH="/app:/app/usr/local/lib/python3.11/site-packages" \
+    PYTHONIOENCODING="utf-8" \
+    LANG="C.UTF-8" \
+    LC_ALL="C.UTF-8" \
+    VM_RESOURCE_MONITOR_HOST="vm-resource-monitor" \
+    VM_RESOURCE_MONITOR_PORT="8187"
+# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
+# Generated: apt + RUN scaffold (mkdir/printf/touch/chown) -> FHS (not ./ or /build/; lib_search_and_inject.py).
+COPY --from=builder --chown=65532:65532 /usr/lib/*/libcurl.so* /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /usr/lib/*/libffi.so* /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /usr/lib/*/libssl.so* /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /usr/lib/*/ossl-modules/ /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /bin/ /app/bin/
+COPY --from=builder --chown=65532:65532 /etc/ssl/ /app/etc/ssl/
+COPY --from=builder --chown=65532:65532 /usr/bin/ /app/usr/bin/
+COPY --from=builder --chown=65532:65532 /usr/lib/python3.11/ /app/usr/lib/python3.11/
+COPY --from=builder --chown=65532:65532 /usr/lib/python3/dist-packages/ /app/usr/lib/python3/dist-packages/
+# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_END
+
+# LUCID_RUNTIME_COPY_FROM_BUILD_BEGIN
+# Generated: same directory set as LUCID_X_FILES_SKELETON (./ under WORKDIR /build).
+COPY --from=builder --chown=65532:65532 /build/configs/ /app/configs/
+COPY --from=builder --chown=65532:65532 /build/gui_api_bridge/ /app/gui_api_bridge/
+COPY --from=builder --chown=65532:65532 /build/gui_hardware_manager/ /app/gui_hardware_manager/
+COPY --from=builder --chown=65532:65532 /build/scripts/ /app/scripts/
+COPY --from=builder --chown=65532:65532 /build/service_configs/ /app/service_configs/
+COPY --from=builder --chown=65532:65532 /build/service_mesh/ /app/service_mesh/
+COPY --from=builder --chown=65532:65532 /build/vm/ /app/vm/
+# LUCID_RUNTIME_COPY_FROM_BUILD_END
+
+
+WORKDIR /app
+
+COPY --from=builder /build/wheels /app/wheels
+COPY --from=builder /build/app /app/app
+COPY --from=builder /build/service_configs /app/service_configs
+COPY --from=builder /build/configs /app/configs
+COPY --from=builder /build/vm /app/vm
+COPY --from=builder /build/gui_hardware_manager /app/gui_hardware_manager
+COPY --from=builder /build/service_mesh /app/service_mesh
+COPY --from=builder /build/gui_api_bridge /app/gui_api_bridge
+
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD curl -f http://localhost:8087/health || exit 1
+    CMD ["/app/usr/bin/python3.11", "-c", "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('vm-resource-monitor', 8187)); s.close(); exit(0 if result == 0 else 1)"]
 
 # Expose monitoring API
-EXPOSE 8087
+EXPOSE 8187
 
 # Entry point
-CMD ["/usr/bin/python3", "-m", "vm.resource_monitor"]
+CMD ["/app/usr/bin/python3.11", "-m", "vm.resource_monitor"]

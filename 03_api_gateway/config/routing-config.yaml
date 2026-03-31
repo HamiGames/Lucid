@@ -1,3 +1,8 @@
+# File: /app/03_api_gateway/config/routing-config.yaml
+# x-lucid-file-path: /app/03_api_gateway/config/routing-config.yaml
+# x-lucid-file-directory: /app/03_api_gateway/config
+# x-lucid-file-type: YAML
+
 # Lucid API Gateway - Routing Configuration
 # Optional YAML configuration for API Gateway routing rules
 # File: 03-api-gateway/config/routing-config.yaml

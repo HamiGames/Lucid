@@ -1,3 +1,8 @@
+# File: /app/auth/docker-compose.yml
+# x-lucid-file-path: /app/auth/docker-compose.yml
+# x-lucid-file-directory: /app/auth
+# x-lucid-file-type: YAML
+
 # Lucid Authentication Service – Standalone Compose aligned with foundation/core stack
 
 services:

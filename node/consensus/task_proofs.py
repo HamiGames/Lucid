@@ -6,6 +6,7 @@
 """
 File: /app/node/consensus/task_proofs.py
 x-lucid-file-path: /app/node/consensus/task_proofs.py
+x-lucid-file-directory: /app/node/consensus
 x-lucid-file-type: python
 """
 

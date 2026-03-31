@@ -3,6 +3,7 @@
 """
 File: /app/03_api_gateway/api/__init__.py
 x-lucid-file-path: /app/03_api_gateway/api/__init__.py
+x-lucid-file-directory: /app/03_api_gateway/api
 x-lucid-file-type: python
 
 Lucid API Gateway - API Package

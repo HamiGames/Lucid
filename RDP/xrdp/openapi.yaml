@@ -1,3 +1,8 @@
+# File: /app/RDP/xrdp/openapi.yaml
+# x-lucid-file-path: /app/RDP/xrdp/openapi.yaml
+# x-lucid-file-directory: /app/RDP/xrdp
+# x-lucid-file-type: YAML
+
 openapi: 3.0.3
 info:
   title: Lucid XRDP API

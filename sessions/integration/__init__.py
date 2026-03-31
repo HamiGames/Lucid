@@ -1,6 +1,7 @@
 """
 File: /app/sessions/integration/__init__.py
 x-lucid-file-path: /app/sessions/integration/__init__.py
+x-lucid-file-directory: /app/sessions/integration
 x-lucid-file-type: python
 
 LUCID Session Integration Components

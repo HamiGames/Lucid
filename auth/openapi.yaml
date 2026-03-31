@@ -1,3 +1,8 @@
+# File: /app/auth/openapi.yaml
+# x-lucid-file-path: /app/auth/openapi.yaml
+# x-lucid-file-directory: /app/auth
+# x-lucid-file-type: YAML
+
 # Lucid Authentication Service - OpenAPI Specification
 # Optional YAML configuration for API documentation
 # File: auth/openapi.yaml

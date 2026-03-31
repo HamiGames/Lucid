@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 # Path: 02_network_security/tor/scripts/check_tor_bootstrap.sh
+# File: /app/02_network_security/tor/scripts/check_tor_bootstrap.sh
+# x-lucid-file-path: /app/02_network_security/tor/scripts/check_tor_bootstrap.sh
+# x-lucid-file-directory: /app/02_network_security/tor/scripts
+# x-lucid-file-type: shell
 # Verify Tor bootstrap status (Dockerfile.tor-proxy-02 distroless: busybox + nc + xxd under /app).
 #
 # Terminal DIR when exec'd in container: WORKDIR /app (USER debian-tor).

@@ -5,6 +5,7 @@
 """
 File: /app/node/models/__init__.py
 x-lucid-file-path: /app/node/models/__init__.py
+x-lucid-file-directory: /app/node/models
 x-lucid-file-type: python
 
 Lucid Node Management Data Models Package

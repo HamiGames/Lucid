@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 # Path: 02_network_security/tor/scripts/start_tor.sh
+# File: /app/02_network_security/tor/scripts/start_tor.sh
+# x-lucid-file-path: /app/02_network_security/tor/scripts/start_tor.sh
+# x-lucid-file-directory: /app/02_network_security/tor/scripts
+# x-lucid-file-type: shell
 # Ensure Tor is running — intended for lucid tor-proxy container (Dockerfile.tor-proxy-02).
 #
 # Terminal DIR when exec'd in container: WORKDIR /app (USER debian-tor).

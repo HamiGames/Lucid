@@ -2,6 +2,7 @@
 """
 File: /app/sessions/recorder/integration/session_storage_client.py
 x-lucid-file-path: /app/sessions/recorder/integration/session_storage_client.py
+x-lucid-file-directory: /app/sessions/recorder/integration
 x-lucid-file-type: python
 
 Session Storage Integration Client

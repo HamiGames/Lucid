@@ -2,6 +2,7 @@
 """
 File: /app/user_content/auth/__init__.py
 x-lucid-file-path: /app/user_content/auth/__init__.py
+x-lucid-file-directory: /app/user_content/auth
 x-lucid-file-type: python
 
 Authentication components for user content.

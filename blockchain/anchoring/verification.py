@@ -1,6 +1,7 @@
 """
 File: /app/blockchain/anchoring/verification.py
 x-lucid-file-path: /app/blockchain/anchoring/verification.py
+x-lucid-file-directory: /app/blockchain/anchoring
 x-lucid-file-type: python
 
 Anchoring Verification Module

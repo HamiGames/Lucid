@@ -1,8 +1,10 @@
 # Path: gui/user/proofs_viewer.py
 """
-file: /app/gui/user/proofs_viewer.py
+File: /app/gui/user/proofs_viewer.py
 x-lucid-file-path: /app/gui/user/proofs_viewer.py
+x-lucid-file-directory: /app/gui/user
 x-lucid-file-type: python
+
 Session proofs display and export for Lucid RDP GUI.
 Provides comprehensive proof viewing, validation, and export capabilities for RDP session recordings.
 """

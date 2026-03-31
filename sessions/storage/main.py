@@ -2,6 +2,7 @@
 """
 File: /app/sessions/storage/main.py
 x-lucid-file-path: /app/sessions/storage/main.py
+x-lucid-file-directory: /app/sessions/storage
 x-lucid-file-type: python
 
 LUCID Session Storage Service - Main Entry Point

@@ -4,6 +4,7 @@
 """
 File: /app/03_api_gateway/api/tests/integration/test_session_lifecycle.py
 x-lucid-file-path: /app/03_api_gateway/api/tests/integration/test_session_lifecycle.py
+x-lucid-file-directory: /app/03_api_gateway/api/tests/integration
 x-lucid-file-type: python
 """
 

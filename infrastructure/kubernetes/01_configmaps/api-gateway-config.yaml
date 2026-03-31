@@ -1,3 +1,8 @@
+# File: /app/service_configs/kubernetes/01_configmaps/api-gateway-config.yaml
+# x-lucid-file-path: /app/service_configs/kubernetes/01_configmaps/api-gateway-config.yaml
+# x-lucid-file-directory: /app/service_configs/kubernetes/01_configmaps
+# x-lucid-file-type: YAML
+
 apiVersion: v1
 kind: ConfigMap
 metadata:

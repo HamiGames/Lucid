@@ -40,11 +40,19 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
         libssl-dev \
         pkg-config \
         curl \
-        git \
+        tini \
+        python3.11-wheel \
+        python3.11-dev \
+        python3.11-pip \
+        python3.11-setuptools \
+        bash \
+        xxd \
+        openssl \
+        dnsutils \
+        rustc \
+        cargo \
         ca-certificates || (echo "ERROR: apt-get install failed" && exit 1)) && \
     rm -rf /var/lib/apt/lists/* && \
-    test -f /usr/bin/gcc || (echo "ERROR: gcc not installed" && exit 1) && \
-    test -f /usr/bin/g++ || (echo "ERROR: g++ not installed" && exit 1)
 
 # Set working directory
 WORKDIR /build
@@ -165,31 +173,30 @@ print("✅ critical packages installed and importable: all directories exist and
 
 # Copy service mesh controller source code to builder stage
 # CRITICAL: Use full path from build context root (build context is .)
-COPY infrastructure/service_mesh/ ./infrastructure/service_mesh/
-COPY infrastructure/service_mesh/entrypoint.py ./entrypoint.py
-COPY infrastructure/service_mesh/controller/ ./controller/
-COPY infrastructure/service_mesh/sidecar/ ./sidecar/
-COPY infrastructure/service_mesh/discovery/ ./discovery/
-COPY infrastructure/service_mesh/communication/ ./communication/
-COPY infrastructure/service_mesh/security/ ./security/
-COPY infrastructure/service_mesh/test_basic.py ./test/test_basic.py
-COPY infrastructure/service_mesh/test_imports.py ./test/test_imports.py
-COPY infrastructure/service_mesh/test_controller.py ./test/test_controller.py
-
-COPY ../../../configs/services/ ./configs/services/
-COPY ../../../service_mesh/ ./service_mesh/
-COPY ../../../api/ ./api/
-COPY ../../../admin/ ./admin/
-COPY ../../../auth/ ./auth/
-COPY ../../../common/ ./common/
-COPY ../../../core/ ./core/
-COPY ../../../database/ ./database/
-COPY ../../../infrastructure/ ./infrastructure/
-COPY ../../../node/ ./node/
-COPY ../../../RDP/ ./RDP/
-COPY ../../../tools/ ./tools/
-COPY ../../../utils/ ./utils/
-COPY ../../../wallet/ ./wallet/
+COPY infrastructure/service_mesh/ ./service_mesh/
+COPY scripts/ ./scripts/
+COPY common/ ./common/
+COPY node/ ./node/
+COPY server/ ./server/
+COPY wallet/ ./wallet/
+COPY auth/ ./auth/
+COPY admin/ ./admin/
+COPY blockchain/ ./blockchain/
+COPY sessions/ ./sessions/
+COPY RDP/ ./rdp/
+COPY contracts/ ./contracts/
+COPY payment_systems/ ./payment_systems/
+COPY gui_api_bridge/ ./gui_api_bridge/
+COPY gui_tor_manager/ ./gui_tor_manager/
+COPY gui_hardware_manager/ ./gui_hardware_manager/
+COPY electron_gui/ ./electron_gui/
+COPY 03_api_gateway/ ./03_api_gateway/
+COPY configs/ ./configs/
+RUN rm -rf ./configs/environment && \
+    echo ".env.* files removed"
+COPY configs/environment/.env.secrets ./configs/.env.secrets
+COPY master-env-config.txt ./configs/.env.master
+COPY infrastructure/containers/services/x_lucid_cluster_calibration/foundation-cluster-host-alignment.yml ./service_configs/x_lucid_cluster_calibration/foundation-cluster-host-alignment.yml
 
 # Verify source code directories were copied (per Dockerfile-copy-pattern: verify after COPY)
 # CRITICAL: This prevents silent COPY failures for source code
@@ -253,103 +260,16 @@ LABEL maintainer="Lucid Development Team" \
       org.opencontainers.image.revision="${VCS_REF}" \
       org.opencontainers.image.vendor="Lucid" \
       org.opencontainers.image.licenses="MIT" \
-      lucid.service="service_mesh-controller" \
-      lucid.type="distroless" \
-      lucid.platform="arm64" \
-      lucid.security="hardened" \
-      phase="2" \
-      cluster="10-cross-cluster-integration"
-
+      com.lucid.service="service_mesh-controller" \
+      com.lucid.type="distroless" \
+      com.lucid.platform="arm64" \
+      com.lucid.security="hardened" \
+      com.lucid.phase="2" \
+      com.lucid.cluster="10-cross-cluster-integration" \
+      com.lucid.expose="8550" \
+      com.lucid.tor.compatible="true" \
+      com.lucid.env.config=".env.master,.env.secrets"
 # Set working directory
-WORKDIR /app
-
-# Create site-packages directory before COPY (distroless doesn't have it)
-# CRITICAL: Use /usr/local (SAME PATTERN AS auth/Dockerfile - standard location for distroless)
-RUN ["/usr/bin/python3", "-c", "import os; os.makedirs('/usr/local/lib/python3.11/site-packages', exist_ok=True); os.makedirs('/usr/local/bin', exist_ok=True); print('✅ Created site-packages directories')"]
-
-# Copy runtime directories from builder (directory already populated with .keep files)
-COPY --from=builder --chown=65532:65532 /var/run /var/run
-COPY --from=builder --chown=65532:65532 /var/lib /var/lib
-
-# Verify runtime directories were copied (per Dockerfile-copy-pattern: verify after COPY)
-# CRITICAL: Verify both marker files AND directory structure (prevents silent COPY failures)
-RUN ["/usr/bin/python3", "-c", "import os, sys; assert os.path.exists('/var/run/.keep'), 'ERROR: Runtime directory marker not copied: /var/run/.keep'; assert os.path.exists('/var/lib/.keep'), 'ERROR: Lib directory marker not copied: /var/lib/.keep'; assert os.path.isdir('/var/run'), 'ERROR: /var/run is not a directory'; assert os.path.isdir('/var/lib'), 'ERROR: /var/lib is not a directory'; assert os.path.isfile('/var/run/.keep'), 'ERROR: /var/run/.keep is not a file'; assert os.path.isfile('/var/lib/.keep'), 'ERROR: /var/lib/.keep is not a file'; print('✅ Runtime directories verified in runtime stage: markers and structure confirmed')"]
-
-# Copy Python packages (directory already populated with packages + marker files from builder stage)
-# CRITICAL: Copy to /usr/local (SAME PATTERN AS auth/Dockerfile line 184 - standard location for distroless)
-# CRITICAL: Copy entire directories (not individual files) per Dockerfile-copy-pattern
-COPY --from=builder --chown=65532:65532 /root/.local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
-COPY --from=builder --chown=65532:65532 /root/.local/bin /usr/local/bin
-
-# Copy dynamic linker for ARM64 (required for native extensions like grpcio)
-COPY --from=builder /lib/ld-linux-aarch64.so.1 /lib/ld-linux-aarch64.so.1
-
-# Copy arch-specific libraries directory (required for ARM64 native extensions)
-COPY --from=builder /lib/aarch64-linux-gnu /lib/aarch64-linux-gnu
-
-# Copy CA certificates (required for SSL/TLS operations)
-COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
-
-# Verify system libraries were copied (per Dockerfile-copy-pattern: verify after COPY)
-
-RUN ["/usr/bin/python3", "-c", "import os, sys; linker = '/lib/ld-linux-aarch64.so.1'; lib_dir = '/lib/aarch64-linux-gnu'; certs = '/etc/ssl/certs/ca-certificates.crt'; assert os.path.exists(linker), f'ERROR: Dynamic linker not copied: {linker}'; assert os.path.isfile(linker), f'ERROR: {linker} is not a file'; assert os.path.getsize(linker) > 0, f'ERROR: {linker} is empty'; assert os.path.isdir(lib_dir), f'ERROR: Arch-specific libs not copied: {lib_dir}'; assert len(os.listdir(lib_dir)) > 0, f'ERROR: {lib_dir} is empty'; assert os.path.exists(certs), f'ERROR: CA certificates not copied: {certs}'; assert os.path.isfile(certs), f'ERROR: {certs} is not a file'; assert os.path.getsize(certs) > 0, f'ERROR: {certs} is empty'; print('✅ System libraries verified in runtime stage: all files exist, have correct types, and are non-empty')"]
-
-# Verify packages were copied (this will fail the build if packages are missing)
-# CRITICAL: Use correct import names (grpc not grpcio, consul not python_consul)
-# CRITICAL: Use /usr/local path (SAME PATTERN AS auth/Dockerfile line 191 - standard location)
-# CRITICAL: Verify both package directories exist AND packages can be imported AND marker file has content (per Dockerfile-copy-pattern)
-# CRITICAL: Add site-packages to sys.path before importing (distroless Python doesn't include /usr/local by default)
-RUN ["/usr/bin/python3", "-c", "import os, importlib, importlib.util, sys; site_packages = '/usr/local/lib/python3.11/site-packages'; bin_dir = '/usr/local/bin'; sys.path.insert(0, site_packages); assert os.path.exists(site_packages), f'ERROR: {site_packages} does not exist'; assert os.path.isdir(site_packages), f'ERROR: {site_packages} is not a directory'; assert os.path.exists(bin_dir), f'ERROR: {bin_dir} does not exist'; assert os.path.isdir(bin_dir), f'ERROR: {bin_dir} is not a directory'; required = ('grpc', 'aiohttp', 'consul', 'pydantic', 'cryptography', 'yaml'); failed = [pkg for pkg in required if not importlib.util.find_spec(pkg)]; assert len(failed) == 0, f'ERROR: Packages cannot be imported: {failed}'; [importlib.import_module(pkg) for pkg in required]; assert os.path.exists(os.path.join(site_packages, 'grpc')), 'ERROR: grpc directory not found'; assert os.path.exists(os.path.join(site_packages, 'aiohttp')), 'ERROR: aiohttp directory not found'; assert os.path.exists(os.path.join(site_packages, 'consul')), 'ERROR: consul directory not found'; assert os.path.exists(os.path.join(site_packages, 'pydantic')), 'ERROR: pydantic directory not found'; assert os.path.exists(os.path.join(site_packages, 'cryptography')), 'ERROR: cryptography directory not found'; assert os.path.exists(os.path.join(site_packages, 'yaml')) or os.path.exists(os.path.join(site_packages, 'yaml.py')), 'ERROR: yaml not found'; marker_path = os.path.join(site_packages, '.lucid-marker'); bin_marker_path = os.path.join(bin_dir, '.lucid-marker'); assert os.path.exists(marker_path), f'ERROR: marker file not found: {marker_path}'; assert os.path.exists(bin_marker_path), f'ERROR: bin marker file not found: {bin_marker_path}'; assert os.path.getsize(marker_path) > 0, f'ERROR: marker file is empty: {marker_path}'; assert os.path.getsize(bin_marker_path) > 0, f'ERROR: bin marker file is empty: {bin_marker_path}'; print('✅ Packages verified in runtime stage: directories exist, imports work, and marker files have content')"]
-
-# Copy application code from builder (directory already populated with source + marker files)
-COPY --from=builder --chown=65532:65532 /build/entrypoint.py    /app/entrypoint.py
-COPY --from=builder --chown=65532:65532 /build/test/test_basic.py /app/test/test_basic.py
-COPY --from=builder --chown=65532:65532 /build/test/test_imports.py /app/test/test_imports.py
-COPY --from=builder --chown=65532:65532 /build/test/test_controller.py /app/test/test_controller.py
-
-COPY --from=builder --chown=65532:65532 /build/controller/      /app/controller/
-COPY --from=builder --chown=65532:65532 /build/sidecar/         /app/sidecar/
-COPY --from=builder --chown=65532:65532 /build/discovery/       /app/discovery/
-COPY --from=builder --chown=65532:65532 /build/communication/   /app/communication/
-COPY --from=builder --chown=65532:65532 /build/security/        /app/security/
-COPY --from=builder --chown=65532:65532 /build/wallet/          /app/wallet/
-COPY --from=builder --chown=65532:65532 /build/tools/           /app/tools/
-COPY --from=builder --chown=65532:65532 /build/utils/           /app/utils/
-COPY --from=builder --chown=65532:65532 /build/common/          /app/common/
-COPY --from=builder --chown=65532:65532 /build/core/            /app/core/
-COPY --from=builder --chown=65532:65532 /build/database/        /app/database/
-COPY --from=builder --chown=65532:65532 /build/infrastructure/  /app/infrastructure/
-COPY --from=builder --chown=65532:65532 /build/node/            /app/node/
-COPY --from=builder --chown=65532:65532 /build/RDP/             /app/RDP/
-COPY --from=builder --chown=65532:65532 /build/entrypoint.py    /app/entrypoint.py
-
-# Verify controller module and entrypoint exist (this will fail the build if missing)
-# CRITICAL: Verify all source directories AND marker files AND module can be imported (per Dockerfile-copy-pattern)
-# CRITICAL: Add site-packages to sys.path before importing (controller imports yaml which is in site-packages)
-RUN ["/usr/bin/python3", "-c", "import os, importlib.util, sys; site_packages = '/usr/local/lib/python3.11/site-packages'; sys.path.insert(0, site_packages); assert os.path.exists('/app/controller'), 'ERROR: /app/controller missing'; assert os.path.isdir('/app/controller'), 'ERROR: /app/controller is not a directory'; assert os.path.exists('/app/sidecar'), 'ERROR: /app/sidecar missing'; assert os.path.exists('/app/discovery'), 'ERROR: /app/discovery missing'; assert os.path.exists('/app/communication'), 'ERROR: /app/communication missing'; assert os.path.exists('/app/security'), 'ERROR: /app/security missing'; assert os.path.exists('/app/entrypoint.py'), 'ERROR: /app/entrypoint.py missing'; assert os.path.isfile('/app/entrypoint.py'), 'ERROR: /app/entrypoint.py is not a file'; assert os.path.exists('/app/controller/.lucid-source-marker'), 'ERROR: controller marker missing'; assert os.path.exists('/app/sidecar/.lucid-sidecar-marker'), 'ERROR: sidecar marker missing'; assert os.path.exists('/app/discovery/.lucid-discovery-marker'), 'ERROR: discovery marker missing'; assert os.path.exists('/app/communication/.lucid-communication-marker'), 'ERROR: communication marker missing'; assert os.path.exists('/app/security/.lucid-security-marker'), 'ERROR: security marker missing'; spec = importlib.util.find_spec('controller.main', package=None); assert spec is not None, 'ERROR: controller.main module not found'; print('✅ controller package and entrypoint verified in runtime stage: all directories, markers, and module imports verified')"]
-
-# Locale and Timezone Configuration (distroless-compatible: C.UTF-8)
-COPY --from=builder --chown=65532:65532 /build/admin/   /app/admin/
-COPY --from=builder --chown=65532:65532 /build/auth/ /app/auth/
-COPY --from=builder --chown=65532:65532 /build/api/ /app/api/
-COPY --from=builder --chown=65532:65532 /build/config/ /app/config/
-COPY --from=builder --chown=65532:65532 /build/sessions/ /app/sessions/
-COPY --from=builder --chown=65532:65532 /build/infrastructure/service_mesh/ /app/infrastructure/service_mesh
-COPY --from=builder --chown=65532:65532 /build/infrastructure/kubernetes/ /app/infrastructure/kubernetes/
-COPY --from=builder --chown=65532:65532 /build/src/gui/ /app/src/gui/
-COPY --from=builder --chown=65532:65532 /build/electron_gui/ /app/electron_gui/
-COPY --from=builder --chown=65532:65532 /build/gui/ /app/gui/
-COPY --from=builder --chown=65532:65532 /build/gui_api_bridge/ /app/gui_api_bridge/
-COPY --from=builder --chown=65532:65532 /build/payment_systems/ /app/payment_systems/
-COPY --from=builder --chown=65532:65532 /build/contracts/ /app/contracts/
-COPY --from=builder --chown=65532:65532 /build/core/ /app/core/
-ENV TZ=UTC \
-    LANG=C.UTF-8 \
-    LC_ALL=C.UTF-8 \
-    COUNTRY=US
-
-# Set Python path and environment (packages already copied above)
-# CRITICAL: Use /usr/local path (SAME PATTERN AS auth/Dockerfile - standard location)
 ENV PYTHONPATH=/app:/usr/local/lib/python3.11/site-packages \
     PATH=/usr/local/bin:/usr/local/bin:/usr/bin:/bin \
     PYTHONUNBUFFERED=1 \
@@ -357,54 +277,56 @@ ENV PYTHONPATH=/app:/usr/local/lib/python3.11/site-packages \
     LUCID_ENV=production \
     LUCID_PLATFORM=arm64 \
     LUCID_ARCHITECTURE=linux/arm64
-
-# Service Configuration (per essentials.md and Network_conig_requirements.md lines 307-360)
-ENV SERVICE_NAME=service_mesh-controller \
-    CONTAINER_NAME=lucid-service_mesh-controller \
-    HOSTNAME=lucid-service_mesh-controller
-
-# Port Configuration
-ENV PORT=8500 \
-    SERVICE_MESH_CONTROLLER_PORT=8500 \
+    SERVICE_NAME=service-mesh-controller \
+    LUCID_SERVICE_MESH_CONTROLLER_PORT=8550 \
     HTTP_PORT=8088 \
-    HEALTHCHECK_PORT=8088 \
-    HEALTHCHECK_PATH=/health
-
-# Network Configuration (per Network_conig_requirements.md lines 334-341)
-ENV SERVICE_MESH_CONTROLLER_HOST=172.20.0.19 \
-    SERVICE_DISCOVERY_URL=http://lucid-service_mesh-controller:8500 \
+    LUCID_SERVICE_MESH_CONTROLLER_HOST=0.0.0.0 \
+    SERVICE_DISCOVERY_URL=http://service-mesh-controller:8550 \
     SERVICE_MESH_ENABLED=true
-
-# Consul Configuration (per Network_conig_requirements.md lines 334-341)
-ENV CONSUL_PORT=8500 \
-    CONSUL_DATACENTER=lucid-dc \
-    CONSUL_BOOTSTRAP_EXPECT=1 \
-    CONSUL_UI_ENABLED=true \
-    CONSUL_CONNECT_ENABLED=true \
-    CONSUL_NODE_NAME=lucid-service_mesh-controller
-
-# Database Configuration (per Network_conig_requirements.md - if needed)
-# Note: MONGODB_PASSWORD will be provided via .env files at runtime
-ENV MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:-changeme}@lucid-mongodb:27017/lucid?authSource=admin \
+    CONSUL_HOST=consul-server \
     REDIS_URL=redis://lucid-redis:6379/0
 
-# Project Configuration (per path_plan.md)
-ENV PROJECT_ROOT=/mnt/myssd/Lucid/Lucid \
-    PROJECT_NAME=Lucid \
-    PROJECT_VERSION=0.1.0
+WORKDIR /app
 
-# Logging Configuration (per path_plan.md)
-ENV LOG_LEVEL=INFO \
-    DEBUG=false \
-    LOG_FORMAT=json
 
-# Network Configuration (per network_defs.md)
-ENV LUCID_PI_NETWORK=lucid-pi-network \
-    LUCID_PI_SUBNET=172.20.0.0/16 \
-    LUCID_PI_GATEWAY=172.20.0.1
+COPY --from=builder --chown=65532:65532 /root/.local/lib/python3.11/site-packages /app/usr/local/lib/python3.11/site-packages
+COPY --from=builder --chown=65532:65532 /root/.local/bin /app/usr/local/bin
+
+COPY --from=builder /lib/ld-linux-aarch64.so.1 /app/lib/ld-linux-aarch64.so.1
+COPY --from=builder /lib/aarch64-linux-gnu /app/lib/aarch64-linux-gnu
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /app/etc/ssl/certs/ca-certificates.crt
+COPY --from=builder --chown=65532:65532 /build/entrypoint.py    /app/entrypoint.py
+COPY --from=builder --chown=65532:65532 /build/test/test_basic.py /app/test/test_basic.py
+COPY --from=builder --chown=65532:65532 /build/test/test_imports.py /app/test/test_imports.py
+COPY --from=builder --chown=65532:65532 /build/test/test_controller.py /app/test/test_controller.py
+
+COPY --from=builder --chown=65532:65532 /build/controller/      /app/controller/
+COPY --from=builder --chown=65532:65532 /build/security/        /app/security/
+COPY --from=builder --chown=65532:65532 /build/wallet/          /app/wallet/
+COPY --from=builder --chown=65532:65532 /build/tools/           /app/tools/
+COPY --from=builder --chown=65532:65532 /build/utils/           /app/utils/
+COPY --from=builder --chown=65532:65532 /build/common/          /app/common/
+COPY --from=builder --chown=65532:65532 /build/node/            /app/node/
+COPY --from=builder --chown=65532:65532 /build/rdp/             /app/rdp/
+COPY --from=builder --chown=65532:65532 /build/entrypoint.py    /app/entrypoint.py
+
+COPY --from=builder --chown=65532:65532 /build/admin/   /app/admin/
+COPY --from=builder --chown=65532:65532 /build/auth/ /app/auth/
+COPY --from=builder --chown=65532:65532 /build/api/ /app/api/
+COPY --from=builder --chown=65532:65532 /build/config/ /app/config/
+COPY --from=builder --chown=65532:65532 /build/sessions/ /app/sessions/
+COPY --from=builder --chown=65532:65532 /build/infrastructure/service_mesh/ /app/infrastructure/service_mesh
+COPY --from=builder --chown=65532:65532 /build/service_configs/kubernetes/ /app/service_configs/kubernetes/
+COPY --from=builder --chown=65532:65532 /build/src/gui/ /app/src/gui/
+COPY --from=builder --chown=65532:65532 /build/electron_gui/ /app/electron_gui/
+COPY --from=builder --chown=65532:65532 /build/gui/ /app/gui/
+COPY --from=builder --chown=65532:65532 /build/gui_api_bridge/ /app/gui_api_bridge/
+COPY --from=builder --chown=65532:65532 /build/payment_systems/ /app/payment_systems/
+COPY --from=builder --chown=65532:65532 /build/contracts/ /app/contracts/
 
 # Use nonroot user (distroless default)
 USER 65532:65532
+RUN ["/app/usr/bin/python3.11", "-c", "import os, importlib.util, sys; site_packages = '/app/usr/local/lib/python3.11/site-packages'; sys.path.insert(0, site_packages); assert os.path.exists('/app/controller'), 'ERROR: /app/controller missing'; assert os.path.isdir('/app/controller'), 'ERROR: /app/controller is not a directory'; assert os.path.exists('/app/sidecar'), 'ERROR: /app/sidecar missing'; assert os.path.exists('/app/discovery'), 'ERROR: /app/discovery missing'; assert os.path.exists('/app/communication'), 'ERROR: /app/communication missing'; assert os.path.exists('/app/security'), 'ERROR: /app/security missing'; assert os.path.exists('/app/entrypoint.py'), 'ERROR: /app/entrypoint.py missing'; assert os.path.isfile('/app/entrypoint.py'), 'ERROR: /app/entrypoint.py is not a file'; assert os.path.exists('/app/controller/.lucid-source-marker'), 'ERROR: controller marker missing'; assert os.path.exists('/app/sidecar/.lucid-sidecar-marker'), 'ERROR: sidecar marker missing'; assert os.path.exists('/app/discovery/.lucid-discovery-marker'), 'ERROR: discovery marker missing'; assert os.path.exists('/app/communication/.lucid-communication-marker'), 'ERROR: communication marker missing'; assert os.path.exists('/app/security/.lucid-security-marker'), 'ERROR: security marker missing'; spec = importlib.util.find_spec('controller.main', package=None); assert spec is not None, 'ERROR: controller.main module not found'; print('✅ controller package and entrypoint verified in runtime stage: all directories, markers, and module imports verified')"]
 
 # Health check (aligned with HTTP endpoint on port 8088)
 # CRITICAL: Uses HTTP endpoint /health for Docker healthcheck
@@ -412,11 +334,11 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD ["/usr/bin/python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8088/health').read(); exit(0)"]
 
 # Expose ports (aligned with essentials.md and Network_conig_requirements.md: 8500,8501,8502,8600,8088)
-EXPOSE 8500 8501 8502 8600 8088
+EXPOSE 8550 8551 8552 8553 8088
 
 # Start application using entrypoint script (more reliable than inline CMD)
 # CRITICAL: Use ENTRYPOINT + CMD pattern (same as auth/Dockerfile) for distroless compatibility
 # CRITICAL: Entrypoint script handles Python path setup and yaml verification
 # CRITICAL: PYTHONPATH is already set in ENV (line 287), entrypoint ensures sys.path is correct
-ENTRYPOINT ["/usr/bin/python3"]
-CMD ["/app/entrypoint.py"]
+ENTRYPOINT ["/app/usr/bin/tini", "--"]
+CMD ["/app/usr/bin/python3.11", "-m", "service_mesh.controller.main"]

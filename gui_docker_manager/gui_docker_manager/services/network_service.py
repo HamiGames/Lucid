@@ -1,6 +1,7 @@
 """
 File: /app/gui_docker_manager/gui_docker_manager/services/network_service.py
 x-lucid-file-path: /app/gui_docker_manager/gui_docker_manager/services/network_service.py
+x-lucid-file-directory: /app/gui_docker_manager/gui_docker_manager/services
 x-lucid-file-type: python
 
 Network Service Business Logic

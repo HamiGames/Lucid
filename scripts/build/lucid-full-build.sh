@@ -27,7 +27,7 @@ CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
 # Build phases configuration
-PHASE1_SERVICES=("auth-service" "mongodb" "redis" "elasticsearch")
+PHASE1_SERVICES=("tor-proxy" "lucid-auth-service" "lucid-mongodb" "lucid-redis" "lucid-elasticsearch")
 PHASE2_SERVICES=("api-gateway" "blockchain-engine" "session-anchoring" "block-manager" "data-chain" "service-mesh-controller")
 PHASE3_SERVICES=("session-pipeline" "session-recorder" "session-processor" "session-storage" "session-api" "rdp-server-manager" "rdp-xrdp" "rdp-controller" "rdp-monitor" "node-management")
 PHASE4_SERVICES=("admin-interface" "tron-client" "tron-payout-router" "tron-wallet-manager" "tron-usdt-manager" "tron-staking" "tron-payment-gateway")

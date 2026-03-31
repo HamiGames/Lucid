@@ -1,6 +1,7 @@
 """
 File: /app/auth/middleware/rate_limit.py
 x-lucid-file-path: /app/auth/middleware/rate_limit.py
+x-lucid-file-directory: /app/auth/middleware
 x-lucid-file-type: python
 
 Lucid Authentication Service - Rate Limiting Middleware

@@ -1,3 +1,8 @@
+# File: /app/blockchain/config/block-manager-logging.yaml
+# x-lucid-file-path: /app/blockchain/config/block-manager-logging.yaml
+# x-lucid-file-directory: /app/blockchain/config
+# x-lucid-file-type: YAML
+
 # Block Manager Logging Configuration
 # Purpose: Centralize logging settings for block-manager container
 # Aligns with docker-compose.core.yml volume mounts

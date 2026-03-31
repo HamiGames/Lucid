@@ -1,6 +1,7 @@
 """
 File: /app/auth/api/endpoint_config.py
 x-lucid-file-path: /app/auth/api/endpoint_config.py
+x-lucid-file-directory: /app/auth/api
 x-lucid-file-type: python
 
 Lucid Authentication Service - Endpoint Configuration Manager

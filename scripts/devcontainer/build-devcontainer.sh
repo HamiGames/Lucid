@@ -1,5 +1,9 @@
 #!/bin/bash
 # Path: build-devcontainer.sh
+# File: /app/scripts/devcontainer/build-devcontainer.sh
+# x-lucid-file-path: /app/scripts/devcontainer/build-devcontainer.sh
+# x-lucid-file-directory: /app/scripts/devcontainer
+# x-lucid-file-type: shell
 # Build and deployment script for Lucid RDP DevContainer
 # Target: ARM64 (Raspberry Pi 5) and AMD64 (development machines)
 # Registry: DockerHub pickme/lucid

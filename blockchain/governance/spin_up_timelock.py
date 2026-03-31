@@ -2,6 +2,7 @@
 """
 File: /app/blockchain/governance/spin_up_timelock.py
 x-lucid-file-path: /app/blockchain/governance/spin_up_timelock.py
+x-lucid-file-directory: /app/blockchain/governance
 x-lucid-file-type: python
 
 Timelock Governance Spin-Up Script

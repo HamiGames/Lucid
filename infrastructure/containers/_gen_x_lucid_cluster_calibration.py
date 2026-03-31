@@ -1,4 +1,10 @@
-"""Generate cluster calibration YAMLs from host-config.yml + x-files-listing.txt.
+"""
+File: /app/configs/_gen_x_lucid_cluster_calibration.py
+x-lucid-file-path: /app/configs/_gen_x_lucid_cluster_calibration.py
+x-lucid-file-directory: /app/configs
+x-lucid-file-type: python
+
+Generate cluster calibration YAMLs from host-config.yml + x-files-listing.txt.
 
 Run from any working directory (uses __file__ location):
 

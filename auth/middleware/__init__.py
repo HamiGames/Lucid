@@ -1,6 +1,7 @@
 """
 File: /app/auth/middleware/__init__.py
 x-lucid-file-path: /app/auth/middleware/__init__.py
+x-lucid-file-directory: /app/auth/middleware
 x-lucid-file-type: python
 
 Lucid Authentication Service - Middleware Package

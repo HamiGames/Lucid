@@ -1,7 +1,10 @@
 """
-Envoy configuration generator for service mesh
+File: /app/old-service_mesh/envoy_config_generator.py
+x-lucid-file-path: /app/old-service_mesh/envoy_config_generator.py
+x-lucid-file-directory: /app/old-service_mesh
+x-lucid-file-type: python
 
-File: /app/service_mesh/envoy_config_generator.py
+Envoy configuration generator for service mesh
 """
 
 import asyncio

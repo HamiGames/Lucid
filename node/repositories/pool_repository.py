@@ -5,6 +5,7 @@
 """
 File: /app/node/repositories/pool_repository.py
 x-lucid-file-path: /app/node/repositories/pool_repository.py
+x-lucid-file-directory: /app/node/repositories
 x-lucid-file-type: python
 
 Pool repository for Lucid system.

@@ -102,22 +102,41 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 # LUCID_X_FILES_SKELETON_BEGIN
 # Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
 RUN set -eux; \
-    mkdir -p '.' './configs' './service_configs' './configs/.ssh' './configs/container' './configs/database' './configs/docker' './configs/environment' './configs/integration' './configs/logging' './configs/pi' './configs/secrets' './configs/security' './configs/tor' './configs/container/admin' './configs/container/auth' './configs/container/base' './configs/container/blockchain' './configs/container/database' './configs/container/electron_gui' './configs/container/gui' './configs/container/node' './configs/container/payment_systems' './configs/container/rdp' './configs/container/server' './configs/container/sessions' './configs/container/storage' './configs/container/tor' './configs/database/elasticsearch' './configs/database/redis' './configs/docker/distroless' './configs/docker/docs' './configs/docker/multi-stage' './configs/environment/development' './configs/environment/pi' './configs/environment/production' './configs/environment/staging' './configs/pi/ssh'; \
+    mkdir -p '.' './configs' './service_configs' './configs/.devcontainer' './configs/.ssh' './configs/admin' './configs/auth' './configs/base' './configs/blockchain' './configs/compose' './configs/container' './configs/database' './configs/docker' './configs/electron_gui' './configs/environment' './configs/gui' './configs/integration' './configs/logging' './configs/network' './configs/node' './configs/overlord' './configs/payment_systems' './configs/pi' './configs/rdp' './configs/secrets' './configs/security' './configs/server' './configs/tor' './configs/user' './configs/admin/admin-system-gateway' './configs/admin/config' './configs/blockchain/chain-to-pay' './configs/blockchain/config' './configs/container/admin' './configs/container/auth' './configs/container/base' './configs/container/blockchain' './configs/container/database' './configs/container/electron_gui' './configs/container/gui' './configs/container/node' './configs/container/payment_systems' './configs/container/rdp' './configs/container/server' './configs/container/sessions' './configs/container/storage' './configs/container/tor' './configs/database/elasticsearch' './configs/database/redis' './configs/docker/compose' './configs/docker/distroless' './configs/docker/docs' './configs/docker/multi-stage' './configs/docker/on-system-chain' './configs/environment/development' './configs/environment/pi' './configs/environment/production' './configs/environment/staging' './configs/node/config' './configs/node/node-system-gateway' './configs/overlord/runtime' './configs/pi/ssh' './configs/docker/compose/mongodb' './configs/docker/compose/nats' './configs/docker/compose/nginx' './configs/docker/compose/redis' './configs/docker/compose/vault' './configs/docker/distroless/base'; \
     for d in \
       '.' \
       './configs' \
       './service_configs' \
+      './configs/.devcontainer' \
       './configs/.ssh' \
+      './configs/admin' \
+      './configs/auth' \
+      './configs/base' \
+      './configs/blockchain' \
+      './configs/compose' \
       './configs/container' \
       './configs/database' \
       './configs/docker' \
+      './configs/electron_gui' \
       './configs/environment' \
+      './configs/gui' \
       './configs/integration' \
       './configs/logging' \
+      './configs/network' \
+      './configs/node' \
+      './configs/overlord' \
+      './configs/payment_systems' \
       './configs/pi' \
+      './configs/rdp' \
       './configs/secrets' \
       './configs/security' \
+      './configs/server' \
       './configs/tor' \
+      './configs/user' \
+      './configs/admin/admin-system-gateway' \
+      './configs/admin/config' \
+      './configs/blockchain/chain-to-pay' \
+      './configs/blockchain/config' \
       './configs/container/admin' \
       './configs/container/auth' \
       './configs/container/base' \
@@ -134,14 +153,25 @@ RUN set -eux; \
       './configs/container/tor' \
       './configs/database/elasticsearch' \
       './configs/database/redis' \
+      './configs/docker/compose' \
       './configs/docker/distroless' \
       './configs/docker/docs' \
       './configs/docker/multi-stage' \
+      './configs/docker/on-system-chain' \
       './configs/environment/development' \
       './configs/environment/pi' \
       './configs/environment/production' \
       './configs/environment/staging' \
+      './configs/node/config' \
+      './configs/node/node-system-gateway' \
+      './configs/overlord/runtime' \
       './configs/pi/ssh' \
+      './configs/docker/compose/mongodb' \
+      './configs/docker/compose/nats' \
+      './configs/docker/compose/nginx' \
+      './configs/docker/compose/redis' \
+      './configs/docker/compose/vault' \
+      './configs/docker/distroless/base' \
     ; do \
       printf 'LUCID_X_FILES_SKELETON_%s' "$(date +%s)" > "$d/.keep"; \
       touch "$d/.keep"; \
@@ -183,7 +213,7 @@ RUN echo "=== Verifying pip installation (database stack) ===" && \
     echo "Package count: $(ls -1 /usr/local/lib/python3.11/site-packages/ | wc -l)" && \
     pip list
 
-
+COPY scripts/ ./scripts/
 COPY database/ ./database/
 COPY common/ ./common/
 COPY common/governance/ ./common/governance/
@@ -207,53 +237,73 @@ WORKDIR /app
 ARG BUILD_DATE
 ARG VCS_REF
 ARG VERSION=1.0.0
+# Lucid Tor egress / network isolation (PUBLIC_TOR_IP: master-env-config.txt; compose: lucid-tor-egress-network)
+ARG PUBLIC_TOR_IP=109.70.100.1
+ARG LUCID_INTERNAL_NETWORK_NAME=lucid-pi-network
+ARG LUCID_TOR_EGRESS_NETWORK_NAME=lucid-tor-egress-network
 
 LABEL maintainer="Lucid Development Team" \
+      com.lucid.network.internal="${LUCID_INTERNAL_NETWORK_NAME}" \
+      com.lucid.network.tor_egress="${LUCID_TOR_EGRESS_NETWORK_NAME}" \
+      com.lucid.tor.public_egress_ip="${PUBLIC_TOR_IP}" \
       org.opencontainers.image.title="Lucid Database Utilities" \
       org.opencontainers.image.description="Database maintenance utilities for Lucid (distroless)" \
       org.opencontainers.image.version="${VERSION}" \
       org.opencontainers.image.revision="${VCS_REF}" \
       org.opencontainers.image.created="${BUILD_DATE}" \
-      com.lucid.service="lucid-database" \
+      com.lucid.plane="ops" \
+      com.lucid.service="mongodb-monitoring" \
+      com.lucid.layer="0" \
+      org.lucid.layer="0" \
       com.lucid.platform="arm64" \
-      com.lucid.cluster="database" \
-      com.lucid.security="distroless" \
       com.lucid.architecture="linux/arm64" \
+      com.lucid.security="distroless" \
       com.lucid.vulnerabilities="zero" \
-      com.lucid.tor.compatible="true"
+      com.lucid.expose="" \
+      com.lucid.cluster="database" \
+      com.lucid.tor.compatible="true" \
+      com.lucid.env.config=".env.foundation,.env.secrets" \
+      com.lucid.service_id="com.lucid.dockerfile.v1.d33eb21629817b7b.infrastructure.containers.database.Dockerfile.database" \
+      onion.lucid.service_id="lucid-d33eb21629817b7b-infrastructure-container" \
+      org.lucid.service_id="org.lucid.dockerfile.v1.d33eb21629817b7b:infrastructure/containers/database/Dockerfile.database" \
 
-ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
-    PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONPATH=/app:/app/usr/local/lib/python3.11/site-packages \
-    PYTHONIOENCODING=utf-8 \
-    LANG=C.UTF-8 \
-    LC_ALL=C.UTF-8 \
-    LUCID_HOST_CONFIG_SERVICE_KEY=mongodb_monitoring \
-    LUCID_SERVICE_HOST_IP=172.20.10.71 \
-    LUCID_SERVICE_HTTP_PATH=http://mongodb-monitoring:27018/app \
-    LUCID_ENV=production \
-    LUCID_PLATFORM=arm64 \
-    MONITORING_SERVICE_PORT=27018 \
+ENV     PUBLIC_TOR_IP="${PUBLIC_TOR_IP}" \
+    LUCID_INTERNAL_NETWORK_NAME="${LUCID_INTERNAL_NETWORK_NAME}" \
+    LUCID_TOR_EGRESS_NETWORK_NAME="${LUCID_TOR_EGRESS_NETWORK_NAME}" \
+    PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
+    PYTHONUNBUFFERED="1" \
+    PYTHONDONTWRITEBYTECODE="1" \
+    PYTHONPATH="/app:/app/usr/local/lib/python3.11/site-packages" \
+    PYTHONIOENCODING="utf-8" \
+    LANG="C.UTF-8" \
+    LC_ALL="C.UTF-8" \
+    LUCID_ENV="production" \
+    LUCID_HOST_CONFIG_SERVICE_NAME="mongodb_monitoring" \
+    LUCID_PLATFORM="arm64" \
+    LUCID_SERVICE_HOST_IP="172.20.10.71" \
+    LUCID_SERVICE_HTTP_PATH="http://mongodb-monitoring:27018/app" \
     MONGODB_URI=${MONGODB_URI:-mongodb://lucid:lucid@lucid-mongodb:27017/lucid?authSource=admin} \
-    PROMETHEUS_ENABLED=true
-# LUCID_RUNTIME_COPY_FROM_BUILD_BEGIN
-# Generated: same directory set as LUCID_X_FILES_SKELETON (./ under WORKDIR /build).
-COPY --from=builder --chown=65532:65532 /build/configs/ /app/configs/
-COPY --from=builder --chown=65532:65532 /build/service_configs/ /app/service_configs/
-# LUCID_RUNTIME_COPY_FROM_BUILD_END
-
+    MONITORING_SERVICE_PORT="27018" \
+    PROMETHEUS_ENABLED="true"
 # LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
 # Generated: apt + RUN scaffold (mkdir/printf/touch/chown) -> FHS (not ./ or /build/; lib_search_and_inject.py).
 COPY --from=builder --chown=65532:65532 /usr/lib/*/libffi.so* /app/usr/lib/
 COPY --from=builder --chown=65532:65532 /usr/lib/*/libssl.so* /app/usr/lib/
 COPY --from=builder --chown=65532:65532 /usr/lib/*/ossl-modules/ /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /usr/lib/*/libpq.so.5 /app/usr/lib/
 COPY --from=builder --chown=65532:65532 /usr/lib/*/libcurl.so* /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /bin/ /app/bin/
 COPY --from=builder --chown=65532:65532 /etc/ssl/ /app/etc/ssl/
 COPY --from=builder --chown=65532:65532 /usr/ /app/usr/
 COPY --from=builder --chown=65532:65532 /var/lib/ /app/var/lib/
 COPY --from=builder --chown=65532:65532 /var/run/ /app/var/run/
 # LUCID_RUNTIME_COPY_FROM_BUILDER_APT_END
+
+# LUCID_RUNTIME_COPY_FROM_BUILD_BEGIN
+# Generated: same directory set as LUCID_X_FILES_SKELETON (./ under WORKDIR /build).
+COPY --from=builder --chown=65532:65532 /build/configs/ /app/configs/
+COPY --from=builder --chown=65532:65532 /build/service_configs/ /app/service_configs/
+# LUCID_RUNTIME_COPY_FROM_BUILD_END
 # LUCID_IMAGE_CONFIG: .env.secrets + .env.master (runtime)
 COPY --from=builder --chown=65532:65532 /build/configs/.env.secrets /app/configs/.env.secrets
 COPY --from=builder --chown=65532:65532 /build/configs/.env.master /app/configs/.env.master

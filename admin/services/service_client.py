@@ -2,6 +2,7 @@
 """
 File: /app/admin/services/service_client.py
 x-lucid-file-path: /app/admin/services/service_client.py
+x-lucid-file-directory: /app/admin/services
 x-lucid-file-type: python
 
 Lucid Admin Interface - Service Client

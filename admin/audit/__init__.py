@@ -1,6 +1,7 @@
 """
 File: /app/admin/audit/__init__.py
 x-lucid-file-path: /app/admin/audit/__init__.py
+x-lucid-file-directory: /app/admin/audit
 x-lucid-file-type: python
 
 Lucid Admin Interface - Audit Package

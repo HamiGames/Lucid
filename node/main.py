@@ -2,6 +2,7 @@
 """
 File: /app/node/main.py
 x-lucid-file-path: /app/node/main.py
+x-lucid-file-directory: /app/node
 x-lucid-file-type: python
 
 Lucid Node Management Service - Main Application

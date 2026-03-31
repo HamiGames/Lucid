@@ -1,8 +1,9 @@
 #!/bin/bash
 # Deployment script for GUI API Bridge
-# File: /app/gui_api_bridge/gui_api_bridge/scripts/deploy.sh
-# x-lucid-file-path: /app/gui_api_bridge/gui_api_bridge/scripts/deploy.sh
-# x-lucid-file-type: bash
+# File: /app/gui_api_bridge/scripts/deploy.sh
+# x-lucid-file-path: /app/gui_api_bridge/scripts/deploy.sh
+# x-lucid-file-directory: /app/gui_api_bridge/scripts
+# x-lucid-file-type: shell
 # Build Host: Windows 11 console
 # Target Host: Raspberry Pi
 # No hardcoded values - all from environment or .env file

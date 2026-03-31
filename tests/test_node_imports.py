@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 """
+File: /app/tests/test_node_imports.py
+x-lucid-file-path: /app/tests/test_node_imports.py
+x-lucid-file-directory: /app/tests
+x-lucid-file-type: python
+
 Standalone test for node system imports and spin-up analysis.
 This test checks if the node modules can be imported without external dependencies.
 """

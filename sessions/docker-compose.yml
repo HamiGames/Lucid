@@ -1,3 +1,8 @@
+# File: /app/sessions/docker-compose.yml
+# x-lucid-file-path: /app/sessions/docker-compose.yml
+# x-lucid-file-directory: /app/sessions
+# x-lucid-file-type: YAML
+
 # sessions/docker-compose.yml
 # Lucid session services – production spin-up
 

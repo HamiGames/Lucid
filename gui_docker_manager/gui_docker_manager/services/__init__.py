@@ -1,6 +1,7 @@
 """
 File: /app/gui_docker_manager/gui_docker_manager/services/__init__.py
 x-lucid-file-path: /app/gui_docker_manager/gui_docker_manager/services/__init__.py
+x-lucid-file-directory: /app/gui_docker_manager/gui_docker_manager/services
 x-lucid-file-type: python
 
 Business logic services for Docker Manager

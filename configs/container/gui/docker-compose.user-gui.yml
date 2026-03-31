@@ -1,3 +1,8 @@
+# File: /app/configs/gui/docker-compose.user-gui.yml
+# x-lucid-file-path: /app/configs/gui/docker-compose.user-gui.yml
+# x-lucid-file-directory: /app/configs/gui
+# x-lucid-file-type: YAML
+
 # LUCID USER GUI - Distroless Deployment
 # Path: infrastructure/containers/gui/docker-compose.user-gui.yml
 #
@@ -33,6 +38,15 @@
 
 name: lucid-user-gui
 
+x-lucid-host-config:
+  file: ../../../infrastructure/containers/host-config.yml
+  repo_path: infrastructure/containers/host-config.yml
+  version: '1.0'
+  description: Lucid container host registry for Docker DNS hostnames, ports, discovery URLs, and static host IPs.
+  http_path_template: 'http://{service_name}:{port}/app'
+  host_ip_range: '172.20.10.1–172.20.10.76'
+  in_container_path: /app/configs/host-config.yml
+
 x-repo-context: &repo-context
   context: ../../../
 
@@ -65,6 +79,7 @@ services:
       - lucid_user_gui_api_bridge_data:/app/data:rw
     networks:
       - lucid-pi-network
+      - lucid-tor-egress-network
       - lucid-gui-network
     user: "65532:65532"
     security_opt:
@@ -116,6 +131,7 @@ services:
       - lucid_user_gui_docker_manager_data:/app/data:rw
     networks:
       - lucid-pi-network
+      - lucid-tor-egress-network
       - lucid-gui-network
     user: "65532:65532"
     security_opt:
@@ -167,6 +183,7 @@ services:
       - onion-state:/app/run/lucid/onion:ro
     networks:
       - lucid-pi-network
+      - lucid-tor-egress-network
       - lucid-gui-network
     user: "65532:65532"
     security_opt:
@@ -218,6 +235,7 @@ services:
       - /run/usb-devices:/run/usb:rw
     networks:
       - lucid-pi-network
+      - lucid-tor-egress-network
       - lucid-gui-network
     depends_on:
       gui-api-bridge:
@@ -266,6 +284,7 @@ services:
       - lucid_user_gui_interface_data:/app/data:rw
     networks:
       - lucid-pi-network
+      - lucid-tor-egress-network
       - lucid-gui-network
     depends_on:
       gui-api-bridge:
@@ -295,6 +314,9 @@ services:
 networks:
   lucid-pi-network:
     name: lucid-pi-network
+    external: true
+  lucid-tor-egress-network:
+    name: lucid-tor-egress-network
     external: true
   lucid-gui-network:
     name: lucid-gui-network

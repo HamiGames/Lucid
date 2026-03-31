@@ -1,3 +1,8 @@
+# File: /app/electron_gui/distroless/docker-compose.electron-gui.yml
+# x-lucid-file-path: /app/electron_gui/distroless/docker-compose.electron-gui.yml
+# x-lucid-file-directory: /app/electron_gui/distroless
+# x-lucid-file-type: YAML
+
 # Lucid Electron-GUI Distroless Services
 # Docker Compose Configuration for Raspberry Pi (linux/arm64)
 # Network: lucid-pi-network (172.20.0.0/16)

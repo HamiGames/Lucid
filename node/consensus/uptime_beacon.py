@@ -1,6 +1,7 @@
 """
 File: /app/node/consensus/uptime_beacon.py
 x-lucid-file-path: /app/node/consensus/uptime_beacon.py
+x-lucid-file-directory: /app/node/consensus
 x-lucid-file-type: python
 
 LUCID Node Consensus - Uptime Beacon System

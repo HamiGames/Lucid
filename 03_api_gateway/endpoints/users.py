@@ -1,6 +1,7 @@
 """
 File: /app/03_api_gateway/endpoints/users.py
 x-lucid-file-path: /app/03_api_gateway/endpoints/users.py
+x-lucid-file-directory: /app/03_api_gateway/endpoints
 x-lucid-file-type: python
 
 User Management Endpoints Module

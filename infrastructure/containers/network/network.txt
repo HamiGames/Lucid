@@ -1,3 +1,10 @@
+# File: /app/configs/network/network.txt
+# x-lucid-file-path: /app/configs/network/network.txt
+# x-lucid-file-directory: /app/configs/network
+# x-lucid-file-type: text
+#
+# Repo section (x-files.json): infrastructure/containers/network/network.txt
+#
 ###################################################################################
 # Lucid bridge /16 plan (RFC1918 172.16.0.0/12). Uses 172.23–172.24 for session + service-mesh
 # stacks and 172.26–172.30 so Lucid’s user-defined bridges sit above Docker’s usual auto-pool band
@@ -5,6 +12,8 @@
 #
 #   Network                     Subnet           Gateway      Role
 #   --------------------------  ---------------  -----------  --------------------------------
+#   lucid-pi-network            172.20.0.0/16    172.20.0.1   Primary service mesh / internal RPC (master-env LUCID_PI_*)
+#   lucid-tor-egress-network    172.31.0.0/16    172.31.0.1   Tor egress lane (172.21 avoided: overlaps common lucid-internal / lucid_external / deploy-single-cluster.sh pools)
 #   lucid-session-network       172.23.0.0/16    172.23.0.1   Session images (build/docker-compose.session-images.yml)
 #   lucid-service-mesh-network  172.24.0.0/16    172.24.0.1   Service mesh / discovery / Consul data plane
 #   lucid-tron-isolated         172.26.0.0/16    172.26.0.1   TRON / payment isolation
@@ -12,6 +21,7 @@
 #   lucid-admin-net             172.28.0.0/16    172.28.0.1   Distroless production / admin
 #   lucid-dev-net               172.29.0.0/16    172.29.0.1   Development / distroless dev
 #   lucid-server-network        172.30.0.0/16    172.30.0.1   Multi-stage / server / CI build
+#   (172.21.0.0/16 is reserved on many Lucid hosts for legacy lucid-internal / external portals — do not use for tor-egress.)
 #
 # to be edited:
 # - all 0.0.0.0 bindings
@@ -23,6 +33,34 @@
 # - convert to *.json or *.sh for container-driven network creation on any host
 #
 ##################################################################################
+# PUBLIC_TOR_IP vs bridge subnets
+# - All networks below use private /16 bridges (172.x). Docker does not assign PUBLIC_TOR_IP to a bridge:
+#   PUBLIC_TOR_IP is the operator-expected Tor *exit* address (master-env-config.txt), not a container NIC.
+# - Only lucid-tor-egress-network carries it as metadata: label lucid.tor.public_egress_ip (for ops / tooling).
+#
+# Before running the lucid-tor-egress-network block (bash, repo root = Lucid/):
+#   export PUBLIC_TOR_IP="$(grep -E '^PUBLIC_TOR_IP=' master-env-config.txt | head -1 | cut -d= -f2-)"
+# PowerShell (repo root; ${PUBLIC_TOR_IP:-...} in the command below is bash-only):
+#   $env:PUBLIC_TOR_IP = (Select-String -Path master-env-config.txt -Pattern '^PUBLIC_TOR_IP=' | Select-Object -First 1).Line.Split('=',2)[1]
+#   if (-not $env:PUBLIC_TOR_IP) { $env:PUBLIC_TOR_IP = '109.70.100.1' }
+#   Replace the lucid.tor.public_egress_ip --label with: --label ("lucid.tor.public_egress_ip=" + $env:PUBLIC_TOR_IP)
+# Default if unset (bash): 109.70.100.1 — keep aligned with master-env-config.txt.
+#
+# lucid-tor-egress-network — Tor external path; tor-proxy static 172.31.0.2, tunnel-tools 172.31.0.3 (docker-compose.proxy-systems.yml).
+docker network create lucid-tor-egress-network \
+  --driver bridge \
+  --subnet 172.31.0.0/16 \
+  --gateway 172.31.0.1 \
+  --attachable \
+  --opt com.docker.network.bridge.enable_icc=true \
+  --opt com.docker.network.bridge.enable_ip_masquerade=true \
+  --opt com.docker.network.bridge.host_binding_ipv4=0.0.0.0 \
+  --opt com.docker.network.driver.mtu=1500 \
+  --label "lucid.network=tor-egress" \
+  --label "lucid.subnet=172.31.0.0/16" \
+  --label "lucid.tor.public_egress_ip=${PUBLIC_TOR_IP:-109.70.100.1}" \
+  --label "lucid.security=tor-egress-external"
+
  # api-gateway base network
  docker network create lucid-pi-network \
     --driver bridge \
@@ -84,7 +122,7 @@ docker network create lucid-tron-isolated \
   --label "lucid.security=payment-isolated"
 
 # lucid-gui-network — subnet/gateway aligned with node/over_lord/docker-compose.yml,
-# infrastructure/kubernetes/01_configmaps/node-management-config.yaml (LUCID_GUI_*)
+#service_configs/kubernetes/01_configmaps/node-management-config.yaml (LUCID_GUI_*)
 docker network create lucid-gui-network \
   --driver bridge \
   --subnet 172.27.0.0/16 \

@@ -1,5 +1,9 @@
 #!/bin/bash
 # scripts/database/backup-sessions.sh
+# File: /app/scripts/database/backup-sessions.sh
+# x-lucid-file-path: /app/scripts/database/backup-sessions.sh
+# x-lucid-file-directory: /app/scripts/database
+# x-lucid-file-type: shell
 # Backup session data for data protection
 # LUCID-STRICT: Distroless build method, encrypted backup
 
@@ -12,13 +16,14 @@ PROJECT_ROOT="$(cd "$SCRIPT_PATH/../../.." && pwd)"
 
 # Configuration
 BACKUP_DIR="${BACKUP_DIR:-$PROJECT_ROOT/backups/sessions}"
-MONGO_HOST="${MONGO_HOST:-localhost}"
-MONGO_PORT="${MONGO_PORT:-27017}"
-MONGO_DB="${MONGO_DB:-lucid}"
+MONGO_HOST="${MONGODB_HOST:-lucid-mongodb}"
+MONGO_PORT="${MONGODB_PORT:-27017}"
+MONGO_DB="${MONGODB_DATABASE:-lucid}"
 BACKUP_RETENTION_DAYS="${BACKUP_RETENTION_DAYS:-30}"
+MONGODB_PASSWORD="${MONGODB_PASSWORD}"
 
 # Encryption settings
-ENCRYPTION_KEY="${ENCRYPTION_KEY:-}"
+ENCRYPTION_KEY="${ENCRYPTION_KEY}"
 ENCRYPTION_ALGORITHM="${ENCRYPTION_ALGORITHM:-aes-256-cbc}"
 
 # Logging

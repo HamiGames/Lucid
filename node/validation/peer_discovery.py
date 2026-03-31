@@ -14,6 +14,7 @@
 """
 File: /app/node/validation/peer_discovery.py
 x-lucid-file-path: /app/node/validation/peer_discovery.py
+x-lucid-file-directory: /app/node/validation
 x-lucid-file-type: python
 
 LUCID Node Peer Discovery Module

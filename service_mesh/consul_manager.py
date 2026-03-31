@@ -1,7 +1,10 @@
 """
-Consul service discovery manager
+File: /app/old-service_mesh/consul_manager.py
+x-lucid-file-path: /app/old-service_mesh/consul_manager.py
+x-lucid-file-directory: /app/old-service_mesh
+x-lucid-file-type: python
 
-File: service_mesh/consul_manager.py
+Consul service discovery manager
 """
 
 import asyncio

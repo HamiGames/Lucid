@@ -1,6 +1,7 @@
 """
 File: /app/blockchain/api/app/services/anchoring_service.py
 x-lucid-file-path: /app/blockchain/api/app/services/anchoring_service.py
+x-lucid-file-directory: /app/blockchain/api/app/services
 x-lucid-file-type: python
 
 Anchoring Service

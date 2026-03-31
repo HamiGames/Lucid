@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# File: /app/scripts/security/run-trivy-scan.sh
+# x-lucid-file-path: /app/scripts/security/run-trivy-scan.sh
+# x-lucid-file-directory: /app/scripts/security
+# x-lucid-file-type: shell
 # Trivy Vulnerability Scanner Script
 # Scans all Lucid containers for security vulnerabilities
 # Author: Lucid Development Team

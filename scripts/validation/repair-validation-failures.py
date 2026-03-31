@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 """
+File: /app/scripts/validation/repair-validation-failures.py
+x-lucid-file-path: /app/scripts/validation/repair-validation-failures.py
+x-lucid-file-directory: /app/scripts/validation
+x-lucid-file-type: python
+
 LUCID Validation Repair Script
 
 This script automatically repairs common validation failures found by the

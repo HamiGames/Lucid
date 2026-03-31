@@ -1,3 +1,8 @@
+# File: /app/service_configs/kubernetes/06-application/rdp-services.yaml
+# x-lucid-file-path: /app/service_configs/kubernetes/06-application/rdp-services.yaml
+# x-lucid-file-directory: /app/service_configs/kubernetes/06-application
+# x-lucid-file-type: YAML
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:

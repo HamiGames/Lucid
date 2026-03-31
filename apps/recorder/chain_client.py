@@ -2,6 +2,7 @@
 """
 File: /app/apps/recorder/chain_client.py
 x-lucid-file-path: /app/apps/recorder/chain_client.py
+x-lucid-file-directory: /app/apps/recorder
 x-lucid-file-type: python
 
 Chain Client Module for Lucid RDP Recorder

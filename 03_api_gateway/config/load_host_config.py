@@ -1,6 +1,7 @@
 """
 File: /app/03_api_gateway/config/load_host_config.py
 x-lucid-file-path: /app/03_api_gateway/config/load_host_config.py
+x-lucid-file-directory: /app/03_api_gateway/config
 x-lucid-file-type: python
 
 Loads host config for Lucid api-gateway service.

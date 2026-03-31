@@ -1,8 +1,11 @@
 """
+File: /app/old-service_mesh/main.py
+x-lucid-file-path: /app/old-service_mesh/main.py
+x-lucid-file-directory: /app/old-service_mesh
+x-lucid-file-type: python
+
 Lucid Service Mesh Controller
 Provides service discovery, mTLS certificate management, and Envoy configuration
-
-File: service_mesh/main.py
 """
 
 import asyncio

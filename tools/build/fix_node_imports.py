@@ -2,6 +2,7 @@
 """
 File: /app/tools/build/fix_node_imports.py
 x-lucid-file-path: /app/tools/build/fix_node_imports.py
+x-lucid-file-directory: /app/tools
 x-lucid-file-type: python
 
 Script to fix database imports in all node modules to use the database adapter.

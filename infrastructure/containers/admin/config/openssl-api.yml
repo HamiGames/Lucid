@@ -1,3 +1,8 @@
+# File: /app/configs/admin/config/openssl-api.yml
+# x-lucid-file-path: /app/configs/admin/config/openssl-api.yml
+# x-lucid-file-directory: /app/configs/admin/config
+# x-lucid-file-type: YAML
+
 # Lucid Admin System Gateway — OpenSSL / TLS API contract
 # Consumed at runtime by entrypoint.py (Python ssl module). Paths may be overridden via .env.admin-system-gateway*.
 #

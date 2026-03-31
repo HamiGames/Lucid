@@ -1,5 +1,9 @@
 #!/bin/bash
 # RDP Recording Service Startup Script
+# File: /app/scripts/services/start-recording-service.sh
+# x-lucid-file-path: /app/scripts/services/start-recording-service.sh
+# x-lucid-file-directory: /app/scripts/services
+# x-lucid-file-type: shell
 # LUCID-STRICT Layer 2 Service Management
 # Purpose: Start session recording service for RDP recording
 # Compatibility: Distroless, API compliant

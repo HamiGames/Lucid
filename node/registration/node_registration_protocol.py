@@ -5,6 +5,7 @@
 """
 File: /app/node/registration/node_registration_protocol.py
 x-lucid-file-path: /app/node/registration/node_registration_protocol.py
+x-lucid-file-directory: /app/node/registration
 x-lucid-file-type: python
 """
 

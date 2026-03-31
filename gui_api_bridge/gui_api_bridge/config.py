@@ -1,11 +1,13 @@
 """
+File: /app/gui_api_bridge/gui_api_bridge/config.py
+x-lucid-file-path: /app/gui_api_bridge/gui_api_bridge/config.py
+x-lucid-file-directory: /app/gui_api_bridge/gui_api_bridge
+x-lucid-file-type: python
+
 GUI API Bridge Configuration Management
 Uses Pydantic Settings for environment variable validation
 No hardcoded values - all configuration from environment
 Aligned with 03_api_gateway configuration patterns
-file: /app/gui_api_bridge/gui_api_bridge/config.py
-x-lucid-file-path: /app/gui_api_bridge/gui_api_bridge/config.py
-x-lucid-file-type: python
 """
 
 import os

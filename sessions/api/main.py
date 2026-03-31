@@ -2,6 +2,7 @@
 """
 File: /app/sessions/api/main.py
 x-lucid-file-path: /app/sessions/api/main.py
+x-lucid-file-directory: /app/sessions/api
 x-lucid-file-type: python
 
 LUCID Session API Service - Main Entry Point

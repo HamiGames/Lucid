@@ -1,3 +1,8 @@
+# File: /app/configs/compose/docker-compose.blockchain.yaml
+# x-lucid-file-path: /app/configs/compose/docker-compose.blockchain.yaml
+# x-lucid-file-directory: /app/infrastructure/compose
+# x-lucid-file-type: YAML
+
 # LUCID BLOCKCHAIN SERVICES - Distroless Deployment
 # Phase 3: Blockchain Services (API, Governance, VM, Ledger, Sessions Data)
 # Aligned with essentials.md Phase 2 and service-ip-configuration.md
@@ -7,10 +12,9 @@
 # configs/environment/.env.secrets is bind-mounted to /app/configs/.env.secrets and listed in env_file for Compose.
 # Do not list master-env-config.txt in env_file: Compose interpolates ${...} and breaks on required placeholders.
 # Optional per-service env fragments (e.g. .env.node): bind-mount from configs/environment/ into /app/configs/ when present; omitted from env_file so compose does not require those files on the host.
-# Host registry: infrastructure/containers/host-config.yml -> /app/service_configs/host-config.yml (x-lucid-file-path).
+# Host registry: infrastructure/containers/host-config.yml -> /app/configs/host-config.yml (x-lucid-file-path).
 # Packaged service configs tree: infrastructure/containers/services/ -> /app/service_configs/ (container-runtime-layout.yml).
 # Build references: infrastructure/containers/<stack>/Dockerfile* (repo root build context).
-
 
 services:
   lucid-blockchain-engine:
@@ -52,7 +56,7 @@ services:
       - ../../master-env-config.txt:/app/configs/.env.master:ro
       - ../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
       - ../../infrastructure/containers/services:/app/service_configs:ro
-      - ../../infrastructure/containers/host-config.yml:/app/service_configs/host-config.yml:ro
+      - ../../infrastructure/containers/host-config.yml:/app/configs/host-config.yml:ro
 
       - /mnt/myssd/Lucid/Lucid/data/blockchain:/data/blockchain:rw
       - /mnt/myssd/Lucid/Lucid/logs/blockchain-engine:/app/logs:rw
@@ -68,7 +72,13 @@ services:
     ports:
       - "8084:8084"
     healthcheck:
-      test: ["CMD", "/usr/bin/python3", "-c", "import os, urllib.request; port = os.getenv('BLOCKCHAIN_ENGINE_PORT', '8084'); urllib.request.urlopen(f'http://localhost:{port}/health', timeout=5).read(); exit(0)"]
+      test:
+        [
+          "CMD",
+          "/usr/bin/python3",
+          "-c",
+          "import os, urllib.request; port = os.getenv('BLOCKCHAIN_ENGINE_PORT', '8084'); urllib.request.urlopen(f'http://localhost:{port}/health', timeout=5).read(); exit(0)",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -121,7 +131,7 @@ services:
       - ../../master-env-config.txt:/app/configs/.env.master:ro
       - ../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
       - ../../infrastructure/containers/services:/app/service_configs:ro
-      - ../../infrastructure/containers/host-config.yml:/app/service_configs/host-config.yml:ro
+      - ../../infrastructure/containers/host-config.yml:/app/configs/host-config.yml:ro
 
       - /mnt/myssd/Lucid/Lucid/data/governance:/data/governance:rw
       - /mnt/myssd/Lucid/Lucid/logs/blockchain-governance:/app/logs:rw
@@ -193,7 +203,7 @@ services:
       - ../../master-env-config.txt:/app/configs/.env.master:ro
       - ../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
       - ../../infrastructure/containers/services:/app/service_configs:ro
-      - ../../infrastructure/containers/host-config.yml:/app/service_configs/host-config.yml:ro
+      - ../../infrastructure/containers/host-config.yml:/app/configs/host-config.yml:ro
 
       - /mnt/myssd/Lucid/Lucid/data/blockchain:/data/blockchain:rw
       - /mnt/myssd/Lucid/Lucid/logs/block-manager:/app/logs:rw
@@ -265,7 +275,7 @@ services:
       - ../../master-env-config.txt:/app/configs/.env.master:ro
       - ../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
       - ../../infrastructure/containers/services:/app/service_configs:ro
-      - ../../infrastructure/containers/host-config.yml:/app/service_configs/host-config.yml:ro
+      - ../../infrastructure/containers/host-config.yml:/app/configs/host-config.yml:ro
 
       - /mnt/myssd/Lucid/Lucid/data/chain:/data/chain:rw
       - /mnt/myssd/Lucid/Lucid/logs/data-chain:/app/logs:rw
@@ -283,7 +293,13 @@ services:
     ports:
       - "8087:8087"
     healthcheck:
-      test: ["CMD", "/usr/bin/python3", "-c", "import os, urllib.request; port = os.getenv('DATA_CHAIN_PORT', '8087'); urllib.request.urlopen(f'http://localhost:{port}/health', timeout=5).read(); exit(0)"]
+      test:
+        [
+          "CMD",
+          "/usr/bin/python3",
+          "-c",
+          "import os, urllib.request; port = os.getenv('DATA_CHAIN_PORT', '8087'); urllib.request.urlopen(f'http://localhost:{port}/health', timeout=5).read(); exit(0)",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -335,7 +351,7 @@ services:
       - ../../master-env-config.txt:/app/configs/.env.master:ro
       - ../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
       - ../../infrastructure/containers/services:/app/service_configs:ro
-      - ../../infrastructure/containers/host-config.yml:/app/service_configs/host-config.yml:ro
+      - ../../infrastructure/containers/host-config.yml:/app/configs/host-config.yml:ro
 
       - /mnt/myssd/Lucid/Lucid/data/vm:/data/vm:rw
       - /mnt/myssd/Lucid/Lucid/logs/blockchain-vm:/app/logs:rw
@@ -403,7 +419,7 @@ services:
       - ../../master-env-config.txt:/app/configs/.env.master:ro
       - ../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
       - ../../infrastructure/containers/services:/app/service_configs:ro
-      - ../../infrastructure/containers/host-config.yml:/app/service_configs/host-config.yml:ro
+      - ../../infrastructure/containers/host-config.yml:/app/configs/host-config.yml:ro
 
       - /mnt/myssd/Lucid/Lucid/data/ledger:/data/ledger:rw
       - /mnt/myssd/Lucid/Lucid/logs/blockchain-ledger:/app/logs:rw

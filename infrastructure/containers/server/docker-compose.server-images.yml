@@ -1,3 +1,8 @@
+# File: /app/configs/server/docker-compose.server-images.yml
+# x-lucid-file-path: /app/configs/server/docker-compose.server-images.yml
+# x-lucid-file-directory: /app/configs/server
+# x-lucid-file-type: YAML
+
 # Lucid server-tier images: API Gateway, Server Core, Server Operations
 # Build context is the repository root (requires COPY RDP/, 03_api_gateway/, etc.)
 #

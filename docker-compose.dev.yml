@@ -1,3 +1,8 @@
+# File: /app/docker-compose.dev.yml
+# x-lucid-file-path: /app/docker-compose.dev.yml
+# x-lucid-file-directory: /app
+# x-lucid-file-type: YAML
+
 # Path: docker-compose.dev.yml
 # Development Docker Compose file for Lucid project
 # Optimized for development with hot reload, debugging, and local volume mounts

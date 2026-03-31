@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 # Combined contract check (lint + validate) for Lucid RDP API
+# File: /app/03_api_gateway/scripts/check_contract.sh
+# x-lucid-file-path: /app/03_api_gateway/scripts/check_contract.sh
+# x-lucid-file-directory: /app/03_api_gateway/scripts
+# x-lucid-file-type: shell
 # Path: 03-api-gateway/scripts/check_contract.sh
 
 set -euo pipefail

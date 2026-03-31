@@ -1,5 +1,9 @@
 #!/bin/bash
 set -euo pipefail
+# File: /app/scripts/enhanced-docker-test.sh
+# x-lucid-file-path: /app/scripts/enhanced-docker-test.sh
+# x-lucid-file-directory: /app/scripts
+# x-lucid-file-type: shell
 
 log_info() { echo -e "\033[0;34m[INFO]\033[0m $*"; }
 log_success() { echo -e "\033[0;32m[SUCCESS]\033[0m $*"; }

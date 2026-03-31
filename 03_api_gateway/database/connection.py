@@ -1,6 +1,7 @@
 """
 File: /app/03_api_gateway/database/connection.py
 x-lucid-file-path: /app/03_api_gateway/database/connection.py
+x-lucid-file-directory: /app/03_api_gateway/database
 x-lucid-file-type: python
 
 Lucid API Gateway - Database Connection

@@ -2,6 +2,7 @@
 """
 File: /app/tools/build/test_all_node_systems_fixed.py
 x-lucid-file-path: /app/tools/build/test_all_node_systems_fixed.py
+x-lucid-file-directory: /app/tools
 x-lucid-file-type: python
 
 Fixed comprehensive test script to start up and validate all main node systems.

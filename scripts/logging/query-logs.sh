@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# File: /app/scripts/logging/query-logs.sh
+# x-lucid-file-path: /app/scripts/logging/query-logs.sh
+# x-lucid-file-directory: /app/scripts/logging
+# x-lucid-file-type: shell
 # Lucid RDP System - Log Query Script
 # Step 49: Logging Configuration
 # Document: BUILD_REQUIREMENTS_GUIDE.md Step 49

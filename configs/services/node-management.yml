@@ -1,3 +1,8 @@
+# File: /app/configs/services/node-management.yml
+# x-lucid-file-path: /app/configs/services/node-management.yml
+# x-lucid-file-directory: /app/configs/services
+# x-lucid-file-type: YAML
+
 # Node Management Service Configuration
 # Cluster: 05-NODE-MANAGEMENT
 # Service: Worker Node Management and PoOT Operations

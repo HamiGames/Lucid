@@ -1,3 +1,8 @@
+# File: /app/auth/config/rbac-policies.yaml
+# x-lucid-file-path: /app/auth/config/rbac-policies.yaml
+# x-lucid-file-directory: /app/auth/config
+# x-lucid-file-type: YAML
+
 # Lucid Authentication Service - RBAC Policies Configuration
 # Optional YAML configuration for role-based access control policies
 # File: auth/config/rbac-policies.yaml

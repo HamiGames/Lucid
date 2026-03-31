@@ -2,6 +2,7 @@
 """
 File: /app/sessions/storage/config.py
 x-lucid-file-path: /app/sessions/storage/config.py
+x-lucid-file-directory: /app/sessions/storage
 x-lucid-file-type: python
 
 Lucid Session Storage Configuration

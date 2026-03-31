@@ -1,3 +1,8 @@
+# File: /app/RDP/xrdp/config.yaml
+# x-lucid-file-path: /app/RDP/xrdp/config.yaml
+# x-lucid-file-directory: /app/RDP/xrdp
+# x-lucid-file-type: YAML
+
 # Lucid XRDP API - Configuration File
 # Optional YAML configuration for XRDP API service
 # File: RDP/xrdp/config.yaml

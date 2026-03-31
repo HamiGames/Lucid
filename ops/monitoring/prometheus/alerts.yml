@@ -1,3 +1,8 @@
+# File: /app/ops/monitoring/prometheus/alerts.yml
+# x-lucid-file-path: /app/ops/monitoring/prometheus/alerts.yml
+# x-lucid-file-directory: /app/ops/monitoring/prometheus
+# x-lucid-file-type: YAML
+
 # Prometheus alerting rules for Lucid RDP system
 # Comprehensive alert rules for all services
 # Aligned with essentials.md service names and ports

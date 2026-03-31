@@ -2,6 +2,7 @@
 """
 File: /app/03_api_gateway/api/app/db/models/user.py
 x-lucid-file-path: /app/03_api_gateway/api/app/db/models/user.py
+x-lucid-file-directory: /app/03_api_gateway/api/app/db/models
 x-lucid-file-type: python
 """
 

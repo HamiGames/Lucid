@@ -1,17 +1,26 @@
 #!/bin/bash
 # Generate Complete Distroless Deployment Configuration
+# File: /app/scripts/config/generate-distroless-deployment-config.sh
+# x-lucid-file-path: /app/scripts/config/generate-distroless-deployment-config.sh
+# x-lucid-file-directory: /app/scripts/config
+# x-lucid-file-type: shell
 # Based on: docker-compose.base.yml and docker-compose.foundation.yml
 # Maintains: Distroless design + Secure design principles
 # Generated: 2025-01-14
 
 set -euo pipefail
 
-# Project root configuration
-PROJECT_ROOT="/mnt/myssd/Lucid/Lucid"
+
+# x-files-listing.txt → LUCID_HOST_COMPOSE_* (scripts/lib/lucid-repo-paths.sh)
+_LUCID_W="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+while [[ "$_LUCID_W" != "/" && "$(basename "$_LUCID_W")" != "scripts" ]]; do _LUCID_W="$(dirname "$_LUCID_W")"; done
+# shellcheck source=lib/lucid-repo-paths.sh
+source "${_LUCID_W}/lib/lucid-repo-paths.sh"
+# Project root = host checkout (from lucid-repo-paths.sh)
+PROJECT_ROOT="$LUCID_REPO_ROOT"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# Change to project root if not already there
-if [ "$(pwd)" != "$PROJECT_ROOT" ]; then
+if [[ "$(pwd)" != "$PROJECT_ROOT" ]] && [[ -d "$PROJECT_ROOT" ]]; then
     echo "Changing to project root: $PROJECT_ROOT"
     cd "$PROJECT_ROOT"
 fi
@@ -197,7 +206,7 @@ LOG_OUTPUT=stdout
 DEPLOYMENT_TARGET=raspberry-pi
 DEPLOYMENT_HOST=192.168.0.75
 DEPLOYMENT_USER=pickme
-DEPLOYMENT_PATH=/mnt/myssd/Lucid/Lucid
+DEPLOYMENT_PATH=/app
 
 # Registry Configuration
 REGISTRY=docker.io
@@ -472,7 +481,7 @@ METRICS_PATH=/metrics
 DEPLOYMENT_TARGET=raspberry-pi
 DEPLOYMENT_HOST=192.168.0.75
 DEPLOYMENT_USER=pickme
-DEPLOYMENT_PATH=/mnt/myssd/Lucid/Lucid
+DEPLOYMENT_PATH=/app
 
 # Registry Configuration
 REGISTRY=docker.io
@@ -667,11 +676,10 @@ cat > scripts/deployment/deploy-distroless-complete.sh << 'EOF'
 
 set -euo pipefail
 
-# Project root configuration
-PROJECT_ROOT="/mnt/myssd/Lucid/Lucid"
+# Project root (x-lucid container layout)
+PROJECT_ROOT="/app"
 
-# Change to project root if not already there
-if [ "$(pwd)" != "$PROJECT_ROOT" ]; then
+if [[ "$(pwd)" != "$PROJECT_ROOT" ]] && [[ -d "$PROJECT_ROOT" ]]; then
     echo "Changing to project root: $PROJECT_ROOT"
     cd "$PROJECT_ROOT"
 fi
@@ -754,7 +762,7 @@ deploy_foundation_services() {
     
     if docker-compose \
         --env-file configs/environment/.env.foundation \
-        -f configs/docker/docker-compose.foundation.yml \
+        -f "${LUCID_HOST_COMPOSE_FOUNDATION}" \
         up -d --remove-orphans; then
         echo -e "${GREEN}✅ Foundation Services deployed successfully${NC}"
         

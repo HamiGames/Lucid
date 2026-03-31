@@ -1,9 +1,21 @@
 #!/bin/bash
 # Path: scripts/setup-lucid-env.sh
+# File: /app/scripts/setup-lucid-env.sh
+# x-lucid-file-path: /app/scripts/setup-lucid-env.sh
+# x-lucid-file-directory: /app/scripts
+# x-lucid-file-type: shell
 # Master script to setup Lucid project environment
 # Runs path setup and generates all environment files
 
 set -euo pipefail
+
+_lucid_here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+_lucid_scripts="$_lucid_here"
+while [[ "$_lucid_scripts" != "/" && "$(basename "$_lucid_scripts")" != "scripts" ]]; do
+    _lucid_scripts="$(dirname "$_lucid_scripts")"
+done
+# shellcheck source=lib/lucid-repo-paths.sh
+source "$_lucid_scripts/lib/lucid-repo-paths.sh"
 
 # Colors for output
 RED='\033[0;31m'
@@ -22,10 +34,10 @@ log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 # GLOBAL PATH CONFIGURATION
 # =============================================================================
 # Set global path variables for consistent file management
-PROJECT_ROOT="/mnt/myssd/Lucid/Lucid"
-ENV_CONFIG_DIR="$PROJECT_ROOT/configs/environment"
-SCRIPTS_CONFIG_DIR="$PROJECT_ROOT/scripts/config"
-SCRIPTS_DIR="$PROJECT_ROOT/scripts"
+PROJECT_ROOT="$LUCID_REPO_ROOT"
+ENV_CONFIG_DIR="$LUCID_ENV_CONFIG_DIR"
+SCRIPTS_CONFIG_DIR="$LUCID_SCRIPTS_DIR/config"
+SCRIPTS_DIR="$LUCID_SCRIPTS_DIR"
 SESSION_CORE_DIR="$PROJECT_ROOT/sessions/core"
 
 log_info "Lucid Environment Setup Master Script"

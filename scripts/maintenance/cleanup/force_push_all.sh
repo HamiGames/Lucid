@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 # Force push ALL files in repo to GitHub, ignoring junk
+# File: /app/scripts/maintenance/cleanup/force_push_all.sh
+# x-lucid-file-path: /app/scripts/maintenance/cleanup/force_push_all.sh
+# x-lucid-file-directory: /app/scripts/maintenance/cleanup
+# x-lucid-file-type: shell
 
 set -euo pipefail
 

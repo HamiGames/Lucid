@@ -1,7 +1,7 @@
 """
 File: /app/service_mesh/discovery/consul_client.py
 x-lucid-file-path: /app/service_mesh/discovery/consul_client.py
-x-lucid-file-directory: /app/service_mesh
+x-lucid-file-directory: /app/service_mesh/discovery
 x-lucid-file-type: python
 
 Lucid Service Mesh - Consul Client

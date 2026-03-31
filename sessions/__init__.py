@@ -2,6 +2,7 @@
 """
 File: /app/sessions/__init__.py
 x-lucid-file-path: /app/sessions/__init__.py
+x-lucid-file-directory: /app/sessions
 x-lucid-file-type: python
 
 Session system package for Lucid RDP.

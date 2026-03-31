@@ -1,3 +1,8 @@
+# File: /app/configs/container/sessions/docker-compose.session-images.yml
+# x-lucid-file-path: /app/configs/container/sessions/docker-compose.session-images.yml
+# x-lucid-file-directory: /app/configs/container/sessions
+# x-lucid-file-type: YAML
+
 # Docker Compose for Lucid Session Images
 # Path: infrastructure/containers/sessions/docker-compose.session-images.yml
 #

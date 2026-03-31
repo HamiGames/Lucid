@@ -1,10 +1,20 @@
 #!/bin/bash
 # Phase 1 Foundation Services Build Validation Script
+# File: /app/scripts/validation/validate-phase1-compliance.sh
+# x-lucid-file-path: /app/scripts/validation/validate-phase1-compliance.sh
+# x-lucid-file-directory: /app/scripts/validation
+# x-lucid-file-type: shell
 # Validates alignment with lucid-container-build-plan.plan.md Steps 5-9
 # Ensures compatibility with architecture documents and project structure
 
 set -euo pipefail
 
+
+# x-files-listing.txt → LUCID_HOST_COMPOSE_* (scripts/lib/lucid-repo-paths.sh)
+_LUCID_W="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+while [[ "$_LUCID_W" != "/" && "$(basename "$_LUCID_W")" != "scripts" ]]; do _LUCID_W="$(dirname "$_LUCID_W")"; done
+# shellcheck source=lib/lucid-repo-paths.sh
+source "${_LUCID_W}/lib/lucid-repo-paths.sh"
 # Color codes for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -14,7 +24,7 @@ NC='\033[0m' # No Color
 
 # Script configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+PROJECT_ROOT="$LUCID_REPO_ROOT"
 VALIDATION_LOG="$PROJECT_ROOT/validation-report-phase1.json"
 VALIDATION_RESULTS=()
 
@@ -50,7 +60,7 @@ validate_step5_storage_database() {
     echo -e "${BLUE}=== Step 5: Storage Database Containers Validation ===${NC}"
     
     # Check MongoDB Dockerfile exists and is distroless
-    local mongodb_dockerfile="$PROJECT_ROOT/infrastructure/containers/database/Dockerfile.mongodb"
+    local mongodb_dockerfile="$PROJECT_ROOT/infrastructure/containers/storage/Dockerfile.mongodb"
     if [ -f "$mongodb_dockerfile" ]; then
         if grep -q "gcr.io/distroless" "$mongodb_dockerfile"; then
             log_result "step5-mongodb-distroless" "PASS" "MongoDB container uses distroless base image"
@@ -68,7 +78,7 @@ validate_step5_storage_database() {
     fi
     
     # Check Redis Dockerfile exists and is distroless
-    local redis_dockerfile="$PROJECT_ROOT/infrastructure/containers/database/Dockerfile.redis"
+    local redis_dockerfile="$PROJECT_ROOT/infrastructure/containers/storage/Dockerfile.redis"
     if [ -f "$redis_dockerfile" ]; then
         if grep -q "gcr.io/distroless" "$redis_dockerfile"; then
             log_result "step5-redis-distroless" "PASS" "Redis container uses distroless base image"
@@ -86,7 +96,7 @@ validate_step5_storage_database() {
     fi
     
     # Check Elasticsearch Dockerfile exists (should be created)
-    local elasticsearch_dockerfile="$PROJECT_ROOT/infrastructure/containers/database/Dockerfile.elasticsearch"
+    local elasticsearch_dockerfile="$PROJECT_ROOT/infrastructure/containers/storage/Dockerfile.elasticsearch"
     if [ -f "$elasticsearch_dockerfile" ]; then
         if grep -q "gcr.io/distroless" "$elasticsearch_dockerfile"; then
             log_result "step5-elasticsearch-distroless" "PASS" "Elasticsearch container uses distroless base image"
@@ -172,7 +182,7 @@ validate_step7_docker_compose() {
     echo -e "${BLUE}=== Step 7: Phase 1 Docker Compose Generation Validation ===${NC}"
     
     # Check foundation docker-compose exists
-    local foundation_compose="$PROJECT_ROOT/configs/docker/docker-compose.foundation.yml"
+    local foundation_compose="${LUCID_HOST_COMPOSE_FOUNDATION}"
     if [ -f "$foundation_compose" ]; then
         log_result "step7-foundation-compose" "PASS" "Foundation docker-compose file exists"
         

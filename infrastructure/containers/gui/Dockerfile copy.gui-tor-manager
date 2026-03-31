@@ -26,6 +26,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 # Set working directory
 WORKDIR /build
+COPY scripts/ ./scripts/
 
 # LUCID_IMAGE_CONFIG: .env.secrets + .env.master + host-config + container services (builder)
 RUN mkdir -p /build/configs /build/service_configs/tor
@@ -86,7 +87,7 @@ RUN mkdir -p /build/tmp /build/common /build/kubernetes && \
 
 COPY common/__init__.py /build/common/__init__.py
 COPY common/tor/ /build/common/tor/
-COPY infrastructure/kubernetes/01_configmaps/ /build/configs/
+COPYservice_configs/kubernetes/01_configmaps/ /build/configs/
 
 # Application modules (explicit per-directory COPY)
 COPY gui_tor_manager/gui_tor_manager/*.py ./gui_tor_manager/
@@ -122,9 +123,18 @@ LABEL maintainer="Lucid Development Team" \
       org.opencontainers.image.version="${VERSION}" \
       org.opencontainers.image.revision="${VCS_REF}" \
       org.opencontainers.image.created="${BUILD_DATE}" \
+      com.lucid.plane="support" \
       com.lucid.service="gui-tor-manager" \
+      com.lucid.layer="3" \
+      org.lucid.layer="3" \
       com.lucid.platform="arm64" \
+      com.lucid.architecture="linux/arm64" \
       com.lucid.security="distroless" \
+      com.lucid.vulnerabilities="zero" \
+      com.lucid.expose="8097" \
+      com.lucid.cluster="gui-integration" \
+      com.lucid.tor.compatible="true" \
+      com.lucid.env.config=".env.tunnel-tools,.env.secrets,.env.foundation" \
       com.lucid.hostconfig.service_name="gui-tor-manager" \
       com.lucid.hostconfig.port="8097" \
       com.lucid.hostconfig.tor_socks_host="tor-socks" \
@@ -132,23 +142,22 @@ LABEL maintainer="Lucid Development Team" \
       com.lucid.hostconfig.upstream_api_gateway_host="api-gateway" \
       com.lucid.hostconfig.upstream_api_gateway_port="8080"
 
-ENV PATH=/usr/local/bin:/usr/bin:/bin \
-    PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONPATH=/app:/usr/local/lib/python3.11/site-packages \
-    PYTHONIOENCODING=utf-8 \
-    LANG=C.UTF-8 \
-    LC_ALL=C.UTF-8 \
-    LUCID_HOST_CONFIG_PATH=/app/configs/host-config.yml \
-    LUCID_HOST_CONFIG_SERVICE_KEY=gui_tor_manager_http \
+ENV PATH="/usr/local/bin:/usr/bin:/bin" \
+    PYTHONUNBUFFERED="1" \
+    PYTHONDONTWRITEBYTECODE="1" \
+    PYTHONPATH="/app:/usr/local/lib/python3.11/site-packages" \
+    PYTHONIOENCODING="utf-8" \
+    LANG="C.UTF-8" \
+    LC_ALL="C.UTF-8" \
+    LUCID_API_GATEWAY_HOST="api-gateway" \
+    LUCID_API_GATEWAY_PORT="8080" \
+    LUCID_HOST_CONFIG_PATH="/app/configs/host-config.yml" \
+    LUCID_HOST_CONFIG_SERVICE_NAME=gui_tor_manager_http \
     LUCID_SERVICE_HOST_IP=172.20.10.63 \
     LUCID_SERVICE_HTTP_PATH=http://gui-tor-manager:8097/app \
-    LUCID_TOR_SOCKS_HOST=tor-socks \
-    LUCID_TOR_SOCKS_PORT=9050 \
-    LUCID_API_GATEWAY_HOST=api-gateway \
-    LUCID_API_GATEWAY_PORT=8080
+    LUCID_TOR_SOCKS_HOST="tor-socks" \
+    LUCID_TOR_SOCKS_PORT="9050"
 
-# Copy system directories and certificates
 # LUCID_IMAGE_CONFIG: .env.secrets + .env.master + host-config + container services (runtime)
 COPY --from=builder --chown=65532:65532 /build/configs/.env.secrets /app/configs/.env.secrets
 COPY --from=builder --chown=65532:65532 /build/configs/.env.master /app/configs/.env.master
@@ -164,11 +173,9 @@ COPY --from=builder --chown=65532:65532 /var/run /var/run
 COPY --from=builder --chown=65532:65532 /var/lib /var/lib
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 
-# Copy Python packages
 COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
 
-# Copy application code
 COPY --chown=65532:65532 --from=builder /build/gui_tor_manager /app/gui_tor_manager
 
 # Set Python path
@@ -182,6 +189,26 @@ ENV PORT=8097 \
     HOST=0.0.0.0 \
     LOG_LEVEL=INFO \
     DEBUG=false
+# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
+# Generated: apt + RUN scaffold (mkdir/printf/touch/chown) -> FHS (not ./ or /build/; lib_search_and_inject.py).
+COPY --from=builder --chown=65532:65532 /usr/lib/*/libssl.so* /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /usr/lib/*/ossl-modules/ /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /usr/lib/*/libffi.so* /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /bin/ /app/bin/
+COPY --from=builder --chown=65532:65532 /etc/ssl/ /app/etc/ssl/
+COPY --from=builder --chown=65532:65532 /usr/bin/ /app/usr/bin/
+COPY --from=builder --chown=65532:65532 /usr/local/bin/ /app/usr/local/bin/
+COPY --from=builder --chown=65532:65532 /usr/local/lib/python3.11/site-packages/ /app/usr/local/lib/python3.11/site-packages/
+COPY --from=builder --chown=65532:65532 /var/lib/ /app/var/lib/
+COPY --from=builder --chown=65532:65532 /var/run/ /app/var/run/
+# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_END
+
+
+
+
+
+
+
 
 # Expose port
 EXPOSE 8097

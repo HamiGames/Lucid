@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# File: /app/scripts/load/run-k6-tests.sh
+# x-lucid-file-path: /app/scripts/load/run-k6-tests.sh
+# x-lucid-file-directory: /app/scripts/load
+# x-lucid-file-type: shell
 # K6 Load Testing Script for Lucid RDP System
 # This script runs comprehensive load tests using K6 for the Lucid system
 

@@ -2,6 +2,7 @@
 """
 File: /app/sessions/pipeline/pipeline_manager.py
 x-lucid-file-path: /app/sessions/pipeline/pipeline_manager.py
+x-lucid-file-directory: /app/sessions/pipeline
 x-lucid-file-type: python
 
 Lucid Session Management Pipeline Manager

@@ -129,13 +129,15 @@ ARG VERSION=1.0.0
 LABEL maintainer="Lucid Development Team" \
       version="${VERSION}" \
       description="Distroless tunnel tools for Lucid core support" \
-      org.opencontainers.image.created="${BUILD_DATE}" \
-      org.opencontainers.image.revision="${VCS_REF}" \
-      org.opencontainers.image.version="${VERSION}" \
       org.opencontainers.image.title="Lucid Tunnel Tools" \
       org.opencontainers.image.description="Distroless tunnel tools for Lucid project" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.created="${BUILD_DATE}" \
       com.lucid.plane="ops" \
       com.lucid.service="tunnel-tools" \
+      com.lucid.layer="0" \
+      org.lucid.layer="0" \
       com.lucid.platform="arm64" \
       com.lucid.architecture="linux/arm64" \
       com.lucid.security="distroless" \
@@ -146,13 +148,13 @@ LABEL maintainer="Lucid Development Team" \
       com.lucid.env.config=".env.tunnel-tools,.env.secrets,.env.foundation"
 
 # Minimal, safe PATH and Python settings
-ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin \
-    PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONPATH=/app:/app/usr/local/lib/python3.11/site-packages \
-    PYTHONIOENCODING=utf-8 \
-    LANG=C.UTF-8 \
-    LC_ALL=C.UTF-8
+ENV PATH="/app/usr/local/bin:/app/usr/bin:/app/bin" \
+    PYTHONUNBUFFERED="1" \
+    PYTHONDONTWRITEBYTECODE="1" \
+    PYTHONPATH="/app:/app/usr/local/lib/python3.11/site-packages" \
+    PYTHONIOENCODING="utf-8" \
+    LANG="C.UTF-8" \
+    LC_ALL="C.UTF-8"
 
 # Copy tini from builder (for proper signal handling)
 COPY --from=tunnel-builder --chown=65532:65532 /usr/bin/tini /app/usr/bin/tini
@@ -235,7 +237,7 @@ CMD ["/app/usr/bin/python3.11", "/app/tunnels/entrypoint.py"]
 
 # NOTES:
 #   Configuration files are expected at:
-#     - /mnt/myssd/Lucid/Lucid/configs/environment/.env.tunnel-tools
-#     - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
-#     - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
+#     - /app/configs/.env.tunnel-tools
+#     - /app/configs/.env.secrets
+#     - /app/configs/.env.foundation
 #   Loaded via docker-compose env_file directive; no hardcoded secrets here.

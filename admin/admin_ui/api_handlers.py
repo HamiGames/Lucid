@@ -1,6 +1,7 @@
 """
 File: /app/admin/admin_ui/api_handlers.py
 x-lucid-file-path: /app/admin/admin_ui/api_handlers.py
+x-lucid-file-directory: /app/admin/admin_ui
 x-lucid-file-type: python
 
 LUCID Admin UI - Next.js Backend API Handlers

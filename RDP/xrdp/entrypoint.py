@@ -3,6 +3,7 @@
 """
 File: /app/RDP/xrdp/entrypoint.py
 x-lucid-file-path: /app/RDP/xrdp/entrypoint.py
+x-lucid-file-directory: /app/RDP/xrdp
 x-lucid-file-type: python
 
 RDP XRDP Service Entrypoint

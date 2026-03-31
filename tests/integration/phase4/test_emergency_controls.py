@@ -1,4 +1,9 @@
 """
+File: /app/tests/integration/phase4/test_emergency_controls.py
+x-lucid-file-path: /app/tests/integration/phase4/test_emergency_controls.py
+x-lucid-file-directory: /app/tests/integration/phase4
+x-lucid-file-type: python
+
 Emergency Controls Integration Tests
 
 This module tests the emergency controls functionality across the system,

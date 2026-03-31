@@ -1,6 +1,7 @@
 """
 File: /app/RDP/common/models.py
 x-lucid-file-path: /app/RDP/common/models.py
+x-lucid-file-directory: /app/RDP/common
 x-lucid-file-type: python
 
 RDP Common Models - Shared Data Models

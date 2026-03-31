@@ -1,5 +1,9 @@
 #!/bin/bash
 # Lucid API - Security Compliance Check Script
+# File: /app/scripts/security/security-compliance-check.sh
+# x-lucid-file-path: /app/scripts/security/security-compliance-check.sh
+# x-lucid-file-directory: /app/scripts/security
+# x-lucid-file-type: shell
 # Comprehensive security compliance verification
 
 set -euo pipefail

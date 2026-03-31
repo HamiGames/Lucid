@@ -4,6 +4,7 @@
 """
 File: /app/02_network_security/__init__.py
 x-lucid-file-path: /app/02_network_security/__init__.py
+x-lucid-file-directory: /app/02_network_security
 x-lucid-file-type: python
 
 Network security package for Lucid RDP.

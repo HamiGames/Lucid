@@ -2,6 +2,7 @@
 """
 File: /app/user_content/backup/__init__.py
 x-lucid-file-path: /app/user_content/backup/__init__.py
+x-lucid-file-directory: /app/user_content/backup
 x-lucid-file-type: python
 
 Backup and restore functionality for user content.

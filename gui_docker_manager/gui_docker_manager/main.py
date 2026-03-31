@@ -2,6 +2,7 @@
 """
 File: /app/gui_docker_manager/gui_docker_manager/main.py
 x-lucid-file-path: /app/gui_docker_manager/gui_docker_manager/main.py
+x-lucid-file-directory: /app/gui_docker_manager/gui_docker_manager
 x-lucid-file-type: python
 
 LUCID GUI Docker Manager Service - Main Entry Point

@@ -1,6 +1,7 @@
 """
 File: /app/server/run_server.py
 x-lucid-file-path: /app/server/run_server.py
+x-lucid-file-directory: /app/server
 x-lucid-file-type: python
 
 CLI entry: validate master-endpoint vs host-config, then run uvicorn.

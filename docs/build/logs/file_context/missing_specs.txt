@@ -88,33 +88,33 @@ According to Spec-1d, these application modules should exist:
 
 #### 4.1 Distroless Docker Images - ✅ MOSTLY COMPLETE
 **Core Services - ✅ EXISTS:**
-- infrastructure/docker/distroless/gui/Dockerfile.gui.distroless ✅
-- infrastructure/docker/distroless/blockchain/Dockerfile.blockchain.distroless ✅
-- infrastructure/docker/distroless/rdp/Dockerfile.rdp.distroless ✅
-- infrastructure/docker/distroless/node/Dockerfile.node.distroless ✅
+- configs/docker/distroless/gui/Dockerfile.gui.distroless ✅
+- configs/docker/distroless/blockchain/Dockerfile.blockchain.distroless ✅
+- configs/docker/distroless/rdp/Dockerfile.rdp.distroless ✅
+- configs/docker/distroless/node/Dockerfile.node.distroless ✅
 
 **Payment Systems - ✅ EXISTS:**
-- infrastructure/docker/payment-systems/Dockerfile.payout-router-v0.distroless ✅
-- infrastructure/docker/payment-systems/Dockerfile.usdt-trc20.distroless ✅
+- configs/docker/payment-systems/Dockerfile.payout-router-v0.distroless ✅
+- configs/docker/payment-systems/Dockerfile.usdt-trc20.distroless ✅
 
 **Session Services - ✅ EXISTS:**
-- infrastructure/docker/sessions/Dockerfile.session-recorder ✅
-- infrastructure/docker/sessions/Dockerfile.chunker ✅
-- infrastructure/docker/sessions/Dockerfile.encryptor ✅
-- infrastructure/docker/sessions/Dockerfile.merkle_builder ✅
+- configs/docker/sessions/Dockerfile.session-recorder ✅
+- configs/docker/sessions/Dockerfile.chunker ✅
+- configs/docker/sessions/Dockerfile.encryptor ✅
+- configs/docker/sessions/Dockerfile.merkle_builder ✅
 
 **Blockchain Services - ✅ EXISTS:**
-- infrastructure/docker/blockchain/Dockerfile.lucid-anchors-client.distroless ✅
-- infrastructure/docker/blockchain/Dockerfile.on-system-chain-client.distroless ✅
+- configs/docker/blockchain/Dockerfile.lucid-anchors-client.distroless ✅
+- configs/docker/blockchain/Dockerfile.on-system-chain-client.distroless ✅
 
 #### 4.2 Multi-Stage Dockerfiles - ❌ MISSING
 The build script expects these multi-stage Dockerfiles:
-- infrastructure/docker/multi-stage/Dockerfile.gui ❌
-- infrastructure/docker/multi-stage/Dockerfile.rdp ❌
-- infrastructure/docker/multi-stage/Dockerfile.node ❌
-- infrastructure/docker/multi-stage/Dockerfile.storage ❌
-- infrastructure/docker/multi-stage/Dockerfile.database ❌
-- infrastructure/docker/multi-stage/Dockerfile.vm ❌
+- configs/docker/multi-stage/Dockerfile.gui ❌
+- configs/docker/multi-stage/Dockerfile.rdp ❌
+- configs/docker/multi-stage/Dockerfile.node ❌
+- configs/docker/multi-stage/Dockerfile.storage ❌
+- configs/docker/multi-stage/Dockerfile.database ❌
+- configs/docker/multi-stage/Dockerfile.vm ❌
 
 ### 5. TESTING INFRASTRUCTURE - ✅ MOSTLY COMPLETE
 
@@ -188,7 +188,7 @@ Lucid/
 │   ├── cloud-init/               # ✅ CREATED - Cloud initialization
 │   ├── ota/                      # ✅ EXISTS - OTA update mechanisms
 │   └── monitoring/               # ✅ EXISTS - Monitoring configurations
-├── infrastructure/docker/        # ✅ MOSTLY COMPLETE - Docker infrastructure
+├── configs/docker/        # ✅ MOSTLY COMPLETE - Docker infrastructure
 │   ├── distroless/               # ✅ EXISTS - Distroless images
 │   │   ├── gui/                  # ✅ EXISTS
 │   │   ├── blockchain/           # ✅ EXISTS
@@ -267,12 +267,12 @@ Lucid/
    - ParamRegistry.sol
    - Governor.sol
 
-2. **Distroless Docker Images** (infrastructure/docker/distroless/)
+2. **Distroless Docker Images** (configs/docker/distroless/)
    - Core service distroless images
    - Payment system distroless images
    - Session service distroless images
 
-3. **Multi-Stage Dockerfiles** (infrastructure/docker/multi-stage/)
+3. **Multi-Stage Dockerfiles** (configs/docker/multi-stage/)
    - All missing multi-stage Dockerfiles
 
 ### PHASE 2: OPERATIONS INFRASTRUCTURE (HIGH PRIORITY)

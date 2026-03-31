@@ -2,6 +2,7 @@
 """
 File: /app/payment_systems/payment_acceptor/test_payment_acceptor.py
 x-lucid-file-path: /app/payment_systems/payment_acceptor/test_payment_acceptor.py
+x-lucid-file-directory: /app/payment_systems/payment_acceptor
 x-lucid-file-type: python
 
 Test script for Payment Acceptor Module

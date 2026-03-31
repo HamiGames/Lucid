@@ -1,5 +1,9 @@
 #!/bin/bash
 # Phase 3 Application Services Integration Tests
+# File: /app/tests/integration/phase3/run_phase3_tests.sh
+# x-lucid-file-path: /app/tests/integration/phase3/run_phase3_tests.sh
+# x-lucid-file-directory: /app/tests/integration/phase3
+# x-lucid-file-type: shell
 # Step 26: Phase 3 Integration Tests
 # Tests session recording pipeline, RDP session lifecycle, node registration
 # Target: Raspberry Pi deployment

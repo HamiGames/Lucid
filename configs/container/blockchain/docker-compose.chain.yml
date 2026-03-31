@@ -1,3 +1,8 @@
+# File: /app/configs/container/blockchain/docker-compose.chain.yml
+# x-lucid-file-path: /app/configs/container/blockchain/docker-compose.chain.yml
+# x-lucid-file-directory: /app/configs/container/blockchain
+# x-lucid-file-type: YAML
+
 # Lucid blockchain — chain creation & data-operations stack
 # Build contexts are repository root (Lucid). Compose file dir: infrastructure/containers/blockchain/
 #

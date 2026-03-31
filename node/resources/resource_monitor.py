@@ -5,6 +5,7 @@
 """
 File: /app/node/resources/resource_monitor.py
 x-lucid-file-path: /app/node/resources/resource_monitor.py
+x-lucid-file-directory: /app/node/resources
 x-lucid-file-type: python
 """
 

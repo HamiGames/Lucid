@@ -2,6 +2,7 @@
 """
 File: /app/apps/walletd/walletd.py
 x-lucid-file-path: /app/apps/walletd/walletd.py
+x-lucid-file-directory: /app/apps/walletd
 x-lucid-file-type: python
 
 Lucid RDP Wallet Daemon

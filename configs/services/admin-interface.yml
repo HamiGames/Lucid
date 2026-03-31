@@ -1,3 +1,8 @@
+# File: /app/configs/services/admin-interface.yml
+# x-lucid-file-path: /app/configs/services/admin-interface.yml
+# x-lucid-file-directory: /app/configs/services
+# x-lucid-file-type: YAML
+
 # Admin Interface Service Configuration
 # Cluster: 06-ADMIN-INTERFACE
 # Service: Admin Dashboard and System Management

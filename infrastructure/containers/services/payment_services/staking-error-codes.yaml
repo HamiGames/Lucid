@@ -1,3 +1,9 @@
+# File: /app/service_configs/payment_services/staking-error-codes.yaml
+# x-lucid-file-path: /app/service_configs/payment_services/staking-error-codes.yaml
+# x-lucid-file-directory: /app/service_configs/payment_services
+# x-lucid-file-type: YAML
+# Lucid alignment: host_registry=infrastructure/containers/host-config.yml (container /app/configs/host-config.yml); path_index=x-files.json section_to_canonical
+
 # LUCID TRON Staking Service - Error Codes Configuration
 # File: payment-systems/tron/config/staking-error-codes.yaml
 # Purpose: Staking-specific error codes and recovery strategies
@@ -8,7 +14,7 @@ x-lucid-host-config:
   repo_path: infrastructure/containers/host-config.yml
   version: '1.0'
   description: Lucid container host registry for Docker DNS hostnames, ports, discovery URLs, and static host IPs.
-  http_path_template: 'http://{service_name}:{port}/app'
+  http_path_template: 'http://${service_name}:${port}/app'
   host_ip_range: '172.20.10.1–172.20.10.76'
   in_container_path: /app/configs/host-config.yml
 x-lucid-host-config-alignment_bundle: payment-services-host-alignment.yml

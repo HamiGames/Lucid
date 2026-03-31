@@ -1,8 +1,10 @@
 """
-Routing Service for API Request Routing
 File: /app/gui_api_bridge/gui_api_bridge/services/routing_service.py
 x-lucid-file-path: /app/gui_api_bridge/gui_api_bridge/services/routing_service.py
+x-lucid-file-directory: /app/gui_api_bridge/gui_api_bridge/services
 x-lucid-file-type: python
+
+Routing Service for API Request Routing
 """
 
 import logging

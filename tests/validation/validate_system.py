@@ -1,4 +1,9 @@
 """
+File: /app/tests/validation/validate_system.py
+x-lucid-file-path: /app/tests/validation/validate_system.py
+x-lucid-file-directory: /app/tests/validation
+x-lucid-file-type: python
+
 System Validation
 
 Comprehensive system validation that orchestrates all validation tests.

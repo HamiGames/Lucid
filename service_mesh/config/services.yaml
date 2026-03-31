@@ -1,3 +1,8 @@
+# File: /app/old-service_mesh/config/services.yaml
+# x-lucid-file-path: /app/old-service_mesh/config/services.yaml
+# x-lucid-file-directory: /app/old-service_mesh/config
+# x-lucid-file-type: YAML
+
 # Lucid Service Mesh - Service Registry Configuration
 # File: service-mesh/config/services.yaml
 # Purpose: Pre-defined service configurations for auto-registration
@@ -78,7 +83,7 @@ services:
   auth-service:
     name: ${AUTH_SERVICE_NAME:-auth-service}
     address: ${AUTH_HOST:-auth-service}
-    port: ${AUTH_PORT:-8084}
+    port: ${AUTH_PORT:-8089}
     protocol: http
     tags:
       - core

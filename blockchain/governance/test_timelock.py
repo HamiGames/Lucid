@@ -2,6 +2,7 @@
 """
 File: /app/blockchain/governance/test_timelock.py
 x-lucid-file-path: /app/blockchain/governance/test_timelock.py
+x-lucid-file-directory: /app/blockchain/governance
 x-lucid-file-type: python
 
 Timelock Governance Test Script

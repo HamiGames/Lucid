@@ -5,6 +5,7 @@
 """
 File: /app/common/security/privacy_shield.py
 x-lucid-file-path: /app/common/security/privacy_shield.py
+x-lucid-file-directory: /app/common/security
 x-lucid-file-type: python
 """
 

@@ -3,6 +3,7 @@
 """
 File: /app/sessions/pipeline/entrypoint.py
 x-lucid-file-path: /app/sessions/pipeline/entrypoint.py
+x-lucid-file-directory: /app/sessions/pipeline
 x-lucid-file-type: python
 
 Session Pipeline Service Entrypoint

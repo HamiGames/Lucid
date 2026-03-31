@@ -1,8 +1,10 @@
-""" Main entry point for Lucid GUI services 
-
-file: /app/gui/main.py
+"""
+File: /app/gui/main.py
 x-lucid-file-path: /app/gui/main.py
+x-lucid-file-directory: /app/gui
 x-lucid-file-type: python
+
+Main entry point for Lucid GUI services 
 
 about this script:
 - this script is the main entry point for the Lucid GUI service
@@ -13,7 +15,6 @@ about this script:
 - triggers lucid-auth-services for validation
 
 Container Path: /app/gui/main.py for triggering fast-api connections to other services
-
 """	
 
 #load imports

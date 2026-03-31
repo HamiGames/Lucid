@@ -2,6 +2,7 @@
 """
 File: /app/apps/dht_node/dht_node.py
 x-lucid-file-path: /app/apps/dht_node/dht_node.py
+x-lucid-file-directory: /app/apps/dht_node
 x-lucid-file-type: python
 
 Lucid RDP DHT Node

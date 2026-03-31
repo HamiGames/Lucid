@@ -1,4 +1,9 @@
 """
+File: /app/tests/integration/phase2/test_blockchain_consensus.py
+x-lucid-file-path: /app/tests/integration/phase2/test_blockchain_consensus.py
+x-lucid-file-directory: /app/tests/integration/phase2
+x-lucid-file-type: python
+
 Phase 2 Integration Tests: Blockchain Consensus Mechanism
 
 This module tests the blockchain consensus mechanism (PoOT - Proof of Observation Time)

@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# File: /app/scripts/deployment/setup-pi-volumes.sh
+# x-lucid-file-path: /app/scripts/deployment/setup-pi-volumes.sh
+# x-lucid-file-directory: /app/scripts/deployment
+# x-lucid-file-type: shell
 # =============================================================================
 # Pi Volume Setup Script
 # Creates all necessary volume mount directories on Raspberry Pi
@@ -7,6 +11,12 @@
 
 set -euo pipefail
 
+
+# x-files-listing.txt → LUCID_HOST_COMPOSE_* (scripts/lib/lucid-repo-paths.sh)
+_LUCID_W="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+while [[ "$_LUCID_W" != "/" && "$(basename "$_LUCID_W")" != "scripts" ]]; do _LUCID_W="$(dirname "$_LUCID_W")"; done
+# shellcheck source=lib/lucid-repo-paths.sh
+source "${_LUCID_W}/lib/lucid-repo-paths.sh"
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -186,7 +196,7 @@ main() {
     echo ""
     echo "Next steps:"
     echo "1. Deploy Phase 1: ./scripts/deployment/deploy-phase1-pi.sh"
-    echo "2. Or deploy specific phase: docker-compose -f configs/docker/docker-compose.foundation.yml up -d"
+    echo "2. Or deploy specific phase: docker-compose -f "${LUCID_HOST_COMPOSE_FOUNDATION}" up -d"
 }
 
 # Help function

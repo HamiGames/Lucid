@@ -1,3 +1,8 @@
+# File: /app/ops/monitoring/lucid_rules.yml
+# x-lucid-file-path: /app/ops/monitoring/lucid_rules.yml
+# x-lucid-file-directory: /app/ops/monitoring
+# x-lucid-file-type: YAML
+
 # Prometheus alerting rules for Lucid RDP system
 groups:
   - name: lucid-system

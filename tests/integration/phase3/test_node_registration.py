@@ -1,4 +1,9 @@
 """
+File: /app/tests/integration/phase3/test_node_registration.py
+x-lucid-file-path: /app/tests/integration/phase3/test_node_registration.py
+x-lucid-file-directory: /app/tests/integration/phase3
+x-lucid-file-type: python
+
 Phase 3 Integration Tests - Node Registration and Pool Assignment
 
 This module tests node registration and pool assignment:

@@ -2,6 +2,7 @@
 """
 File: /app/sessions/pipeline/chunk_processor.py
 x-lucid-file-path: /app/sessions/pipeline/chunk_processor.py
+x-lucid-file-directory: /app/sessions/pipeline
 x-lucid-file-type: python
 
 LUCID Chunk Processor - SPEC-1B Implementation

@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 # Lucid Multi-Onion Generator - Creates 5 distinct .onion addresses
+# File: /app/02_network_security/tor/scripts/create_ephemeral_onion.sh
+# x-lucid-file-path: /app/02_network_security/tor/scripts/create_ephemeral_onion.sh
+# x-lucid-file-directory: /app/02_network_security/tor/scripts
+# x-lucid-file-type: shell
 # Each onion maps to different internal services with ED25519-V3 keys
 # Cookie authentication with hex encoding for security
 

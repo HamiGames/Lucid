@@ -2,6 +2,7 @@
 """
 File: /app/database/schema/mongodb_schema.py
 x-lucid-file-path: /app/database/schema/mongodb_schema.py
+x-lucid-file-directory: /app/database/schema
 x-lucid-file-type: python
 
 LUCID MongoDB Database Schema - SPEC-1B Implementation
@@ -90,7 +91,11 @@ class MongoDBManager:
                             "permissions": {
                                 "bsonType": "array",
                                 "items": {"bsonType": "string"}
-                            }
+                            },
+                            "contact_profile_key": {
+                                "bsonType": "string",
+                                "description": "Overlay key for configs/environment/profiles/<key>/.env.secrets",
+                            },
                         }
                     }
                 }

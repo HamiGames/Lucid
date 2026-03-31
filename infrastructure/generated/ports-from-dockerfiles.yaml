@@ -1,0 +1,400 @@
+# =============================================================================
+# Lucid - Dockerfile-derived registry (generator output)
+# Generated: 2026-03-31T11:19:46Z
+# Generator: infrastructure/generate_ports_txt_from_dockerfiles.py
+#
+# Per Dockerfile: dockerfile_path, service_name (inferred), ports (EXPOSE).
+# Not a drop-in replacement for repo root ports.txt (no image/tags/http_path).
+# Merge manually; run _gen_host_config.py only after enriching canonical ports.txt.
+# =============================================================================
+
+dockerfile_services:
+  - dockerfile_path: infrastructure/containers/admin/dockerfile.admin-overlord
+    service_name: admin-overlord
+    service_name_source: "ports.txt[admin_overlord].service_name"
+    ports: [8140]
+
+  - dockerfile_path: infrastructure/containers/admin/Dockerfile.admin-system-gateway
+    service_name: admin-system-gateway
+    service_name_source: "ports.txt[admin_system_gateway].service_name"
+    ports: [8155, 28080, 28120, 28050, 27000]
+
+  - dockerfile_path: infrastructure/containers/admin/Dockerfile.admin-ui-backend
+    service_name: admin-ui-backend
+    service_name_source: "ports.txt[admin_ui_backend].service_name"
+    ports: [8120]
+
+  - dockerfile_path: infrastructure/containers/admin/Dockerfile.gov-client
+    service_name: admin-governance-client
+    service_name_source: "ports.txt[admin_governance_client].service_name"
+    ports: [8070]
+
+  - dockerfile_path: infrastructure/containers/admin/Dockerfile.key-rotation
+    service_name: admin-key-rotation
+    service_name_source: "ports.txt[admin_key_rotation].service_name"
+    ports: [8060]
+
+  - dockerfile_path: infrastructure/containers/admin/Dockerfile.params-registry
+    service_name: admin-params-registry
+    service_name_source: "ports.txt[admin_params_registry].service_name"
+    ports: [8050]
+
+  - dockerfile_path: infrastructure/containers/auth/Dockerfile.auth-service
+    service_name: lucid-auth-service
+    service_name_source: "ports.txt[lucid_auth_service].service_name"
+    ports: [8089]
+
+  - dockerfile_path: infrastructure/containers/auth/Dockerfile.lucid-gov
+    service_name: lucid-gov
+    service_name_source: "ports.txt[lucid_gov].service_name"
+    ports: [8108]
+
+  - dockerfile_path: infrastructure/containers/blockchain/Dockerfile.block-manager
+    service_name: block-manager
+    service_name_source: "ports.txt[block_manager].service_name"
+    ports: [8086]
+
+  - dockerfile_path: infrastructure/containers/blockchain/Dockerfile.chain-to-pay
+    service_name: chain-to-pay
+    service_name_source: "ports.txt[chain_to_pay].service_name"
+    ports: [8114]
+
+  - dockerfile_path: infrastructure/containers/blockchain/Dockerfile.consensus-engine
+    service_name: blockchain-consensus-engine
+    service_name_source: "ports.txt[blockchain_consensus_engine].service_name"
+    ports: [8185]
+
+  - dockerfile_path: infrastructure/containers/blockchain/Dockerfile.data
+    service_name: data-chain
+    service_name_source: "ports.txt[data_chain].service_name"
+    ports: [8087]
+
+  - dockerfile_path: infrastructure/containers/blockchain/Dockerfile.engine
+    service_name: blockchain-engine
+    service_name_source: "ports.txt[blockchain_engine].service_name"
+    ports: [8084]
+
+  - dockerfile_path: infrastructure/containers/database/Dockerfile.database
+    service_name: mongodb-monitoring
+    service_name_source: "ports.txt[mongodb_monitoring].service_name"
+    ports: [27018]
+
+  - dockerfile_path: infrastructure/containers/database/Dockerfile.database-overlord
+    service_name: database-overlord
+    service_name_source: "ports.txt[database_overlord].service_name"
+    ports: [8121]
+
+  - dockerfile_path: infrastructure/containers/database/Dockerfile.elasticsearch
+    service_name: lucid-elasticsearch-http
+    service_name_source: "ports.txt[lucid_elasticsearch_http].service_name"
+    ports: [9200, 9300]
+
+  - dockerfile_path: infrastructure/containers/database/Dockerfile.mongodb
+    service_name: lucid-mongodb
+    service_name_source: "ports.txt[lucid_mongodb].service_name"
+    ports: [27017]
+
+  - dockerfile_path: infrastructure/containers/database/Dockerfile.redis
+    service_name: lucid-redis
+    service_name_source: "ports.txt[lucid_redis].service_name"
+    ports: [6379]
+
+  - dockerfile_path: infrastructure/containers/electron_gui/Dockerfile.admin
+    service_name: admin_interface
+    service_name_source: ENV LUCID_HOST_CONFIG_SERVICE_NAME
+    ports: [8125, 8101]
+
+  - dockerfile_path: infrastructure/containers/electron_gui/Dockerfile.node
+    service_name: electron-gui-node
+    service_name_source: LABEL com.lucid.hostconfig.service_name
+    ports: [3002]
+
+  - dockerfile_path: infrastructure/containers/electron_gui/Dockerfile.user
+    service_name: electron-gui-user
+    service_name_source: LABEL com.lucid.hostconfig.service_name
+    ports: [3001]
+
+  - dockerfile_path: infrastructure/containers/gui/Dockerfile copy.gui-tor-manager
+    service_name: gui-tor-manager
+    service_name_source: LABEL com.lucid.hostconfig.service_name
+    ports: [8097]
+
+  - dockerfile_path: infrastructure/containers/gui/Dockerfile.gui
+    service_name: gui-docker-manager
+    service_name_source: "ports.txt[gui_docker_manager].service_name"
+    ports: []
+
+  - dockerfile_path: infrastructure/containers/gui/Dockerfile.gui-api-bridge
+    service_name: gui-api-bridge
+    service_name_source: "ports.txt[gui_api_bridge].service_name"
+    ports: [8203]
+
+  - dockerfile_path: infrastructure/containers/gui/Dockerfile.gui-hardware-manager
+    service_name: gui-hardware-manager
+    service_name_source: LABEL com.lucid.hostconfig.service_name
+    ports: [8099]
+
+  - dockerfile_path: infrastructure/containers/gui/Dockerfile.gui-tor-manager
+    service_name: gui-tor-manager
+    service_name_source: LABEL com.lucid.hostconfig.service_name
+    ports: [8097]
+
+  - dockerfile_path: infrastructure/containers/node/Dockerfile.node-gov
+    service_name: node-gov
+    service_name_source: "ports.txt[node_gov].service_name"
+    ports: [8620]
+
+  - dockerfile_path: infrastructure/containers/node/Dockerfile.node-management
+    service_name: node-management
+    service_name_source: "ports.txt[node_management].service_name"
+    ports: [8095, 8099, 8129]
+
+  - dockerfile_path: infrastructure/containers/node/Dockerfile.node-overlord
+    service_name: node-overlord
+    service_name_source: "ports.txt[node_overlord].service_name"
+    ports: [8130]
+
+  - dockerfile_path: infrastructure/containers/node/Dockerfile.node-registry
+    service_name: node-registry
+    service_name_source: "ports.txt[node_registry].service_name"
+    ports: [8610]
+
+  - dockerfile_path: infrastructure/containers/node/Dockerfile.node-system-gateway
+    service_name: node-system-gateway
+    service_name_source: "ports.txt[node_system_gateway].service_name"
+    ports: [8640]
+
+  - dockerfile_path: infrastructure/containers/node/Dockerfile.node-utils
+    service_name: node-utils
+    service_name_source: "ports.txt[node_utils].service_name"
+    ports: [8630]
+
+  - dockerfile_path: infrastructure/containers/node/Dockerfile.node-worker
+    service_name: node-worker
+    service_name_source: "ports.txt[node_worker].service_name"
+    ports: [8600]
+
+  - dockerfile_path: infrastructure/containers/payment_systems/Dockerfile.on-system-chain-client
+    service_name: on-system-chain-client
+    service_name_source: "ports.txt[on_system_chain_client].service_name"
+    ports: [8040]
+
+  - dockerfile_path: infrastructure/containers/payment_systems/Dockerfile.payment-gateway
+    service_name: payment-system-gateway
+    service_name_source: "ports.txt[payment_system_gateway].service_name"
+    ports: [8197, 8196]
+
+  - dockerfile_path: infrastructure/containers/payment_systems/Dockerfile.tron-node-client
+    service_name: tron-node-client
+    service_name_source: "ports.txt[tron_node_client].service_name"
+    ports: [8035]
+
+  - dockerfile_path: infrastructure/containers/payment_systems/Dockerfile.tron-payment-service
+    service_name: tron-payment-service
+    service_name_source: "ports.txt[tron_payment_service].service_name"
+    ports: [8150]
+
+  - dockerfile_path: infrastructure/containers/payment_systems/Dockerfile.wallet
+    service_name: wallet-manager
+    service_name_source: "ports.txt[wallet_manager].service_name"
+    ports: [8093, 8103]
+
+  - dockerfile_path: infrastructure/containers/rdp/Dockerfile.rdp-controller
+    service_name: rdp-controller
+    service_name_source: "service_key_from_dockerfile:rdp_controller"
+    ports: [8192]
+
+  - dockerfile_path: infrastructure/containers/server/Dockerfile
+    service_name: lucid-server-core
+    service_name_source: "ports.txt[lucid_server_core].service_name"
+    ports: [8100]
+
+  - dockerfile_path: infrastructure/containers/server/Dockerfile.rdp-server-manager
+    service_name: lucid-rdp-server-manager
+    service_name_source: ENV LUCID_HOST_CONFIG_SERVICE_NAME
+    ports: [8490]
+
+  - dockerfile_path: infrastructure/containers/server/Dockerfile.server-gateway
+    service_name: server-gateway
+    service_name_source: ENV LUCID_HOST_CONFIG_SERVICE_NAME
+    ports: [8450]
+
+  - dockerfile_path: infrastructure/containers/server/Dockerfile.server-manager
+    service_name: lucid-server-manager
+    service_name_source: "ports.txt[lucid_server_manager].service_name"
+    ports: [8081]
+
+  - dockerfile_path: infrastructure/containers/server/Dockerfile.service-mesh-controller
+    service_name: lucid-service-mesh-controller
+    service_name_source: "ports.txt[lucid_service_mesh_controller].service_name"
+    ports: [8500, 8501, 8502, 8600, 8088]
+
+  - dockerfile_path: infrastructure/containers/sessions/Dockerfile.anchoring
+    service_name: session-anchoring
+    service_name_source: "ports.txt[session_anchoring].service_name"
+    ports: [8085]
+
+  - dockerfile_path: infrastructure/containers/sessions/Dockerfile.api
+    service_name: session-api
+    service_name_source: "ports.txt[session_api].service_name"
+    ports: [8113]
+
+  - dockerfile_path: infrastructure/containers/sessions/Dockerfile.chunk-processor
+    service_name: session-chunk-processor
+    service_name_source: "ports.txt[session_chunk_processor].service_name"
+    ports: [8010]
+
+  - dockerfile_path: infrastructure/containers/sessions/Dockerfile.merkle-tree-builder
+    service_name: merkle-tree-builder
+    service_name_source: ENV LUCID_HOST_CONFIG_SERVICE_NAME
+    ports: [8392]
+
+  - dockerfile_path: infrastructure/containers/sessions/Dockerfile.session-overlord
+    service_name: session-overlord
+    service_name_source: "ports.txt[session_overlord].service_name"
+    ports: [8110]
+
+  - dockerfile_path: infrastructure/containers/sessions/Dockerfile.session-pipeline
+    service_name: session-pipeline
+    service_name_source: "service_key_from_dockerfile:session_pipeline"
+    ports: [8083]
+
+  - dockerfile_path: infrastructure/containers/sessions/Dockerfile.session-pipeline-manager
+    service_name: session-pipeline-manager
+    service_name_source: "ports.txt[session_pipeline_manager].service_name"
+    ports: [7990]
+
+  - dockerfile_path: infrastructure/containers/sessions/Dockerfile.session-storage-service
+    service_name: session-storage-service
+    service_name_source: "ports.txt[session_storage_service].service_name"
+    ports: [8020]
+
+  - dockerfile_path: infrastructure/containers/sessions/Dockerfile.session-systems-control
+    service_name: session-system-control
+    service_name_source: "ports.txt[session_system_control].service_name"
+    ports: [7988]
+
+  - dockerfile_path: infrastructure/containers/storage/Dockerfile.elasticsearch
+    service_name: elasticsearch-storage
+    service_name_source: ENV LUCID_HOST_CONFIG_SERVICE_NAME
+    ports: [9300, 9200]
+
+  - dockerfile_path: infrastructure/containers/storage/Dockerfile.mongodb
+    service_name: lucid-mongodb
+    service_name_source: "ports.txt[lucid_mongodb].service_name"
+    ports: [27019]
+
+  - dockerfile_path: infrastructure/containers/storage/Dockerfile.redis
+    service_name: lucid-redis
+    service_name_source: "ports.txt[lucid_redis].service_name"
+    ports: [6380]
+
+  - dockerfile_path: infrastructure/containers/storage/Dockerfile.storage
+    service_name: lucid-system-storage
+    service_name_source: "ports.txt[lucid_system_storage].service_name"
+    ports: [9900]
+
+  - dockerfile_path: infrastructure/containers/tor/Dockerfile.tor-proxy-02
+    service_name: tor-socks
+    service_name_source: "ports.txt[tor_socks].service_name"
+    ports: [9050, 9051, 8888]
+
+  - dockerfile_path: infrastructure/containers/tor/Dockerfile.tunnels
+    service_name: tunnel-tools
+    service_name_source: "ports.txt[tunnel_tools].service_name"
+    ports: [7000]
+
+  - dockerfile_path: infrastructure/containers/user/Dockerfile
+    service_name: api-gateway
+    service_name_source: "ports.txt[main_lucid_gateway].service_name"
+    ports: [8080]
+
+  - dockerfile_path: infrastructure/containers/vm/Dockerfile.vm
+    service_name: vm-service
+    service_name_source: "ports.txt[vm_service].service_name"
+    ports: [8107]
+
+  - dockerfile_path: infrastructure/docker/common/Dockerfile
+    service_name: common
+    service_name_source: "filename:parent_dir"
+    ports: []
+
+  - dockerfile_path: infrastructure/docker/common/Dockerfile.common
+    service_name: common
+    service_name_source: "filename:dockerfile.suffix"
+    ports: []
+
+  - dockerfile_path: infrastructure/docker/common/Dockerfile.lucid-governor
+    service_name: lucid-governor
+    service_name_source: "filename:dockerfile.suffix"
+    ports: [8208]
+
+  - dockerfile_path: infrastructure/docker/common/Dockerfile.timelock
+    service_name: timelock
+    service_name_source: "filename:dockerfile.suffix"
+    ports: [8109]
+
+  - dockerfile_path: infrastructure/docker/databases/Dockerfile.database-backup
+    service_name: database-backup
+    service_name_source: "filename:dockerfile.suffix"
+    ports: [8189]
+
+  - dockerfile_path: infrastructure/docker/databases/Dockerfile.database-monitoring
+    service_name: database-monitoring
+    service_name_source: "filename:dockerfile.suffix"
+    ports: [27020, 9216]
+
+  - dockerfile_path: infrastructure/docker/distroless/base/Dockerfile.base
+    service_name: base
+    service_name_source: "filename:dockerfile.suffix"
+    ports: []
+
+  - dockerfile_path: infrastructure/docker/distroless/gui/Dockerfile.gui
+    service_name: gui
+    service_name_source: "filename:dockerfile.suffix"
+    ports: []
+
+  - dockerfile_path: infrastructure/docker/distroless/rdp/Dockerfile.rdp
+    service_name: rdp
+    service_name_source: "filename:dockerfile.suffix"
+    ports: []
+
+  - dockerfile_path: infrastructure/docker/multi-stage/Dockerfile.vm
+    service_name: vm
+    service_name_source: "filename:dockerfile.suffix"
+    ports: [8207]
+
+  - dockerfile_path: infrastructure/docker/payment-systems/Dockerfile.tron-client
+    service_name: tron-client
+    service_name_source: "filename:dockerfile.suffix"
+    ports: [8030]
+
+  - dockerfile_path: infrastructure/docker/vm/Dockerfile.vm-manager
+    service_name: vm-manager
+    service_name_source: "filename:dockerfile.suffix"
+    ports: [8285]
+
+  - dockerfile_path: infrastructure/docker/vm/Dockerfile.vm-orchestrator
+    service_name: vm-orchestrator
+    service_name_source: "filename:dockerfile.suffix"
+    ports: [8186]
+
+  - dockerfile_path: infrastructure/docker/vm/Dockerfile.vm-resource-monitor
+    service_name: vm-resource-monitor
+    service_name_source: "filename:dockerfile.suffix"
+    ports: [8187]
+
+  - dockerfile_path: infrastructure/docker/wallet/Dockerfile.key-rotation
+    service_name: key-rotation
+    service_name_source: "filename:dockerfile.suffix"
+    ports: [8090]
+
+  - dockerfile_path: infrastructure/docker/wallet/Dockerfile.role-manager
+    service_name: role-manager
+    service_name_source: "filename:dockerfile.suffix"
+    ports: [8102]
+
+  - dockerfile_path: infrastructure/docker/wallet/Dockerfile.software-vault
+    service_name: software-vault
+    service_name_source: "filename:dockerfile.suffix"
+    ports: [8101]

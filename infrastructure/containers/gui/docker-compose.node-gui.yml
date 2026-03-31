@@ -1,12 +1,17 @@
+# File: /app/configs/gui/docker-compose.node-gui.yml
+# x-lucid-file-path: /app/configs/gui/docker-compose.node-gui.yml
+# x-lucid-file-directory: /app/configs/gui
+# x-lucid-file-type: YAML
+
 # LUCID GUI SYSTEM (node operator) — Distroless Deployment
 # Path: infrastructure/containers/gui/docker-compose.node-gui.yml
 #
 # Aligned with: ports.txt / host-config.yml (gui_api_bridge 8102, electron_gui_node 3002),
 #   infrastructure/containers/env/env.secrets.template → configs/environment/.env.secrets.
 #
-# Networks: lucid-gui-network (172.27.0.0/16), lucid-pi-network, lucid-session-network, lucid-tron-isolated
+# Networks: lucid-gui-network (172.27.0.0/16), lucid-pi-network, lucid-session-network, lucid-tron-isolated, lucid-tor-egress-network (Tor path; create per /app/configs/network/network.txt — x-files: infrastructure/containers/network/network.txt)
 #   so gui-api-bridge can reach session-api, tron-client / payment peers, and pi-network discovery
-#   (see infrastructure/containers/network/network.txt).
+#   (see infrastructure/containers/network/network.txt → /app/configs/network/network.txt in x-files.json).
 #
 # container_name lucid-node-gui-api-bridge avoids clashing with docker-compose.user-gui.yml (lucid-gui-api-bridge);
 # Docker DNS name for the service remains gui-api-bridge within this compose project.
@@ -73,6 +78,7 @@ services:
       - lucid_node_gui_api_bridge_data:/app/data:rw
     networks:
       - lucid-pi-network
+      - lucid-tor-egress-network
       - lucid-gui-network
       - lucid-session-network
       - lucid-tron-isolated
@@ -126,6 +132,7 @@ services:
       - lucid_node_gui_interface_data:/app/data:rw
     networks:
       - lucid-pi-network
+      - lucid-tor-egress-network
       - lucid-gui-network
       - lucid-session-network
       - lucid-tron-isolated
@@ -183,6 +190,9 @@ networks:
     external: true
   lucid-tron-isolated:
     name: lucid-tron-isolated
+    external: true
+  lucid-tor-egress-network:
+    name: lucid-tor-egress-network
     external: true
 
 volumes:

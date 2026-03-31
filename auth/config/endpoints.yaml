@@ -1,3 +1,8 @@
+# File: /app/auth/config/endpoints.yaml
+# x-lucid-file-path: /app/auth/config/endpoints.yaml
+# x-lucid-file-directory: /app/auth/config
+# x-lucid-file-type: YAML
+
 # Lucid Authentication Service - HTTP Endpoint Configuration
 # File: auth/config/endpoints.yaml
 # Purpose: Customizable endpoint configuration for authentication service

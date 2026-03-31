@@ -1,5 +1,9 @@
 #!/bin/bash
 # System Health Check Script
+# File: /app/scripts/monitoring/check-system-health.sh
+# x-lucid-file-path: /app/scripts/monitoring/check-system-health.sh
+# x-lucid-file-directory: /app/scripts/monitoring
+# x-lucid-file-type: shell
 # LUCID-STRICT Layer 2 Monitoring
 # Purpose: Comprehensive system health check for operational monitoring
 # Compatibility: Distroless, API compliant

@@ -1,3 +1,8 @@
+# File: /app/payment_systems/tron/config/tron-relay-config.yaml
+# x-lucid-file-path: /app/payment_systems/tron/config/tron-relay-config.yaml
+# x-lucid-file-directory: /app/payment_systems/tron/config
+# x-lucid-file-type: YAML
+
 # LUCID TRON Relay Service Configuration
 # READ-ONLY blockchain relay and caching service
 

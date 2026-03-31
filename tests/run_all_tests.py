@@ -2,6 +2,13 @@
 # Runs comprehensive tests across all sections
 # Based on LUCID-STRICT requirements
 
+"""
+File: /app/tests/run_all_tests.py
+x-lucid-file-path: /app/tests/run_all_tests.py
+x-lucid-file-directory: /app/tests
+x-lucid-file-type: python
+"""
+
 import sys
 import subprocess
 import logging

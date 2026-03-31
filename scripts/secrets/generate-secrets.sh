@@ -1,5 +1,9 @@
 #!/bin/bash
 # Secret Generation Script
+# File: /app/scripts/secrets/generate-secrets.sh
+# x-lucid-file-path: /app/scripts/secrets/generate-secrets.sh
+# x-lucid-file-directory: /app/scripts/secrets
+# x-lucid-file-type: shell
 # LUCID-STRICT Secret Management System
 # Purpose: Generate secure secrets for all Lucid clusters
 # Compatibility: Distroless, API compliant

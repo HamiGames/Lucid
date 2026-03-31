@@ -2,6 +2,7 @@
 """
 File: /app/apps/recorder/recorder.py
 x-lucid-file-path: /app/apps/recorder/recorder.py
+x-lucid-file-directory: /app/apps/recorder
 x-lucid-file-type: python
 
 Lucid RDP Session Recorder

@@ -1,6 +1,7 @@
 """
 File: /app/blockchain/data/storage.py
 x-lucid-file-path: /app/blockchain/data/storage.py
+x-lucid-file-directory: /app/blockchain/data
 x-lucid-file-type: python
 
 Data Storage Backend

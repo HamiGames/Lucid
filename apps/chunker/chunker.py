@@ -2,6 +2,7 @@
 """
 File: /app/apps/chunker/chunker.py
 x-lucid-file-path: /app/apps/chunker/chunker.py
+x-lucid-file-directory: /app/apps/chunker
 x-lucid-file-type: python
 
 Lucid RDP Chunker Service

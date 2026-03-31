@@ -1,5 +1,9 @@
 #!/bin/bash
 # Lucid Docker Environment Setup Script
+# File: /app/scripts/network/setup/setup-docker-environment.sh
+# x-lucid-file-path: /app/scripts/network/setup/setup-docker-environment.sh
+# x-lucid-file-directory: /app/scripts/network/setup
+# x-lucid-file-type: shell
 # Complete Docker-in-Docker setup with lucid-pi buildx builder and network configuration
 # Addresses user requirements for full script assessment and dev container system config
 

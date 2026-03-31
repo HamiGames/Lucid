@@ -5,6 +5,12 @@
 
 set -euo pipefail
 
+
+# x-files-listing.txt → LUCID_HOST_COMPOSE_* (scripts/lib/lucid-repo-paths.sh)
+_LUCID_W="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+while [[ "$_LUCID_W" != "/" && "$(basename "$_LUCID_W")" != "scripts" ]]; do _LUCID_W="$(dirname "$_LUCID_W")"; done
+# shellcheck source=lib/lucid-repo-paths.sh
+source "${_LUCID_W}/lib/lucid-repo-paths.sh"
 # Configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
@@ -252,14 +258,14 @@ step7_generate_docker_compose() {
     log_step "Step 7: Generate Phase 1 Docker Compose"
     
     # Check if compose file exists
-    if [[ -f "$PROJECT_ROOT/configs/docker/docker-compose.foundation.yml" ]]; then
+    if [[ -f "${LUCID_HOST_COMPOSE_FOUNDATION}" ]]; then
         log_success "Phase 1 Docker Compose file already exists"
     else
         log_warning "Phase 1 Docker Compose file not found, creating basic template..."
         
         # Create basic compose file
         mkdir -p "$PROJECT_ROOT/configs/docker"
-        cat > "$PROJECT_ROOT/configs/docker/docker-compose.foundation.yml" << 'EOF'
+        cat > "${LUCID_HOST_COMPOSE_FOUNDATION}" << 'EOF'
 version: '3.8'
 
 services:
@@ -364,6 +370,10 @@ step8_prepare_deployment() {
         mkdir -p "$PROJECT_ROOT/scripts/deployment"
         cat > "$PROJECT_ROOT/scripts/deployment/deploy-phase1-pi.sh" << 'EOF'
 #!/bin/bash
+# File: /app/scripts/deployment/deploy-phase1-pi.sh
+# x-lucid-file-path: /app/scripts/deployment/deploy-phase1-pi.sh
+# x-lucid-file-directory: /app/scripts/deployment
+# x-lucid-file-type: shell
 # Phase 1 Deployment Script for Raspberry Pi
 # Based on docker-build-process-plan.md Step 8
 
@@ -393,7 +403,7 @@ ssh "$PI_USER@$PI_HOST" "sudo chown $PI_USER:$PI_USER $PI_DEPLOY_DIR"
 
 # Copy compose file and environment to Pi
 echo "Copying configuration files to Pi..."
-scp "$PROJECT_ROOT/configs/docker/docker-compose.foundation.yml" "$PI_USER@$PI_HOST:$PI_DEPLOY_DIR/"
+scp "${LUCID_HOST_COMPOSE_FOUNDATION}" "$PI_USER@$PI_HOST:$PI_DEPLOY_DIR/"
 scp "$PROJECT_ROOT/configs/environment/.env.foundation" "$PI_USER@$PI_HOST:$PI_DEPLOY_DIR/.env"
 
 # Pull ARM64 images on Pi
@@ -425,6 +435,10 @@ step9_prepare_integration_tests() {
         mkdir -p "$PROJECT_ROOT/tests/integration/phase1"
         cat > "$PROJECT_ROOT/tests/integration/phase1/run_phase1_tests.sh" << 'EOF'
 #!/bin/bash
+# File: /app/tests/integration/phase1/run_phase1_tests.sh
+# x-lucid-file-path: /app/tests/integration/phase1/run_phase1_tests.sh
+# x-lucid-file-directory: /app/tests/integration/phase1
+# x-lucid-file-type: shell
 # Phase 1 Integration Tests
 # Based on docker-build-process-plan.md Step 9
 
@@ -438,7 +452,7 @@ echo "Testing MongoDB connection..."
 python3 -c "
 import pymongo
 import os
-client = pymongo.MongoClient('mongodb://localhost:27017/lucid_production')
+client = pymongo.MongoClient('mongodb://localhost:27017/lucid')
 print('✅ MongoDB connection successful')
 "
 

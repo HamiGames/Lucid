@@ -1,3 +1,8 @@
+# File: /app/service_configs/kubernetes/patches/service-mesh-controller-patch.yaml
+# x-lucid-file-path: /app/service_configs/kubernetes/patches/service-mesh-controller-patch.yaml
+# x-lucid-file-directory: /app/service_configs/kubernetes/patches
+# x-lucid-file-type: YAML
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:

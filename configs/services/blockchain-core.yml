@@ -1,3 +1,8 @@
+# File: /app/configs/services/blockchain-core.yml
+# x-lucid-file-path: /app/configs/services/blockchain-core.yml
+# x-lucid-file-directory: /app/configs/services
+# x-lucid-file-type: YAML
+
 # Blockchain Core Service Configuration
 # Cluster: 02-BLOCKCHAIN-CORE
 # Service: lucid_blocks Blockchain System

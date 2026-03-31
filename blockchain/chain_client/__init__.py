@@ -1,6 +1,7 @@
 """
 File: /app/blockchain/chain_client/__init__.py
 x-lucid-file-path: /app/blockchain/chain_client/__init__.py
+x-lucid-file-directory: /app/blockchain/chain_client
 x-lucid-file-type: python
 
 Blockchain Chain Client Module

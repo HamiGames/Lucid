@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 # Path: 02_network_security/tunnels/scripts/create_tunnel.sh
+# File: /app/02_network_security/tunnels/scripts/create_tunnel.sh
+# x-lucid-file-path: /app/02_network_security/tunnels/scripts/create_tunnel.sh
+# x-lucid-file-directory: /app/02_network_security/tunnels/scripts
+# x-lucid-file-type: shell
 # Create an ephemeral onion tunnel (ADD_ONION) via Tor ControlPort.
 # Works in lucid-tunnel-tools (Dockerfile) or on a host with docker; delegates to
 # create_ephemeral_onion.sh for valid Tor Port= lines.

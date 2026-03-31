@@ -2,6 +2,7 @@
 """
 File: /app/apps/recorder/encoder.py
 x-lucid-file-path: /app/apps/recorder/encoder.py
+x-lucid-file-directory: /app/apps/recorder
 x-lucid-file-type: python
 
 Hardware Encoder Module for Lucid RDP Recorder

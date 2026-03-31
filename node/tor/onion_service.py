@@ -1,6 +1,7 @@
 """
 File: /app/node/tor/onion_service.py
 x-lucid-file-path: /app/node/tor/onion_service.py
+x-lucid-file-directory: /app/node/tor
 x-lucid-file-type: python
 
 LUCID Node Tor - Onion Service Creation and Management

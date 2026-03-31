@@ -1,6 +1,7 @@
 """
 File: /app/blockchain/api/app/database/repositories/__init__.py
 x-lucid-file-path: /app/blockchain/api/app/database/repositories/__init__.py
+x-lucid-file-directory: /app/blockchain/api/app/database/repositories
 x-lucid-file-type: python
 
 Database Repositories Package

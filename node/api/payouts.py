@@ -5,6 +5,7 @@
 """
 File: /app/node/api/payouts.py
 x-lucid-file-path: /app/node/api/payouts.py
+x-lucid-file-directory: /app/node/api
 x-lucid-file-type: python
 
 Payout management API endpoints for Lucid system.

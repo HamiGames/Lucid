@@ -6,6 +6,7 @@
 """
 File: /app/RDP/recorder/__init__.py
 x-lucid-file-path: /app/RDP/recorder/__init__.py
+x-lucid-file-directory: /app/RDP/recorder
 x-lucid-file-type: python
 
 RDP Recorder Module

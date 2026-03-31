@@ -2,6 +2,7 @@
 """
 File: /app/sessions/recorder/main.py
 x-lucid-file-path: /app/sessions/recorder/main.py
+x-lucid-file-directory: /app/sessions/recorder
 x-lucid-file-type: python
 
 Lucid Session Management Recorder Service

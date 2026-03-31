@@ -1,6 +1,13 @@
 # tests/integration/phase1/test_phase1_integration.py
 # Phase 1 integration tests
 
+"""
+File: /app/tests/integration/phase1/test_phase1_integration.py
+x-lucid-file-path: /app/tests/integration/phase1/test_phase1_integration.py
+x-lucid-file-directory: /app/tests/integration/phase1
+x-lucid-file-type: python
+"""
+
 import pytest
 import asyncio
 import requests

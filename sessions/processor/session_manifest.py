@@ -6,6 +6,7 @@
 """
 File: /app/sessions/processor/session_manifest.py
 x-lucid-file-path: /app/sessions/processor/session_manifest.py
+x-lucid-file-directory: /app/sessions/processor
 x-lucid-file-type: python
 """
 

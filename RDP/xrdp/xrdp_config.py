@@ -6,6 +6,7 @@
 """
 File: /app/RDP/xrdp/xrdp_config.py
 x-lucid-file-path: /app/RDP/xrdp/xrdp_config.py
+x-lucid-file-directory: /app/RDP/xrdp
 x-lucid-file-type: python
 """
 

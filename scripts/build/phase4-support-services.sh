@@ -5,6 +5,12 @@
 
 set -euo pipefail
 
+
+# x-files-listing.txt → LUCID_HOST_COMPOSE_* (scripts/lib/lucid-repo-paths.sh)
+_LUCID_W="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+while [[ "$_LUCID_W" != "/" && "$(basename "$_LUCID_W")" != "scripts" ]]; do _LUCID_W="$(dirname "$_LUCID_W")"; done
+# shellcheck source=lib/lucid-repo-paths.sh
+source "${_LUCID_W}/lib/lucid-repo-paths.sh"
 # Configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
@@ -293,14 +299,14 @@ step31_generate_docker_compose() {
     log_step "Step 31: Generate Phase 4 Docker Compose"
     
     # Check if compose file exists
-    if [[ -f "$PROJECT_ROOT/configs/docker/docker-compose.support.yml" ]]; then
+    if [[ -f "${LUCID_HOST_COMPOSE_SUPPORT}" ]]; then
         log_success "Phase 4 Docker Compose file already exists"
     else
         log_warning "Phase 4 Docker Compose file not found, creating basic template..."
         
         # Create basic compose file
         mkdir -p "$PROJECT_ROOT/configs/docker"
-        cat > "$PROJECT_ROOT/configs/docker/docker-compose.support.yml" << 'EOF'
+        cat > "${LUCID_HOST_COMPOSE_SUPPORT}" << 'EOF'
 version: '3.8'
 
 services:
@@ -475,6 +481,10 @@ step32_prepare_deployment() {
         mkdir -p "$PROJECT_ROOT/scripts/deployment"
         cat > "$PROJECT_ROOT/scripts/deployment/deploy-phase4-pi.sh" << 'EOF'
 #!/bin/bash
+# File: /app/scripts/deployment/deploy-phase4-pi.sh
+# x-lucid-file-path: /app/scripts/deployment/deploy-phase4-pi.sh
+# x-lucid-file-directory: /app/scripts/deployment
+# x-lucid-file-type: shell
 # Phase 4 Deployment Script for Raspberry Pi
 # Based on docker-build-process-plan.md Step 32
 
@@ -499,7 +509,7 @@ echo
 
 # Copy compose file and environment to Pi
 echo "Copying configuration files to Pi..."
-scp "$PROJECT_ROOT/configs/docker/docker-compose.support.yml" "$PI_USER@$PI_HOST:$PI_DEPLOY_DIR/"
+scp "${LUCID_HOST_COMPOSE_SUPPORT}" "$PI_USER@$PI_HOST:$PI_DEPLOY_DIR/"
 scp "$PROJECT_ROOT/configs/environment/.env.support" "$PI_USER@$PI_HOST:$PI_DEPLOY_DIR/.env.support"
 
 # Pull ARM64 images on Pi
@@ -531,6 +541,10 @@ step33_prepare_integration_tests() {
         mkdir -p "$PROJECT_ROOT/tests/integration/phase4"
         cat > "$PROJECT_ROOT/tests/integration/phase4/run_phase4_tests.sh" << 'EOF'
 #!/bin/bash
+# File: /app/tests/integration/phase4/run_phase4_tests.sh
+# x-lucid-file-path: /app/tests/integration/phase4/run_phase4_tests.sh
+# x-lucid-file-directory: /app/tests/integration/phase4
+# x-lucid-file-type: shell
 # Phase 4 Integration Tests
 # Based on docker-build-process-plan.md Step 33
 
@@ -611,6 +625,10 @@ step34_prepare_final_integration_test() {
         mkdir -p "$PROJECT_ROOT/tests/integration/final"
         cat > "$PROJECT_ROOT/tests/integration/final/run_final_integration_test.sh" << 'EOF'
 #!/bin/bash
+# File: /app/tests/integration/final/run_final_integration_test.sh
+# x-lucid-file-path: /app/tests/integration/final/run_final_integration_test.sh
+# x-lucid-file-directory: /app/tests/integration/final
+# x-lucid-file-type: shell
 # Final System Integration Test
 # Based on docker-build-process-plan.md Step 34
 

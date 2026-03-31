@@ -4,6 +4,7 @@
 """
 File: /app/apps/encryptor/src/__init__.py
 x-lucid-file-path: /app/apps/encryptor/src/__init__.py
+x-lucid-file-directory: /app/apps/encryptor/src
 x-lucid-file-type: python
 
 Encryptor Source package for Lucid RDP.

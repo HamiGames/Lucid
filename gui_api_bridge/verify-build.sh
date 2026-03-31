@@ -1,5 +1,9 @@
 #!/bin/bash
 # File: gui_api_bridge/verify-build.sh
+# File: /app/gui_api_bridge/verify-build.sh
+# x-lucid-file-path: /app/gui_api_bridge/verify-build.sh
+# x-lucid-file-directory: /app/gui_api_bridge
+# x-lucid-file-type: shell
 # Purpose: Verify GUI API Bridge service build completeness
 # Usage: bash gui_api_bridge/verify-build.sh
 

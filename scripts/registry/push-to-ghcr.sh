@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# File: /app/scripts/registry/push-to-ghcr.sh
+# x-lucid-file-path: /app/scripts/registry/push-to-ghcr.sh
+# x-lucid-file-directory: /app/scripts/registry
+# x-lucid-file-type: shell
 # Lucid Container Registry Push Script
 # Pushes distroless containers to GitHub Container Registry (GHCR)
 # Usage: ./push-to-ghcr.sh [service-name] [tag] [platform]

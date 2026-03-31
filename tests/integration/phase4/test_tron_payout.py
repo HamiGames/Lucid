@@ -1,4 +1,9 @@
 """
+File: /app/tests/integration/phase4/test_tron_payout.py
+x-lucid-file-path: /app/tests/integration/phase4/test_tron_payout.py
+x-lucid-file-directory: /app/tests/integration/phase4
+x-lucid-file-type: python
+
 TRON Payout Integration Tests
 
 This module tests the TRON payment cluster (Cluster 07) functionality,

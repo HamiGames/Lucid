@@ -4,6 +4,7 @@
 """
 File: /app/apps/chunker/src/__init__.py
 x-lucid-file-path: /app/apps/chunker/src/__init__.py
+x-lucid-file-directory: /app/apps/chunker/src
 x-lucid-file-type: python
 
 Chunker Source package for Lucid RDP.

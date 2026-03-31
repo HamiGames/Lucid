@@ -1,8 +1,11 @@
 """
+File: /app/old-service_mesh/config.py
+x-lucid-file-path: /app/old-service_mesh/config.py
+x-lucid-file-directory: /app/old-service_mesh
+x-lucid-file-type: python
+
 Lucid Service Mesh Controller - Configuration
 Environment-based configuration using pydantic-settings
-
-File: service_mesh/config.py
 """
 
 from functools import lru_cache

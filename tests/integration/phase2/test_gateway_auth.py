@@ -1,4 +1,9 @@
 """
+File: /app/tests/integration/phase2/test_gateway_auth.py
+x-lucid-file-path: /app/tests/integration/phase2/test_gateway_auth.py
+x-lucid-file-directory: /app/tests/integration/phase2
+x-lucid-file-type: python
+
 Phase 2 Integration Tests: API Gateway → Auth → Database Flow
 
 This module tests the integration between API Gateway, Authentication service,

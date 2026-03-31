@@ -1,3 +1,8 @@
+# File: /app/RDP/config/monitor-config.yaml
+# x-lucid-file-path: /app/RDP/config/monitor-config.yaml
+# x-lucid-file-directory: /app/RDP/config
+# x-lucid-file-type: YAML
+
 # Lucid RDP Resource Monitor - Configuration File
 # Optional YAML configuration for RDP resource monitoring service
 # File: RDP/config/monitor-config.yaml

@@ -1,3 +1,8 @@
+# File: /app/docker-compose.phase3.yml
+# x-lucid-file-path: /app/docker-compose.phase3.yml
+# x-lucid-file-directory: /app
+# x-lucid-file-type: YAML
+
 # Phase 3 Container Builds - All Application Services
 # Step 32: Phase 3 Container Builds
 # Combines Session Management, RDP Services, and Node Management

@@ -1,6 +1,7 @@
 """
 File: /app/03_api_gateway/models/auth.py
 x-lucid-file-path: /app/03_api_gateway/models/auth.py
+x-lucid-file-directory: /app/03_api_gateway/models
 x-lucid-file-type: python
 
 Authentication Data Models

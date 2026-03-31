@@ -83,8 +83,9 @@ METRICS_RETENTION_DAYS=7
 # =============================================================================
 # Operational Configuration
 # =============================================================================
-# Operational config file path
-OPERATIONAL_CONFIG_PATH=/app/config/operational-config.json
+# Operational config file path (canonical + legacy alias)
+NODE_OPERATIONAL_CONFIG_PATH=/app/config/operational-config.json
+OPERATIONAL_CONFIG_PATH=${NODE_OPERATIONAL_CONFIG_PATH}
 
 # Logging configuration file path
 LOGGING_CONFIG_PATH=/app/config/logging-config.json

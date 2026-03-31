@@ -5,6 +5,7 @@
 """
 File: /app/blockchain/chain_client/lucid_chunk_store_client.py
 x-lucid-file-path: /app/blockchain/chain_client/lucid_chunk_store_client.py
+x-lucid-file-directory: /app/blockchain/chain_client
 x-lucid-file-type: python
 """
 

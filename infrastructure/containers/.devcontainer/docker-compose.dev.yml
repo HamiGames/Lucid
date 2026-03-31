@@ -1,3 +1,8 @@
+# File: /app/configs/.devcontainer/docker-compose.dev.yml
+# x-lucid-file-path: /app/configs/.devcontainer/docker-compose.dev.yml
+# x-lucid-file-directory: /app/configs/.devcontainer
+# x-lucid-file-type: YAML
+
 # Lucid Development Container - Complete Build Factory
 # Docker-in-Docker environment for building entire Lucid project stack
 # Follows SPEC-4 clustered build stages and LUCID-STRICT mode

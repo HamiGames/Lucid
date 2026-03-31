@@ -5,6 +5,7 @@
 """
 File: /app/node/registration/__init__.py
 x-lucid-file-path: /app/node/registration/__init__.py
+x-lucid-file-directory: /app/node/registration
 x-lucid-file-type: python
 
 Registration module for Lucid node operations.

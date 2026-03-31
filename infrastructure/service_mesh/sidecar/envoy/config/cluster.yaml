@@ -1,3 +1,8 @@
+# File: /app/service_mesh/sidecar/envoy/config/cluster.yaml
+# x-lucid-file-path: /app/service_mesh/sidecar/envoy/config/cluster.yaml
+# x-lucid-file-directory: /app/service_mesh/sidecar/envoy/config
+# x-lucid-file-type: YAML
+
 # Lucid Service Mesh - Envoy Cluster Configuration
 # File: infrastructure/service_mesh/sidecar/envoy/config/cluster.yaml
 # Purpose: Envoy cluster configuration for service mesh

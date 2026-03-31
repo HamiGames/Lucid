@@ -1,7 +1,10 @@
 """
-Lucid Service Mesh Controller Module
+File: /app/old-service_mesh/controller/__init__.py
+x-lucid-file-path: /app/old-service_mesh/controller/__init__.py
+x-lucid-file-directory: /app/old-service_mesh/controller
+x-lucid-file-type: python
 
-File: service_mesh/controller/__init__.py
+Lucid Service Mesh Controller Module
 """
 
 from .main import main, ServiceMeshController

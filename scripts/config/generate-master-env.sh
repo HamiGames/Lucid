@@ -1,5 +1,9 @@
 #!/bin/bash
 # Master Environment Generation Script for Lucid Project
+# File: /app/scripts/config/generate-master-env.sh
+# x-lucid-file-path: /app/scripts/config/generate-master-env.sh
+# x-lucid-file-directory: /app/scripts/config
+# x-lucid-file-type: shell
 # Coordinates all environment generation scripts to ensure alignment
 # Generated: 2025-01-14
 

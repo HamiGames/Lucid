@@ -1,7 +1,10 @@
-""" Wallet GUI for Lucid RDP.
-file: /app/gui/wallet/wallet_gui.py
+"""
+File: /app/gui/wallet/wallet_gui.py
 x-lucid-file-path: /app/gui/wallet/wallet_gui.py
+x-lucid-file-directory: /app/gui/wallet
 x-lucid-file-type: python
+
+Wallet GUI for Lucid RDP.
 
 contains:
 - the connnections to the design materials for the wallet gui
@@ -10,7 +13,6 @@ contains:
 - converts Typescript designs to javascript for the wallet gui
 - converts javascript to python for the wallet gui
 - converts python functions to javascript functions
-
 """
 
 # load imports

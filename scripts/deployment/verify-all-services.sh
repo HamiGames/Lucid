@@ -1,5 +1,9 @@
 #!/bin/bash
 # Lucid Service Verification Script
+# File: /app/scripts/deployment/verify-all-services.sh
+# x-lucid-file-path: /app/scripts/deployment/verify-all-services.sh
+# x-lucid-file-directory: /app/scripts/deployment
+# x-lucid-file-type: shell
 # Verifies all Lucid services are running and healthy
 # Based on Step 50 requirements from BUILD_REQUIREMENTS_GUIDE.md
 

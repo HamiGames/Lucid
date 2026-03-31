@@ -3,6 +3,7 @@
 """
 File: /app/node/work_credits.py
 x-lucid-file-path: /app/node/work_credits.py
+x-lucid-file-directory: /app/node
 x-lucid-file-type: python
 """
 

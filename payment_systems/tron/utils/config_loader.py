@@ -1,6 +1,7 @@
 """
 File: /app/payment_systems/tron/utils/config_loader.py
 x-lucid-file-path: /app/payment_systems/tron/utils/config_loader.py
+x-lucid-file-directory: /app/payment_systems/tron/utils
 x-lucid-file-type: python
 
 LUCID Payment Systems - TRON Client Configuration Loader Module

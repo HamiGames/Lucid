@@ -1,3 +1,8 @@
+# File: /app/configs/container/manifest.yml
+# x-lucid-file-path: /app/configs/container/manifest.yml
+# x-lucid-file-directory: /app/configs/container
+# x-lucid-file-type: YAML
+
 # configs/container/manifest.yml
 # Compose bundles mirrored from infrastructure/containers/<area>/docker-compose*.yml
 # Service DNS names and ports must match infrastructure/containers/host-config.yml

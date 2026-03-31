@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
+# File: /app/scripts/deployment/devcontainer/fix_editor_env.sh
+# x-lucid-file-path: /app/scripts/deployment/devcontainer/fix_editor_env.sh
+# x-lucid-file-directory: /app/scripts/deployment/devcontainer
+# x-lucid-file-type: shell
 
 REPO_ROOT="${REPO_ROOT:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
 API_DIR="$REPO_ROOT/03-api-gateway/api"

@@ -1,3 +1,8 @@
+# File: /app/configs/gui/docker-compose.gui-admin.yml
+# x-lucid-file-path: /app/configs/gui/docker-compose.gui-admin.yml
+# x-lucid-file-directory: /app/configs/gui
+# x-lucid-file-type: YAML
+
 # LUCID GUI ADMIN - Distroless Deployment
 # Path: infrastructure/containers/gui/docker-compose.gui-admin.yml
 #

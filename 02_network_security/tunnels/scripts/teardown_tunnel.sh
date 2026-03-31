@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 # Path: 02_network_security/tunnels/scripts/teardown_tunnel.sh
+# File: /app/02_network_security/tunnels/scripts/teardown_tunnel.sh
+# x-lucid-file-path: /app/02_network_security/tunnels/scripts/teardown_tunnel.sh
+# x-lucid-file-directory: /app/02_network_security/tunnels/scripts
+# x-lucid-file-type: shell
 # Remove ephemeral onion (DEL_ONION) via Tor ControlPort.
 # See: 02_network_security/tunnels/Dockerfile, 02_network_security/tor/Dockerfile.tor-proxy-02
 

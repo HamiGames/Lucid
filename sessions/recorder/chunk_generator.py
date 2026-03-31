@@ -2,6 +2,7 @@
 """
 File: /app/sessions/recorder/chunk_generator.py
 x-lucid-file-path: /app/sessions/recorder/chunk_generator.py
+x-lucid-file-directory: /app/sessions/recorder
 x-lucid-file-type: python
 
 Lucid Session Management Chunk Generator

@@ -1,6 +1,7 @@
 """
 File: /app/gui_hardware_manager/gui_hardware_manager/middleware/logging.py
 x-lucid-file-path: /app/gui_hardware_manager/gui_hardware_manager/middleware/logging.py
+x-lucid-file-directory: /app/gui_hardware_manager/gui_hardware_manager/middleware
 x-lucid-file-type: python
 
 Logging middleware for request/response tracking

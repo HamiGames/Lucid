@@ -1,5 +1,9 @@
 #!/bin/bash
 # Generate Secure Keys and Passwords for Lucid Project
+# File: /app/scripts/config/generate-secure-keys.sh
+# x-lucid-file-path: /app/scripts/config/generate-secure-keys.sh
+# x-lucid-file-directory: /app/scripts/config
+# x-lucid-file-type: shell
 # Based on: lucid-container-build-plan.plan.md Step 2
 # Generated: 2025-01-14
 

@@ -1,8 +1,10 @@
 """
-Authentication Models
 File: /app/gui_api_bridge/gui_api_bridge/models/auth.py
 x-lucid-file-path: /app/gui_api_bridge/gui_api_bridge/models/auth.py
+x-lucid-file-directory: /app/gui_api_bridge/gui_api_bridge/models
 x-lucid-file-type: python
+
+Authentication Models
 """
 
 from pydantic import BaseModel

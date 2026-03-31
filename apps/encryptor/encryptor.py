@@ -2,6 +2,7 @@
 """
 File: /app/apps/encryptor/encryptor.py
 x-lucid-file-path: /app/apps/encryptor/encryptor.py
+x-lucid-file-directory: /app/apps/encryptor
 x-lucid-file-type: python
 
 Lucid RDP Encryptor Service

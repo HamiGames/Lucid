@@ -1,10 +1,22 @@
 #!/bin/bash
 
+# File: /app/scripts/generate-env-files.sh
+# x-lucid-file-path: /app/scripts/generate-env-files.sh
+# x-lucid-file-directory: /app/scripts
+# x-lucid-file-type: shell
 # Lucid Environment File Generator
 # Generates all required .env files for the Lucid project
 # Based on path_plan.md and distroless design concept
 
 set -e
+
+_lucid_here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+_lucid_scripts="$_lucid_here"
+while [[ "$_lucid_scripts" != "/" && "$(basename "$_lucid_scripts")" != "scripts" ]]; do
+    _lucid_scripts="$(dirname "$_lucid_scripts")"
+done
+# shellcheck source=lib/lucid-repo-paths.sh
+source "$_lucid_scripts/lib/lucid-repo-paths.sh"
 
 # Colors for output
 RED='\033[0;31m'
@@ -13,8 +25,8 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-# Project paths from path_plan.md
-PROJECT_ROOT="/mnt/myssd/Lucid/Lucid"
+# Project paths (repo root = directory containing master-env-config.txt)
+PROJECT_ROOT="$LUCID_REPO_ROOT"
 ENV_DIR="${PROJECT_ROOT}/configs/environment"
 
 echo -e "${BLUE}🔧 Lucid Environment File Generator${NC}"
@@ -1054,7 +1066,7 @@ LOG_MAX_FILES=5
 BACKUP_ENABLED=true
 BACKUP_SCHEDULE="0 2 * * *"
 BACKUP_RETENTION_DAYS=7
-BACKUP_PATH=/mnt/myssd/Lucid/Lucid/backups
+BACKUP_PATH=${PROJECT_ROOT}/backups
 BACKUP_COMPRESSION_ENABLED=true
 BACKUP_ENCRYPTION_ENABLED=true
 BACKUP_ENCRYPTION_KEY=${ENCRYPTION_KEY}
@@ -1084,11 +1096,11 @@ DOCKER_REGISTRY=docker.io
 DOCKER_NAMESPACE=pickme
 DOCKER_TAG=latest-arm64
 
-# Pi Data Paths
-DATA_PATH=/mnt/myssd/Lucid/Lucid/data
-LOGS_PATH=/mnt/myssd/Lucid/Lucid/logs
-BACKUPS_PATH=/mnt/myssd/Lucid/Lucid/backups
-CONFIGS_PATH=/mnt/myssd/Lucid/Lucid/configs
+# Pi Data Paths (host checkout; containers use /app/var/... per Dockerfiles)
+DATA_PATH=${PROJECT_ROOT}/data
+LOGS_PATH=${PROJECT_ROOT}/logs
+BACKUPS_PATH=${PROJECT_ROOT}/backups
+CONFIGS_PATH=${PROJECT_ROOT}/configs
 EOF
 
 # .env.blockchain-api

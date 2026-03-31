@@ -1,7 +1,7 @@
 """
 File: /app/service_mesh/controller/health_checker.py
 x-lucid-file-path: /app/service_mesh/controller/health_checker.py
-x-lucid-file-directory: /app/service_mesh
+x-lucid-file-directory: /app/service_mesh/controller
 x-lucid-file-type: python
 
 Lucid Service Mesh Controller - Health Checker
@@ -100,7 +100,7 @@ class HealthChecker:
                 "timeout": 10
             },
             "auth-service": {
-                "health_endpoint": "http://auth-service:8089/health",
+                "health_endpoint": "http://lucid-auth-service:8089/health",
                 "check_interval": 30,
                 "timeout": 10
             },

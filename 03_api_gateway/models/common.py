@@ -1,6 +1,7 @@
 """
 File: /app/03_api_gateway/models/common.py
 x-lucid-file-path: /app/03_api_gateway/models/common.py
+x-lucid-file-directory: /app/03_api_gateway/models
 x-lucid-file-type: python
 
 Common Data Models

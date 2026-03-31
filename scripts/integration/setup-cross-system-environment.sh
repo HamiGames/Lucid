@@ -1,14 +1,24 @@
 #!/bin/bash
 # Cross-System Environment Setup Script
+# File: /app/scripts/integration/setup-cross-system-environment.sh
+# x-lucid-file-path: /app/scripts/integration/setup-cross-system-environment.sh
+# x-lucid-file-directory: /app/scripts/integration
+# x-lucid-file-type: shell
 # Sets up environment coordination across GUI, API, and Docker systems
 
 set -euo pipefail
 
+
+# x-files-listing.txt → LUCID_HOST_COMPOSE_* (scripts/lib/lucid-repo-paths.sh)
+_LUCID_W="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+while [[ "$_LUCID_W" != "/" && "$(basename "$_LUCID_W")" != "scripts" ]]; do _LUCID_W="$(dirname "$_LUCID_W")"; done
+# shellcheck source=lib/lucid-repo-paths.sh
+source "${_LUCID_W}/lib/lucid-repo-paths.sh"
 # Script configuration
 SCRIPT_NAME="setup-cross-system-environment.sh"
 SCRIPT_VERSION="1.0.0"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+PROJECT_ROOT="$LUCID_REPO_ROOT"
 
 # Color codes for output
 RED='\033[0;31m'
@@ -397,26 +407,26 @@ generate_deployment_script() {
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+PROJECT_ROOT="$LUCID_REPO_ROOT"
 
 # Load environment variables
 source "$PROJECT_ROOT/configs/environment/.secrets" 2>/dev/null || true
 
 # Deploy phases in order
 echo "Deploying Phase 1: Foundation Services..."
-docker-compose -f "$PROJECT_ROOT/configs/docker/docker-compose.foundation.yml" up -d
+docker-compose -f "${LUCID_HOST_COMPOSE_FOUNDATION}" up -d
 
 echo "Deploying Phase 2: Core Services..."
-docker-compose -f "$PROJECT_ROOT/configs/docker/docker-compose.core.yml" up -d
+docker-compose -f "${LUCID_HOST_COMPOSE_CORE}" up -d
 
 echo "Deploying Phase 3: Application Services..."
-docker-compose -f "$PROJECT_ROOT/configs/docker/docker-compose.application.yml" up -d
+docker-compose -f "${LUCID_HOST_COMPOSE_APPLICATION}" up -d
 
 echo "Deploying Phase 4: Support Services..."
-docker-compose -f "$PROJECT_ROOT/configs/docker/docker-compose.support.yml" up -d
+docker-compose -f "${LUCID_HOST_COMPOSE_SUPPORT}" up -d
 
 echo "Deploying GUI Integration Services..."
-docker-compose -f "$PROJECT_ROOT/configs/docker/docker-compose.gui-integration.yml" up -d
+docker-compose -f "${LUCID_HOST_COMPOSE_GUI_INTEGRATION}" up -d
 
 echo "All systems deployed successfully!"
 EOF
@@ -442,7 +452,7 @@ create_health_check_script() {
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+PROJECT_ROOT="$LUCID_REPO_ROOT"
 
 # Service endpoints
 declare -A SERVICES=(

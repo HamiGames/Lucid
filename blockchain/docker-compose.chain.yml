@@ -1,3 +1,8 @@
+# File: /app/blockchain/docker-compose.chain.yml
+# x-lucid-file-path: /app/blockchain/docker-compose.chain.yml
+# x-lucid-file-directory: /app/blockchain
+# x-lucid-file-type: YAML
+
 # Compose file directory: blockchain/ — env files and paths are relative to this folder.
 # Repository root is one level up: use ../configs/environment/ for shared .env.* files.
 # This stack does not define lucid-mongodb / lucid-redis / lucid-auth-service; start them separately

@@ -1,8 +1,10 @@
 """
-User API Routes
 File: /app/gui_api_bridge/gui_api_bridge/routers/user.py
 x-lucid-file-path: /app/gui_api_bridge/gui_api_bridge/routers/user.py
+x-lucid-file-directory: /app/gui_api_bridge/gui_api_bridge/routers
 x-lucid-file-type: python
+
+User API Routes
 Endpoints: /api/v1/user
 Allowed methods: GET, POST
 """

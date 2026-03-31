@@ -1,4 +1,9 @@
 """
+File: /app/tests/integration/phase2/test_service_mesh.py
+x-lucid-file-path: /app/tests/integration/phase2/test_service_mesh.py
+x-lucid-file-directory: /app/tests/integration/phase2
+x-lucid-file-type: python
+
 Phase 2 Integration Tests: Service Mesh (Consul) Integration
 
 This module tests the service mesh integration using Consul for service discovery,

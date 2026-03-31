@@ -1,6 +1,7 @@
 """
 File: /app/admin/config/load_host_config.py
 x-lucid-file-path: /app/admin/config/load_host_config.py
+x-lucid-file-directory: /app/admin/config
 x-lucid-file-type: python
 
 Load host config for Lucid Admin services.

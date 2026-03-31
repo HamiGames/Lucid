@@ -1,6 +1,7 @@
 """
 File: /app/gui_tor_manager/gui_tor_manager/main.py
 x-lucid-file-path: /app/gui_tor_manager/gui_tor_manager/main.py
+x-lucid-file-directory: /app/gui_tor_manager/gui_tor_manager
 x-lucid-file-type: python
 
 FastAPI Application Main Module for GUI Tor Manager

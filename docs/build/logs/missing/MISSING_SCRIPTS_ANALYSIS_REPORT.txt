@@ -28,7 +28,7 @@ EXISTING SCRIPTS VERIFICATION
 - Database Scripts: scripts/init_mongodb_schema.sh
 - OTA Scripts: ops/ota/update.sh
 - Testing Scripts: 08-quality/scripts/*.sh (multiple)
-- Docker Scripts: infrastructure/docker/*/build-env.sh (multiple)
+- Docker Scripts: configs/docker/*/build-env.sh (multiple)
 
 ---
 

@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 """
+File: /app/scripts/verification/verify-tron-isolation.py
+x-lucid-file-path: /app/scripts/verification/verify-tron-isolation.py
+x-lucid-file-directory: /app/scripts/verification
+x-lucid-file-type: python
+
 TRON Isolation Verification Script
 Verifies that TRON payment system is completely isolated from blockchain core
 Part of Step 28: TRON Isolation Verification

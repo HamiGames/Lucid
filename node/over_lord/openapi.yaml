@@ -1,3 +1,8 @@
+# File: /app/node/over_lord/openapi.yaml
+# x-lucid-file-path: /app/node/over_lord/openapi.yaml
+# x-lucid-file-directory: /app/node/over_lord
+# x-lucid-file-type: YAML
+
 openapi: 3.0.3
 info:
   title: Lucid Node Management API

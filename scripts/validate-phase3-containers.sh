@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# File: /app/scripts/validate-phase3-containers.sh
+# x-lucid-file-path: /app/scripts/validate-phase3-containers.sh
+# x-lucid-file-directory: /app/scripts
+# x-lucid-file-type: shell
 # Step 32: Phase 3 Container Builds Validation Script
 # Validates all 10 application containers are running
 

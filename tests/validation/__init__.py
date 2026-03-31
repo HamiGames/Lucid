@@ -1,4 +1,9 @@
 """
+File: /app/tests/validation/__init__.py
+x-lucid-file-path: /app/tests/validation/__init__.py
+x-lucid-file-directory: /app/tests/validation
+x-lucid-file-type: python
+
 Lucid System Validation Tests
 
 This package contains comprehensive validation tests for the complete Lucid system.

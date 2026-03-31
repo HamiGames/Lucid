@@ -1,5 +1,5 @@
 #!/bin/bash
-# Path: infrastructure/docker/sessions/build-env.sh
+# Path: configs/docker/sessions/build-env.sh
 # Build Environment Script for Lucid Session Services
 # Generates .env files for session processing containers
 

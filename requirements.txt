@@ -53,12 +53,12 @@
 # Infrastructure/base images (keep last to avoid pin conflicts)
 -r infrastructure/containers/base/requirements-minimal.txt
 -r infrastructure/containers/base/requirements.txt
--r infrastructure/docker/distroless/base/requirements-minimal.txt
--r infrastructure/docker/distroless/base/requirements.txt
+-r configs/docker/distroless/base/requirements-minimal.txt
+-r configs/docker/distroless/base/requirements.txt
 -r build/distroless/base/requirements.txt
--r infrastructure/docker/multi-stage/requirements.database.txt
--r infrastructure/docker/multi-stage/requirements.storage.txt
--r infrastructure/docker/multi-stage/requirements.vm.txt
+-r configs/docker/multi-stage/requirements.database.txt
+-r configs/docker/multi-stage/requirements.storage.txt
+-r configs/docker/multi-stage/requirements.vm.txt
 -r database/requirements.database.txt
 -r database/elasticsearch/requirements.txt
 -r database/redis/requirements.txt

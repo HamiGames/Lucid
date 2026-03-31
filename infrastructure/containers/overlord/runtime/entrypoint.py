@@ -1,4 +1,11 @@
-"""Distroless entrypoint for Lucid overlord containers (uvicorn)."""
+"""
+File: /app/configs/overlord/runtime/entrypoint.py
+x-lucid-file-path: /app/configs/overlord/runtime/entrypoint.py
+x-lucid-file-directory: /app/configs/overlord/runtime
+x-lucid-file-type: python
+
+Distroless entrypoint for Lucid overlord containers (uvicorn).
+"""
 from __future__ import annotations
 
 import os

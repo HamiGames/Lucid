@@ -1,5 +1,9 @@
 #!/bin/bash
 # Generate All Environment Files for Lucid Project
+# File: /app/scripts/config/generate-all-environments.sh
+# x-lucid-file-path: /app/scripts/config/generate-all-environments.sh
+# x-lucid-file-directory: /app/scripts/config
+# x-lucid-file-type: shell
 # Based on: distro-deployment-plan.md requirements
 # Generated: 2025-01-14
 

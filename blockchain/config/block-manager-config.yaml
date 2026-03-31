@@ -1,3 +1,8 @@
+# File: /app/blockchain/config/block-manager-config.yaml
+# x-lucid-file-path: /app/blockchain/config/block-manager-config.yaml
+# x-lucid-file-directory: /app/blockchain/config
+# x-lucid-file-type: YAML
+
 # Lucid Block Manager Configuration
 # Purpose: Centralize operational settings for the block-manager container
 # Aligns with docker-compose.core.yml (service block-manager) and foundation services

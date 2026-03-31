@@ -1,10 +1,22 @@
 #!/bin/bash
 # Path: scripts/deployment/deploy-multi-stage-build.sh
+# File: /app/scripts/deployment/deploy-multi-stage-build.sh
+# x-lucid-file-path: /app/scripts/deployment/deploy-multi-stage-build.sh
+# x-lucid-file-directory: /app/scripts/deployment
+# x-lucid-file-type: shell
 # Deploy Multi-Stage Build Infrastructure
 # Deploys multi-stage build environment for CI/CD and local development
 # MUST RUN ON PI CONSOLE
 
 set -euo pipefail
+
+_lucid_here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+_lucid_scripts="$_lucid_here"
+while [[ "$_lucid_scripts" != "/" && "$(basename "$_lucid_scripts")" != "scripts" ]]; do
+    _lucid_scripts="$(dirname "$_lucid_scripts")"
+done
+# shellcheck source=../lib/lucid-repo-paths.sh
+source "$_lucid_scripts/lib/lucid-repo-paths.sh"
 
 # Colors for output
 RED='\033[0;31m'
@@ -19,8 +31,8 @@ log_success() { echo -e "${GREEN}[SUCCESS]${NC} $1"; }
 log_warning() { echo -e "${YELLOW}[WARNING]${NC} $1"; }
 log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 
-# Project root
-PROJECT_ROOT="${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}"
+# Project root (override with env PROJECT_ROOT if needed)
+PROJECT_ROOT="${PROJECT_ROOT:-$LUCID_REPO_ROOT}"
 
 echo ""
 log_info "========================================"

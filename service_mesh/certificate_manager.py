@@ -1,7 +1,10 @@
 """
-mTLS certificate manager for service mesh
+File: /app/old-service_mesh/certificate_manager.py
+x-lucid-file-path: /app/old-service_mesh/certificate_manager.py
+x-lucid-file-directory: /app/old-service_mesh
+x-lucid-file-type: python
 
-File: service_mesh/certificate_manager.py
+mTLS certificate manager for service mesh
 """
 
 import asyncio

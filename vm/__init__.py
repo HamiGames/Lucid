@@ -2,6 +2,7 @@
 """
 File: /app/vm/__init__.py
 x-lucid-file-path: /app/vm/__init__.py
+x-lucid-file-directory: /app/vm
 x-lucid-file-type: python
 
 Virtual Machine package for Lucid RDP.

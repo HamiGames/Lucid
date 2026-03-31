@@ -1,6 +1,7 @@
 """
 File: /app/admin/system/__init__.py
 x-lucid-file-path: /app/admin/system/__init__.py
+x-lucid-file-directory: /app/admin/system
 x-lucid-file-type: python
 
 Lucid Admin Systems 

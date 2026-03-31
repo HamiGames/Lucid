@@ -1,0 +1,73 @@
+{
+  "_meta": {
+    "schema_version": "1.0",
+    "file": "infrastructure/containers/lib-inject-path.json",
+    "description": "Recommended absolute paths on the Debian/apt builder image to COPY into a minimal or distroless runtime stage. Used by lib_search_and_inject.py (merged with built-in defaults; entries here override same package keys).",
+    "rationale": [
+      "Docker multi-stage builds: install tools and libs in a full base image, then COPY --from=builder only what the runtime needs.",
+      "Distroless and minimal bases omit apt/dpkg; anything not copied is missing at runtime.",
+      "Prefer apt-get install --no-install-recommends in Dockerfiles to limit transitive packages (Docker build best practices).",
+      "Where a binary needs many .so files, validate with ldd on the builder and extend this map (pattern described in Docker ecosystem guidance)."
+    ],
+    "docker_documentation_references": [
+      {
+        "title": "Multi-stage builds",
+        "url": "https://docs.docker.com/develop/develop-images/multistage-build/",
+        "summary": "Separate build and runtime stages; copy artifacts with COPY --from."
+      },
+      {
+        "title": "Distroless images",
+        "url": "https://docs.docker.com/dhi/core-concepts/distroless/",
+        "summary": "Minimal runtimes require explicit copies of binaries and shared libraries."
+      },
+      {
+        "title": "Dockerfile best practices",
+        "url": "https://docs.docker.com/build/building/best-practices/",
+        "summary": "Reduce image size and attack surface; multi-stage builds and minimal installs."
+      }
+    ]
+  },
+  "build_only_packages": [],
+  "package_runtime_aliases": {
+    "libssl-dev": ["libssl3", "openssl"],
+    "libffi-dev": ["libffi8"],
+    "python3-dev": ["python3.11", "libpython3.11"],
+    "curl": ["libcurl4"],
+    "libcurl4-openssl-dev": ["libcurl4"],
+    "libpq-dev": ["libpq5"]
+  },
+  "package_runtime_support": {
+    "bash": ["/usr/bin/bash", "/bin/bash"],
+    "tini": ["/usr/bin/tini"],
+    "tor": ["/usr/bin/tor", "/etc/tor/torrc", "/var/lib/tor/"],
+    "ca-certificates": ["/etc/ssl/certs/ca-certificates.crt", "/etc/ssl/certs/"],
+    "curl": ["/usr/bin/curl", "/etc/ssl/openssl.cnf"],
+    "libcurl4": ["/usr/lib/*/libcurl.so*"],
+    "libssl3": ["/usr/lib/*/libssl.so*", "/usr/lib/*/ossl-modules/"],
+    "libcrypto3": ["/usr/lib/*/libcrypto.so*"],
+    "libffi8": ["/usr/lib/*/libffi.so*"],
+    "python3": ["/usr/bin/python3", "/usr/lib/python3.11/"],
+    "python3-minimal": ["/usr/bin/python3"],
+    "python3.11": ["/usr/bin/python3.11", "/usr/lib/python3.11/"],
+    "python3-distutils": ["/usr/lib/python3.11/distutils/"],
+    "python3-pip": ["/usr/lib/python3/dist-packages/"],
+    "python3-setuptools": ["/usr/lib/python3/dist-packages/"],
+    "python3-wheel": ["/usr/lib/python3/dist-packages/"],
+    "openssl": ["/usr/bin/openssl", "/etc/ssl/openssl.cnf"],
+    "libpython3.11": ["/usr/lib/python3.11/"],
+    "libc6": ["/lib/*/libc.so.6", "/lib/*/libm.so.6", "/lib/*/libpthread.so.0", "/lib/*/libdl.so.2"],
+    "libgcc-s1": ["/usr/lib/*/libgcc_s.so.1"],
+    "libstdc++6": ["/usr/lib/*/libstdc++.so.6"],
+    "zlib1g": ["/usr/lib/*/libz.so.1"],
+    "libzstd1": ["/usr/lib/*/libzstd.so.1"],
+    "liblz4-1": ["/usr/lib/*/liblz4.so.1"],
+    "libpq5": ["/usr/lib/*/libpq.so.5"],
+    "wget": ["/usr/bin/wget"],
+    "jq": ["/usr/bin/jq"],
+    "xxd": ["/usr/bin/xxd"],
+    "libgomp1": ["/usr/lib/*/libgomp.so.1"],
+    "coreutils": ["/usr/bin/cat", "/usr/bin/chmod", "/usr/bin/cp", "/usr/bin/date", "/usr/bin/dd", "/usr/bin/df", "/usr/bin/dirname", "/usr/bin/echo", "/usr/bin/env", "/usr/bin/ln", "/usr/bin/ls", "/usr/bin/mkdir", "/usr/bin/mv", "/usr/bin/readlink", "/usr/bin/rm", "/usr/bin/rmdir", "/usr/bin/sleep", "/usr/bin/sort", "/usr/bin/tail", "/usr/bin/tee", "/usr/bin/test", "/usr/bin/touch", "/usr/bin/tr", "/usr/bin/uname", "/usr/bin/wc", "/usr/bin/whoami"],
+    "procps": ["/usr/bin/ps", "/usr/bin/top"],
+    "libicu72": ["/usr/lib/*/libicu*.so*"]
+  }
+}

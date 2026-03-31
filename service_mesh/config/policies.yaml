@@ -1,3 +1,8 @@
+# File: /app/old-service_mesh/config/policies.yaml
+# x-lucid-file-path: /app/old-service_mesh/config/policies.yaml
+# x-lucid-file-directory: /app/old-service_mesh/config
+# x-lucid-file-type: YAML
+
 # Lucid Service Mesh - Policy Configuration
 # File: service-mesh/config/policies.yaml
 # Purpose: Traffic management and security policies

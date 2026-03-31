@@ -1,4 +1,9 @@
 """
+File: /app/tests/integration/phase4/__init__.py
+x-lucid-file-path: /app/tests/integration/phase4/__init__.py
+x-lucid-file-directory: /app/tests/integration/phase4
+x-lucid-file-type: python
+
 Phase 4 Integration Tests
 
 This module contains integration tests for Phase 4 of the Lucid API system,

@@ -7,6 +7,7 @@
 """
 File: /app/admin/emergency/__init__.py
 x-lucid-file-path: /app/admin/emergency/__init__.py
+x-lucid-file-directory: /app/admin/emergency
 x-lucid-file-type: python
 """
 

@@ -1,5 +1,9 @@
 #!/bin/bash
 # Phase 3 Application Services Deployment Script
+# File: /app/scripts/deployment/deploy-phase3-pi.sh
+# x-lucid-file-path: /app/scripts/deployment/deploy-phase3-pi.sh
+# x-lucid-file-directory: /app/scripts/deployment
+# x-lucid-file-type: shell
 # Step 25: Phase 3 Deployment
 # Deploys session management, RDP services, and node management to Raspberry Pi
 # Target: Raspberry Pi 5 (192.168.0.75) via SSH

@@ -2,6 +2,7 @@
 """
 File: /app/user/__init__.py
 x-lucid-file-path: /app/user/__init__.py
+x-lucid-file-directory: /app/user
 x-lucid-file-type: python
 
 User package for Lucid RDP.

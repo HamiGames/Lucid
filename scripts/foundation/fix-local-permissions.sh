@@ -1,5 +1,9 @@
 #!/bin/bash
 # scripts/foundation/fix-local-permissions.sh
+# File: /app/scripts/foundation/fix-local-permissions.sh
+# x-lucid-file-path: /app/scripts/foundation/fix-local-permissions.sh
+# x-lucid-file-directory: /app/scripts/foundation
+# x-lucid-file-type: shell
 # Fix file permissions for local git repository
 
 set -e

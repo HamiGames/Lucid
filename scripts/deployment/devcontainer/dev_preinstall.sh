@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 # File: .devcontainer/dev_preinstall.sh
+# File: /app/scripts/deployment/devcontainer/dev_preinstall.sh
+# x-lucid-file-path: /app/scripts/deployment/devcontainer/dev_preinstall.sh
+# x-lucid-file-directory: /app/scripts/deployment/devcontainer
+# x-lucid-file-type: shell
 # Purpose: Dev bootstrap for OS-level tooling used across the project (devcontainer only).
 # Installs: OpenJDK 17, Node.js 20.x + Redocly CLI, MongoDB 7 client tools,
 #           build deps for cryptography/native wheels, and utilities.

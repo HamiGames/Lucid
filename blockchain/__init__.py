@@ -1,6 +1,7 @@
 """
 File: /app/blockchain/__init__.py
 x-lucid-file-path: /app/blockchain/__init__.py
+x-lucid-file-directory: /app/blockchain
 x-lucid-file-type: python
 
 LUCID Blockchain Components - Blockchain Architecture (lucid_blocks)

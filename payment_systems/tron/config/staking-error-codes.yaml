@@ -1,3 +1,8 @@
+# File: /app/payment_systems/tron/config/staking-error-codes.yaml
+# x-lucid-file-path: /app/payment_systems/tron/config/staking-error-codes.yaml
+# x-lucid-file-directory: /app/payment_systems/tron/config
+# x-lucid-file-type: YAML
+
 # LUCID TRON Staking Service - Error Codes Configuration
 # File: payment-systems/tron/config/staking-error-codes.yaml
 # Purpose: Staking-specific error codes and recovery strategies

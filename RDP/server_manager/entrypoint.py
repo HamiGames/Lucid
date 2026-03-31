@@ -3,6 +3,7 @@
 """
 File: /app/RDP/server_manager/entrypoint.py
 x-lucid-file-path: /app/RDP/server_manager/entrypoint.py
+x-lucid-file-directory: /app/RDP/server_manager
 x-lucid-file-type: python
 
 RDP Server Manager Service Entrypoint

@@ -2,6 +2,7 @@
 """
 File: /app/node/payout_manager.py
 x-lucid-file-path: /app/node/payout_manager.py
+x-lucid-file-directory: /app/node
 x-lucid-file-type: python
 
 Lucid Node Management - Payout Manager

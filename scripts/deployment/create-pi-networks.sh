@@ -1,11 +1,21 @@
 #!/bin/bash
 # Path: scripts/deployment/create-pi-networks.sh
+# File: /app/scripts/deployment/create-pi-networks.sh
+# x-lucid-file-path: /app/scripts/deployment/create-pi-networks.sh
+# x-lucid-file-directory: /app/scripts/deployment
+# x-lucid-file-type: shell
 # Create Docker Networks on Raspberry Pi
 # MUST RUN DIRECTLY ON PI CONSOLE
 # Based on: docker-build-process-plan.md network specifications
 
 set -euo pipefail
 
+
+# x-files-listing.txt → LUCID_HOST_COMPOSE_* (scripts/lib/lucid-repo-paths.sh)
+_LUCID_W="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+while [[ "$_LUCID_W" != "/" && "$(basename "$_LUCID_W")" != "scripts" ]]; do _LUCID_W="$(dirname "$_LUCID_W")"; done
+# shellcheck source=lib/lucid-repo-paths.sh
+source "${_LUCID_W}/lib/lucid-repo-paths.sh"
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -177,19 +187,19 @@ log_info "  • $GUI_NETWORK ($GUI_SUBNET) - GUI integration services"
 echo ""
 log_info "Next steps (run on Pi console):"
 log_info "  1. Set project root:"
-log_info "     export PROJECT_ROOT=\"/mnt/myssd/Lucid/Lucid\""
+log_info "     export PROJECT_ROOT=\"/absolute/path/to/Lucid\"   # host checkout (see scripts/lib/lucid-repo-paths.sh)"
 log_info ""
 log_info "  2. Generate .env files:"
 log_info "     bash scripts/config/generate-all-env-complete.sh"
 log_info ""
 log_info "  3. Deploy Phase 1 (Foundation):"
 log_info "     docker-compose --env-file configs/environment/.env.foundation \\"
-log_info "                    -f configs/docker/docker-compose.foundation.yml up -d"
+log_info "                    -f "${LUCID_HOST_COMPOSE_FOUNDATION}" up -d"
 log_info ""
 log_info "  4. Deploy Phase 2 (Core):"
 log_info "     docker-compose --env-file configs/environment/.env.foundation \\"
 log_info "                    --env-file configs/environment/.env.core \\"
-log_info "                    -f configs/docker/docker-compose.core.yml up -d"
+log_info "                    -f "${LUCID_HOST_COMPOSE_CORE}" up -d"
 log_info ""
 echo ""
 log_success "Networks ready for deployment!"

@@ -1,7 +1,7 @@
 """
 File: /app/service_mesh/controller/http_server.py
 x-lucid-file-path: /app/service_mesh/controller/http_server.py
-x-lucid-file-directory: /app/service_mesh
+x-lucid-file-directory: /app/service_mesh/controller
 x-lucid-file-type: python
 
 HTTP Server for Service Mesh Controller

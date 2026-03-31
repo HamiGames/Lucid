@@ -1,6 +1,13 @@
 # Simplified Test Script for Core Data Structures
 # Tests basic functionality without requiring heavy dependencies
 
+"""
+File: /app/tests/test_core_structures.py
+x-lucid-file-path: /app/tests/test_core_structures.py
+x-lucid-file-directory: /app/tests
+x-lucid-file-type: python
+"""
+
 import os
 import sys
 import logging

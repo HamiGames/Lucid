@@ -1,0 +1,368 @@
+(Scoped to 1 path prefix(es): infrastructure)
+Dockerfiles in scope: 90 of 242
+
+================================================================================
+DOCKERFILE STANDARDIZATION DIAGNOSTIC REPORT
+================================================================================
+
+
+ISSUE SUMMARY:
+
+(Duplicate port groups: map ports.port when set, else first EXPOSE on disk — same as repair script.)
+
+[FAIL] Missing Canonical Paths: 90/90 (100.0%)
+[FAIL] Missing EXPOSE (Dockerfile on disk): 11/90 (12.2%)
+[FAIL] Dockerfile path not on disk: 7/90 (7.8%)
+[FAIL] Map port != Dockerfile EXPOSE: 13/90 (14.4%)
+[FAIL] Missing X-Files Entries: 90/90 (100.0%)
+[FAIL] Missing Infrastructure Rel: 21/90 (23.3%)
+[ OK ] Missing Service IDs: 0/90 (0.0%)
+[FAIL] Duplicate declared ports (map or EXPOSE): 13/90 (14.4%)
+[FAIL] Port+service mismatches: 4/90 (4.4%)
+
+
+DETAILED ISSUES:
+
+[FAIL] MISSING CANONICAL PATHS (90 files):
+   1. infrastructure/containers/.devcontainer/Dockerfile.network-friendly
+   2. infrastructure/containers/.devcontainer/Dockerfile.simple
+   3. infrastructure/containers/admin/dockerfile.admin-overlord
+   4. infrastructure/containers/admin/Dockerfile.admin-system-gateway
+   5. infrastructure/containers/admin/Dockerfile.admin-ui-backend
+   6. infrastructure/containers/admin/Dockerfile.gov-client
+   7. infrastructure/containers/admin/Dockerfile.governance-client
+   8. infrastructure/containers/admin/Dockerfile.key-rotation
+   9. infrastructure/containers/admin/Dockerfile.params-registry
+   10. infrastructure/containers/auth/Dockerfile.auth-service
+   11. infrastructure/containers/auth/Dockerfile.lucid-gov
+   12. infrastructure/containers/base/Dockerfile.base
+   13. infrastructure/containers/base/Dockerfile.java-base
+   14. infrastructure/containers/base/Dockerfile.python-base
+   15. infrastructure/containers/blockchain/Dockerfile.block-manager
+   16. infrastructure/containers/blockchain/Dockerfile.chain-to-pay
+   17. infrastructure/containers/blockchain/Dockerfile.consensus-engine
+   18. infrastructure/containers/blockchain/Dockerfile.data
+   19. infrastructure/containers/blockchain/Dockerfile.engine
+   20. infrastructure/containers/database/Dockerfile.database
+   21. infrastructure/containers/database/Dockerfile.database-overlord
+   22. infrastructure/containers/database/Dockerfile.elasticsearch
+   23. infrastructure/containers/database/Dockerfile.mongodb
+   24. infrastructure/containers/database/Dockerfile.redis
+   25. infrastructure/containers/electron_gui/Dockerfile.admin
+   26. infrastructure/containers/electron_gui/Dockerfile.node
+   27. infrastructure/containers/electron_gui/Dockerfile.user
+   28. infrastructure/containers/gui/Dockerfile.gui
+   29. infrastructure/containers/gui/Dockerfile.gui-api-bridge
+   30. infrastructure/containers/gui/Dockerfile.gui-hardware-manager
+   31. infrastructure/containers/gui/Dockerfile.gui-tor-manager
+   32. infrastructure/containers/node/Dockerfile.node-gov
+   33. infrastructure/containers/node/Dockerfile.node-management
+   34. infrastructure/containers/node/Dockerfile.node-overlord
+   35. infrastructure/containers/node/Dockerfile.node-registry
+   36. infrastructure/containers/node/Dockerfile.node-system-gateway
+   37. infrastructure/containers/node/Dockerfile.node-utils
+   38. infrastructure/containers/node/Dockerfile.node-worker
+   39. infrastructure/containers/payment_systems/Dockerfile.on-system-chain-client
+   40. infrastructure/containers/payment_systems/Dockerfile.payment-gateway
+   41. infrastructure/containers/payment_systems/Dockerfile.tron-node-client
+   42. infrastructure/containers/payment_systems/Dockerfile.tron-payment-service
+   43. infrastructure/containers/payment_systems/Dockerfile.wallet
+   44. infrastructure/containers/rdp/Dockerfile.rdp-controller
+   45. infrastructure/containers/server/Dockerfile
+   46. infrastructure/containers/server/Dockerfile.rdp-server-manager
+   47. infrastructure/containers/server/Dockerfile.server-gateway
+   48. infrastructure/containers/server/Dockerfile.server-manager
+   49. infrastructure/containers/server/Dockerfile.service-mesh-controller
+   50. infrastructure/containers/services/node/Dockerfile
+   51. infrastructure/containers/services/node/Dockerfile.node-management
+   52. infrastructure/containers/sessions/Dockerfile.anchoring
+   53. infrastructure/containers/sessions/Dockerfile.api
+   54. infrastructure/containers/sessions/Dockerfile.chunk-processor
+   55. infrastructure/containers/sessions/Dockerfile.merkle-tree-builder
+   56. infrastructure/containers/sessions/Dockerfile.session-overlord
+   57. infrastructure/containers/sessions/Dockerfile.session-pipeline
+   58. infrastructure/containers/sessions/Dockerfile.session-pipeline-manager
+   59. infrastructure/containers/sessions/Dockerfile.session-storage-service
+   60. infrastructure/containers/sessions/Dockerfile.session-systems-control
+   61. infrastructure/containers/storage/Dockerfile.elasticsearch
+   62. infrastructure/containers/storage/Dockerfile.mongodb
+   63. infrastructure/containers/storage/Dockerfile.redis
+   64. infrastructure/containers/storage/Dockerfile.storage
+   65. infrastructure/containers/tor/Dockerfile
+   66. infrastructure/containers/tor/Dockerfile.tor-proxy-02
+   67. infrastructure/containers/tor/Dockerfile.tunnels
+   68. infrastructure/containers/user/Dockerfile
+   69. infrastructure/containers/vm/Dockerfile.vm
+   70. infrastructure/docker/common/Dockerfile
+   71. infrastructure/docker/common/Dockerfile.beta
+   72. infrastructure/docker/common/Dockerfile.common
+   73. infrastructure/docker/common/Dockerfile.lucid-governor
+   74. infrastructure/docker/common/Dockerfile.timelock
+   75. infrastructure/docker/databases/Dockerfile.database-backup
+   76. infrastructure/docker/databases/Dockerfile.database-monitoring
+   77. infrastructure/docker/distroless/base/Dockerfile.base
+   78. infrastructure/docker/distroless/gui/Dockerfile.gui
+   79. infrastructure/docker/distroless/rdp/Dockerfile.rdp
+   80. infrastructure/docker/multi-stage/Dockerfile.database
+   81. infrastructure/docker/multi-stage/Dockerfile.storage
+   82. infrastructure/docker/multi-stage/Dockerfile.vm
+   83. infrastructure/docker/payment-systems/Dockerfile.tron-client
+   84. infrastructure/docker/vm/Dockerfile.vm-manager
+   85. infrastructure/docker/vm/Dockerfile.vm-orchestrator
+   86. infrastructure/docker/vm/Dockerfile.vm-resource-monitor
+   87. infrastructure/docker/wallet/Dockerfile.key-rotation
+   88. infrastructure/docker/wallet/Dockerfile.role-manager
+   89. infrastructure/docker/wallet/Dockerfile.software-vault
+   90. infrastructure/service_mesh/Dockerfile.controller
+
+[FAIL] MISSING EXPOSE PORT (Dockerfile on disk has no numeric EXPOSE) (11 files):
+   1. infrastructure/containers/.devcontainer/Dockerfile.network-friendly
+   2. infrastructure/containers/.devcontainer/Dockerfile.simple
+   3. infrastructure/containers/base/Dockerfile.base
+   4. infrastructure/containers/base/Dockerfile.java-base
+   5. infrastructure/containers/base/Dockerfile.python-base
+   6. infrastructure/containers/gui/Dockerfile.gui
+   7. infrastructure/docker/common/Dockerfile
+   8. infrastructure/docker/common/Dockerfile.common
+   9. infrastructure/docker/distroless/base/Dockerfile.base
+   10. infrastructure/docker/distroless/gui/Dockerfile.gui
+   11. infrastructure/docker/distroless/rdp/Dockerfile.rdp
+
+[FAIL] DOCKERFILE PATH IN MAP BUT FILE MISSING ON DISK (7 files):
+   1. infrastructure/containers/admin/Dockerfile.governance-client
+   2. infrastructure/containers/services/node/Dockerfile
+   3. infrastructure/containers/services/node/Dockerfile.node-management
+   4. infrastructure/containers/tor/Dockerfile
+   5. infrastructure/docker/common/Dockerfile.beta
+   6. infrastructure/docker/multi-stage/Dockerfile.database
+   7. infrastructure/docker/multi-stage/Dockerfile.storage
+
+[WARN] MAP PORT != DOCKERFILE EXPOSE (13 files):
+   (Recalibration map JSON is stale vs first EXPOSE — run repair_dockerfile_standardization.py.)
+   1. infrastructure/containers/blockchain/Dockerfile.consensus-engine  map=8085  EXPOSE_first=8185
+   2. infrastructure/containers/database/Dockerfile.database-overlord  map=8120  EXPOSE_first=8121
+   3. infrastructure/containers/electron_gui/Dockerfile.admin  map=8120  EXPOSE_first=8125
+   4. infrastructure/containers/gui/Dockerfile.gui-api-bridge  map=8102  EXPOSE_first=8203
+   5. infrastructure/containers/payment_systems/Dockerfile.payment-gateway  map=8097  EXPOSE_first=8197
+   6. infrastructure/containers/payment_systems/Dockerfile.tron-node-client  map=8030  EXPOSE_first=8035
+   7. infrastructure/containers/payment_systems/Dockerfile.tron-payment-service  map=8080  EXPOSE_first=8150
+   8. infrastructure/containers/server/Dockerfile.rdp-server-manager  map=8090  EXPOSE_first=8490
+   9. infrastructure/containers/server/Dockerfile.server-gateway  map=8080  EXPOSE_first=8450
+   10. infrastructure/containers/sessions/Dockerfile.merkle-tree-builder  map=8092  EXPOSE_first=8392
+   11. infrastructure/containers/storage/Dockerfile.elasticsearch  map=9200  EXPOSE_first=9300
+   12. infrastructure/containers/storage/Dockerfile.mongodb  map=27017  EXPOSE_first=27019
+   13. infrastructure/containers/storage/Dockerfile.redis  map=6379  EXPOSE_first=6380
+
+[FAIL] MISSING X-FILES ENTRIES (90 files):
+   1. infrastructure/containers/.devcontainer/Dockerfile.network-friendly
+   2. infrastructure/containers/.devcontainer/Dockerfile.simple
+   3. infrastructure/containers/admin/dockerfile.admin-overlord
+   4. infrastructure/containers/admin/Dockerfile.admin-system-gateway
+   5. infrastructure/containers/admin/Dockerfile.admin-ui-backend
+   6. infrastructure/containers/admin/Dockerfile.gov-client
+   7. infrastructure/containers/admin/Dockerfile.governance-client
+   8. infrastructure/containers/admin/Dockerfile.key-rotation
+   9. infrastructure/containers/admin/Dockerfile.params-registry
+   10. infrastructure/containers/auth/Dockerfile.auth-service
+   11. infrastructure/containers/auth/Dockerfile.lucid-gov
+   12. infrastructure/containers/base/Dockerfile.base
+   13. infrastructure/containers/base/Dockerfile.java-base
+   14. infrastructure/containers/base/Dockerfile.python-base
+   15. infrastructure/containers/blockchain/Dockerfile.block-manager
+   16. infrastructure/containers/blockchain/Dockerfile.chain-to-pay
+   17. infrastructure/containers/blockchain/Dockerfile.consensus-engine
+   18. infrastructure/containers/blockchain/Dockerfile.data
+   19. infrastructure/containers/blockchain/Dockerfile.engine
+   20. infrastructure/containers/database/Dockerfile.database
+   21. infrastructure/containers/database/Dockerfile.database-overlord
+   22. infrastructure/containers/database/Dockerfile.elasticsearch
+   23. infrastructure/containers/database/Dockerfile.mongodb
+   24. infrastructure/containers/database/Dockerfile.redis
+   25. infrastructure/containers/electron_gui/Dockerfile.admin
+   26. infrastructure/containers/electron_gui/Dockerfile.node
+   27. infrastructure/containers/electron_gui/Dockerfile.user
+   28. infrastructure/containers/gui/Dockerfile.gui
+   29. infrastructure/containers/gui/Dockerfile.gui-api-bridge
+   30. infrastructure/containers/gui/Dockerfile.gui-hardware-manager
+   31. infrastructure/containers/gui/Dockerfile.gui-tor-manager
+   32. infrastructure/containers/node/Dockerfile.node-gov
+   33. infrastructure/containers/node/Dockerfile.node-management
+   34. infrastructure/containers/node/Dockerfile.node-overlord
+   35. infrastructure/containers/node/Dockerfile.node-registry
+   36. infrastructure/containers/node/Dockerfile.node-system-gateway
+   37. infrastructure/containers/node/Dockerfile.node-utils
+   38. infrastructure/containers/node/Dockerfile.node-worker
+   39. infrastructure/containers/payment_systems/Dockerfile.on-system-chain-client
+   40. infrastructure/containers/payment_systems/Dockerfile.payment-gateway
+   41. infrastructure/containers/payment_systems/Dockerfile.tron-node-client
+   42. infrastructure/containers/payment_systems/Dockerfile.tron-payment-service
+   43. infrastructure/containers/payment_systems/Dockerfile.wallet
+   44. infrastructure/containers/rdp/Dockerfile.rdp-controller
+   45. infrastructure/containers/server/Dockerfile
+   46. infrastructure/containers/server/Dockerfile.rdp-server-manager
+   47. infrastructure/containers/server/Dockerfile.server-gateway
+   48. infrastructure/containers/server/Dockerfile.server-manager
+   49. infrastructure/containers/server/Dockerfile.service-mesh-controller
+   50. infrastructure/containers/services/node/Dockerfile
+   51. infrastructure/containers/services/node/Dockerfile.node-management
+   52. infrastructure/containers/sessions/Dockerfile.anchoring
+   53. infrastructure/containers/sessions/Dockerfile.api
+   54. infrastructure/containers/sessions/Dockerfile.chunk-processor
+   55. infrastructure/containers/sessions/Dockerfile.merkle-tree-builder
+   56. infrastructure/containers/sessions/Dockerfile.session-overlord
+   57. infrastructure/containers/sessions/Dockerfile.session-pipeline
+   58. infrastructure/containers/sessions/Dockerfile.session-pipeline-manager
+   59. infrastructure/containers/sessions/Dockerfile.session-storage-service
+   60. infrastructure/containers/sessions/Dockerfile.session-systems-control
+   61. infrastructure/containers/storage/Dockerfile.elasticsearch
+   62. infrastructure/containers/storage/Dockerfile.mongodb
+   63. infrastructure/containers/storage/Dockerfile.redis
+   64. infrastructure/containers/storage/Dockerfile.storage
+   65. infrastructure/containers/tor/Dockerfile
+   66. infrastructure/containers/tor/Dockerfile.tor-proxy-02
+   67. infrastructure/containers/tor/Dockerfile.tunnels
+   68. infrastructure/containers/user/Dockerfile
+   69. infrastructure/containers/vm/Dockerfile.vm
+   70. infrastructure/docker/common/Dockerfile
+   71. infrastructure/docker/common/Dockerfile.beta
+   72. infrastructure/docker/common/Dockerfile.common
+   73. infrastructure/docker/common/Dockerfile.lucid-governor
+   74. infrastructure/docker/common/Dockerfile.timelock
+   75. infrastructure/docker/databases/Dockerfile.database-backup
+   76. infrastructure/docker/databases/Dockerfile.database-monitoring
+   77. infrastructure/docker/distroless/base/Dockerfile.base
+   78. infrastructure/docker/distroless/gui/Dockerfile.gui
+   79. infrastructure/docker/distroless/rdp/Dockerfile.rdp
+   80. infrastructure/docker/multi-stage/Dockerfile.database
+   81. infrastructure/docker/multi-stage/Dockerfile.storage
+   82. infrastructure/docker/multi-stage/Dockerfile.vm
+   83. infrastructure/docker/payment-systems/Dockerfile.tron-client
+   84. infrastructure/docker/vm/Dockerfile.vm-manager
+   85. infrastructure/docker/vm/Dockerfile.vm-orchestrator
+   86. infrastructure/docker/vm/Dockerfile.vm-resource-monitor
+   87. infrastructure/docker/wallet/Dockerfile.key-rotation
+   88. infrastructure/docker/wallet/Dockerfile.role-manager
+   89. infrastructure/docker/wallet/Dockerfile.software-vault
+   90. infrastructure/service_mesh/Dockerfile.controller
+
+[FAIL] MISSING INFRASTRUCTURE REL (21 files):
+   1. infrastructure/docker/common/Dockerfile
+   2. infrastructure/docker/common/Dockerfile.beta
+   3. infrastructure/docker/common/Dockerfile.common
+   4. infrastructure/docker/common/Dockerfile.lucid-governor
+   5. infrastructure/docker/common/Dockerfile.timelock
+   6. infrastructure/docker/databases/Dockerfile.database-backup
+   7. infrastructure/docker/databases/Dockerfile.database-monitoring
+   8. infrastructure/docker/distroless/base/Dockerfile.base
+   9. infrastructure/docker/distroless/gui/Dockerfile.gui
+   10. infrastructure/docker/distroless/rdp/Dockerfile.rdp
+   11. infrastructure/docker/multi-stage/Dockerfile.database
+   12. infrastructure/docker/multi-stage/Dockerfile.storage
+   13. infrastructure/docker/multi-stage/Dockerfile.vm
+   14. infrastructure/docker/payment-systems/Dockerfile.tron-client
+   15. infrastructure/docker/vm/Dockerfile.vm-manager
+   16. infrastructure/docker/vm/Dockerfile.vm-orchestrator
+   17. infrastructure/docker/vm/Dockerfile.vm-resource-monitor
+   18. infrastructure/docker/wallet/Dockerfile.key-rotation
+   19. infrastructure/docker/wallet/Dockerfile.role-manager
+   20. infrastructure/docker/wallet/Dockerfile.software-vault
+   21. infrastructure/service_mesh/Dockerfile.controller
+
+[WARN] DUPLICATE DECLARED PORT (13 ports):
+   (Numbered paths: repair keeps #1 at P, #2 -> P+2, #3 -> P+3, ...)
+
+   Port 6379: 2 dockerfiles
+   1. infrastructure/containers/database/Dockerfile.redis
+   2. infrastructure/containers/storage/Dockerfile.redis
+   Port 7000: 2 dockerfiles
+   1. infrastructure/containers/tor/Dockerfile
+   2. infrastructure/containers/tor/Dockerfile.tunnels
+   Port 8030: 2 dockerfiles
+   1. infrastructure/containers/payment_systems/Dockerfile.tron-node-client
+   2. infrastructure/docker/payment-systems/Dockerfile.tron-client
+   Port 8070: 2 dockerfiles
+   1. infrastructure/containers/admin/Dockerfile.gov-client
+   2. infrastructure/containers/admin/Dockerfile.governance-client
+   Port 8080: 3 dockerfiles
+   1. infrastructure/containers/payment_systems/Dockerfile.tron-payment-service
+   2. infrastructure/containers/server/Dockerfile.server-gateway
+   3. infrastructure/containers/user/Dockerfile
+   Port 8085: 2 dockerfiles
+   1. infrastructure/containers/blockchain/Dockerfile.consensus-engine
+   2. infrastructure/containers/sessions/Dockerfile.anchoring
+   Port 8090: 2 dockerfiles
+   1. infrastructure/containers/server/Dockerfile.rdp-server-manager
+   2. infrastructure/docker/wallet/Dockerfile.key-rotation
+   Port 8095: 3 dockerfiles
+   1. infrastructure/containers/node/Dockerfile.node-management
+   2. infrastructure/containers/services/node/Dockerfile
+   3. infrastructure/containers/services/node/Dockerfile.node-management
+   Port 8097: 2 dockerfiles
+   1. infrastructure/containers/gui/Dockerfile.gui-tor-manager
+   2. infrastructure/containers/payment_systems/Dockerfile.payment-gateway
+   Port 8102: 2 dockerfiles
+   1. infrastructure/containers/gui/Dockerfile.gui-api-bridge
+   2. infrastructure/docker/wallet/Dockerfile.role-manager
+   Port 8120: 3 dockerfiles
+   1. infrastructure/containers/admin/Dockerfile.admin-ui-backend
+   2. infrastructure/containers/database/Dockerfile.database-overlord
+   3. infrastructure/containers/electron_gui/Dockerfile.admin
+   Port 9200: 2 dockerfiles
+   1. infrastructure/containers/database/Dockerfile.elasticsearch
+   2. infrastructure/containers/storage/Dockerfile.elasticsearch
+   Port 27017: 2 dockerfiles
+   1. infrastructure/containers/database/Dockerfile.mongodb
+   2. infrastructure/containers/storage/Dockerfile.mongodb
+
+[WARN] PORT + SERVICE MISMATCHES (4 ports):
+   Port 8120: keys=['admin_ui_backend', 'database_overlord'] names=['admin-ui-backend', 'database-overlord']
+   1. infrastructure/containers/admin/Dockerfile.admin-ui-backend
+   2. infrastructure/containers/database/Dockerfile.database-overlord
+   3. infrastructure/containers/electron_gui/Dockerfile.admin
+   Port 8085: keys=['blockchain_consensus_engine', 'session_anchoring'] names=['blockchain-consensus-engine', 'session-anchoring']
+   1. infrastructure/containers/blockchain/Dockerfile.consensus-engine
+   2. infrastructure/containers/sessions/Dockerfile.anchoring
+   Port 8097: keys=['gui_tor_manager_http', 'payment_system_gateway'] names=['gui-tor-manager', 'payment-system-gateway']
+   1. infrastructure/containers/gui/Dockerfile.gui-tor-manager
+   2. infrastructure/containers/payment_systems/Dockerfile.payment-gateway
+   Port 8080: keys=['lucid_server_gateway', 'main_lucid_gateway', 'tron_payment_service'] names=['api-gateway', 'server-gateway', 'tron-payment-service']
+   1. infrastructure/containers/payment_systems/Dockerfile.tron-payment-service
+   2. infrastructure/containers/server/Dockerfile.server-gateway
+   3. infrastructure/containers/user/Dockerfile
+
+
+RECOMMENDATIONS TO FIX:
+
+1. CANONICAL PATHS (100.0% missing):
+   ACTION: Update apply_lucid_service_ids_to_dockerfiles.py to:
+   - Add canonical_path resolution from host-config.yml service_name
+   - Match Dockerfile ports to canonical host-config.yml entries
+
+2. MISSING EXPOSE (12.2% of scoped Dockerfiles):
+   ACTION: Add a numeric EXPOSE <port> to each Dockerfile (diagnostics use it as source of truth).
+   Then run repair_dockerfile_standardization.py to sync dockerfile_recalibration_map.json.
+
+2b. ORPHAN MAP KEYS (7.8% — file deleted but path still in map):
+   ACTION: Remove keys from infrastructure/containers/service_id-list.json (and x-files.json if listed).
+   Then: python infrastructure/containers/build_dockerfile_recalibration_map.py
+
+2c. STALE MAP PORTS (map JSON disagrees with Dockerfile EXPOSE):
+   ACTION: python repair_dockerfile_standardization.py [--in-place]
+
+3. X-FILES TRACKING (100.0% missing):
+   ACTION: Update inject_dockerfile_x_files_skeleton.py:
+   - Scan all Dockerfiles for COPY/ADD commands
+   - Add missing entries to x-files-listing.txt
+
+4. DUPLICATE PORTS (13 conflicts):
+   ACTION: Review collision_notes in host-config.yml
+   - Use distinct service_name hostnames for co-hosted services
+   - Remap ports for multi-instance services
+   - repair_dockerfile_standardization.py assigns 2nd/3rd... paths (sorted) to P+2, P+3... in the recalibration map; align EXPOSE / compose with host-config as needed.
+   - For explicit service keys: dockerfile_standardization_diagnostics.py --emit-port-overrides infrastructure/containers/port_conflict_overrides.json
+     then edit JSON and run repair_dockerfile_standardization.py --overrides <that file>
+
+
+================================================================================
+ANALYSIS COMPLETE
+================================================================================

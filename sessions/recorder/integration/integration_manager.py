@@ -2,6 +2,7 @@
 """
 File: /app/sessions/recorder/integration/integration_manager.py
 x-lucid-file-path: /app/sessions/recorder/integration/integration_manager.py
+x-lucid-file-directory: /app/sessions/recorder/integration
 x-lucid-file-type: python
 
 Integration Manager for Session Recorder

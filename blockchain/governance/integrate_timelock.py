@@ -2,6 +2,7 @@
 """
 File: /app/blockchain/governance/integrate_timelock.py
 x-lucid-file-path: /app/blockchain/governance/integrate_timelock.py
+x-lucid-file-directory: /app/blockchain/governance
 x-lucid-file-type: python
 
 Timelock Governance Integration Script

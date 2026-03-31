@@ -1,37 +1,32 @@
 #!/bin/bash
-# Path: /mnt/myssd/Lucid/Lucid/infrastructure/docker/build-env.sh
 # Master Build Environment Script for Lucid Docker Services
+# File: /app/configs/docker//build-env.sh
+# x-lucid-file-path: /app/configs/docker//build-env.sh
+# x-lucid-file-directory: /app/configs/docker/
+# x-lucid-file-type: shell
 # Orchestrates all service-specific build-env scripts
-# Pi Console Native - Optimized for Raspberry Pi 5 deployment
+# Generation paths: x-lucid /app/configs, /app/scripts (override with LUCID_IMAGE_APP_ROOT / LUCID_IMAGE_CONFIG_DIR).
 
 set -euo pipefail
 
 # =============================================================================
-# PI CONSOLE NATIVE CONFIGURATION
+# PATH CONFIGURATION (x-lucid / container generation targets)
 # =============================================================================
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+LUCID_IMAGE_APP_ROOT="${LUCID_IMAGE_APP_ROOT:-/app}"
+LUCID_IMAGE_CONFIG_DIR="${LUCID_IMAGE_CONFIG_DIR:-/app/configs}"
+PROJECT_ROOT="$LUCID_IMAGE_APP_ROOT"
+ENV_DIR="$LUCID_IMAGE_CONFIG_DIR"
+SCRIPTS_DIR="$LUCID_IMAGE_APP_ROOT/scripts"
+CONFIG_SCRIPTS_DIR="$SCRIPTS_DIR/config"
 
-# Fixed Pi Console Paths - No dynamic detection for Pi console reliability
-PROJECT_ROOT="/mnt/myssd/Lucid/Lucid"
-ENV_DIR="/mnt/myssd/Lucid/Lucid/configs/environment"
-SCRIPTS_DIR="/mnt/myssd/Lucid/Lucid/scripts"
-CONFIG_SCRIPTS_DIR="/mnt/myssd/Lucid/Lucid/scripts/config"
-SCRIPT_DIR="/mnt/myssd/Lucid/Lucid/infrastructure/docker"
-
-# Validate Pi mount points exist
+# Optional Pi mounts do not gate writes to ENV_DIR.
 validate_pi_mounts() {
-    local required_mounts=(
-        "/mnt/myssd"
-        "/mnt/myssd/Lucid"
-        "/mnt/myssd/Lucid/Lucid"
-    )
-    
-    for mount in "${required_mounts[@]}"; do
-        if [[ ! -d "$mount" ]]; then
-            echo "ERROR: Required Pi mount point not found: $mount"
-            echo "Please ensure the SSD is properly mounted at /mnt/myssd"
-            exit 1
-        fi
-    done
+    if [[ -d "/mnt/myssd" ]] || [[ -d "/mnt/usb" ]] || [[ -d "/mnt/sdcard" ]]; then
+        return 0
+    fi
+    echo "NOTE: No Pi SSD/USB mount detected; writing env files to $ENV_DIR"
+    return 0
 }
 
 # Check required packages for Pi console
@@ -61,23 +56,13 @@ check_pi_packages() {
     fi
 }
 
-# Validate paths exist
+# Validate paths exist (mkdir for x-lucid /app targets; ENV_DIR must be writable)
 validate_paths() {
-    local required_paths=(
-        "$PROJECT_ROOT"
-        "$ENV_DIR"
-        "$SCRIPTS_DIR"
-        "$CONFIG_SCRIPTS_DIR"
-        "$SCRIPT_DIR"
-    )
-    
-    for path in "${required_paths[@]}"; do
-        if [[ ! -d "$path" ]]; then
-            echo "ERROR: Required path not found: $path"
-            echo "Please ensure the Lucid project is properly set up on the Pi"
-            exit 1
-        fi
-    done
+    mkdir -p "$PROJECT_ROOT" "$ENV_DIR" "$SCRIPTS_DIR" "$CONFIG_SCRIPTS_DIR" "$SCRIPT_DIR" 2>/dev/null || true
+    if [[ ! -d "$ENV_DIR" ]] || [[ ! -w "$ENV_DIR" ]]; then
+        echo "ERROR: Environment directory missing or not writable: $ENV_DIR"
+        exit 1
+    fi
 }
 
 # Check Pi-specific requirements

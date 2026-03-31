@@ -1,3 +1,8 @@
+# File: /app/03_api_gateway/docker-compose.yml
+# x-lucid-file-path: /app/03_api_gateway/docker-compose.yml
+# x-lucid-file-directory: /app/03_api_gateway
+# x-lucid-file-type: YAML
+
 # 03-api-gateway/docker-compose.yml
 # Lucid API Gateway – relies on foundation MongoDB/Redis and tor-proxy
 # Aligned with @constants: TOR_PROXY_* env vars, onion-state volume
@@ -29,6 +34,7 @@ services:
     networks:
       lucid-pi-network:
         ipv4_address: ${API_GATEWAY_IP:-172.20.0.18}
+      lucid-tor-egress-network: {}
     volumes:
       - api-gateway-certs:/certs:ro
       - api-gateway-logs:/app/logs
@@ -64,6 +70,9 @@ networks:
   lucid-pi-network:
     external: true
     name: lucid-pi-network
+  lucid-tor-egress-network:
+    external: true
+    name: lucid-tor-egress-network
 
 volumes:
   api-gateway-certs:

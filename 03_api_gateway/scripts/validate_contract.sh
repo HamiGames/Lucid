@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 # Validate Lucid RDP API contract (OpenAPI 3.0+)
+# File: /app/03_api_gateway/scripts/validate_contract.sh
+# x-lucid-file-path: /app/03_api_gateway/scripts/validate_contract.sh
+# x-lucid-file-directory: /app/03_api_gateway/scripts
+# x-lucid-file-type: shell
 # Path: 03-api-gateway/scripts/validate_contract.sh
 
 set -euo pipefail

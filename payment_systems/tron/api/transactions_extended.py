@@ -1,6 +1,7 @@
 """
 File: /app/payment_systems/tron/api/transactions_extended.py
 x-lucid-file-path: /app/payment_systems/tron/api/transactions_extended.py
+x-lucid-file-directory: /app/payment_systems/tron/api
 x-lucid-file-type: python
 
 LUCID Payment Systems - Extended TRON Transactions API

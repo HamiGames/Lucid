@@ -1,3 +1,8 @@
+# File: /app/payment_systems/tron/config/wallet-manager-config.yaml
+# x-lucid-file-path: /app/payment_systems/tron/config/wallet-manager-config.yaml
+# x-lucid-file-directory: /app/payment_systems/tron/config
+# x-lucid-file-type: YAML
+
 # Lucid TRON Wallet Manager - Wallet Manager Configuration
 # Optional YAML configuration for wallet manager service
 # File: payment-systems/tron/config/wallet-manager-config.yaml

@@ -1,3 +1,8 @@
+# File: /app/auth/config/hardware-wallet-config.yaml
+# x-lucid-file-path: /app/auth/config/hardware-wallet-config.yaml
+# x-lucid-file-directory: /app/auth/config
+# x-lucid-file-type: YAML
+
 # Lucid Authentication Service - Hardware Wallet Configuration
 # Optional YAML configuration for hardware wallet device settings
 # File: auth/config/hardware-wallet-config.yaml

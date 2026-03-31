@@ -1,6 +1,7 @@
 """
 File: /app/payment_systems/tron/wallet_manager_main.py
 x-lucid-file-path: /app/payment_systems/tron/wallet_manager_main.py
+x-lucid-file-directory: /app/payment_systems/tron
 x-lucid-file-type: python
 
 LUCID TRON Wallet Manager Service - Main Entry Point

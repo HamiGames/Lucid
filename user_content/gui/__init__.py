@@ -5,6 +5,7 @@
 """
 File: /app/user_content/gui/__init__.py
 x-lucid-file-path: /app/user_content/gui/__init__.py
+x-lucid-file-directory: /app/user_content/gui
 x-lucid-file-type: python
 """
 

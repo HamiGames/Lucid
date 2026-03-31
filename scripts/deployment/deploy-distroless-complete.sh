@@ -1,10 +1,22 @@
 #!/bin/bash
 # Path: scripts/deployment/deploy-distroless-complete.sh
+# File: /app/scripts/deployment/deploy-distroless-complete.sh
+# x-lucid-file-path: /app/scripts/deployment/deploy-distroless-complete.sh
+# x-lucid-file-directory: /app/scripts/deployment
+# x-lucid-file-type: shell
 # Complete Distroless Deployment Orchestrator
 # Orchestrates the entire distroless deployment process
 # MUST RUN ON PI CONSOLE
 
 set -euo pipefail
+
+_lucid_here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+_lucid_scripts="$_lucid_here"
+while [[ "$_lucid_scripts" != "/" && "$(basename "$_lucid_scripts")" != "scripts" ]]; do
+    _lucid_scripts="$(dirname "$_lucid_scripts")"
+done
+# shellcheck source=../lib/lucid-repo-paths.sh
+source "$_lucid_scripts/lib/lucid-repo-paths.sh"
 
 # Colors for output
 RED='\033[0;31m'
@@ -20,7 +32,7 @@ log_warning() { echo -e "${YELLOW}[WARNING]${NC} $1"; }
 log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 
 # Project root
-PROJECT_ROOT="${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}"
+PROJECT_ROOT="${PROJECT_ROOT:-$LUCID_REPO_ROOT}"
 
 echo ""
 log_info "========================================"
@@ -101,7 +113,7 @@ ensure_environment_files() {
         
         # Set PROJECT_ROOT if not set
         if [ -z "${PROJECT_ROOT:-}" ]; then
-            export PROJECT_ROOT="/mnt/myssd/Lucid/Lucid"
+            export PROJECT_ROOT="$LUCID_REPO_ROOT"
             log_info "Set PROJECT_ROOT to: $PROJECT_ROOT"
         fi
         

@@ -1,3 +1,8 @@
+# File: /app/configs/services/beta-sidecar.yml
+# x-lucid-file-path: /app/configs/services/beta-sidecar.yml
+# x-lucid-file-directory: /app/configs/services
+# x-lucid-file-type: YAML
+
 # Beta Sidecar Configuration
 # Implements Beta sidecar pattern for service isolation and security
 # Based on architecture documents and service mesh requirements

@@ -1,3 +1,8 @@
+# File: /app/configs/container/admin/docker-compose.admin.yml
+# x-lucid-file-path: /app/configs/container/admin/docker-compose.admin.yml
+# x-lucid-file-directory: /app/configs/container/admin
+# x-lucid-file-type: YAML
+
 # LUCID ADMIN - Distroless Deployment
 # Path: infrastructure/containers/admin/docker-compose.admin.yml
 #

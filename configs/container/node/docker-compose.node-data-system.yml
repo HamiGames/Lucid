@@ -1,3 +1,8 @@
+# File: /app/configs/container/node/docker-compose.node-data-system.yml
+# x-lucid-file-path: /app/configs/container/node/docker-compose.node-data-system.yml
+# x-lucid-file-directory: /app/configs/container/node
+# x-lucid-file-type: YAML
+
 # LUCID NODE DATA SYSTEM — node-worker + data-chain + block-manager + chain-to-pay
 # Path: infrastructure/containers/node/docker-compose.node-data-system.yml
 #

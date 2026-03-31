@@ -1,3 +1,9 @@
+# File: /app/service_configs/container-runtime-layout.yml
+# x-lucid-file-path: /app/service_configs/container-runtime-layout.yml
+# x-lucid-file-directory: /app/service_configs
+# x-lucid-file-type: YAML
+# Lucid alignment: host_registry=infrastructure/containers/host-config.yml (container /app/configs/host-config.yml); path_index=x-files.json section_to_canonical
+
 # =============================================================================
 # Lucid — where files under infrastructure/containers/services/ live at runtime
 #
@@ -13,7 +19,7 @@
 #
 # Service hostname, port, static host_ip (repository root service-ip.txt), and http_path template (generated): infrastructure/containers/host-config.yml
 # Payment TRON stack: x-lucid alignment bundle payment_services/payment-services-host-alignment.yml (pairs with docker-compose.payment-internal.yml).
-# Per com.lucid.cluster groups: x_lucid_cluster_calibration/*-cluster-host-alignment.yml (host-config.yml + x-files-listing.txt; regenerate via infrastructure/containers/_gen_x_lucid_cluster_calibration.py).
+# Per com.lucid.cluster groups: x_lucid_cluster_calibration/*-cluster-host-alignment.yml (host-config.yml + x-files-listing.txt + x-files.json; regenerate via infrastructure/containers/_gen_x_lucid_cluster_calibration.py).
 # When editing *.yml / *.yaml / *.json / *.conf here, keep Docker DNS service_name and ports consistent with that registry (e.g. lucid-mongodb, lucid-redis, api-gateway).
 #
 # Dockerfiles typically:
@@ -31,6 +37,8 @@
 
 lucid_services_config_root: /app/service_configs
 
+# Tor egress Docker bridge: lucid-tor-egress-network (172.31.0.0/16) — create manually per infrastructure/containers/network/network.txt; dual-home tor-proxy in infrastructure/containers/tor/docker-compose.proxy-systems.yml; env keys LUCID_TOR_EGRESS_* and PUBLIC_TOR_IP in master-env-config.txt.
+#
 # Docker Compose files under configs/docker/ (orchestration on build/target host; not under lucid_services_config_root unless COPY'd explicitly).
 configs_docker_compose_yml:
   - configs/docker/docker-compose.all.yml

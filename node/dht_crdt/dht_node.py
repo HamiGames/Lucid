@@ -2,6 +2,7 @@
 """
 File: /app/node/dht_crdt/dht_node.py
 x-lucid-file-path: /app/node/dht_crdt/dht_node.py
+x-lucid-file-directory: /app/node/dht_crdt
 x-lucid-file-type: python
 
 LUCID DHT/CRDT Node - SPEC-1B Implementation

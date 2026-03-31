@@ -1,4 +1,9 @@
 """
+File: /app/configs/overlord/runtime/app.py
+x-lucid-file-path: /app/configs/overlord/runtime/app.py
+x-lucid-file-directory: /app/configs/overlord/runtime
+x-lucid-file-type: python
+
 Lucid overlord — FastAPI for env templates, health, and (node plane) YAML triggers.
 
 OVERLORD_DOMAIN: node | session | database | admin (controls API prefix and env file name).

@@ -1,6 +1,7 @@
 """
 File: /app/sessions/recorder/config.py
 x-lucid-file-path: /app/sessions/recorder/config.py
+x-lucid-file-directory: /app/sessions/recorder
 x-lucid-file-type: python
 
 Configuration Module for Session Recorder

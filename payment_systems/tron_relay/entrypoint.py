@@ -3,6 +3,7 @@
 """
 File: /app/payment_systems/tron_relay/entrypoint.py
 x-lucid-file-path: /app/payment_systems/tron_relay/entrypoint.py
+x-lucid-file-directory: /app/payment_systems/tron_relay
 x-lucid-file-type: python
 
 TRON Relay Service Entrypoint

@@ -1,5 +1,9 @@
 #!/bin/bash
 # Setup Docker Hub Authentication for pickme/lucid namespace
+# File: /app/scripts/registry/setup-dockerhub-auth.sh
+# x-lucid-file-path: /app/scripts/registry/setup-dockerhub-auth.sh
+# x-lucid-file-directory: /app/scripts/registry
+# x-lucid-file-type: shell
 # Implements Docker Hub authentication as per docker-build-process-plan.md
 
 set -e

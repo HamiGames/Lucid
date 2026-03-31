@@ -1,3 +1,9 @@
+# File: /app/service_configs/tron-payment.yml
+# x-lucid-file-path: /app/service_configs/tron-payment.yml
+# x-lucid-file-directory: /app/service_configs
+# x-lucid-file-type: YAML
+# Lucid alignment: host_registry=infrastructure/containers/host-config.yml (container /app/configs/host-config.yml); path_index=x-files.json section_to_canonical
+
 # Runtime (container): /app/service_configs/tron-payment.yml — see container-runtime-layout.yml
 # TRON Payment Service Configuration
 # This file contains configuration for the TRON payment system services

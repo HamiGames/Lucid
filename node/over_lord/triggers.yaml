@@ -1,3 +1,8 @@
+# File: /app/node/over_lord/triggers.yaml
+# x-lucid-file-path: /app/node/over_lord/triggers.yaml
+# x-lucid-file-directory: /app/node/over_lord
+# x-lucid-file-type: YAML
+
 # =============================================================================
 # Node overlord — YAML trigger definitions
 # Path: node/over_lord/triggers.yaml

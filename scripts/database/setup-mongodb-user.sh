@@ -1,10 +1,22 @@
 #!/bin/bash
 # MongoDB User Setup Script for Lucid Project
+# File: /app/scripts/database/setup-mongodb-user.sh
+# x-lucid-file-path: /app/scripts/database/setup-mongodb-user.sh
+# x-lucid-file-directory: /app/scripts/database
+# x-lucid-file-type: shell
 # Purpose: Create the 'lucid' user in MongoDB admin database
 # Usage: Run this script ONCE to set up MongoDB authentication
 # File: scripts/database/setup-mongodb-user.sh
 
 set -e
+
+_lucid_here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+_lucid_scripts="$_lucid_here"
+while [[ "$_lucid_scripts" != "/" && "$(basename "$_lucid_scripts")" != "scripts" ]]; do
+    _lucid_scripts="$(dirname "$_lucid_scripts")"
+done
+# shellcheck source=../lib/lucid-repo-paths.sh
+source "$_lucid_scripts/lib/lucid-repo-paths.sh"
 
 # Colors for output
 RED='\033[0;31m'
@@ -16,7 +28,7 @@ echo -e "${GREEN}🔧 MongoDB User Setup for Lucid Project${NC}"
 echo "=========================================="
 
 # Get project root
-PROJECT_ROOT="${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}"
+PROJECT_ROOT="${PROJECT_ROOT:-$LUCID_REPO_ROOT}"
 ENV_SECRETS="${PROJECT_ROOT}/configs/environment/.env.secrets"
 
 # Check if env file exists
@@ -43,7 +55,7 @@ echo "   Password: ${MONGODB_PASSWORD:0:2}... (hidden)"
 if ! docker ps | grep -q "lucid-mongodb"; then
     echo -e "${RED}❌ Error: lucid-mongodb container is not running${NC}"
     echo -e "${YELLOW}💡 Start MongoDB first:${NC}"
-    echo "   docker compose -f $PROJECT_ROOT/configs/docker/docker-compose.foundation.yml --env-file $PROJECT_ROOT/configs/environment/.env.foundation --env-file $PROJECT_ROOT/configs/environment/.env.support --env-file $PROJECT_ROOT/configs/environment/.env.distroless --env-file $PROJECT_ROOT/configs/environment/.env.secrets up -d lucid-mongodb"
+    echo "   docker compose -f ${LUCID_HOST_COMPOSE_FOUNDATION} --env-file $PROJECT_ROOT/configs/environment/.env.foundation --env-file $PROJECT_ROOT/configs/environment/.env.support --env-file $PROJECT_ROOT/configs/environment/.env.distroless --env-file $PROJECT_ROOT/configs/environment/.env.secrets up -d lucid-mongodb"
     exit 1
 fi
 
@@ -117,11 +129,11 @@ elif echo "$CREATE_RESULT" | grep -q "AUTH_REQUIRED"; then
     echo ""
     echo -e "${YELLOW}📝 Manual steps:${NC}"
     echo "   1. Stop MongoDB: docker stop lucid-mongodb"
-    echo "   2. Edit configs/docker/docker-compose.foundation.yml"
+    echo "   2. Edit host file ${LUCID_HOST_REL_COMPOSE_FOUNDATION} (in-image ${LUCID_X_IMAGE_COMPOSE_FOUNDATION} per x-files-listing.txt)"
     echo "   3. Remove '--auth' from lucid-mongodb command (line ~166)"
     echo "   4. Start MongoDB: docker compose -f ... up -d lucid-mongodb"
     echo "   5. Run this script again"
-    echo "   6. Re-add '--auth' to docker-compose.foundation.yml"
+    echo "   6. Re-add '--auth' to ${LUCID_HOST_REL_COMPOSE_FOUNDATION}"
     echo "   7. Restart MongoDB"
     exit 1
 else

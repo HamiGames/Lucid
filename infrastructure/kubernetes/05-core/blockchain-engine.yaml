@@ -1,3 +1,8 @@
+# File: /app/service_configs/kubernetes/05-core/blockchain-engine.yaml
+# x-lucid-file-path: /app/service_configs/kubernetes/05-core/blockchain-engine.yaml
+# x-lucid-file-directory: /app/service_configs/kubernetes/05-core
+# x-lucid-file-type: YAML
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:

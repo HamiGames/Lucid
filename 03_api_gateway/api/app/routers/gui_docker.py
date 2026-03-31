@@ -1,6 +1,7 @@
 """
 File: /app/03_api_gateway/api/app/routers/gui_docker.py
 x-lucid-file-path: /app/03_api_gateway/api/app/routers/gui_docker.py
+x-lucid-file-directory: /app/03_api_gateway/api/app/routers
 x-lucid-file-type: python
 
 GUI Docker Manager Proxy Endpoints Router

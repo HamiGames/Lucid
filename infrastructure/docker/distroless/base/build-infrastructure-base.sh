@@ -1,5 +1,9 @@
 #!/bin/bash
 # Build Infrastructure Base Distroless Images Script
+# File: /app/configs/docker//distroless/base/build-infrastructure-base.sh
+# x-lucid-file-path: /app/configs/docker//distroless/base/build-infrastructure-base.sh
+# x-lucid-file-directory: /app/configs/docker//distroless/base
+# x-lucid-file-type: shell
 # Bash script for Linux/macOS development environment
 # Builds infrastructure base distroless images for Lucid project
 

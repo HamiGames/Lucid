@@ -1,3 +1,8 @@
+# File: /app/gui_api_bridge/docker-compose.yml
+# x-lucid-file-path: /app/gui_api_bridge/docker-compose.yml
+# x-lucid-file-directory: /app/gui_api_bridge
+# x-lucid-file-type: YAML
+
 # gui-api-bridge/docker-compose.yml
 # Lucid GUI API Bridge - Docker Compose Configuration
 # Aligned with 03-api-gateway docker-compose pattern

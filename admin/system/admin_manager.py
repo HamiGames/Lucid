@@ -1,8 +1,9 @@
-﻿# Path: admin/admin_manager.py
+# Path: admin/admin_manager.py
 
 """
 File: /app/admin/system/admin_manager.py
 x-lucid-file-path: /app/admin/system/admin_manager.py
+x-lucid-file-directory: /app/admin/system
 x-lucid-file-type: python
 """
 

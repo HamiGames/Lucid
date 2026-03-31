@@ -1,6 +1,7 @@
 """
 File: /app/gui_hardware_manager/gui_hardware_manager/config.py
 x-lucid-file-path: /app/gui_hardware_manager/gui_hardware_manager/config.py
+x-lucid-file-directory: /app/gui_hardware_manager/gui_hardware_manager
 x-lucid-file-type: python
 
 Configuration Management for GUI Hardware Manager

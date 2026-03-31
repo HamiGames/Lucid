@@ -5,6 +5,7 @@
 """
 File: /app/node/validation/__init__.py
 x-lucid-file-path: /app/node/validation/__init__.py
+x-lucid-file-directory: /app/node/validation
 x-lucid-file-type: python
 
 Validation module for Lucid node operations.

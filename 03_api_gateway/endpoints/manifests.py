@@ -1,6 +1,7 @@
 """
 File: /app/03_api_gateway/endpoints/manifests.py
 x-lucid-file-path: /app/03_api_gateway/endpoints/manifests.py
+x-lucid-file-directory: /app/03_api_gateway/endpoints
 x-lucid-file-type: python
 
 Session Manifest Endpoints Module

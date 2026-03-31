@@ -1,3 +1,8 @@
+# File: /app/configs/compose/docker-compose.payment-systems.yaml
+# x-lucid-file-path: /app/configs/compose/docker-compose.payment-systems.yaml
+# x-lucid-file-directory: /app/infrastructure/compose
+# x-lucid-file-type: YAML
+
 # LUCID PAYMENT SYSTEMS - Distroless Deployment
 # Phase 4: Payment Systems (TRON Integration, Payment Governance, Distribution)
 # Aligned with essentials.md and service-ip-configuration.md
@@ -7,10 +12,9 @@
 # configs/environment/.env.secrets is bind-mounted to /app/configs/.env.secrets and listed in env_file for Compose.
 # Do not list master-env-config.txt in env_file: Compose interpolates ${...} and breaks on required placeholders.
 # Optional per-service env fragments (e.g. .env.node): bind-mount from configs/environment/ into /app/configs/ when present; omitted from env_file so compose does not require those files on the host.
-# Host registry: infrastructure/containers/host-config.yml -> /app/service_configs/host-config.yml (x-lucid-file-path).
+# Host registry: infrastructure/containers/host-config.yml -> /app/configs/host-config.yml (x-lucid-file-path).
 # Packaged service configs tree: infrastructure/containers/services/ -> /app/service_configs/ (container-runtime-layout.yml).
 # Build references: infrastructure/containers/<stack>/Dockerfile* (repo root build context).
-
 
 services:
   # TRON Client - Main TRON integration service
@@ -51,7 +55,7 @@ services:
       - ../../master-env-config.txt:/app/configs/.env.master:ro
       - ../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
       - ../../infrastructure/containers/services:/app/service_configs:ro
-      - ../../infrastructure/containers/host-config.yml:/app/service_configs/host-config.yml:ro
+      - ../../infrastructure/containers/host-config.yml:/app/configs/host-config.yml:ro
 
       - /mnt/myssd/Lucid/Lucid/data/tron:/data/tron:rw
       - /mnt/myssd/Lucid/Lucid/data/keys:/data/keys:rw
@@ -127,7 +131,7 @@ services:
       - ../../master-env-config.txt:/app/configs/.env.master:ro
       - ../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
       - ../../infrastructure/containers/services:/app/service_configs:ro
-      - ../../infrastructure/containers/host-config.yml:/app/service_configs/host-config.yml:ro
+      - ../../infrastructure/containers/host-config.yml:/app/configs/host-config.yml:ro
 
       - /mnt/myssd/Lucid/Lucid/data/payments:/data/payouts:rw
       - /mnt/myssd/Lucid/Lucid/data/keys:/data/keys:ro
@@ -206,7 +210,7 @@ services:
       - ../../master-env-config.txt:/app/configs/.env.master:ro
       - ../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
       - ../../infrastructure/containers/services:/app/service_configs:ro
-      - ../../infrastructure/containers/host-config.yml:/app/service_configs/host-config.yml:ro
+      - ../../infrastructure/containers/host-config.yml:/app/configs/host-config.yml:ro
 
       - /mnt/myssd/Lucid/Lucid/data/wallets:/data/wallets:rw
       - /mnt/myssd/Lucid/Lucid/data/keys:/data/keys:ro
@@ -284,7 +288,7 @@ services:
       - ../../master-env-config.txt:/app/configs/.env.master:ro
       - ../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
       - ../../infrastructure/containers/services:/app/service_configs:ro
-      - ../../infrastructure/containers/host-config.yml:/app/service_configs/host-config.yml:ro
+      - ../../infrastructure/containers/host-config.yml:/app/configs/host-config.yml:ro
 
       - /mnt/myssd/Lucid/Lucid/data/usdt:/data/usdt:rw
       - /mnt/myssd/Lucid/Lucid/data/keys:/data/keys:ro
@@ -361,7 +365,7 @@ services:
       - ../../master-env-config.txt:/app/configs/.env.master:ro
       - ../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
       - ../../infrastructure/containers/services:/app/service_configs:ro
-      - ../../infrastructure/containers/host-config.yml:/app/service_configs/host-config.yml:ro
+      - ../../infrastructure/containers/host-config.yml:/app/configs/host-config.yml:ro
 
       - /mnt/myssd/Lucid/Lucid/data/staking:/data/staking:rw
       - /mnt/myssd/Lucid/Lucid/data/keys:/data/keys:ro
@@ -442,7 +446,7 @@ services:
       - ../../master-env-config.txt:/app/configs/.env.master:ro
       - ../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
       - ../../infrastructure/containers/services:/app/service_configs:ro
-      - ../../infrastructure/containers/host-config.yml:/app/service_configs/host-config.yml:ro
+      - ../../infrastructure/containers/host-config.yml:/app/configs/host-config.yml:ro
 
       - /mnt/myssd/Lucid/Lucid/data/gateway:/data/gateway:rw
       - /mnt/myssd/Lucid/Lucid/data/keys:/data/keys:ro

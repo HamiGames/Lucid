@@ -1,3 +1,8 @@
+# File: /app/service_configs/kubernetes/03-databases/elasticsearch.yaml
+# x-lucid-file-path: /app/service_configs/kubernetes/03-databases/elasticsearch.yaml
+# x-lucid-file-directory: /app/service_configs/kubernetes/03-databases
+# x-lucid-file-type: YAML
+
 # LUCID ELASTICSEARCH - Kubernetes Deployment
 # Phase 1: Foundation Services
 # Aligned with essentials.md - Elasticsearch Service

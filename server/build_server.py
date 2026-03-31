@@ -1,6 +1,7 @@
 """
 File: /app/server/build_server.py
 x-lucid-file-path: /app/server/build_server.py
+x-lucid-file-directory: /app/server
 x-lucid-file-type: python
 
 Assemble server process paths, environment, and bound port from host-config.

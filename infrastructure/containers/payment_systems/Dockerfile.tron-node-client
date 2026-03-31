@@ -73,9 +73,6 @@ RUN mkdir -p /app-dirs/cache/tron-node-client /app-dirs/data/tron-node-client /a
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --upgrade pip setuptools wheel
 
-COPY payment_systems/tron/requirements.txt ./requirements.txt
-COPY payment_systems/tron/requirements-prod.txt ./requirements-prod.txt
-
 RUN --mount=type=cache,target=/root/.cache/pip \
     mkdir -p /build/wheels && \
     printf "LUCID_TRON_NODE_CLIENT_WHEELS_$(date +%s)" > /build/wheels/.keep && \
@@ -83,32 +80,89 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 # LUCID_X_FILES_SKELETON_BEGIN
 # Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
 RUN set -eux; \
-    mkdir -p '.' './app' './configs' './service_configs' './app/api' './app/config' './app/models' './app/repositories' './app/schemas' './app/services' './app/utils' './configs/.ssh' './configs/container' './configs/database' './configs/docker' './configs/environment' './configs/integration' './configs/logging' './configs/pi' './configs/secrets' './configs/security' './configs/tor' './service_configs/blockchain' './service_configs/distroless' './service_configs/logging' './service_configs/multi-stage' './service_configs/node' './service_configs/payment_services' './service_configs/rdp' './service_configs/security' './service_configs/service_mesh' './service_configs/sessions' './service_configs/x_lucid_cluster_calibration' './configs/container/admin' './configs/container/auth' './configs/container/base' './configs/container/blockchain' './configs/container/database' './configs/container/electron_gui' './configs/container/gui' './configs/container/node' './configs/container/payment_systems' './configs/container/rdp' './configs/container/server' './configs/container/sessions' './configs/container/storage' './configs/container/tor' './configs/database/elasticsearch' './configs/database/redis' './configs/docker/distroless' './configs/docker/docs' './configs/docker/multi-stage' './configs/environment/development' './configs/environment/pi' './configs/environment/production' './configs/environment/staging' './configs/pi/ssh'; \
+    mkdir -p '.' './app' './apps' './configs' './payment_systems' './scripts' './service_configs' './wallet' './apps/admin_ui' './apps/chain_client' './apps/chunker' './apps/dht_node' './apps/encryptor' './apps/exporter' './apps/gui-user' './apps/gui_admin' './apps/gui_node' './apps/merkle' './apps/recorder' './apps/tron-node' './apps/walletd' './configs/.devcontainer' './configs/.ssh' './configs/admin' './configs/auth' './configs/base' './configs/blockchain' './configs/compose' './configs/container' './configs/database' './configs/docker' './configs/electron_gui' './configs/environment' './configs/gui' './configs/integration' './configs/logging' './configs/network' './configs/node' './configs/overlord' './configs/payment_systems' './configs/pi' './configs/rdp' './configs/secrets' './configs/security' './configs/server' './configs/tor' './configs/user' './payment_systems/payment_acceptor' './payment_systems/tron' './payment_systems/tron_node' './payment_systems/tron_relay' './payment_systems/wallet' './scripts/build' './scripts/compliance' './scripts/config' './scripts/contracts' './scripts/database' './scripts/deployment' './scripts/devcontainer' './scripts/docs' './scripts/foundation' './scripts/gui' './scripts/hardware' './scripts/integration' './scripts/lib' './scripts/load' './scripts/logging' './scripts/maintenance' './scripts/migration' './scripts/monitoring' './scripts/network' './scripts/registry' './scripts/secrets' './scripts/security' './scripts/services' './scripts/testing' './scripts/validation' './scripts/verification' './service_configs/blockchain' './service_configs/distroless' './service_configs/kubernetes' './service_configs/logging' './service_configs/multi-stage' './service_configs/node' './service_configs/payment_services' './service_configs/rdp' './service_configs/security' './service_configs/service_mesh' './service_configs/sessions' './service_configs/storage' './service_configs/tor' './service_configs/x_lucid_cluster_calibration' './wallet/security' './wallet/walletd' './apps/admin_ui/src' './apps/chain_client/src' './apps/chunker/src' './apps/encryptor/src' './apps/gui-user/src' './apps/gui_admin/src' './apps/gui_node/src' './apps/tron-node/src' './configs/admin/admin-system-gateway' './configs/admin/config' './configs/blockchain/chain-to-pay' './configs/blockchain/config' './configs/container/admin' './configs/container/auth' './configs/container/base' './configs/container/blockchain' './configs/container/database' './configs/container/electron_gui' './configs/container/gui' './configs/container/node' './configs/container/payment_systems' './configs/container/rdp' './configs/container/server' './configs/container/sessions' './configs/container/storage' './configs/container/tor' './configs/database/elasticsearch' './configs/database/redis' './configs/docker/compose' './configs/docker/distroless' './configs/docker/docs' './configs/docker/multi-stage' './configs/docker/on-system-chain' './configs/environment/development' './configs/environment/pi' './configs/environment/production' './configs/environment/staging' './configs/node/config' './configs/node/node-system-gateway' './configs/overlord/runtime' './configs/pi/ssh' './payment_systems/tron/api' './payment_systems/tron/config' './payment_systems/tron/models' './payment_systems/tron/repositories' './payment_systems/tron/schemas' './payment_systems/tron/services' './payment_systems/tron/utils' './payment_systems/tron_relay/api' './payment_systems/tron_relay/config' './payment_systems/tron_relay/services' './scripts/build/components' './scripts/build/core' './scripts/build/distroless' './scripts/build/utils' './scripts/compliance/distroless' './scripts/compliance/general' './scripts/deployment/devcontainer' './scripts/deployment/distroless' './scripts/deployment/pi' './scripts/deployment/utils' './scripts/maintenance/cleanup' './scripts/maintenance/optimization' './scripts/maintenance/recovery' './scripts/network/diagnostics' './scripts/network/security' './scripts/network/setup' './scripts/testing/integration' './scripts/testing/unit' './scripts/testing/utils' './service_configs/kubernetes/01_configmaps' './service_configs/kubernetes/02-secrets' './service_configs/kubernetes/03-databases' './service_configs/kubernetes/04-auth' './service_configs/kubernetes/04-network' './service_configs/kubernetes/05-core' './service_configs/kubernetes/06-application' './service_configs/kubernetes/07-support' './service_configs/kubernetes/08-ingress' './service_configs/kubernetes/patches' './apps/admin_ui/src/app' './apps/admin_ui/src/components' './apps/admin_ui/src/hooks' './apps/admin_ui/src/lib' './apps/admin_ui/src/types' './apps/chain_client/src/services' './apps/gui-user/src/app' './apps/gui-user/src/components' './apps/gui-user/src/services' './apps/gui-user/src/stores' './apps/gui_admin/src/app' './apps/gui_node/src/app' './configs/docker/compose/mongodb' './configs/docker/compose/nats' './configs/docker/compose/nginx' './configs/docker/compose/redis' './configs/docker/compose/vault' './configs/docker/distroless/base' './apps/admin_ui/src/components/dashboard' './apps/admin_ui/src/components/ui'; \
     for d in \
       '.' \
       './app' \
+      './apps' \
       './configs' \
+      './payment_systems' \
+      './scripts' \
       './service_configs' \
-      './app/api' \
-      './app/config' \
-      './app/models' \
-      './app/repositories' \
-      './app/schemas' \
-      './app/services' \
-      './app/utils' \
+      './wallet' \
+      './apps/admin_ui' \
+      './apps/chain_client' \
+      './apps/chunker' \
+      './apps/dht_node' \
+      './apps/encryptor' \
+      './apps/exporter' \
+      './apps/gui-user' \
+      './apps/gui_admin' \
+      './apps/gui_node' \
+      './apps/merkle' \
+      './apps/recorder' \
+      './apps/tron-node' \
+      './apps/walletd' \
+      './configs/.devcontainer' \
       './configs/.ssh' \
+      './configs/admin' \
+      './configs/auth' \
+      './configs/base' \
+      './configs/blockchain' \
+      './configs/compose' \
       './configs/container' \
       './configs/database' \
       './configs/docker' \
+      './configs/electron_gui' \
       './configs/environment' \
+      './configs/gui' \
       './configs/integration' \
       './configs/logging' \
+      './configs/network' \
+      './configs/node' \
+      './configs/overlord' \
+      './configs/payment_systems' \
       './configs/pi' \
+      './configs/rdp' \
       './configs/secrets' \
       './configs/security' \
+      './configs/server' \
       './configs/tor' \
+      './configs/user' \
+      './payment_systems/payment_acceptor' \
+      './payment_systems/tron' \
+      './payment_systems/tron_node' \
+      './payment_systems/tron_relay' \
+      './payment_systems/wallet' \
+      './scripts/build' \
+      './scripts/compliance' \
+      './scripts/config' \
+      './scripts/contracts' \
+      './scripts/database' \
+      './scripts/deployment' \
+      './scripts/devcontainer' \
+      './scripts/docs' \
+      './scripts/foundation' \
+      './scripts/gui' \
+      './scripts/hardware' \
+      './scripts/integration' \
+      './scripts/lib' \
+      './scripts/load' \
+      './scripts/logging' \
+      './scripts/maintenance' \
+      './scripts/migration' \
+      './scripts/monitoring' \
+      './scripts/network' \
+      './scripts/registry' \
+      './scripts/secrets' \
+      './scripts/security' \
+      './scripts/services' \
+      './scripts/testing' \
+      './scripts/validation' \
+      './scripts/verification' \
       './service_configs/blockchain' \
       './service_configs/distroless' \
+      './service_configs/kubernetes' \
       './service_configs/logging' \
       './service_configs/multi-stage' \
       './service_configs/node' \
@@ -117,7 +171,23 @@ RUN set -eux; \
       './service_configs/security' \
       './service_configs/service_mesh' \
       './service_configs/sessions' \
+      './service_configs/storage' \
+      './service_configs/tor' \
       './service_configs/x_lucid_cluster_calibration' \
+      './wallet/security' \
+      './wallet/walletd' \
+      './apps/admin_ui/src' \
+      './apps/chain_client/src' \
+      './apps/chunker/src' \
+      './apps/encryptor/src' \
+      './apps/gui-user/src' \
+      './apps/gui_admin/src' \
+      './apps/gui_node/src' \
+      './apps/tron-node/src' \
+      './configs/admin/admin-system-gateway' \
+      './configs/admin/config' \
+      './configs/blockchain/chain-to-pay' \
+      './configs/blockchain/config' \
       './configs/container/admin' \
       './configs/container/auth' \
       './configs/container/base' \
@@ -134,19 +204,84 @@ RUN set -eux; \
       './configs/container/tor' \
       './configs/database/elasticsearch' \
       './configs/database/redis' \
+      './configs/docker/compose' \
       './configs/docker/distroless' \
       './configs/docker/docs' \
       './configs/docker/multi-stage' \
+      './configs/docker/on-system-chain' \
       './configs/environment/development' \
       './configs/environment/pi' \
       './configs/environment/production' \
       './configs/environment/staging' \
+      './configs/node/config' \
+      './configs/node/node-system-gateway' \
+      './configs/overlord/runtime' \
       './configs/pi/ssh' \
+      './payment_systems/tron/api' \
+      './payment_systems/tron/config' \
+      './payment_systems/tron/models' \
+      './payment_systems/tron/repositories' \
+      './payment_systems/tron/schemas' \
+      './payment_systems/tron/services' \
+      './payment_systems/tron/utils' \
+      './payment_systems/tron_relay/api' \
+      './payment_systems/tron_relay/config' \
+      './payment_systems/tron_relay/services' \
+      './scripts/build/components' \
+      './scripts/build/core' \
+      './scripts/build/distroless' \
+      './scripts/build/utils' \
+      './scripts/compliance/distroless' \
+      './scripts/compliance/general' \
+      './scripts/deployment/devcontainer' \
+      './scripts/deployment/distroless' \
+      './scripts/deployment/pi' \
+      './scripts/deployment/utils' \
+      './scripts/maintenance/cleanup' \
+      './scripts/maintenance/optimization' \
+      './scripts/maintenance/recovery' \
+      './scripts/network/diagnostics' \
+      './scripts/network/security' \
+      './scripts/network/setup' \
+      './scripts/testing/integration' \
+      './scripts/testing/unit' \
+      './scripts/testing/utils' \
+      './service_configs/kubernetes/01_configmaps' \
+      './service_configs/kubernetes/02-secrets' \
+      './service_configs/kubernetes/03-databases' \
+      './service_configs/kubernetes/04-auth' \
+      './service_configs/kubernetes/04-network' \
+      './service_configs/kubernetes/05-core' \
+      './service_configs/kubernetes/06-application' \
+      './service_configs/kubernetes/07-support' \
+      './service_configs/kubernetes/08-ingress' \
+      './service_configs/kubernetes/patches' \
+      './apps/admin_ui/src/app' \
+      './apps/admin_ui/src/components' \
+      './apps/admin_ui/src/hooks' \
+      './apps/admin_ui/src/lib' \
+      './apps/admin_ui/src/types' \
+      './apps/chain_client/src/services' \
+      './apps/gui-user/src/app' \
+      './apps/gui-user/src/components' \
+      './apps/gui-user/src/services' \
+      './apps/gui-user/src/stores' \
+      './apps/gui_admin/src/app' \
+      './apps/gui_node/src/app' \
+      './configs/docker/compose/mongodb' \
+      './configs/docker/compose/nats' \
+      './configs/docker/compose/nginx' \
+      './configs/docker/compose/redis' \
+      './configs/docker/compose/vault' \
+      './configs/docker/distroless/base' \
+      './apps/admin_ui/src/components/dashboard' \
+      './apps/admin_ui/src/components/ui' \
     ; do \
       printf 'LUCID_X_FILES_SKELETON_%s' "$(date +%s)" > "$d/.keep"; \
       touch "$d/.keep"; \
     done
 # LUCID_X_FILES_SKELETON_END
+COPY scripts/ ./scripts/
 
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --no-cache-dir --no-index --find-links /build/wheels \
@@ -157,7 +292,16 @@ RUN printf "LUCID_TRON_NODE_CLIENT_PACKAGES_$(date +%s)" > /usr/local/lib/python
 
 RUN python3.11 -c "import fastapi,uvicorn,pydantic,tronpy,httpx,cryptography; print('tron-node-client deps OK')"
 
-COPY payment_systems/tron/ /build/app/
+
+COPY configs/ ./configs/
+RUN rm -rf ./configs/environment
+COPY configs/environment/.env.secrets ./configs/.env.secrets
+COPY master-env-config.txt ./configs/.env.master
+COPY wallet/ ./wallet/
+COPY apps/ ./apps/
+COPY app/ ./app/
+COPY payment_systems/ ./payment_systems/
+COPY infrastructure/containers/services/ ./service_configs/
 
 COPY infrastructure/containers/host-config.yml ./service_configs/host-config.yml
 COPY infrastructure/containers/services/x_lucid_cluster_calibration/payment-cluster-host-alignment.yml ./service_configs/x_lucid_cluster_calibration/payment-cluster-host-alignment.yml
@@ -173,67 +317,58 @@ RUN test -f /build/app/tron_client_entrypoint.py && test -f /build/app/main.py &
 ############################
 FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12:latest
 
-WORKDIR /app
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 ARG BUILD_DATE
 ARG VCS_REF
 ARG VERSION=1.0.0
+# Lucid Tor egress / network isolation (PUBLIC_TOR_IP: master-env-config.txt; compose: lucid-tor-egress-network)
+ARG PUBLIC_TOR_IP=109.70.100.1
+ARG LUCID_INTERNAL_NETWORK_NAME=lucid-pi-network
+ARG LUCID_TOR_EGRESS_NETWORK_NAME=lucid-tor-egress-network
 
 LABEL maintainer="Lucid Development Team" \
+      com.lucid.network.internal="${LUCID_INTERNAL_NETWORK_NAME}" \
+      com.lucid.network.tor_egress="${LUCID_TOR_EGRESS_NETWORK_NAME}" \
+      com.lucid.tor.public_egress_ip="${PUBLIC_TOR_IP}" \
       org.opencontainers.image.title="Lucid TRON Node Client" \
       org.opencontainers.image.description="TRON node-edge client (FastAPI) for Lucid payment plane" \
       org.opencontainers.image.version="${VERSION}" \
       org.opencontainers.image.revision="${VCS_REF}" \
       org.opencontainers.image.created="${BUILD_DATE}" \
-      org.opencontainers.image.source="https://github.com/HamiGames/Lucid" \
-      com.lucid.service="tron-node-client" \
-      com.lucid.platform="arm64" \
-      com.lucid.cluster="payment" \
-      com.lucid.security="distroless" \
-      com.lucid.expose="8030" \
       com.lucid.plane="support" \
+      com.lucid.service="tron-node-client" \
+      com.lucid.layer="4" \
+      org.lucid.layer="4" \
+      com.lucid.platform="arm64" \
       com.lucid.architecture="linux/arm64" \
+      com.lucid.security="distroless" \
       com.lucid.vulnerabilities="zero" \
-      com.lucid.tor.compatible="true"
+      com.lucid.expose="8035" \
+      com.lucid.cluster="payment" \
+      com.lucid.tor.compatible="true" \
+      com.lucid.env.config=".env.master,.env.secrets" \
+      com.lucid.service_id="com.lucid.dockerfile.v1.0968fe4e5f1ddcbd.infrastructure.containers.payment_systems.Dockerfile.tron-node-client" \
+      onion.lucid.service_id="lucid-0968fe4e5f1ddcbd-infrastructure-container" \
+      org.lucid.service_id="org.lucid.dockerfile.v1.0968fe4e5f1ddcbd:infrastructure/containers/payment_systems/Dockerfile.tron-node-client" \
 
-ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
-    PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONPATH=/app:/app/usr/local/lib/python3.11/site-packages \
-    PYTHONIOENCODING=utf-8 \
-    LANG=C.UTF-8 \
-    LC_ALL=C.UTF-8 \
-    LUCID_HOST_CONFIG_PATH=/app/configs/host-config.yml \
-    LUCID_HOST_CONFIG_SERVICE_KEY=tron_node_client \
-    LUCID_SERVICE_HOST_IP=172.20.10.38 \
-    LUCID_SERVICE_HTTP_PATH=http://tron-node-client:8030/app \
-    SERVICE_PORT=8030 \
-    SERVICE_HOST=0.0.0.0 \
-    WORKERS=1 \
-    LOG_LEVEL=INFO
-# LUCID_RUNTIME_COPY_FROM_BUILD_BEGIN
-# Generated: same directory set as LUCID_X_FILES_SKELETON (./ under WORKDIR /build).
-COPY --from=builder --chown=65532:65532 /build/app/ /app/app/
-COPY --from=builder --chown=65532:65532 /build/configs/ /app/configs/
-COPY --from=builder --chown=65532:65532 /build/service_configs/ /app/service_configs/
-# LUCID_RUNTIME_COPY_FROM_BUILD_END
-
+ENV     PUBLIC_TOR_IP="${PUBLIC_TOR_IP}" \
+    LUCID_INTERNAL_NETWORK_NAME="${LUCID_INTERNAL_NETWORK_NAME}" \
+    LUCID_TOR_EGRESS_NETWORK_NAME="${LUCID_TOR_EGRESS_NETWORK_NAME}" \
+    PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
+    PYTHONUNBUFFERED="1" \
+    PYTHONDONTWRITEBYTECODE="1" \
+    PYTHONPATH="/app:/app/usr/local/lib/python3.11/site-packages" \
+    PYTHONIOENCODING="utf-8" \
+    LANG="C.UTF-8" \
+    LC_ALL="C.UTF-8" \
+    LOG_LEVEL="INFO" \
+    LUCID_HOST_CONFIG_PATH="/app/configs/host-config.yml" \
+    LUCID_HOST_CONFIG_SERVICE_NAME=tron_node_client \
+    LUCID_SERVICE_HOST_IP=${TRON_NODE_CLIENT_HOST_IP} \
+    LUCID_SERVICE_HTTP_PATH=http://tron-node-client:8035/app \
+    SERVICE_HOST="0.0.0.0" \
+    SERVICE_PORT="8035" \
+    WORKERS="1"
 # LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
 # Generated: apt + RUN scaffold (mkdir/printf/touch/chown) -> FHS (not ./ or /build/; lib_search_and_inject.py).
 COPY --from=builder --chown=65532:65532 /usr/lib/*/libffi.so* /app/usr/lib/
@@ -242,7 +377,6 @@ COPY --from=builder --chown=65532:65532 /usr/lib/*/ossl-modules/ /app/usr/lib/
 COPY --from=builder --chown=65532:65532 /usr/lib/*/libcurl.so* /app/usr/lib/
 COPY --from=builder --chown=65532:65532 /app-dirs/ /app/app-dirs/
 COPY --from=builder --chown=65532:65532 /etc/ssl/ /app/etc/ssl/
-COPY --from=builder --chown=65532:65532 /root/ /app/root/
 COPY --from=builder --chown=65532:65532 /usr/bin/ /app/usr/bin/
 COPY --from=builder --chown=65532:65532 /usr/lib/python3.11/ /app/usr/lib/python3.11/
 COPY --from=builder --chown=65532:65532 /usr/lib/python3/dist-packages/ /app/usr/lib/python3/dist-packages/
@@ -251,6 +385,17 @@ COPY --from=builder --chown=65532:65532 /usr/local/lib/python3.11/site-packages/
 COPY --from=builder --chown=65532:65532 /var/lib/ /app/var/lib/
 COPY --from=builder --chown=65532:65532 /var/run/ /app/var/run/
 # LUCID_RUNTIME_COPY_FROM_BUILDER_APT_END
+
+# LUCID_RUNTIME_COPY_FROM_BUILD_BEGIN
+# Generated: same directory set as LUCID_X_FILES_SKELETON (./ under WORKDIR /build).
+COPY --from=builder --chown=65532:65532 /build/app/ /app/app/
+COPY --from=builder --chown=65532:65532 /build/apps/ /app/apps/
+COPY --from=builder --chown=65532:65532 /build/configs/ /app/configs/
+COPY --from=builder --chown=65532:65532 /build/payment_systems/ /app/payment_systems/
+COPY --from=builder --chown=65532:65532 /build/scripts/ /app/scripts/
+COPY --from=builder --chown=65532:65532 /build/service_configs/ /app/service_configs/
+COPY --from=builder --chown=65532:65532 /build/wallet/ /app/wallet/
+# LUCID_RUNTIME_COPY_FROM_BUILD_END
 # LUCID_IMAGE_CONFIG: .env.secrets + .env.master (runtime)
 COPY --from=builder --chown=65532:65532 /build/configs/.env.secrets /app/configs/.env.secrets
 COPY --from=builder --chown=65532:65532 /build/configs/.env.master /app/configs/.env.master
@@ -277,10 +422,10 @@ RUN ["/app/usr/bin/python3.11", "-c", "import os,sys; sp='/app/usr/local/lib/pyt
 
 RUN ["/app/usr/bin/python3.11", "-c", "import os; assert os.path.isfile('/app/tron_client_entrypoint.py'); print('layout OK')"]
 
-EXPOSE 8030
+EXPOSE 8035
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-  CMD ["/app/usr/bin/python3.11", "-c", "import os,urllib.request; p=os.getenv('SERVICE_PORT','8030'); urllib.request.urlopen(f'http://127.0.0.1:{p}/health',timeout=5).read()"]
+  CMD ["/app/usr/bin/python3.11", "-c", "import os,urllib.request; p=os.getenv('SERVICE_PORT','8035'); urllib.request.urlopen(f'http://127.0.0.1:{p}/health',timeout=5).read()"]
 
 USER 65532:65532
 

@@ -1,3 +1,8 @@
+# File: /app/configs/server/docker-compose.server-external.yml
+# x-lucid-file-path: /app/configs/server/docker-compose.server-external.yml
+# x-lucid-file-directory: /app/configs/server
+# x-lucid-file-type: YAML
+
 # LUCID SERVER EXTERNAL — server plane (gateway, manager, core)
 # Path: infrastructure/containers/server/docker-compose.server-external.yml
 #

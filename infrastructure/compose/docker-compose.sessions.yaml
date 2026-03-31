@@ -1,3 +1,8 @@
+# File: /app/configs/compose/docker-compose.sessions.yaml
+# x-lucid-file-path: /app/configs/compose/docker-compose.sessions.yaml
+# x-lucid-file-directory: /app/infrastructure/compose
+# x-lucid-file-type: YAML
+
 # LUCID SESSION PIPELINE - Distroless Deployment
 # Phase 2: Session Pipeline Services (Chunker, Encryptor, Merkle, Orchestrator, Auth)
 # Aligned with essentials.md Phase 3 and service-ip-configuration.md
@@ -7,10 +12,9 @@
 # configs/environment/.env.secrets is bind-mounted to /app/configs/.env.secrets and listed in env_file for Compose.
 # Do not list master-env-config.txt in env_file: Compose interpolates ${...} and breaks on required placeholders.
 # Optional per-service env fragments (e.g. .env.node): bind-mount from configs/environment/ into /app/configs/ when present; omitted from env_file so compose does not require those files on the host.
-# Host registry: infrastructure/containers/host-config.yml -> /app/service_configs/host-config.yml (x-lucid-file-path).
+# Host registry: infrastructure/containers/host-config.yml -> /app/configs/host-config.yml (x-lucid-file-path).
 # Packaged service configs tree: infrastructure/containers/services/ -> /app/service_configs/ (container-runtime-layout.yml).
 # Build references: infrastructure/containers/<stack>/Dockerfile* (repo root build context).
-
 
 services:
   lucid-session-chunker:
@@ -49,7 +53,7 @@ services:
       - ../../master-env-config.txt:/app/configs/.env.master:ro
       - ../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
       - ../../infrastructure/containers/services:/app/service_configs:ro
-      - ../../infrastructure/containers/host-config.yml:/app/service_configs/host-config.yml:ro
+      - ../../infrastructure/containers/host-config.yml:/app/configs/host-config.yml:ro
 
       - /mnt/myssd/Lucid/Lucid/data/sessions:/data/sessions:rw
       - /mnt/myssd/Lucid/Lucid/logs/session-chunker:/app/logs:rw
@@ -119,7 +123,7 @@ services:
       - ../../master-env-config.txt:/app/configs/.env.master:ro
       - ../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
       - ../../infrastructure/containers/services:/app/service_configs:ro
-      - ../../infrastructure/containers/host-config.yml:/app/service_configs/host-config.yml:ro
+      - ../../infrastructure/containers/host-config.yml:/app/configs/host-config.yml:ro
 
       - /mnt/myssd/Lucid/Lucid/data/sessions:/data/sessions:ro
       - /mnt/myssd/Lucid/Lucid/data/encrypted:/data/encrypted:rw
@@ -191,7 +195,7 @@ services:
       - ../../master-env-config.txt:/app/configs/.env.master:ro
       - ../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
       - ../../infrastructure/containers/services:/app/service_configs:ro
-      - ../../infrastructure/containers/host-config.yml:/app/service_configs/host-config.yml:ro
+      - ../../infrastructure/containers/host-config.yml:/app/configs/host-config.yml:ro
 
       - /mnt/myssd/Lucid/Lucid/data/encrypted:/data/encrypted:ro
       - /mnt/myssd/Lucid/Lucid/data/merkle:/data/merkle:rw
@@ -267,7 +271,7 @@ services:
       - ../../master-env-config.txt:/app/configs/.env.master:ro
       - ../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
       - ../../infrastructure/containers/services:/app/service_configs:ro
-      - ../../infrastructure/containers/host-config.yml:/app/service_configs/host-config.yml:ro
+      - ../../infrastructure/containers/host-config.yml:/app/configs/host-config.yml:ro
 
       - /mnt/myssd/Lucid/Lucid/data/sessions:/data/sessions:rw
       - /mnt/myssd/Lucid/Lucid/data/encrypted:/data/encrypted:ro
@@ -350,7 +354,7 @@ services:
       - ../../master-env-config.txt:/app/configs/.env.master:ro
       - ../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
       - ../../infrastructure/containers/services:/app/service_configs:ro
-      - ../../infrastructure/containers/host-config.yml:/app/service_configs/host-config.yml:ro
+      - ../../infrastructure/containers/host-config.yml:/app/configs/host-config.yml:ro
 
       - /mnt/myssd/Lucid/Lucid/data/auth:/data/auth:rw
       - /mnt/myssd/Lucid/Lucid/logs/auth-service:/app/logs:rw

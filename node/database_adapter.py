@@ -2,6 +2,7 @@
 """
 File: /app/node/database_adapter.py
 x-lucid-file-path: /app/node/database_adapter.py
+x-lucid-file-directory: /app/node
 x-lucid-file-type: python
 
 Lucid Node Management - Database Adapter

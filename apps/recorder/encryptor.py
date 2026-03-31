@@ -2,6 +2,7 @@
 """
 File: /app/apps/recorder/encryptor.py
 x-lucid-file-path: /app/apps/recorder/encryptor.py
+x-lucid-file-directory: /app/apps/recorder
 x-lucid-file-type: python
 
 Session Encryptor Module for Lucid RDP Recorder

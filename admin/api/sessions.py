@@ -2,6 +2,7 @@
 """
 File: /app/admin/api/sessions.py
 x-lucid-file-path: /app/admin/api/sessions.py
+x-lucid-file-directory: /app/admin/api
 x-lucid-file-type: python
 
 Lucid Admin Interface - Session Management API

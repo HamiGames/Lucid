@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 """
+File: /app/scripts/validation/validate-python-build-alignment.py
+x-lucid-file-path: /app/scripts/validation/validate-python-build-alignment.py
+x-lucid-file-directory: /app/scripts/validation
+x-lucid-file-type: python
+
 LUCID Python Files Build Alignment Validator
 
 This script validates all Python files against the lucid-container-build-plan.plan.md

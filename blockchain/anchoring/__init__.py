@@ -1,6 +1,7 @@
 """
 File: /app/blockchain/anchoring/__init__.py
 x-lucid-file-path: /app/blockchain/anchoring/__init__.py
+x-lucid-file-directory: /app/blockchain/anchoring
 x-lucid-file-type: python
 
 LUCID Session Anchoring Module

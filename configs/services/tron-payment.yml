@@ -1,3 +1,8 @@
+# File: /app/configs/services/tron-payment.yml
+# x-lucid-file-path: /app/configs/services/tron-payment.yml
+# x-lucid-file-directory: /app/configs/services
+# x-lucid-file-type: YAML
+
 # TRON Payment Service Configuration
 # This file contains configuration for the TRON payment system services
 

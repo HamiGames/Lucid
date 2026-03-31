@@ -1,5 +1,9 @@
 #!/bin/bash
 # scripts/foundation/fix-pi-ssh-permissions.sh
+# File: /app/scripts/foundation/fix-pi-ssh-permissions.sh
+# x-lucid-file-path: /app/scripts/foundation/fix-pi-ssh-permissions.sh
+# x-lucid-file-directory: /app/scripts/foundation
+# x-lucid-file-type: shell
 # Comprehensive Pi SSH permission fix for Lucid project
 
 set -e

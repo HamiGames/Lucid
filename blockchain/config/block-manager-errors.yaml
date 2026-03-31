@@ -1,3 +1,8 @@
+# File: /app/blockchain/config/block-manager-errors.yaml
+# x-lucid-file-path: /app/blockchain/config/block-manager-errors.yaml
+# x-lucid-file-directory: /app/blockchain/config
+# x-lucid-file-type: YAML
+
 # Block Manager Error Handling Configuration
 # Purpose: Define error handling policies and recovery strategies
 

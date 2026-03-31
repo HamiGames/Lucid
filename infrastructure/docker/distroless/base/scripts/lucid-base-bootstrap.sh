@@ -1,5 +1,9 @@
 #!/usr/bin/env sh
 set -eu
+# File: /app/configs/docker//distroless/base/scripts/lucid-base-bootstrap.sh
+# x-lucid-file-path: /app/configs/docker//distroless/base/scripts/lucid-base-bootstrap.sh
+# x-lucid-file-directory: /app/configs/docker//distroless/base/scripts
+# x-lucid-file-type: shell
 
 LOG_DIR="${LUCID_BASE_LOG_DIR:-/var/log/lucid-base}"
 LOG_FILE="$LOG_DIR/bootstrap.log"

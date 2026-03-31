@@ -3,6 +3,7 @@
 """
 File: /app/user/user_manager.py
 x-lucid-file-path: /app/user/user_manager.py
+x-lucid-file-directory: /app/user
 x-lucid-file-type: python
 """
 

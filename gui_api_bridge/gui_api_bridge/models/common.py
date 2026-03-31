@@ -1,8 +1,10 @@
 """
-Common Data Models
 File: /app/gui_api_bridge/gui_api_bridge/models/common.py
 x-lucid-file-path: /app/gui_api_bridge/gui_api_bridge/models/common.py
+x-lucid-file-directory: /app/gui_api_bridge/gui_api_bridge/models
 x-lucid-file-type: python
+
+Common Data Models
 x-lucid-file-size: 100
 x-lucid-file-hash: 1234567890
 x-lucid-file-created: 2021-01-01

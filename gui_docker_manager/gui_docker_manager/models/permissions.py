@@ -1,6 +1,7 @@
 """
 File: /app/gui_docker_manager/gui_docker_manager/models/permissions.py
 x-lucid-file-path: /app/gui_docker_manager/gui_docker_manager/models/permissions.py
+x-lucid-file-directory: /app/gui_docker_manager/gui_docker_manager/models
 x-lucid-file-type: python
 
 Permission and Role Data Models

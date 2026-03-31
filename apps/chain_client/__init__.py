@@ -4,6 +4,7 @@
 """
 File: /app/apps/chain_client/__init__.py
 x-lucid-file-path: /app/apps/chain_client/__init__.py
+x-lucid-file-directory: /app/apps/chain_client
 x-lucid-file-type: python
 
 Chain Client package for Lucid RDP.

@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 """
+File: /app/configs/admin/admin-system-gateway/entrypoint.py
+x-lucid-file-path: /app/configs/admin/admin-system-gateway/entrypoint.py
+x-lucid-file-directory: /app/configs/admin/admin-system-gateway
+x-lucid-file-type: python
+
 Lucid Admin System Gateway — distroless portal (aligned with 03_api_gateway layout).
 Loads /app/node/config/openssl-api.yml (TLS policy) and connections.json (routes).
 Env overrides: ADMIN_GATEWAY_* and ADMIN_GATEWAY_UPSTREAM_<NAME>_HOST|PORT.

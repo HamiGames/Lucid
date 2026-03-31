@@ -2,6 +2,7 @@
 """
 File: /app/database/redis/healthcheck.py
 x-lucid-file-path: /app/database/redis/healthcheck.py
+x-lucid-file-directory: /app/database/redis
 x-lucid-file-type: python
 
 Redis Health Check Script for Distroless Container

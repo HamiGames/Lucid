@@ -1,3 +1,8 @@
+# File: /app/configs/container/blockchain/docker-compose.manager.yml
+# x-lucid-file-path: /app/configs/container/blockchain/docker-compose.manager.yml
+# x-lucid-file-directory: /app/configs/container/blockchain
+# x-lucid-file-type: YAML
+
 # Lucid blockchain — core manager stack (engine, data, consensus, block-manager + sessions, payments, wallet, VM)
 # Build contexts: repository root. Compose path: infrastructure/containers/blockchain/
 #

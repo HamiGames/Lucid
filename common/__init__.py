@@ -4,6 +4,7 @@
 """
 File: /app/common/__init__.py
 x-lucid-file-path: /app/common/__init__.py
+x-lucid-file-directory: /app/common
 x-lucid-file-type: python
 
 Common package for Lucid RDP.

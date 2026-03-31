@@ -1,5 +1,9 @@
 #!/bin/bash
 # Path: scripts/docker-smoke-test.sh
+# File: /app/scripts/docker-smoke-test.sh
+# x-lucid-file-path: /app/scripts/docker-smoke-test.sh
+# x-lucid-file-directory: /app/scripts
+# x-lucid-file-type: shell
 # Comprehensive Dockerfile smoke test for Lucid project
 # Validates COPY, ENV, WORKDIR paths and docker-compose spin-up
 

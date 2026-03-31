@@ -1,3 +1,8 @@
+# File: /app/RDP/xrdp/config/monitoring-config.yaml
+# x-lucid-file-path: /app/RDP/xrdp/config/monitoring-config.yaml
+# x-lucid-file-directory: /app/RDP/xrdp/config
+# x-lucid-file-type: YAML
+
 # XRDP Service Monitoring Configuration
 # File: RDP/xrdp/config/monitoring-config.yaml
 # Purpose: Prometheus metrics, alerting rules, and monitoring setup for rdp-xrdp container

@@ -1,7 +1,14 @@
+# File: /app/service_configs/payment_services/payment-services-host-alignment.yml
+# x-lucid-file-path: /app/service_configs/payment_services/payment-services-host-alignment.yml
+# x-lucid-file-directory: /app/service_configs/payment_services
+# x-lucid-file-type: YAML
+# Lucid alignment: host_registry=infrastructure/containers/host-config.yml (container /app/configs/host-config.yml); path_index=x-files.json section_to_canonical
+
 # Runtime (container): /app/service_configs/payment_services/payment-services-host-alignment.yml
 # Canonical payment-stack alignment for x-lucid deployment (merge with docker-compose.payment-internal.yml).
 # Source registry: infrastructure/containers/host-config.yml; static host_ip completes with repository root service-ip.txt
 #   for keys omitted from the generated host-config fragment (payment_system_gateway, tron_relay).
+# Path index: x-files.json (section_to_canonical) for repo ↔ /app/service_configs paths.
 
 x-lucid-host-config:
   file: ../../host-config.yml
@@ -9,13 +16,13 @@ x-lucid-host-config:
   version: '1.0'
   description: Lucid container host registry for Docker DNS hostnames, ports, discovery URLs, and static host IPs.
   ip_source_repo_path: service-ip.txt
-  http_path_template: 'http://{service_name}:{port}/app'
+  http_path_template: 'http://${service_name}:${port}/app'
   host_ip_range: '172.20.10.1–172.20.10.76'
   in_container_path: /app/configs/host-config.yml
 
 x-lucid-host-config-alignment:
   registry_path: /app/configs/host-config.yml
-  http_path_template: "http://{service_name}:{port}/app"
+  http_path_template: "http://${service_name}:${port}/app"
   host_ip_range: 172.20.10.1–172.20.10.76
   entries:
     main_lucid_gateway:

@@ -1,10 +1,20 @@
 #!/bin/bash
 # Test Deployment Fix - Verify Docker Hub Pull Configuration
+# File: /app/scripts/deployment/test-deployment-fix.sh
+# x-lucid-file-path: /app/scripts/deployment/test-deployment-fix.sh
+# x-lucid-file-directory: /app/scripts/deployment
+# x-lucid-file-type: shell
 # Path: scripts/deployment/test-deployment-fix.sh
 # Run this to verify the deployment fix is working
 
 set -euo pipefail
 
+
+# x-files-listing.txt → LUCID_HOST_COMPOSE_* (scripts/lib/lucid-repo-paths.sh)
+_LUCID_W="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+while [[ "$_LUCID_W" != "/" && "$(basename "$_LUCID_W")" != "scripts" ]]; do _LUCID_W="$(dirname "$_LUCID_W")"; done
+# shellcheck source=lib/lucid-repo-paths.sh
+source "${_LUCID_W}/lib/lucid-repo-paths.sh"
 # Colors
 GREEN='\033[0;32m'
 RED='\033[0;31m'
@@ -57,7 +67,7 @@ fi
 
 # Test 3: Verify Compose File Configuration
 echo -e "${BLUE}Test 3: Verify Compose File Configuration${NC}"
-compose_file="configs/docker/docker-compose.foundation.yml"
+compose_file="$LUCID_HOST_COMPOSE_FOUNDATION"
 
 if [ -f "$compose_file" ]; then
     echo -e "${GREEN}✅ Compose file exists${NC}"

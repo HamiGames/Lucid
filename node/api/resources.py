@@ -5,6 +5,7 @@
 """
 File: /app/node/api/resources.py
 x-lucid-file-path: /app/node/api/resources.py
+x-lucid-file-directory: /app/node/api
 x-lucid-file-type: python
 
 Resource monitoring API endpoints for Lucid system.

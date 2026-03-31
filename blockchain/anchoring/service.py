@@ -1,6 +1,7 @@
 """
 File: /app/blockchain/anchoring/service.py
 x-lucid-file-path: /app/blockchain/anchoring/service.py
+x-lucid-file-directory: /app/blockchain/anchoring
 x-lucid-file-type: python
 
 Session Anchoring Service

@@ -1,3 +1,8 @@
+# File: /app/gui_api_bridge/config/gui-bridge-entrypoints.yml
+# x-lucid-file-path: /app/gui_api_bridge/config/gui-bridge-entrypoints.yml
+# x-lucid-file-directory: /app/gui_api_bridge/config
+# x-lucid-file-type: YAML
+
 # gui_api_bridge/config/gui-bridge-entrypoints.yml
 #
 # Container layout: host registry at /app/configs/host-config.yml; bundled service

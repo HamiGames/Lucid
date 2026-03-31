@@ -1,4 +1,9 @@
 """
+File: /app/tests/performance/test_database_queries.py
+x-lucid-file-path: /app/tests/performance/test_database_queries.py
+x-lucid-file-directory: /app/tests/performance
+x-lucid-file-type: python
+
 Database Query Performance Tests
 
 Tests database query performance benchmarks:

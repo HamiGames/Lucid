@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 # Path: 02_network_security/tor/tor-show-onion.sh
+# File: /app/02_network_security/tor/tor-show-onion.sh
+# x-lucid-file-path: /app/02_network_security/tor/tor-show-onion.sh
+# x-lucid-file-directory: /app/02_network_security/tor
+# x-lucid-file-type: shell
 # Aligned with: 02_network_security/tor/Dockerfile.tor-proxy-02 (distroless tor-proxy-02).
 # Installed in image as: /app/run/lucid/tor/bin/tor-show-onion.sh
 #

@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 # Collect Tunnel Tools Metrics Script
+# File: /app/02_network_security/tunnels/scripts/collect-metrics.sh
+# x-lucid-file-path: /app/02_network_security/tunnels/scripts/collect-metrics.sh
+# x-lucid-file-directory: /app/02_network_security/tunnels/scripts
+# x-lucid-file-type: shell
 # Path: 02_network_security/tunnels/scripts/collect-metrics.sh
 # Layout: 02_network_security/tunnels/Dockerfile (metrics under /app/run/lucid/...)
 

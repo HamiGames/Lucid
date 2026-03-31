@@ -1,5 +1,9 @@
 #!/bin/bash
 # Lucid Local Development Cleanup Script
+# File: /app/scripts/deployment/cleanup-local.sh
+# x-lucid-file-path: /app/scripts/deployment/cleanup-local.sh
+# x-lucid-file-directory: /app/scripts/deployment
+# x-lucid-file-type: shell
 # Cleans up all Lucid services and resources for local development
 # Based on Step 50 requirements from BUILD_REQUIREMENTS_GUIDE.md
 

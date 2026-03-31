@@ -1,3 +1,8 @@
+# File: /app/node/over_lord/node-management-config.yaml
+# x-lucid-file-path: /app/node/over_lord/node-management-config.yaml
+# x-lucid-file-directory: /app/node/over_lord
+# x-lucid-file-type: YAML
+
 # Lucid Node Management - Node Management Configuration
 # File: node/config/node-management-config.yaml
 # Purpose: Node pool, PoOT, payouts, resilience, and integration defaults.

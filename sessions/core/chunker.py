@@ -2,6 +2,7 @@
 """
 File: /app/sessions/core/chunker.py
 x-lucid-file-path: /app/sessions/core/chunker.py
+x-lucid-file-directory: /app/sessions/core
 x-lucid-file-type: python
 
 LUCID Session Chunker - SPEC-1B Implementation

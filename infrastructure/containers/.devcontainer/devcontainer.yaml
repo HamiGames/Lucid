@@ -1,3 +1,8 @@
+# File: /app/configs/.devcontainer/devcontainer.yaml
+# x-lucid-file-path: /app/configs/.devcontainer/devcontainer.yaml
+# x-lucid-file-directory: /app/configs/.devcontainer
+# x-lucid-file-type: YAML
+
 name: lucid-dev
 
 # Build the dev shell image from your Dockerfile

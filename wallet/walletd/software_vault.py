@@ -5,6 +5,7 @@
 """
 File: /app/wallet/walletd/software_vault.py
 x-lucid-file-path: /app/wallet/walletd/software_vault.py
+x-lucid-file-directory: /app/wallet/walletd
 x-lucid-file-type: python
 """
 

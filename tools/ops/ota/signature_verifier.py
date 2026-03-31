@@ -2,6 +2,7 @@
 """
 File: /app/tools/ops/ota/signature_verifier.py
 x-lucid-file-path: /app/tools/ops/ota/signature_verifier.py
+x-lucid-file-directory: /app/tools/ops/ota
 x-lucid-file-type: python
 
 LUCID SIGNATURE VERIFIER - SPEC-4 Release Signature Verification

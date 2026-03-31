@@ -1,5 +1,9 @@
 #!/bin/bash
 # auth/build-auth-service.sh
+# File: /app/auth/build-auth-service.sh
+# x-lucid-file-path: /app/auth/build-auth-service.sh
+# x-lucid-file-directory: /app/auth
+# x-lucid-file-type: shell
 # Deploy authentication service container on Pi (Pi-side deployment using pre-built images)
 
 set -e

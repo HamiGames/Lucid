@@ -1,8 +1,10 @@
 """
-Admin API Routes
 File: /app/gui_api_bridge/gui_api_bridge/routers/admin.py
 x-lucid-file-path: /app/gui_api_bridge/gui_api_bridge/routers/admin.py
+x-lucid-file-directory: /app/gui_api_bridge/gui_api_bridge/routers
 x-lucid-file-type: python
+
+Admin API Routes
 Endpoints: /api/v1/admin
 Allowed methods: GET, POST, PUT, DELETE, PATCH
 """

@@ -1,3 +1,8 @@
+# File: /app/auth/config/service-mesh-config.yaml
+# x-lucid-file-path: /app/auth/config/service-mesh-config.yaml
+# x-lucid-file-directory: /app/auth/config
+# x-lucid-file-type: YAML
+
 # Lucid Authentication Service - Service Mesh Configuration
 # Optional YAML configuration for service mesh integration
 # File: auth/config/service-mesh-config.yaml

@@ -1,6 +1,7 @@
 """
 File: /app/payment_systems/tron/repositories/wallet_repository.py
 x-lucid-file-path: /app/payment_systems/tron/repositories/wallet_repository.py
+x-lucid-file-directory: /app/payment_systems/tron/repositories
 x-lucid-file-type: python
 
 Wallet Repository - MongoDB persistence layer for wallet management

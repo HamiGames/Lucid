@@ -1,6 +1,7 @@
 """
 File: /app/node/payouts/__init__.py
 x-lucid-file-path: /app/node/payouts/__init__.py
+x-lucid-file-directory: /app/node/payouts
 x-lucid-file-type: python
 
 LUCID Node Payouts Module

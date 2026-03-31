@@ -1,10 +1,22 @@
 #!/bin/bash
 # Path: scripts/config/generate-all-env-complete.sh
+# File: /app/scripts/config/generate-all-env-complete.sh
+# x-lucid-file-path: /app/scripts/config/generate-all-env-complete.sh
+# x-lucid-file-directory: /app/scripts/config
+# x-lucid-file-type: shell
 # Complete Environment Generation Master Script
 # Generates ALL .env files with ACTUAL values for the entire Lucid project
 # NO PLACEHOLDERS - Everything is generated with cryptographically secure values
 
 set -euo pipefail
+
+_lucid_here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+_lucid_scripts="$_lucid_here"
+while [[ "$_lucid_scripts" != "/" && "$(basename "$_lucid_scripts")" != "scripts" ]]; do
+    _lucid_scripts="$(dirname "$_lucid_scripts")"
+done
+# shellcheck source=../lib/lucid-repo-paths.sh
+source "$_lucid_scripts/lib/lucid-repo-paths.sh"
 
 # Colors for output
 RED='\033[0;31m'
@@ -23,12 +35,12 @@ log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 log_header() { echo -e "${PURPLE}═══════════════════════════════════════════════════════════════${NC}"; echo -e "${PURPLE}$1${NC}"; echo -e "${PURPLE}═══════════════════════════════════════════════════════════════${NC}"; }
 log_step() { echo -e "${CYAN}[STEP]${NC} $1"; }
 
-# Configuration - Pi Console Paths
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="/mnt/myssd/Lucid/Lucid"
-ENV_DIR="/mnt/myssd/Lucid/Lucid/configs/environment"
-SCRIPTS_DIR="/mnt/myssd/Lucid/Lucid/scripts"
-CONFIG_SCRIPTS_DIR="/mnt/myssd/Lucid/Lucid/scripts/config"
+# Configuration
+SCRIPT_DIR="$_lucid_here"
+PROJECT_ROOT="$LUCID_REPO_ROOT"
+ENV_DIR="$LUCID_ENV_CONFIG_DIR"
+SCRIPTS_DIR="$LUCID_SCRIPTS_DIR"
+CONFIG_SCRIPTS_DIR="$SCRIPTS_DIR/config"
 BUILD_TIMESTAMP=$(date '+%Y%m%d-%H%M%S')
 GIT_SHA=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 
@@ -849,8 +861,8 @@ run_all_generation_scripts() {
     # Run API Gateway generate-env.sh
     log_step "Generating API Gateway .env.api..."
     ((TOTAL_FILES+=1))
-    if [[ -f "$PROJECT_ROOT/03-api-gateway/api/generate-env.sh" ]]; then
-        if bash "$PROJECT_ROOT/03-api-gateway/api/generate-env.sh"; then
+    if [[ -f "$PROJECT_ROOT/03_api_gateway/api/generate-env.sh" ]]; then
+        if bash "$PROJECT_ROOT/03_api_gateway/api/generate-env.sh"; then
             log_success "✅ API Gateway .env.api generated"
             ((GENERATED_FILES+=1))
         else
@@ -890,7 +902,7 @@ validate_generated_files() {
     # List of files to validate
     local files_to_check=(
         # API Gateway
-        "$PROJECT_ROOT/03-api-gateway/api/.env.api"
+        "$PROJECT_ROOT/03_api_gateway/api/.env.api"
         
         # Blockchain
         "$PROJECT_ROOT/infrastructure/docker/blockchain/env/.env.deployment-orchestrator"
@@ -998,7 +1010,7 @@ create_summary() {
 ## Generated Files
 
 ### API Gateway (1 file)
-- ✅ \`03-api-gateway/api/.env.api\`
+- ✅ \`03_api_gateway/api/.env.api\`
 
 ### Blockchain Services (10 files)
 - ✅ \`infrastructure/docker/blockchain/env/.env.deployment-orchestrator\`
@@ -1088,7 +1100,7 @@ create_summary() {
    - Backup to secure location immediately
 
 2. **Individual Secrets Files:**
-   - \`03-api-gateway/api/.env.api.secrets\`
+   - \`03_api_gateway/api/.env.api.secrets\`
    - \`sessions/core/.env.sessions.secrets\`
    - All have chmod 600 permissions
 
@@ -1110,10 +1122,10 @@ create_summary() {
 ### 1. Verify Generated Files
 \`\`\`bash
 # Check for placeholders (should return nothing)
-grep -r "_PLACEHOLDER" configs/environment/ infrastructure/docker/*/env/ 03-api-gateway/api/ sessions/core/ || echo "No placeholders found ✅"
+grep -r "_PLACEHOLDER" configs/environment/ infrastructure/docker/*/env/ 03_api_gateway/api/ sessions/core/ || echo "No placeholders found ✅"
 
 # Check for circular references (should return nothing)
-grep -rE '\$\{[A-Z_]+\}' configs/environment/ infrastructure/docker/*/env/ 03-api-gateway/api/ sessions/core/ || echo "No circular references found ✅"
+grep -rE '\$\{[A-Z_]+\}' configs/environment/ infrastructure/docker/*/env/ 03_api_gateway/api/ sessions/core/ || echo "No circular references found ✅"
 
 # Check for empty critical values
 grep -rE '(MONGODB_PASSWORD|JWT_SECRET|ENCRYPTION_KEY)=""' infrastructure/docker/*/env/ || echo "No empty critical values ✅"
@@ -1123,7 +1135,7 @@ grep -rE '(MONGODB_PASSWORD|JWT_SECRET|ENCRYPTION_KEY)=""' infrastructure/docker
 \`\`\`bash
 # Set restrictive permissions
 chmod 600 configs/environment/.env.secure
-chmod 600 03-api-gateway/api/.env.api.secrets
+chmod 600 03_api_gateway/api/.env.api.secrets
 chmod 600 sessions/core/.env.sessions.secrets
 
 # Verify .gitignore
@@ -1133,7 +1145,7 @@ git status --ignored | grep -E '\.env|\.secrets' || echo "Files properly ignored
 ### 3. Backup Secure Values
 \`\`\`bash
 # Create encrypted backup
-tar czf lucid-secrets-backup-$BUILD_TIMESTAMP.tar.gz configs/environment/.env.secure 03-api-gateway/api/.env.api.secrets sessions/core/.env.sessions.secrets
+tar czf lucid-secrets-backup-$BUILD_TIMESTAMP.tar.gz configs/environment/.env.secure 03_api_gateway/api/.env.api.secrets sessions/core/.env.sessions.secrets
 gpg -c lucid-secrets-backup-$BUILD_TIMESTAMP.tar.gz
 rm lucid-secrets-backup-$BUILD_TIMESTAMP.tar.gz
 \`\`\`
@@ -1155,7 +1167,7 @@ cd scripts/deployment
 **Phase Configs:** \`configs/environment/.env.*\`  
 **Blockchain Configs:** \`infrastructure/docker/blockchain/env/.env.*\`  
 **Database Configs:** \`infrastructure/docker/databases/env/.env.*\`  
-**API Gateway Config:** \`03-api-gateway/api/.env.api\`  
+**API Gateway Config:** \`03_api_gateway/api/.env.api\`  
 **Session Configs:** \`sessions/core/.env.*\`  
 **Master Secure File:** \`configs/environment/.env.secure\` 
 

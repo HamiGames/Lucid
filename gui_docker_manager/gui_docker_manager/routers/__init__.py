@@ -1,6 +1,7 @@
 """
 File: /app/gui_docker_manager/gui_docker_manager/routers/__init__.py
 x-lucid-file-path: /app/gui_docker_manager/gui_docker_manager/routers/__init__.py
+x-lucid-file-directory: /app/gui_docker_manager/gui_docker_manager/routers
 x-lucid-file-type: python
 
 Routers for Docker Manager API

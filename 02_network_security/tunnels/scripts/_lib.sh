@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 # Shared helpers for tunnel scripts
+# File: /app/02_network_security/tunnels/scripts/_lib.sh
+# x-lucid-file-path: /app/02_network_security/tunnels/scripts/_lib.sh
+# x-lucid-file-directory: /app/02_network_security/tunnels/scripts
+# x-lucid-file-type: shell
 # Canonical layout: infrastructure/containers/services/tor/tor-operational-layout.yml
 # (with container-runtime-layout.yml lucid_services_config_root + x-files-listing host-config paths)
 # Aligns with:

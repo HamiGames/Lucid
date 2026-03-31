@@ -1,5 +1,9 @@
 #!/bin/bash
 # Secret Encryption Script
+# File: /app/scripts/secrets/encrypt-secrets.sh
+# x-lucid-file-path: /app/scripts/secrets/encrypt-secrets.sh
+# x-lucid-file-directory: /app/scripts/secrets
+# x-lucid-file-type: shell
 # LUCID-STRICT Secret Management System
 # Purpose: Encrypt and decrypt secrets for secure storage and distribution
 # Compatibility: Distroless, API compliant

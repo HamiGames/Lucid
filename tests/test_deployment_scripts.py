@@ -2,6 +2,13 @@
 # Validates PowerShell and Bash deployment scripts
 # Based on LUCID-STRICT requirements
 
+"""
+File: /app/tests/test_deployment_scripts.py
+x-lucid-file-path: /app/tests/test_deployment_scripts.py
+x-lucid-file-directory: /app/tests
+x-lucid-file-type: python
+"""
+
 import os
 import subprocess
 import logging

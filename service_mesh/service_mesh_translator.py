@@ -1,4 +1,9 @@
 """
+File: /app/old-service_mesh/service_mesh_translator.py
+x-lucid-file-path: /app/old-service_mesh/service_mesh_translator.py
+x-lucid-file-directory: /app/old-service_mesh
+x-lucid-file-type: python
+
 Lucid service mesh connection translator.
 
 Maps user/admin/node traffic described in
@@ -9,8 +14,6 @@ Aligns with:
 - Dockerfile.service-mesh-controller: /app/configs/host-config.yml, mesh ports 8500/8088
 - Dockerfile.server-manager: LUCID_HOST_CONFIG_PATH, lucid-server-manager:8081 orchestration
 - Dockerfile.tor-proxy-02 + Dockerfile.tunnels: tor SOCKS/control + tunnel-tools interop
-
-File: service_mesh/service_mesh_translator.py
 """
 
 from __future__ import annotations

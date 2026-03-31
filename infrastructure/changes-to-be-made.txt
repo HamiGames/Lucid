@@ -1,0 +1,203 @@
+# changes-to-be-made.txt
+# Repo path: infrastructure/changes-to-be-made.txt
+# Generated: 2026-03-31 — alignment audit of infrastructure/* vs canonical registry.
+#
+# SOURCE OF TRUTH (per request)
+#   - infrastructure/containers/** (especially host-config.yml, service YAMLs under
+#     services/, rdp/docker-compose.rdp-system.yml, sessions/*-config.yaml, payment_services/*)
+#   - infrastructure/containers/host-config.yml — service_name, port, host_ip, labels
+#
+# CROSS-REFERENCE INDEX
+#   - x-files.json — maps repo paths to container paths (/app/configs/..., /app/service_configs/...).
+#     Any compose or k8s file that claims alignment must exist in section_to_canonical for packaging.
+#   - infrastructure/containers/network/network.txt — bridge subnets (172.20.0.0/16 lucid-pi-network, etc.)
+#
+# ---------------------------------------------------------------------------
+# SEVERITY: CRITICAL — broken references (compose will not resolve)
+# ---------------------------------------------------------------------------
+#
+# File: infrastructure/docker/compose/docker-compose.yml
+# Service: rdp-controller
+#   - depends_on lists "tor-proxy" — no service named tor-proxy exists in this file.
+#   - depends_on lists "rdp-server-manager" — actual service key is "lucid-rdp-server-manager".
+#   - Fix: add tor-proxy (or remove dependency), and rename depends_on target to lucid-rdp-server-manager
+#     (or the hostname you intend to use on the network).
+#   - RDP_SERVER_MANAGER_URL default is http://rdp-server-manager:8081 — WRONG vs containers truth:
+#     host-config + infrastructure/containers/rdp/docker-compose.rdp-system.yml use
+#     rdp-server-manager-http:8090 (HTTP manager). Port 8081 is lucid-server-manager (different service).
+#     Fix default to http://rdp-server-manager-http:8090 (or env-driven publish port).
+#
+# ---------------------------------------------------------------------------
+# SEVERITY: HIGH — host port collisions inside the same compose file
+# ---------------------------------------------------------------------------
+#
+# File: infrastructure/docker/compose/docker-compose.yml
+#   - lucid-rdp-monitor and lucid-node-management both publish "8095:8095".
+#     host-config: node-management = 8095; rdp-resource-monitor = 8201.
+#     Fix: rdp monitor should publish 8201 (container internal must match Dockerfile/rdp compose),
+#     and only one service may bind host 8095.
+#
+# ---------------------------------------------------------------------------
+# SEVERITY: HIGH — session / pipeline ports vs infrastructure/containers
+# ---------------------------------------------------------------------------
+#
+# Canonical (host-config.yml + infrastructure/containers/services/sessions/api-config.yaml +
+# processing-cluster-host-alignment.yml):
+#   session-pipeline        → 8083
+#   session-chunk-processor → 8010
+#   session-api             → 8113
+#
+# File: infrastructure/docker/compose/docker-compose.yml
+#   - lucid-session-pipeline: uses 8089:8089 and healthcheck localhost:8089 — should be 8083 throughout.
+#   - lucid-chunk-processor: uses 8091:8091 — should be 8010 (8091 is session-processor / tron-client per registry).
+#   - lucid-session-api: uses 8093:8093 — should be 8113.
+#   - lucid-session-pipeline publishes 8089 — also collides with lucid-auth-service (8089) on the same host.
+#
+# Kubernetes (misaligned with containers admin-interface.yml but aligned with session configs):
+#   - infrastructure/kubernetes/01_configmaps/session-management-config.yaml — pipeline 8083 / API 8113 OK.
+#   - Main compose above is the outlier vs k8s + containers session docs.
+#
+# ---------------------------------------------------------------------------
+# SEVERITY: HIGH — payment / TRON stack ports vs host-config + payment-services-host-alignment.yml
+# ---------------------------------------------------------------------------
+#
+# host-config.yml (+ payment-services-host-alignment.yml) expect:
+#   tron-client      8091   payout-router   8092   wallet-manager 8093   usdt-manager 8094
+#   tron-client-aux  8101   (payment-system-gateway 8097 per payment-services-host-alignment.yml extension)
+#
+# File: infrastructure/docker/compose/docker-compose.yml
+#   - lucid-tron-client: 8097 — should be 8091 (8097 is gui-tor-manager in host-config; collision risk).
+#   - lucid-payout-router: 8098 — should be 8092 (8098 is gui-docker-manager).
+#   - lucid-wallet-manager: 8099 — should be 8093 (8099 is node-management-staging / gui-hardware-manager per collision_notes).
+#   - lucid-usdt-manager: 8100 — should be 8094 (8100 is tron-client-aux port in registry).
+#   - lucid-trx-staking: 8101 — overlaps tron-client-aux / rdp-session-controller (8101); verify intended
+#     service_name from host-config fragment (tron_staking 8096 suggested in payment-services-host-alignment.yml).
+#   - lucid-payment-gateway: 8097 — matches payment-services-host-alignment.yml payment-system-gateway:8097;
+#     NOTE: host-config.yml also assigns 8097 to gui-tor-manager — document operator remap or split stacks.
+#   - Internal env URLs (e.g. TRON_CLIENT_URL) must use the corrected ports after remapping.
+#
+# ---------------------------------------------------------------------------
+# SEVERITY: HIGH — admin UI port vs infrastructure/containers/services/admin-interface.yml
+# ---------------------------------------------------------------------------
+#
+# infrastructure/containers/services/admin-interface.yml states admin_ui: 8120 (admin_ui_backend / host-config).
+#
+# Misaligned consumers:
+#   - infrastructure/docker/compose/docker-compose.yml — lucid-admin-interface 8083:8083
+#   - infrastructure/kubernetes/01_configmaps/admin-interface-config.yaml — ADMIN_PORT 8083
+#   - infrastructure/kubernetes/07-support/admin-interface.yaml — containerPort 8083
+#   - infrastructure/kubernetes/01_configmaps/api-gateway-config.yaml — ADMIN_INTERFACE_URL :8083
+#
+# Fix direction: move admin interface listen/publish to 8120 and update all dependent URLs/ingress,
+# unless the running image is proven to listen on 8083 (then fix admin-interface.yml + host-config — do not
+# leave all three contradictory).
+#
+# ---------------------------------------------------------------------------
+# SEVERITY: HIGH — RDP stack vs infrastructure/containers/rdp/docker-compose.rdp-system.yml
+# ---------------------------------------------------------------------------
+#
+# Canonical pattern (rdp docker-compose + host-config):
+#   rdp-server (8001)  rdp-server-manager-http (8090)  rdp-session-controller (8101)
+#   rdp-resource-monitor (8201)  lucid-xrdp (8250)  xrdp-rdp (3389)  xrdp-sesman (3350)
+#
+# File: infrastructure/docker/compose/docker-compose.yml
+#   - lucid-rdp-server-manager: maps 3389 — should align with manager HTTP 8090 + separate xrdp desktop 3389
+#     (split services like rdp-system compose or rename container to match xrdp-rdp).
+#   - lucid-rdp-xrdp: 3350/3351 — canonical sesman is 3350; lucid-xrdp API is 8250; add 8250 and 3389 as needed.
+#   - lucid-rdp-monitor: should be 8201 not 8095 (see collision above).
+#
+# ---------------------------------------------------------------------------
+# SEVERITY: MEDIUM — static IPv4 on lucid-pi-network vs host-config host_ip
+# ---------------------------------------------------------------------------
+#
+# host-config.yml assigns per-service host_ip in 172.20.10.1–172.20.10.76 (service-ip.txt derived).
+#
+# Drift examples:
+#   - infrastructure/docker/compose/docker-compose.yml — first wave uses 172.20.0.10–0.36; later services use
+#     172.20.10.x. Pick one scheme: either migrate all lucid-pi-network static IPs to host-config host_ip values
+#     or document intentional “gateway lane (.0.*)” vs “registry lane (.10.*)” and stop mixing in one stack.
+#   - infrastructure/compose/docker-compose.core.yaml — MONGODB_HOST=172.20.0.11 etc.; host-config lucid_mongodb
+#     host_ip is 172.20.10.70. Env and registry disagree.
+#   - infrastructure/service_mesh/config/service-mesh.yaml — fixed 172.20.0.* addresses; mesh controller
+#     host-config host_ip is 172.20.10.55 (lucid-service-mesh-controller).
+#
+# Elasticsearch / Redis / Mongo in compose use 172.20.0.13 / .12 / .11 in env dependencies while host-config
+# lists 172.20.10.68 / .67 / .70 — cross-service URLs break if some stacks use registry IPs and others .0.*.
+#
+# ---------------------------------------------------------------------------
+# SEVERITY: MEDIUM — API gateway published ports
+# ---------------------------------------------------------------------------
+#
+# host-config: api-gateway is 8080; lucid-server-manager is a separate entry on 8081.
+#
+# File: infrastructure/docker/compose/docker-compose.yml — lucid-api-gateway publishes 8080 and 8081.
+#   Remove 8081 from api-gateway unless the image truly multiplexes server-manager (unlikely per registry).
+#
+# ---------------------------------------------------------------------------
+# SEVERITY: MEDIUM — VM and system storage
+# ---------------------------------------------------------------------------
+#
+# host-config: vm-service 8107; lucid_system_storage 9900.
+#
+# File: infrastructure/docker/compose/docker-compose.yml
+#   - lucid-vm: 8103 — should be 8107 per host-config (unless image default differs — then fix Dockerfile/env in containers).
+#   - lucid-storage: 8104 — should be 9900 per lucid_system_storage.
+#
+# ---------------------------------------------------------------------------
+# SEVERITY: MEDIUM — lucid-gui port
+# ---------------------------------------------------------------------------
+#
+# host-config electron GUIs use 3001 / 3002; generic “lucid-gui” on 8000 is not in host-config service list.
+# Either map to electron_gui_user/node service names and ports or add a registry entry and document 8000.
+#
+# ---------------------------------------------------------------------------
+# SEVERITY: LOW — labels / com.lucid.* vs compose lucid.* labels
+# ---------------------------------------------------------------------------
+#
+# host-config uses labels like com.lucid.service / com.lucid.expose.
+# infrastructure/docker/compose/docker-compose.yml uses lucid.service / lucid.type on some services only.
+# For discovery parity, mirror com.lucid.* from host-config on published services or document the split.
+#
+# ---------------------------------------------------------------------------
+# SEVERITY: LOW — network.txt vs collision_notes
+# ---------------------------------------------------------------------------
+#
+# infrastructure/containers/network/network.txt describes subnet planning; host-config collision_notes list
+# duplicate logical ports across different service_name hostnames. Operators must not publish both colliding
+# services on the same host port — compose files should call out *_PUBLISH_PORT overrides where needed
+# (already pattern in rdp-system compose).
+#
+# ---------------------------------------------------------------------------
+# x-files.json maintenance
+# ---------------------------------------------------------------------------
+#
+# When adding or renaming infrastructure compose files, update x-files.json section_to_canonical (and any
+# generated sections) so container build pipelines that COPY from the index stay consistent.
+#
+# ---------------------------------------------------------------------------
+# SUMMARY TABLE (docker-compose.yml → align toward host-config + containers manifests)
+# ---------------------------------------------------------------------------
+#
+# Service key (compose)              Current publish / issue           Target (registry-led)
+# ---------------------------------  --------------------------------  ----------------------------------
+# lucid-api-gateway                  +8081 extra                       8080 only
+# lucid-session-pipeline             8089 (auth collision)             8083
+# lucid-chunk-processor              8091                              8010
+# lucid-session-api                  8093                              8113
+# lucid-rdp-server-manager           3389                              split: HTTP 8090 + xrdp 3389 per rdp-system
+# lucid-rdp-xrdp                     3350/3351                         8250 + sesman 3350 + desktop 3389 per role
+# rdp-controller                     depends_on / URL wrong            fix deps; manager URL :8090 hostname
+# lucid-rdp-monitor                  8095 (clash with node-mgmt)       8201
+# lucid-node-management              8095                              8095 (keep; free host port)
+# lucid-admin-interface              8083                              8120 (per admin-interface.yml)
+# lucid-tron-client                  8097                              8091
+# lucid-payout-router                8098                              8092
+# lucid-wallet-manager               8099                              8093
+# lucid-usdt-manager                 8100                              8094
+# lucid-trx-staking                  8101                              verify vs 8096 / host-config tron_staking
+# lucid-payment-gateway              8097                              keep if following payment alignment; note 8097/gui-tor conflict
+# lucid-vm                           8103                              8107
+# lucid-storage                      8104                              9900
+# Static IPs (early services)        172.20.0.*                        172.20.10.* per host-config host_ip
+#
+# End of changes-to-be-made.txt

@@ -1,4 +1,9 @@
 """
+File: /app/tests/unit/blockchain/test_poot_consensus.py
+x-lucid-file-path: /app/tests/unit/blockchain/test_poot_consensus.py
+x-lucid-file-directory: /app/tests/unit/blockchain
+x-lucid-file-type: python
+
 Unit tests for PoOT (Proof of Operational Tasks) consensus engine.
 
 Tests work credits calculation, leader selection with cooldown, and consensus parameters

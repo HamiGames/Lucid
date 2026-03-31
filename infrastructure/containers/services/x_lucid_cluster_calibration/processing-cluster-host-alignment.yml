@@ -1,9 +1,16 @@
+# File: /app/service_configs/x_lucid_cluster_calibration/processing-cluster-host-alignment.yml
+# x-lucid-file-path: /app/service_configs/x_lucid_cluster_calibration/processing-cluster-host-alignment.yml
+# x-lucid-file-directory: /app/service_configs/x_lucid_cluster_calibration
+# x-lucid-file-type: YAML
+# Lucid alignment: host_registry=infrastructure/containers/host-config.yml (container /app/configs/host-config.yml); path_index=x-files.json section_to_canonical
+
 # Runtime (container): /app/service_configs/x_lucid_cluster_calibration/processing-cluster-host-alignment.yml
-# Canonical processing cluster alignment: host-config.yml + x-files-listing.txt (merge with docker-compose for this stack).
+# Canonical processing cluster alignment: host-config.yml + x-files-listing.txt + x-files.json (merge with docker-compose for this stack).
 x-lucid-calibration:
   cluster: processing
   source_host_config: infrastructure/containers/host-config.yml
   source_x_files_listing: x-files-listing.txt
+  source_x_files_json: x-files.json
   description: Host registry + x-lucid file paths for processing cluster (merge with docker-compose fragments for this stack).
 x-lucid-host-config:
   file: ../../host-config.yml
@@ -11,12 +18,12 @@ x-lucid-host-config:
   version: '1.0'
   description: Lucid container host registry for Docker DNS hostnames, ports, discovery URLs, and static host IPs.
   ip_source_repo_path: service-ip.txt
-  http_path_template: http://{service_name}:{port}/app
+  http_path_template: http://${service_name}:${port}/app
   host_ip_range: 172.20.10.1–172.20.10.76
   in_container_path: /app/configs/host-config.yml
 x-lucid-host-config-alignment:
   registry_path: /app/configs/host-config.yml
-  http_path_template: http://{service_name}:{port}/app
+  http_path_template: http://${service_name}:${port}/app
   host_ip_range: 172.20.10.1–172.20.10.76
   entries:
     session_api:

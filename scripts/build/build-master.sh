@@ -10,8 +10,9 @@ set -euo pipefail
 PROJECT_ROOT="$(pwd)"
 NETWORK_SCRIPT="./scripts/setup_lucid_networks.ps1"  # Will convert to bash version
 BUILD_SCRIPT_SH="./build-devcontainer.sh"
-COMPOSE_SCRIPT="./06-orchestration-runtime/compose/compose_up_dev.sh"
-DEPLOYMENT_SCRIPT="./scripts/deploy-lucid-pi.sh"
+# Dev slice compose (no compose_up_dev.sh in tree — use: docker compose -f infrastructure/compose/lucid-dev.yaml up)
+COMPOSE_SCRIPT="./infrastructure/compose/lucid-dev.yaml"
+DEPLOYMENT_SCRIPT="./scripts/deployment/deploy-lucid-pi.sh"
 
 # Command line options
 TEST_ONLY=false

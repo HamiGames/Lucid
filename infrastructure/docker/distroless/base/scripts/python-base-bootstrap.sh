@@ -1,5 +1,9 @@
 #!/bin/bash
 set -euo pipefail
+# File: /app/configs/docker//distroless/base/scripts/python-base-bootstrap.sh
+# x-lucid-file-path: /app/configs/docker//distroless/base/scripts/python-base-bootstrap.sh
+# x-lucid-file-directory: /app/configs/docker//distroless/base/scripts
+# x-lucid-file-type: shell
 
 LOG_DIR="${PYTHON_BASE_LOG_DIR:-/var/log/python-base}"
 LOG_FILE="${LOG_DIR}/bootstrap.log"

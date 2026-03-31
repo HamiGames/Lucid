@@ -1,8 +1,10 @@
 """
-Node Operator API Routes
 File: /app/gui_api_bridge/gui_api_bridge/routers/node.py
 x-lucid-file-path: /app/gui_api_bridge/gui_api_bridge/routers/node.py
+x-lucid-file-directory: /app/gui_api_bridge/gui_api_bridge/routers
 x-lucid-file-type: python
+
+Node Operator API Routes
 Endpoints: /api/v1/node
 Allowed methods: GET, POST, PUT
 """

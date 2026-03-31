@@ -2,6 +2,7 @@
 """
 File: /app/blockchain/evm/gas_estimator.py
 x-lucid-file-path: /app/blockchain/evm/gas_estimator.py
+x-lucid-file-directory: /app/blockchain/evm
 x-lucid-file-type: python
 
 Gas Estimator for EVM Transactions

@@ -1,6 +1,7 @@
 """
 File: /app/blockchain/core/mempool.py
 x-lucid-file-path: /app/blockchain/core/mempool.py
+x-lucid-file-directory: /app/blockchain/core
 x-lucid-file-type: python
 """
 

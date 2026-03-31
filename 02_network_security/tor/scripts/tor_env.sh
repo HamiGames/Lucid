@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 # Lucid Tor environment (single source of truth)
+# File: /app/02_network_security/tor/scripts/tor_env.sh
+# x-lucid-file-path: /app/02_network_security/tor/scripts/tor_env.sh
+# x-lucid-file-directory: /app/02_network_security/tor/scripts
+# x-lucid-file-type: shell
 
 log() { printf '[tor_env] %s\n' "$*"; }
 

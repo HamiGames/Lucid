@@ -1,5 +1,9 @@
 #!/bin/bash
 # Setup Git Authentication for Lucid Project
+# File: /app/scripts/deployment/utils/setup-git-auth.sh
+# x-lucid-file-path: /app/scripts/deployment/utils/setup-git-auth.sh
+# x-lucid-file-directory: /app/scripts/deployment/utils
+# x-lucid-file-type: shell
 # Supports both SSH and Personal Access Token methods
 
 set -e

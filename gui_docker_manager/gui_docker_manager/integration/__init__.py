@@ -1,6 +1,7 @@
 """
 File: /app/gui_docker_manager/gui_docker_manager/integration/__init__.py
 x-lucid-file-path: /app/gui_docker_manager/gui_docker_manager/integration/__init__.py
+x-lucid-file-directory: /app/gui_docker_manager/gui_docker_manager/integration
 x-lucid-file-type: python
 
 Integration modules for Docker Manager

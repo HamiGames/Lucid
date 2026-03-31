@@ -2,6 +2,7 @@
 """
 File: /app/blockchain/core/consensus_engine.py
 x-lucid-file-path: /app/blockchain/core/consensus_engine.py
+x-lucid-file-directory: /app/blockchain/core
 x-lucid-file-type: python
 
 LUCID Blockchain Consensus Engine - SPEC-1B Implementation

@@ -96,23 +96,30 @@ LABEL maintainer="Lucid Development Team" \
       org.opencontainers.image.version="${VERSION}" \
       org.opencontainers.image.revision="${VCS_REF}" \
       org.opencontainers.image.created="${BUILD_DATE}" \
+      com.lucid.plane="ops" \
       com.lucid.service="rdp-controller" \
+      com.lucid.layer="3" \
+      org.lucid.layer="3" \
       com.lucid.platform="arm64" \
+      com.lucid.architecture="linux/arm64" \
+      com.lucid.security="distroless" \
+      com.lucid.vulnerabilities="zero" \
+      com.lucid.expose="" \
       com.lucid.cluster="application" \
-      com.lucid.security="distroless"
+      com.lucid.tor.compatible="true" \
+      com.lucid.env.config=".env.foundation,.env.secrets"
 
-ENV PATH=/opt/venv/bin:/usr/local/bin:/usr/bin:/bin \
-    PYTHONPATH=/opt/lucid/app \
-    PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONIOENCODING=utf-8 \
-    LANG=C.UTF-8 \
-    LC_ALL=C.UTF-8 \
-    CONTROLLER_HOST=0.0.0.0 \
-    CONTROLLER_PORT=8092 \
-    XRDP_HOST=lucid-rdp \
-    XRDP_API_URL=http://lucid-rdp:8091 \
-    # MONGODB_URI and REDIS_URL must be set via docker-compose environment variables
+ENV PATH="/opt/venv/bin:/usr/local/bin:/usr/bin:/bin" \
+    PYTHONUNBUFFERED="1" \
+    PYTHONDONTWRITEBYTECODE="1" \
+    PYTHONPATH="/opt/lucid/app" \
+    PYTHONIOENCODING="utf-8" \
+    LANG="C.UTF-8" \
+    LC_ALL="C.UTF-8" \
+    CONTROLLER_HOST="0.0.0.0" \
+    CONTROLLER_PORT="8092" \
+    XRDP_API_URL="http://lucid-rdp:8091" \
+    XRDP_HOST="lucid-rdp"
     # from .env.secrets file (no hardcoded passwords) \
     MAX_PENDING_REQUESTS=256
 

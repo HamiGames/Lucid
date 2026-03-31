@@ -1,4 +1,9 @@
 """
+File: /app/tests/integration/blockchain-integration/test_mongodb_sharding.py
+x-lucid-file-path: /app/tests/integration/blockchain-integration/test_mongodb_sharding.py
+x-lucid-file-directory: /app/tests/integration/blockchain-integration
+x-lucid-file-type: python
+
 Integration tests for MongoDB sharding and replication.
 
 Tests MongoDB sharding configuration, replica set management,

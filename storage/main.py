@@ -2,6 +2,7 @@
 """
 File: /app/storage/main.py
 x-lucid-file-path: /app/storage/main.py
+x-lucid-file-directory: /app/storage
 x-lucid-file-type: python
 
 Lucid storage plane service — hardware-backed capacity, mount layout, and health.

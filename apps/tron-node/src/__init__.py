@@ -4,6 +4,7 @@
 """
 File: /app/apps/tron-node/src/__init__.py
 x-lucid-file-path: /app/apps/tron-node/src/__init__.py
+x-lucid-file-directory: /app/apps/tron-node/src
 x-lucid-file-type: python
 
 Tron Node Source package for Lucid RDP.

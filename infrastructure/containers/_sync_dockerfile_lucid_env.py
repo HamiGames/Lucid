@@ -2,7 +2,14 @@
 #   - infrastructure/containers/host-config.yml
 #   - service-ip.txt (repo root)
 #   - ports.txt (repo root) for fallback http_path / service_name / port
-"""Run from repo root: python infrastructure/containers/_sync_dockerfile_lucid_env.py"""
+"""
+File: /app/configs/_sync_dockerfile_lucid_env.py
+x-lucid-file-path: /app/configs/_sync_dockerfile_lucid_env.py
+x-lucid-file-directory: /app/configs
+x-lucid-file-type: python
+
+Run from repo root: python infrastructure/containers/_sync_dockerfile_lucid_env.py
+"""
 
 from __future__ import annotations
 
@@ -183,16 +190,16 @@ def merge_meta(
     return ip, str(http_path), key
 
 
-TRIO_BLOCK = """    LUCID_HOST_CONFIG_SERVICE_KEY={key} \\
+TRIO_BLOCK = """    LUCID_HOST_CONFIG_SERVICE_NAME={key} \\
     LUCID_SERVICE_HOST_IP={ip} \\
     LUCID_SERVICE_HTTP_PATH={path} \\"""
 
-TRIO_BLOCK_NO_IP = """    LUCID_HOST_CONFIG_SERVICE_KEY={key} \\
+TRIO_BLOCK_NO_IP = """    LUCID_HOST_CONFIG_SERVICE_NAME={key} \\
     LUCID_SERVICE_HTTP_PATH={path} \\"""
 
 # Match the three lines (with optional middle IP line)
 RE_TRIO = re.compile(
-    r"[ \t]*LUCID_HOST_CONFIG_SERVICE_KEY=[^\\\n]+ ?\\\n"
+    r"[ \t]*LUCID_HOST_CONFIG_SERVICE_NAME=[^\\\n]+ ?\\\n"
     r"(?:[ \t]*LUCID_SERVICE_HOST_IP=[^\\\n]+ ?\\\n)?"
     r"[ \t]*LUCID_SERVICE_HTTP_PATH=[^\\\n]+ ?\\\n",
     re.MULTILINE,
@@ -200,7 +207,7 @@ RE_TRIO = re.compile(
 
 # user-plane gateway image: extra keys between SERVICE_KEY and IP
 RE_USER_BLOCK = re.compile(
-    r"[ \t]*LUCID_HOST_CONFIG_SERVICE_KEY=[^\\\n]+ ?\\\n"
+    r"[ \t]*LUCID_HOST_CONFIG_SERVICE_NAME=[^\\\n]+ ?\\\n"
     r"([ \t]*LUCID_SERVICES_CONFIG_DIR=[^\\\n]+ ?\\\n)"
     r"([ \t]*LUCID_SERVICE_NAME=[^\\\n]+ ?\\\n)"
     r"[ \t]*LUCID_SERVICE_HOST_IP=[^\\\n]+ ?\\\n"
@@ -221,30 +228,30 @@ def _infer_host_config_path_env(text: str) -> str | None:
 def patch_content(text: str, key: str, ip: str | None, http_path: str) -> str:
     if ip:
         trio_mid = (
-            f"    LUCID_HOST_CONFIG_SERVICE_KEY={key} \\\n"
+            f"    LUCID_HOST_CONFIG_SERVICE_NAME={key} \\\n"
             f"    LUCID_SERVICE_HOST_IP={ip} \\\n"
             f"    LUCID_SERVICE_HTTP_PATH={http_path} \\\n"
         )
         trio_end = (
-            f"    LUCID_HOST_CONFIG_SERVICE_KEY={key} \\\n"
+            f"    LUCID_HOST_CONFIG_SERVICE_NAME={key} \\\n"
             f"    LUCID_SERVICE_HOST_IP={ip} \\\n"
             f"    LUCID_SERVICE_HTTP_PATH={http_path}\n"
         )
         trio_mid_no_ip = (
-            f"    LUCID_HOST_CONFIG_SERVICE_KEY={key} \\\n"
+            f"    LUCID_HOST_CONFIG_SERVICE_NAME={key} \\\n"
             f"    LUCID_SERVICE_HTTP_PATH={http_path} \\\n"
         )
         trio_end_no_ip = (
-            f"    LUCID_HOST_CONFIG_SERVICE_KEY={key} \\\n"
+            f"    LUCID_HOST_CONFIG_SERVICE_NAME={key} \\\n"
             f"    LUCID_SERVICE_HTTP_PATH={http_path}\n"
         )
     else:
         trio_mid = trio_mid_no_ip = (
-            f"    LUCID_HOST_CONFIG_SERVICE_KEY={key} \\\n"
+            f"    LUCID_HOST_CONFIG_SERVICE_NAME={key} \\\n"
             f"    LUCID_SERVICE_HTTP_PATH={http_path} \\\n"
         )
         trio_end = trio_end_no_ip = (
-            f"    LUCID_HOST_CONFIG_SERVICE_KEY={key} \\\n"
+            f"    LUCID_HOST_CONFIG_SERVICE_NAME={key} \\\n"
             f"    LUCID_SERVICE_HTTP_PATH={http_path}\n"
         )
 
@@ -252,7 +259,7 @@ def patch_content(text: str, key: str, ip: str | None, http_path: str) -> str:
     if um and ip:
         mid = um.group(1) + um.group(2)
         repl = (
-            f"    LUCID_HOST_CONFIG_SERVICE_KEY={key} \\\n"
+            f"    LUCID_HOST_CONFIG_SERVICE_NAME={key} \\\n"
             f"{mid}"
             f"    LUCID_SERVICE_HOST_IP={ip} \\\n"
             f"    LUCID_SERVICE_HTTP_PATH={http_path} \\\n"
@@ -277,7 +284,7 @@ def patch_content(text: str, key: str, ip: str | None, http_path: str) -> str:
     if sub != text:
         return sub
 
-    if "LUCID_HOST_CONFIG_SERVICE_KEY=" not in text:
+    if "LUCID_HOST_CONFIG_SERVICE_NAME=" not in text:
         m = re.search(
             r"^([ \t]*LUCID_HOST_CONFIG_PATH=[^\\\n]+ \\\n)",
             text,
@@ -287,7 +294,7 @@ def patch_content(text: str, key: str, ip: str | None, http_path: str) -> str:
             insert = trio_mid if ip else trio_mid_no_ip
             return text[: m.end()] + insert + text[m.end() :]
 
-    if "LUCID_HOST_CONFIG_SERVICE_KEY=" not in text:
+    if "LUCID_HOST_CONFIG_SERVICE_NAME=" not in text:
         sub_path_end = re.sub(
             r"(\n[ \t]*LUCID_HOST_CONFIG_PATH=[^\n\\\r]+)(\r?\n\r?\n# LUCID_IMAGE_CONFIG:)",
             r"\1 \\\n" + (trio_end if ip else trio_end_no_ip) + r"\2",
@@ -298,7 +305,7 @@ def patch_content(text: str, key: str, ip: str | None, http_path: str) -> str:
             return sub_path_end
 
     if (
-        "LUCID_HOST_CONFIG_SERVICE_KEY=" not in text
+        "LUCID_HOST_CONFIG_SERVICE_NAME=" not in text
         and "host-config.yml" in text
     ):
         dest = _infer_host_config_path_env(text)

@@ -2,6 +2,7 @@
 """
 File: /app/sessions/api/routes.py
 x-lucid-file-path: /app/sessions/api/routes.py
+x-lucid-file-directory: /app/sessions/api
 x-lucid-file-type: python
 
 LUCID Session API Routes - Step 17 Implementation

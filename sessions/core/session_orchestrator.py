@@ -2,6 +2,7 @@
 """
 File: /app/sessions/core/session_orchestrator.py
 x-lucid-file-path: /app/sessions/core/session_orchestrator.py
+x-lucid-file-directory: /app/sessions/core
 x-lucid-file-type: python
 
 LUCID Session Orchestrator - SPEC-1B Implementation

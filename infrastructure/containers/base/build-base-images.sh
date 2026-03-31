@@ -1,5 +1,9 @@
 #!/bin/bash
 # Lucid Base Images Build Script
+# File: /app/configs/base/build-base-images.sh
+# x-lucid-file-path: /app/configs/base/build-base-images.sh
+# x-lucid-file-directory: /app/configs/base
+# x-lucid-file-type: shell
 # Builds distroless base images for Python and Java services
 # Supports multi-platform builds for ARM64 (Pi) and AMD64
 

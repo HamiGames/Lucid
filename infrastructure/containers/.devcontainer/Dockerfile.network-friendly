@@ -18,6 +18,64 @@ ENV DEBIAN_FRONTEND=noninteractive \
 
 # Set workspace per devcontainer spec
 WORKDIR /workspaces/Lucid
+# LUCID_X_FILES_SKELETON_BEGIN
+# Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
+RUN set -eux; \
+    mkdir -p '.' './scripts' './scripts/build' './scripts/compliance' './scripts/config' './scripts/contracts' './scripts/database' './scripts/deployment' './scripts/devcontainer' './scripts/docs' './scripts/foundation' './scripts/gui' './scripts/hardware' './scripts/integration' './scripts/lib' './scripts/load' './scripts/logging' './scripts/maintenance' './scripts/migration' './scripts/monitoring' './scripts/network' './scripts/registry' './scripts/secrets' './scripts/security' './scripts/services' './scripts/testing' './scripts/validation' './scripts/verification' './scripts/build/components' './scripts/build/core' './scripts/build/distroless' './scripts/build/utils' './scripts/compliance/distroless' './scripts/compliance/general' './scripts/deployment/devcontainer' './scripts/deployment/distroless' './scripts/deployment/pi' './scripts/deployment/utils' './scripts/maintenance/cleanup' './scripts/maintenance/optimization' './scripts/maintenance/recovery' './scripts/network/diagnostics' './scripts/network/security' './scripts/network/setup' './scripts/testing/integration' './scripts/testing/unit' './scripts/testing/utils'; \
+    for d in \
+      '.' \
+      './scripts' \
+      './scripts/build' \
+      './scripts/compliance' \
+      './scripts/config' \
+      './scripts/contracts' \
+      './scripts/database' \
+      './scripts/deployment' \
+      './scripts/devcontainer' \
+      './scripts/docs' \
+      './scripts/foundation' \
+      './scripts/gui' \
+      './scripts/hardware' \
+      './scripts/integration' \
+      './scripts/lib' \
+      './scripts/load' \
+      './scripts/logging' \
+      './scripts/maintenance' \
+      './scripts/migration' \
+      './scripts/monitoring' \
+      './scripts/network' \
+      './scripts/registry' \
+      './scripts/secrets' \
+      './scripts/security' \
+      './scripts/services' \
+      './scripts/testing' \
+      './scripts/validation' \
+      './scripts/verification' \
+      './scripts/build/components' \
+      './scripts/build/core' \
+      './scripts/build/distroless' \
+      './scripts/build/utils' \
+      './scripts/compliance/distroless' \
+      './scripts/compliance/general' \
+      './scripts/deployment/devcontainer' \
+      './scripts/deployment/distroless' \
+      './scripts/deployment/pi' \
+      './scripts/deployment/utils' \
+      './scripts/maintenance/cleanup' \
+      './scripts/maintenance/optimization' \
+      './scripts/maintenance/recovery' \
+      './scripts/network/diagnostics' \
+      './scripts/network/security' \
+      './scripts/network/setup' \
+      './scripts/testing/integration' \
+      './scripts/testing/unit' \
+      './scripts/testing/utils' \
+    ; do \
+      printf 'LUCID_X_FILES_SKELETON_%s' "$(date +%s)" > "$d/.keep"; \
+      touch "$d/.keep"; \
+    done
+# LUCID_X_FILES_SKELETON_END
+COPY scripts/ ./scripts/
 
 # Configure APT for better network reliability
 RUN echo 'Acquire::Retries "3";' >> /etc/apt/apt.conf.d/80-retries && \
@@ -104,18 +162,6 @@ RUN pip config set global.timeout 60 && \
 
 # Copy and install Python requirements in stages for better caching
 COPY infrastructure/containers/infrastructure/containers/.devcontainer/requirements-dev.txt /tmp/requirements-dev.txt
-# LUCID_X_FILES_SKELETON_BEGIN
-# Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
-RUN set -eux; \
-    mkdir -p '.' './pyproject.toml not found, skipping'; \
-    for d in \
-      '.' \
-      './pyproject.toml not found, skipping' \
-    ; do \
-      printf 'LUCID_X_FILES_SKELETON_%s' "$(date +%s)" > "$d/.keep"; \
-      touch "$d/.keep"; \
-    done
-# LUCID_X_FILES_SKELETON_END
 COPY pyproject.toml /tmp/pyproject.toml 2>/dev/null || echo "pyproject.toml not found, skipping"
 
 # Install Python dependencies with retries and fallbacks
@@ -212,6 +258,22 @@ RUN echo '#!/bin/bash' > /usr/local/bin/start-lucid-dev && \
 
 # Set working directory and default user
 WORKDIR /workspaces/Lucid
+# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
+# Generated: apt + RUN scaffold (mkdir/printf/touch/chown) -> FHS (not ./ or /build/; lib_search_and_inject.py).
+COPY --from=base --chown=root /dev/null/ /app/dev/null/
+COPY --from=base --chown=root /etc/apt/apt.conf.d/80-retries/ /app/etc/apt/apt.conf.d/80-retries/
+COPY --from=base --chown=root /etc/tor/torrc/ /app/etc/tor/torrc
+COPY --from=base --chown=root /run/lucid/onion/ /app/run/lucid/onion/
+COPY --from=base --chown=root /usr/local/bin/start-lucid-dev/ /app/usr/local/bin/start-lucid-dev/
+COPY --from=base --chown=root /var/lib/tor/ /app/var/lib/tor/
+COPY --from=base --chown=root /workspaces/Lucid/configs/ /app/lucidconfigs/
+# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_END
+
+# LUCID_RUNTIME_COPY_FROM_BUILD_BEGIN
+# Generated: same directory set as LUCID_X_FILES_SKELETON (./ under WORKDIR /build).
+COPY --from=base --chown=65532:65532 /build/scripts/ /app/scripts/
+# LUCID_RUNTIME_COPY_FROM_BUILD_END
+
 USER root
 
 # Health check to ensure container is ready (with fallback)

@@ -1,6 +1,7 @@
 """
 File: /app/blockchain/api/app/health_check.py
 x-lucid-file-path: /app/blockchain/api/app/health_check.py
+x-lucid-file-directory: /app/blockchain/api/app
 x-lucid-file-type: python
 
 Health Check Module

@@ -1,3 +1,10 @@
+"""
+File: /app/tests/test_auth_middleware.py
+x-lucid-file-path: /app/tests/test_auth_middleware.py
+x-lucid-file-directory: /app/tests
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 import importlib

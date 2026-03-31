@@ -1,4 +1,10 @@
-# Runtime (container): /app/service_configs/rdp/server-manager-config.yaml — see ../container-runtime-layout.yml
+# File: /app/service_configs/rdp/server-manager-config.yaml
+# x-lucid-file-path: /app/service_configs/rdp/server-manager-config.yaml
+# x-lucid-file-directory: /app/service_configs/rdp
+# x-lucid-file-type: YAML
+# Lucid alignment: host_registry=infrastructure/containers/host-config.yml (container /app/configs/host-config.yml); path_index=x-files.json section_to_canonical
+
+# Runtime (container): /app/rdp/config//server-manager-config.yaml — see ../container-runtime-layout.yml
 # Lucid RDP Server Manager - Configuration File
 # Optional YAML configuration for RDP server management
 # File: RDP/config/server-manager-config.yaml
@@ -10,7 +16,7 @@
 # Canonical registry (generated): infrastructure/containers/host-config.yml → container path /app/configs/host-config.yml
 x-lucid-host-config-alignment:
   registry_path: /app/configs/host-config.yml
-  http_path_template: "http://{service_name}:{port}/app"
+  http_path_template: "http://${service_name}:${port}/app"
   host_ip_range: 172.20.10.1–172.20.10.76
   entries:
     main_lucid_gateway:

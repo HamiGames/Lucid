@@ -5,6 +5,12 @@
 
 set -euo pipefail
 
+
+# x-files-listing.txt → LUCID_HOST_COMPOSE_* (scripts/lib/lucid-repo-paths.sh)
+_LUCID_W="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+while [[ "$_LUCID_W" != "/" && "$(basename "$_LUCID_W")" != "scripts" ]]; do _LUCID_W="$(dirname "$_LUCID_W")"; done
+# shellcheck source=lib/lucid-repo-paths.sh
+source "${_LUCID_W}/lib/lucid-repo-paths.sh"
 # Script configuration
 SCRIPT_NAME="build-all-systems.sh"
 SCRIPT_VERSION="1.0.0"
@@ -380,9 +386,9 @@ deploy_to_pi() {
     log_info "Deploying services on Pi..."
     ssh "$PI_USER@$PI_HOST" << EOF
         cd $PI_DEPLOY_DIR
-        docker-compose -f configs/docker/docker-compose.all.yml pull
-        docker-compose -f configs/docker/docker-compose.all.yml up -d
-        docker-compose -f configs/docker/docker-compose.gui-integration.yml up -d
+        docker-compose -f "${LUCID_HOST_COMPOSE_ALL}" pull
+        docker-compose -f "${LUCID_HOST_COMPOSE_ALL}" up -d
+        docker-compose -f "${LUCID_HOST_COMPOSE_GUI_INTEGRATION}" up -d
 EOF
     
     log_success "Deployment to Pi completed"

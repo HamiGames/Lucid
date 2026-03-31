@@ -58,10 +58,10 @@ RUN mkdir -p ./gui ./gui_api_bridge ./user-content ./RDP ./node ./contracts ./se
 && printf "LUCID_GUI_SERVICE_MESH_RUNTIME_DIRECTORY" > ./service_mesh/.keep \
 && printf "LUCID_GUI_SESSIONS_RUNTIME_DIRECTORY" > ./sessions/.keep \
 && printf "LUCID_GUI_INFRASTRUCTURE_SERVICE_MESH_RUNTIME_DIRECTORY" > ./infrastructure/service_mesh/.keep \
-&& printf "LUCID_GUI_INFRASTRUCTURE_KUBERNETES_RUNTIME_DIRECTORY" > ./infrastructure/kubernetes/.keep \
+&& printf "LUCID_GUI_INFRASTRUCTURE_KUBERNETES_RUNTIME_DIRECTORY" > ./service_configs/kubernetes/.keep \
 && printf "LUCID_GUI_SRC_GUI_RUNTIME_DIRECTORY" > ./src/gui/.keep \
 && printf "LUCID_GUI_ELECTRON_GUI_RUNTIME_DIRECTORY" > ./electron_gui/.keep \
-&& touch ./gui/.keep ./gui_api_bridge/.keep ./user-content/.keep ./RDP/.keep ./node/.keep ./contracts/.keep ./service_mesh/.keep ./sessions/.keep ./infrastructure/service_mesh/.keep ./infrastructure/kubernetes/.keep ./src/gui/.keep ./electron_gui/.keep \
+&& touch ./gui/.keep ./gui_api_bridge/.keep ./user-content/.keep ./RDP/.keep ./node/.keep ./contracts/.keep ./service_mesh/.keep ./sessions/.keep ./infrastructure/service_mesh/.keep ./service_configs/kubernetes/.keep ./src/gui/.keep ./electron_gui/.keep \
 && echo "Externals directory structure created"
 
 
@@ -80,7 +80,7 @@ COPY ../service_mesh/ ./service_mesh/
 COPY ../sessions/ ./sessions/
 COPY ../service_mesh/ ./service_mesh/
 COPY ../infrastructure/service_mesh/ ./infrastructure/service_mesh/
-COPY ../infrastructure/kubernetes/ ./infrastructure/kubernetes/
+COPY ../service_configs/kubernetes/ ./service_configs/kubernetes/
 COPY ../src/gui/ ./src/gui/
 
 FROM --platform=$TARGETPLATFORM gcr.io/distroless/java17-debian12:latest as runtime
@@ -139,7 +139,7 @@ COPY --from=builder --chown=65532:65532 /build/contracts/ /app/contracts/
 COPY --from=builder --chown=65532:65532 /build/service_mesh/ /app/service_mesh
 COPY --from=builder --chown=65532:65532 /build/sessions/ /app/sessions/
 COPY --from=builder --chown=65532:65532 /build/infrastructure/service_mesh/ /app/infrastructure/service_mesh/
-COPY --from=builder --chown=65532:65532 /build/infrastructure/kubernetes/ /app/infrastructure/kubernetes/
+COPY --from=builder --chown=65532:65532 /build/service_configs/kubernetes/ /app/service_configs/kubernetes/
 COPY --from=builder --chown=65532:65532 /build/src/gui/ /app/src/gui/
 
 # runtime local.bin COPY

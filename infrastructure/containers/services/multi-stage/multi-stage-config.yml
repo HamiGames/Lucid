@@ -1,3 +1,9 @@
+# File: /app/service_configs/multi-stage/multi-stage-config.yml
+# x-lucid-file-path: /app/service_configs/multi-stage/multi-stage-config.yml
+# x-lucid-file-directory: /app/service_configs/multi-stage
+# x-lucid-file-type: YAML
+# Lucid alignment: host_registry=infrastructure/containers/host-config.yml (container /app/configs/host-config.yml); path_index=x-files.json section_to_canonical
+
 # Runtime (container): /app/service_configs/multi-stage/multi-stage-config.yml — see ../container-runtime-layout.yml
 # Multi-Stage Docker Configuration for Lucid Project
 # Container-hosted: no host SSD paths; named volumes + in-network services. Optional bind overrides via LUCID_*.
@@ -7,7 +13,7 @@
 # Per-service static host_ip values: repository root service-ip.txt
 x-lucid-host-config-alignment:
   registry_path: /app/configs/host-config.yml
-  http_path_template: "http://{service_name}:{port}/app"
+  http_path_template: "http://${service_name}:${port}/app"
   host_ip_range: 172.20.10.1–172.20.10.76
   entries:
     main_lucid_gateway:
@@ -46,7 +52,7 @@ services:
   multi-stage-base:
     build:
       context: ${LUCID_COMPOSE_REPO_ROOT:-../../../../}
-      dockerfile: ${LUCID_MULTI_STAGE_BASE_DOCKERFILE:-infrastructure/docker/multi-stage/Dockerfile.base}
+      dockerfile: ${LUCID_MULTI_STAGE_BASE_DOCKERFILE:-configs/docker/multi-stage/Dockerfile.base}
       platforms:
         - linux/amd64
         - linux/arm64
@@ -100,7 +106,7 @@ services:
   multi-stage-dev:
     build:
       context: ${LUCID_COMPOSE_REPO_ROOT:-../../../../}
-      dockerfile: ${LUCID_MULTI_STAGE_BASE_DOCKERFILE:-infrastructure/docker/multi-stage/Dockerfile.base}
+      dockerfile: ${LUCID_MULTI_STAGE_BASE_DOCKERFILE:-configs/docker/multi-stage/Dockerfile.base}
       platforms:
         - linux/amd64
         - linux/arm64
@@ -151,7 +157,7 @@ services:
   multi-stage-builder:
     build:
       context: ${LUCID_COMPOSE_REPO_ROOT:-../../../../}
-      dockerfile: ${LUCID_MULTI_STAGE_BASE_DOCKERFILE:-infrastructure/docker/multi-stage/Dockerfile.base}
+      dockerfile: ${LUCID_MULTI_STAGE_BASE_DOCKERFILE:-configs/docker/multi-stage/Dockerfile.base}
       platforms:
         - linux/amd64
         - linux/arm64

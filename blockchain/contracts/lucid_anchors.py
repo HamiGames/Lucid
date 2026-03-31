@@ -2,6 +2,7 @@
 """
 File: /app/blockchain/contracts/lucid_anchors.py
 x-lucid-file-path: /app/blockchain/contracts/lucid_anchors.py
+x-lucid-file-directory: /app/blockchain/contracts
 x-lucid-file-type: python
 
 LucidAnchors Smart Contract Interface

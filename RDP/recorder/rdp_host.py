@@ -6,6 +6,7 @@
 """
 File: /app/RDP/recorder/rdp_host.py
 x-lucid-file-path: /app/RDP/recorder/rdp_host.py
+x-lucid-file-directory: /app/RDP/recorder
 x-lucid-file-type: python
 """
 

@@ -1,5 +1,9 @@
 #!/bin/bash
 # scripts/foundation/build-distroless-base-images.sh
+# File: /app/scripts/foundation/build-distroless-base-images.sh
+# x-lucid-file-path: /app/scripts/foundation/build-distroless-base-images.sh
+# x-lucid-file-directory: /app/scripts/foundation
+# x-lucid-file-type: shell
 # Build distroless base images for all service types
 # Supports multi-platform builds for ARM64 (Pi) and AMD64
 # Integrates with GitHub Container Registry

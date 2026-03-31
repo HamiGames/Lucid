@@ -1,6 +1,7 @@
 """
 File: /app/blockchain/config/block_manager_config.py
 x-lucid-file-path: /app/blockchain/config/block_manager_config.py
+x-lucid-file-directory: /app/blockchain/config
 x-lucid-file-type: python
 
 Block Manager Configuration Loader

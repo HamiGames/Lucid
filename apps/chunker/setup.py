@@ -2,6 +2,7 @@
 """
 File: /app/apps/chunker/setup.py
 x-lucid-file-path: /app/apps/chunker/setup.py
+x-lucid-file-directory: /app/apps/chunker
 x-lucid-file-type: python
 
 Setup script for native chunker extension

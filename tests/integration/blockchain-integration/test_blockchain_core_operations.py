@@ -1,4 +1,9 @@
 """
+File: /app/tests/integration/blockchain-integration/test_blockchain_core_operations.py
+x-lucid-file-path: /app/tests/integration/blockchain-integration/test_blockchain_core_operations.py
+x-lucid-file-directory: /app/tests/integration/blockchain-integration
+x-lucid-file-type: python
+
 Integration tests for blockchain core operations.
 
 Tests blockchain consensus, session anchoring, and block management.

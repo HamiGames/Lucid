@@ -1,6 +1,7 @@
 """
 File: /app/03_api_gateway/api/app/db/models/__init__.py
 x-lucid-file-path: /app/03_api_gateway/api/app/db/models/__init__.py
+x-lucid-file-directory: /app/03_api_gateway/api/app/db/models
 x-lucid-file-type: python
 
 api gateway models package for lucid		

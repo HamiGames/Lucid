@@ -2,6 +2,7 @@
 """
 File: /app/user_content/notifications/__init__.py
 x-lucid-file-path: /app/user_content/notifications/__init__.py
+x-lucid-file-directory: /app/user_content/notifications
 x-lucid-file-type: python
 
 Notification system components for user content.

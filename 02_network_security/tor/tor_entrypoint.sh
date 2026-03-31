@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 # tor_entrypoint.sh — Tor Proxy Container Entrypoint
+# File: /app/02_network_security/tor/tor_entrypoint.sh
+# x-lucid-file-path: /app/02_network_security/tor/tor_entrypoint.sh
+# x-lucid-file-directory: /app/02_network_security/tor
+# x-lucid-file-type: shell
 # Aligned with: 02_network_security/tor/Dockerfile.tor-proxy-02 (SPEC-4 Stage 0, distroless).
 # Runtime: WORKDIR /app, USER debian-tor; tor at /app/usr/bin/tor; busybox at /app/bin/busybox.
 # Distroless busybox compatible.

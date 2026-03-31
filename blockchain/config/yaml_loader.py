@@ -1,6 +1,7 @@
 """
 File: /app/blockchain/config/yaml_loader.py
 x-lucid-file-path: /app/blockchain/config/yaml_loader.py
+x-lucid-file-directory: /app/blockchain/config
 x-lucid-file-type: python
 
 YAML Configuration Loader with Environment Variable Support

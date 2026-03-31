@@ -1,172 +1,237 @@
-# infrastructure/docker/common/Dockerfile.common
-# -----------------------------------------------------------------------------
-# LUCID SERVER TOOLS - SPEC-1B Implementation
-# Distroless utility toolbox for Pi-side diagnostics and maintenance
-# Build context: project root
+# syntax=docker/dockerfile:1.5
+# Lucid server-tools (distroless) — slimmer variant: scripts + MongoDB CLIs + bootstrap helpers.
+# Build context: repository root (.)
+# Dockerfile path: infrastructure/docker/common/Dockerfile.common
 #
-# Configuration is provided at runtime via .env files on the Pi console:
-#   /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
-#   /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
-#   /mnt/myssd/Lucid/Lucid/configs/environment/.env.support
-#   /mnt/myssd/Lucid/Lucid/configs/environment/.env.server-tools
-#
-# Layout registry: infrastructure/containers/host-config.yml → canonical runtime /app/service_configs/host-config.yml
-# Service config root: infrastructure/containers/services/container-runtime-layout.yml (lucid_services_config_root: /app/service_configs)
-# Path equivalences: x-files-listing.txt (repository root)
-# -----------------------------------------------------------------------------
+# Runtime env on Pi via compose: .env.foundation, .env.core, .env.support, .env.server-tools
+# Layout: infrastructure/containers/host-config.yml → /app/configs/host-config.yml
 
-    ARG BUILD_DATE
-    ARG VCS_REF
-    ARG VERSION=1.0.0
-    ARG TARGETPLATFORM=linux/arm64
-    ARG BUILDPLATFORM=linux/amd64
-    
-    # =============================================================================
-    # Stage 1: Builder – install diagnostic tooling
-    # =============================================================================
-    FROM debian:12-slim AS builder
-    
-    ARG BUILDPLATFORM
-    ARG TARGETPLATFORM
-    
-    ENV DEBIAN_FRONTEND=noninteractive \
-        PIP_PREFER_BINARY=1
-    
-    RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
-        --mount=type=cache,target=/var/lib/apt,sharing=locked \
-        rm -rf /var/lib/apt/lists/* && \
-        apt-get update --allow-releaseinfo-change && \
-        apt-get install -y --no-install-recommends \
-            bash \
-            curl \
-            wget \
-            jq \
-            python3 \
-            python3-venv \
-            python3-pip \
-            python3-setuptools \
-            python3-wheel \
-            python3-dev \
-            dnsutils \
-            iputils-ping \
-            inetutils-traceroute \
-            netcat-openbsd \
-            socat \
-            nmap \
-            tcpdump \
-            iperf3 \
-            openssl \
-            ca-certificates \
-            gnupg \
-            htop \
-            procps \
-            lsof \
-            strace \
-            rsync \
-            unzip \
-            tar \
-            gzip \
-            git \
-            vim \
-            nano \
-            tree \
-            util-linux \
-            gosu \
-            yq \
-        && apt-get clean \
-        && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-    
-    RUN --mount=type=cache,target=/root/.cache/pip \
-        mkdir -p /build/wheels && \
-        pip3 install --break-system-packages --upgrade pip setuptools wheel && \
-        pip3 --version && \
-        python3 -m wheel version
-    
-    # Bundle MongoDB CLI tools (requires artifacts/mongodb/bin/* in build context)
-    COPY artifacts/mongodb /tmp/mongodb-tools
-    RUN mkdir -p /opt/lucid/tools/mongodb-tools \
-        && cp -a /tmp/mongodb-tools/bin/. /opt/lucid/tools/mongodb-tools \
-        && rm -rf /tmp/mongodb-tools
-    
-    # Optional Python virtual environment warm-up (PEP 668 friendly)
-    RUN python3 -m venv /opt/lucid/tools/venv \
-        && /opt/lucid/tools/venv/bin/pip install --no-cache-dir --upgrade pip setuptools wheel \
-        && /opt/lucid/tools/venv/bin/pip --version \
-        && /opt/lucid/tools/venv/bin/python -m wheel version
-    
-    # Non-root user used in runtime (distroless stage will copy passwd/group)
-    RUN useradd --system --create-home --shell /bin/bash lucid
-    
-    # Create tooling directories with sane permissions
-    RUN mkdir -p /opt/lucid/scripts /opt/lucid/logs \
-        && chown -R lucid:lucid /opt/lucid \
-        && chmod -R 755 /opt/lucid/scripts
-    
-    # -----------------------------------------------------------------------------
-    # Copy bootstrap scripts and ensure they are executable
-    # -----------------------------------------------------------------------------
-    COPY --chmod=755 infrastructure/docker/common/server-tools-bootstrap.sh /usr/local/bin/server-tools-bootstrap
-    COPY --chmod=755 infrastructure/docker/common/service_mesh-bootstrap.sh /usr/local/bin/service_mesh-bootstrap
-    
-    # =============================================================================
-    # Stage 2: Distroless runtime
-    # =============================================================================
-    FROM gcr.io/distroless/base-debian12:latest
-    
-    ARG BUILD_DATE
-    ARG VCS_REF
-    ARG VERSION=1.0.0
-    
-    LABEL maintainer="Lucid Development Team" \
-          version="${VERSION}" \
-          description="Distroless server tooling image for Lucid Pi operations" \
-          org.opencontainers.image.created="${BUILD_DATE}" \
-          org.opencontainers.image.revision="${VCS_REF}" \
-          org.opencontainers.image.version="${VERSION}" \
-          org.opencontainers.image.title="Lucid Server Tools" \
-          org.opencontainers.image.description="Utility toolbox for Lucid deployment diagnostics" \
-          com.lucid.plane="ops" \
-          com.lucid.service="server-tools" \
-          com.lucid.platform="arm64" \
-          com.lucid.architecture="linux/arm64" \
-          com.lucid.security="distroless" \
-          com.lucid.vulnerabilities="zero" \
-          com.lucid.tor.compatible="true" \
-          com.lucid.env.config=".env.foundation,.env.core,.env.support,.env.server-tools" \
-          com.lucid.deployment.path="/mnt/myssd/Lucid/Lucid"
-    
-    # =============================================================================
-    # ENVIRONMENT VARIABLES - MINIMAL DEFAULTS ONLY
-    # =============================================================================
-    ENV PATH=/opt/lucid/scripts:/usr/local/bin:/usr/bin:/bin \
-        SERVER_TOOLS_HOME=/opt/lucid \
-        SERVER_TOOLS_LOG_DIR=/opt/lucid/logs
-    
-    COPY --from=builder /bin/bash /bin/bash
-    COPY --from=builder /usr/bin /usr/bin
-    COPY --from=builder /usr/lib /usr/lib
-    COPY --from=builder /lib /lib
-    COPY --from=builder /opt/lucid /opt/lucid
-    COPY --chmod=755 infrastructure/docker/common/server-tools-bootstrap.sh /usr/local/bin/server-tools-bootstrap
-    COPY --chmod=755 infrastructure/docker/common/service_mesh-bootstrap.sh /usr/local/bin/service_mesh-bootstrap
-    COPY --from=builder /etc/passwd /etc/passwd
-    COPY --from=builder /etc/group /etc/group
-    COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
-    
-    WORKDIR /opt/lucid
-    USER lucid:lucid
-    
-    CMD ["/usr/local/bin/server-tools-bootstrap"]
-    
-    # -----------------------------------------------------------------------------
-    # Runtime configuration notes
-    # -----------------------------------------------------------------------------
-    # - All environment values are injected via docker-compose env_file entries on
-    #   the Pi console. This Dockerfile contains no deployment-specific secrets.
-    # - Expected env files (see plan/constants):
-    #     /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
-    #     /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
-    #     /mnt/myssd/Lucid/Lucid/configs/environment/.env.support
-    #     /mnt/myssd/Lucid/Lucid/configs/environment/.env.server-tools
-    # - Compose definitions are responsible for mounting volumes, exposing any
-    #   ports, and orchestrating lifecycle with other Lucid services.
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION=1.0.0
+ARG TARGETPLATFORM=linux/arm64
+ARG BUILDPLATFORM=linux/amd64
+
+# -----------------------------------------------------------------------------
+# Stage 1 — Builder
+# -----------------------------------------------------------------------------
+FROM --platform=$TARGETPLATFORM debian:12-slim AS builder
+
+ARG TARGETARCH
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_PREFER_BINARY=1
+
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    rm -rf /var/lib/apt/lists/* && \
+    apt-get update --allow-releaseinfo-change && \
+    apt-get install -y --no-install-recommends \
+        bash \
+        ca-certificates \
+        curl \
+        dnsutils \
+        git \
+        gnupg \
+        htop \
+        inetutils-traceroute \
+        iputils-ping \
+        jq \
+        netcat-openbsd \
+        openssl \
+        procps \
+        python3 \
+        python3-pip \
+        python3-setuptools \
+        python3-wheel \
+        rsync \
+        socat \
+        tar \
+        tini \
+        wget \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip3 install --break-system-packages --upgrade pip setuptools wheel && \
+    pip3 install --break-system-packages yq
+
+RUN set -eux; \
+    case "$TARGETARCH" in \
+        arm64) \
+            MONGOSH_URL="https://downloads.mongodb.com/compass/mongosh-2.1.5-linux-arm64.tgz"; \
+            DB_TOOLS_URL="https://fastdl.mongodb.org/tools/db/mongodb-database-tools-debian12-aarch64-100.9.4.tgz"; \
+            ;; \
+        amd64) \
+            MONGOSH_URL="https://downloads.mongodb.com/compass/mongosh-2.1.5-linux-x64.tgz"; \
+            DB_TOOLS_URL="https://fastdl.mongodb.org/tools/db/mongodb-database-tools-debian12-x86_64-100.9.4.tgz"; \
+            ;; \
+        *) \
+            echo "unsupported TARGETARCH=$TARGETARCH"; exit 1; \
+            ;; \
+    esac; \
+    mkdir -p /build/lucid/tools/mongodb-tools; \
+    curl -fsSL "$MONGOSH_URL" | tar -xzC /tmp; \
+    mv /tmp/mongosh-*/bin/* /build/lucid/tools/mongodb-tools/; \
+    rm -rf /tmp/mongosh-*; \
+    curl -fsSL "$DB_TOOLS_URL" | tar -xzC /tmp; \
+    mv /tmp/mongodb-database-tools-*/bin/* /build/lucid/tools/mongodb-tools/; \
+    rm -rf /tmp/mongodb-database-tools-*
+
+RUN groupadd -g 65532 nonroot && \
+    useradd --system --no-create-home --shell /usr/sbin/nologin -u 65532 -g nonroot nonroot
+
+RUN mkdir -p /build/lucid/scripts /build/lucid/logs /var/log/lucid && \
+    chown -R 65532:65532 /build/lucid /var/log/lucid
+
+WORKDIR /build
+# LUCID_X_FILES_SKELETON_BEGIN
+# Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
+RUN set -eux; \
+    mkdir -p '.' './scripts' './scripts/build' './scripts/compliance' './scripts/config' './scripts/contracts' './scripts/database' './scripts/deployment' './scripts/devcontainer' './scripts/docs' './scripts/foundation' './scripts/gui' './scripts/hardware' './scripts/integration' './scripts/lib' './scripts/load' './scripts/logging' './scripts/maintenance' './scripts/migration' './scripts/monitoring' './scripts/network' './scripts/registry' './scripts/secrets' './scripts/security' './scripts/services' './scripts/testing' './scripts/validation' './scripts/verification' './scripts/build/components' './scripts/build/core' './scripts/build/distroless' './scripts/build/utils' './scripts/compliance/distroless' './scripts/compliance/general' './scripts/deployment/devcontainer' './scripts/deployment/distroless' './scripts/deployment/pi' './scripts/deployment/utils' './scripts/maintenance/cleanup' './scripts/maintenance/optimization' './scripts/maintenance/recovery' './scripts/network/diagnostics' './scripts/network/security' './scripts/network/setup' './scripts/testing/integration' './scripts/testing/unit' './scripts/testing/utils'; \
+    for d in \
+      '.' \
+      './scripts' \
+      './scripts/build' \
+      './scripts/compliance' \
+      './scripts/config' \
+      './scripts/contracts' \
+      './scripts/database' \
+      './scripts/deployment' \
+      './scripts/devcontainer' \
+      './scripts/docs' \
+      './scripts/foundation' \
+      './scripts/gui' \
+      './scripts/hardware' \
+      './scripts/integration' \
+      './scripts/lib' \
+      './scripts/load' \
+      './scripts/logging' \
+      './scripts/maintenance' \
+      './scripts/migration' \
+      './scripts/monitoring' \
+      './scripts/network' \
+      './scripts/registry' \
+      './scripts/secrets' \
+      './scripts/security' \
+      './scripts/services' \
+      './scripts/testing' \
+      './scripts/validation' \
+      './scripts/verification' \
+      './scripts/build/components' \
+      './scripts/build/core' \
+      './scripts/build/distroless' \
+      './scripts/build/utils' \
+      './scripts/compliance/distroless' \
+      './scripts/compliance/general' \
+      './scripts/deployment/devcontainer' \
+      './scripts/deployment/distroless' \
+      './scripts/deployment/pi' \
+      './scripts/deployment/utils' \
+      './scripts/maintenance/cleanup' \
+      './scripts/maintenance/optimization' \
+      './scripts/maintenance/recovery' \
+      './scripts/network/diagnostics' \
+      './scripts/network/security' \
+      './scripts/network/setup' \
+      './scripts/testing/integration' \
+      './scripts/testing/unit' \
+      './scripts/testing/utils' \
+    ; do \
+      printf 'LUCID_X_FILES_SKELETON_%s' "$(date +%s)" > "$d/.keep"; \
+      touch "$d/.keep"; \
+    done
+# LUCID_X_FILES_SKELETON_END
+COPY scripts/ ./scripts/
+
+COPY --chmod=755 infrastructure/docker/common/server-tools-bootstrap.sh /usr/local/bin/server-tools-bootstrap
+COPY --chmod=755 infrastructure/docker/common/service-mesh-bootstrap.sh /usr/local/bin/service-mesh-bootstrap
+
+RUN chown -R 65532:65532 /build/scripts
+
+# -----------------------------------------------------------------------------
+# Stage 2 — Distroless runtime (pattern aligned with infrastructure/containers/blockchain/Dockerfile.block-manager)
+# -----------------------------------------------------------------------------
+FROM gcr.io/distroless/base-debian12:latest
+
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION=1.0.0
+# Lucid Tor egress / network isolation (PUBLIC_TOR_IP: master-env-config.txt; compose: lucid-tor-egress-network)
+ARG PUBLIC_TOR_IP=109.70.100.1
+ARG LUCID_INTERNAL_NETWORK_NAME=lucid-pi-network
+ARG LUCID_TOR_EGRESS_NETWORK_NAME=lucid-tor-egress-network
+WORKDIR /app
+LABEL maintainer="Lucid Development Team" \
+      com.lucid.network.internal="${LUCID_INTERNAL_NETWORK_NAME}" \
+      com.lucid.network.tor_egress="${LUCID_TOR_EGRESS_NETWORK_NAME}" \
+      com.lucid.tor.public_egress_ip="${PUBLIC_TOR_IP}" \
+      version="${VERSION}" \
+      description="Distroless server tooling for Lucid Pi operations" \
+      org.opencontainers.image.title="Lucid Server Tools" \
+      org.opencontainers.image.description="Utility toolbox for deployment diagnostics" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.created="${BUILD_DATE}" \
+      com.lucid.plane="ops" \
+      com.lucid.service="common" \
+      com.lucid.layer="0" \
+      org.lucid.layer="0" \
+      com.lucid.platform="arm64" \
+      com.lucid.architecture="linux/arm64" \
+      com.lucid.security="distroless" \
+      com.lucid.vulnerabilities="zero" \
+      com.lucid.expose="" \
+      com.lucid.tor.compatible="true" \
+      com.lucid.env.config=".env.foundation,.env.core,.env.support,.env.server-tools" \
+      com.lucid.service_id="com.lucid.dockerfile.v1.68302a346e11898a.infrastructure.docker.common.Dockerfile.common" \
+      onion.lucid.service_id="lucid-68302a346e11898a-infrastructure-docker-co" \
+      org.lucid.service_id="org.lucid.dockerfile.v1.68302a346e11898a:infrastructure/docker/common/Dockerfile.common" \
+
+ENV     PUBLIC_TOR_IP="${PUBLIC_TOR_IP}" \
+    LUCID_INTERNAL_NETWORK_NAME="${LUCID_INTERNAL_NETWORK_NAME}" \
+    LUCID_TOR_EGRESS_NETWORK_NAME="${LUCID_TOR_EGRESS_NETWORK_NAME}" \
+    PATH="/app/lucid/tools/mongodb-tools:/app/usr/local/bin:/app/usr/bin:/bin:/app/scripts" \
+    SERVER_TOOLS_HOME="/app/tools" \
+    SERVER_TOOLS_LOG_DIR="/app/var/log/server-tools"
+# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
+# Generated: apt + RUN scaffold (mkdir/printf/touch/chown) -> FHS (not ./ or /build/; lib_search_and_inject.py).
+COPY --from=builder --chown=65532:65532 /usr/lib/*/libcurl.so* /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /bin/ /app/bin/
+COPY --from=builder --chown=65532:65532 /etc/ssl/ /app/etc/ssl/
+COPY --from=builder --chown=65532:65532 /usr/bin/ /app/usr/bin/
+COPY --from=builder --chown=65532:65532 /usr/lib/python3.11/ /app/usr/lib/python3.11/
+COPY --from=builder --chown=65532:65532 /usr/lib/python3/dist-packages/ /app/usr/lib/python3/dist-packages/
+COPY --from=builder --chown=65532:65532 /var/log/lucid/ /app/var/log/lucid/
+# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_END
+
+# LUCID_RUNTIME_COPY_FROM_BUILD_BEGIN
+# Generated: same directory set as LUCID_X_FILES_SKELETON (./ under WORKDIR /build).
+COPY --from=builder --chown=65532:65532 /build/scripts/ /app/scripts/
+# LUCID_RUNTIME_COPY_FROM_BUILD_END
+
+
+# Root FHS slices from builder (same idea as infrastructure/docker/common/Dockerfile final stage)
+COPY --from=builder /bin/bash /app/bin/bash
+
+COPY --from=builder /usr/bin/ /app/usr/bin/
+COPY --from=builder /usr/lib/ /app/usr/lib/
+COPY --from=builder /lib/ /app/lib/
+COPY --from=builder /usr/local/bin/ /usr/local/bin/
+COPY --from=builder /usr/local/lib/python3.11/ /app/usr/local/lib/python3.11/
+COPY --from=builder /usr/lib/python3/ /app/usr/lib/python3/
+
+
+COPY --chmod=755 infrastructure/docker/common/server-tools-bootstrap.sh /usr/local/bin/server-tools-bootstrap
+COPY --chmod=755 infrastructure/docker/common/service-mesh-bootstrap.sh /usr/local/bin/service-mesh-bootstrap
+
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+
+USER 65532:65532
+
+
+ENTRYPOINT ["/usr/bin/tini", "--"]
+CMD ["/usr/local/bin/server-tools-bootstrap"]

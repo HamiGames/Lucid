@@ -1,4 +1,9 @@
 """
+File: /app/configs/admin/admin-system-gateway/verify_runtime.py
+x-lucid-file-path: /app/configs/admin/admin-system-gateway/verify_runtime.py
+x-lucid-file-directory: /app/configs/admin/admin-system-gateway
+x-lucid-file-type: python
+
 Distroless build verification: /app/node/* tree and openssl-api support files exist.
 Invoked during image build (see Dockerfile.admin-system-gateway) then removed from the image.
 """

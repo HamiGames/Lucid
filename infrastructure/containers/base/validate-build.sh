@@ -1,5 +1,9 @@
 #!/bin/bash
 # infrastructure/containers/base/validate-build.sh
+# File: /app/configs/base/validate-build.sh
+# x-lucid-file-path: /app/configs/base/validate-build.sh
+# x-lucid-file-directory: /app/configs/base
+# x-lucid-file-type: shell
 # Validate distroless base image builds
 # Ensures all required files and configurations are present
 

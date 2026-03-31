@@ -1,6 +1,7 @@
 """
 File: /app/blockchain/api/app/errors.py
 x-lucid-file-path: /app/blockchain/api/app/errors.py
+x-lucid-file-directory: /app/blockchain/api/app
 x-lucid-file-type: python
 
 Error Handling Module

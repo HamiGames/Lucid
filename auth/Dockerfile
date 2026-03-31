@@ -169,16 +169,26 @@ ARG VERSION=1.0.0
 LABEL maintainer="Lucid Development Team" \
       version="${VERSION}" \
       description="Distroless Auth Service for Lucid authentication support" \
-      org.opencontainers.image.created="${BUILD_DATE}" \
-      org.opencontainers.image.revision="${VCS_REF}" \
       org.opencontainers.image.version="${VERSION}" \
-      com.lucid.service="auth-service" \
-      com.lucid.cluster="foundation"
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.created="${BUILD_DATE}" \
+      com.lucid.plane="ops" \
+      com.lucid.service="lucid-auth-service" \
+      com.lucid.layer="0" \
+      org.lucid.layer="0" \
+      com.lucid.platform="arm64" \
+      com.lucid.architecture="linux/arm64" \
+      com.lucid.security="distroless" \
+      com.lucid.vulnerabilities="zero" \
+      com.lucid.expose="8089" \
+      com.lucid.cluster="foundation" \
+      com.lucid.tor.compatible="true" \
+      com.lucid.env.config=".env.foundation,.env.secrets"
 
-ENV PATH=/usr/local/bin:/usr/bin:/bin \
-    PYTHONUNBUFFERED=1 \
-    PYTHONPATH=/app:/usr/local/lib/python3.11/site-packages \
-    SERVICE_NAME=lucid-auth-service
+ENV PATH="/usr/local/bin:/usr/bin:/bin" \
+    PYTHONUNBUFFERED="1" \
+    PYTHONPATH="/app:/usr/local/lib/python3.11/site-packages" \
+    SERVICE_NAME="lucid-auth-service"
 
 WORKDIR /app
 

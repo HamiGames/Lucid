@@ -3,6 +3,7 @@
 """
 File: /app/gui_docker_manager/gui_docker_manager/entrypoint.py
 x-lucid-file-path: /app/gui_docker_manager/gui_docker_manager/entrypoint.py
+x-lucid-file-directory: /app/gui_docker_manager/gui_docker_manager
 x-lucid-file-type: python
 
 GUI Docker Manager Service Entrypoint

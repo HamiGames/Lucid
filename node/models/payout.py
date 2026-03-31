@@ -5,6 +5,7 @@
 """
 File: /app/node/models/payout.py
 x-lucid-file-path: /app/node/models/payout.py
+x-lucid-file-directory: /app/node/models
 x-lucid-file-type: python
 
 Payout data models for Lucid system.

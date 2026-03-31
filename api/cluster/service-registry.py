@@ -2,6 +2,7 @@
 """
 File: /app/api/cluster/service-registry.py
 x-lucid-file-path: /app/api/cluster/service-registry.py
+x-lucid-file-directory: /app/api/cluster
 x-lucid-file-type: python
 
 LUCID Service Registry - SPEC-1B Implementation

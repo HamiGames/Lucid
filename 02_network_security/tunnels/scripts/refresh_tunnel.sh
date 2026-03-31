@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 # Refresh (recreate) the onion tunnel by rotating it and verifying reachability.
+# File: /app/02_network_security/tunnels/scripts/refresh_tunnel.sh
+# x-lucid-file-path: /app/02_network_security/tunnels/scripts/refresh_tunnel.sh
+# x-lucid-file-directory: /app/02_network_security/tunnels/scripts
+# x-lucid-file-type: shell
 # Path: 02_network_security/tunnels/scripts/refresh_tunnel.sh
 
 set -euo pipefail

@@ -1,5 +1,9 @@
 #!/bin/bash
 # scripts/contracts/deploy-to-mainnet.sh
+# File: /app/scripts/contracts/deploy-to-mainnet.sh
+# x-lucid-file-path: /app/scripts/contracts/deploy-to-mainnet.sh
+# x-lucid-file-directory: /app/scripts/contracts
+# x-lucid-file-type: shell
 # Deploy contracts to TRON Mainnet for production deployment
 # LUCID-STRICT: TRON payment system isolation, distroless architecture
 

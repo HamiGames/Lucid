@@ -65,6 +65,30 @@ db.createCollection("users", {
           preferences: {
             bsonType: "object",
             description: "User preferences and settings"
+          },
+          contact_profile_key: {
+            bsonType: ["string", "null"],
+            description: "Overlay key for configs/environment/profiles/<key>/.env.secrets"
+          },
+          profile: {
+            bsonType: "object",
+            description: "Profile blob; metadata.contact_profile_key mirrors top-level",
+            properties: {
+              metadata: {
+                bsonType: "object",
+                properties: {
+                  contact_profile_key: { bsonType: ["string", "null"] }
+                }
+              },
+              lucid_env: {
+                bsonType: "object",
+                description: "Non-secret paths and variable-group flags (see scripts/database/ensure_user_profile_fields.js)",
+                properties: {
+                  node_operational_config_path: { bsonType: "string" },
+                  variable_groups: { bsonType: "object" }
+                }
+              }
+            }
           }
         }
       }

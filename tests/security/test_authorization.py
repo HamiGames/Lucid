@@ -1,4 +1,9 @@
 """
+File: /app/tests/security/test_authorization.py
+x-lucid-file-path: /app/tests/security/test_authorization.py
+x-lucid-file-directory: /app/tests/security
+x-lucid-file-type: python
+
 Authorization Security Tests
 
 Tests RBAC (Role-Based Access Control) authorization,

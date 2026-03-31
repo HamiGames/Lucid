@@ -1,6 +1,7 @@
 """
 File: /app/sessions/processor/main.py
 x-lucid-file-path: /app/sessions/processor/main.py
+x-lucid-file-directory: /app/sessions/processor
 x-lucid-file-type: python
 
 Chunk Processor Service Main Entry Point

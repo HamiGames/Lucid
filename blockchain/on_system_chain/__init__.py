@@ -1,6 +1,7 @@
 """
 File: /app/blockchain/on_system_chain/__init__.py
 x-lucid-file-path: /app/blockchain/on_system_chain/__init__.py
+x-lucid-file-directory: /app/blockchain/on_system_chain
 x-lucid-file-type: python
 
 LUCID On-System Data Chain Components

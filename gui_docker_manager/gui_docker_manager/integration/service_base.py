@@ -2,6 +2,7 @@
 """
 File: /app/gui_docker_manager/gui_docker_manager/integration/service_base.py
 x-lucid-file-path: /app/gui_docker_manager/gui_docker_manager/integration/service_base.py
+x-lucid-file-directory: /app/gui_docker_manager/gui_docker_manager/integration
 x-lucid-file-type: python
 
 Base Service Client for Integration Modules

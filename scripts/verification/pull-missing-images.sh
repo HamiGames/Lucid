@@ -1,11 +1,23 @@
 #!/bin/bash
 ################################################################################
+# File: /app/scripts/verification/pull-missing-images.sh
+# x-lucid-file-path: /app/scripts/verification/pull-missing-images.sh
+# x-lucid-file-directory: /app/scripts/verification
+# x-lucid-file-type: shell
 # Lucid Pi - Pull Missing Docker Images Script
 # Location: /mnt/myssd/Lucid/Lucid/scripts/verification/pull-missing-images.sh
 # Purpose: Pull all required Docker images that are missing from local registry
 ################################################################################
 
 set -e
+
+_lucid_here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+_lucid_scripts="$_lucid_here"
+while [[ "$_lucid_scripts" != "/" && "$(basename "$_lucid_scripts")" != "scripts" ]]; do
+    _lucid_scripts="$(dirname "$_lucid_scripts")"
+done
+# shellcheck source=../lib/lucid-repo-paths.sh
+source "$_lucid_scripts/lib/lucid-repo-paths.sh"
 
 # Color codes
 RED='\033[0;31m'
@@ -14,7 +26,7 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
-PROJECT_DIR="/mnt/myssd/Lucid/Lucid"
+PROJECT_DIR="$LUCID_REPO_ROOT"
 cd "${PROJECT_DIR}" || exit 1
 
 echo -e "${BLUE}========================================${NC}"

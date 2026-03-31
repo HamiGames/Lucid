@@ -1,5 +1,9 @@
 #!/bin/bash
 # Generate .env.application for Phase 3 Application Services
+# File: /app/scripts/config/generate-application-env.sh
+# x-lucid-file-path: /app/scripts/config/generate-application-env.sh
+# x-lucid-file-directory: /app/scripts/config
+# x-lucid-file-type: shell
 # Based on: distro-deployment-plan.md Phase 4.3
 # Generated: 2025-01-14
 
@@ -425,7 +429,7 @@ METRICS_PATH=/metrics
 DEPLOYMENT_TARGET=raspberry-pi
 DEPLOYMENT_HOST=192.168.0.75
 DEPLOYMENT_USER=pickme
-DEPLOYMENT_PATH=/mnt/myssd/Lucid/Lucid
+DEPLOYMENT_PATH=${PI_DEPLOY_DIR:-$PROJECT_ROOT}
 
 # Registry Configuration
 REGISTRY=ghcr.io

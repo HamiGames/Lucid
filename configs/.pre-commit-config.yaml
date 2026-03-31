@@ -1,3 +1,8 @@
+# File: /app/configs/.pre-commit-config.yaml
+# x-lucid-file-path: /app/configs/.pre-commit-config.yaml
+# x-lucid-file-directory: /app/configs
+# x-lucid-file-type: YAML
+
 repos:
   # Black: Python code formatter
   - repo: https://github.com/psf/black

@@ -1,5 +1,9 @@
 #!/bin/bash
 # MongoDB Health Check Script for Lucid Database Services
+# File: /app/configs/docker//databases/mongodb-health.sh
+# x-lucid-file-path: /app/configs/docker//databases/mongodb-health.sh
+# x-lucid-file-directory: /app/configs/docker//databases
+# x-lucid-file-type: shell
 # LUCID-STRICT Layer 0 Core Infrastructure
 
 set -euo pipefail

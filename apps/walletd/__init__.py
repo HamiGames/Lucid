@@ -4,6 +4,7 @@
 """
 File: /app/apps/walletd/__init__.py
 x-lucid-file-path: /app/apps/walletd/__init__.py
+x-lucid-file-directory: /app/apps/walletd
 x-lucid-file-type: python
 
 Walletd package for Lucid RDP.

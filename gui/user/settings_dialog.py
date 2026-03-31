@@ -1,8 +1,10 @@
 # Path: gui/user/settings_dialog.py
 """
-file: /app/gui/user/settings_dialog.py
+File: /app/gui/user/settings_dialog.py
 x-lucid-file-path: /app/gui/user/settings_dialog.py
+x-lucid-file-directory: /app/gui/user
 x-lucid-file-type: python
+
 User preferences and settings dialog for Lucid RDP GUI.
 Provides comprehensive settings management for user preferences, connection parameters,
 and application configuration.

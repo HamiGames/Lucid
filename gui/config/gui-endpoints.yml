@@ -1,12 +1,16 @@
+# File: /app/gui/config/gui-endpoints.yml
+# x-lucid-file-path: /app/gui/config/gui-endpoints.yml
+# x-lucid-file-directory: /app/gui/config
+# x-lucid-file-type: YAML
+
 # gui/config/gui-endpoints.yml
 #
-# Host registry: infrastructure/containers/host-config.yml
+# Host registry: /app/configs/host-config.yml
 # http_path_template: http://${service_name}:${port}/app
 
 version: "1.0"
 
 meta:
-  host_config_path: infrastructure/containers/host-config.yml
   host_config_container_path: /app/configs/host-config.yml
   services_config_root: /app/configs/services
   http_path_template: http://${service_name}:${port}/app

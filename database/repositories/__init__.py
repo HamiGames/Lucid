@@ -1,6 +1,7 @@
 """
 File: /app/database/repositories/__init__.py
 x-lucid-file-path: /app/database/repositories/__init__.py
+x-lucid-file-directory: /app/database/repositories
 x-lucid-file-type: python
 
 Database Repositories Package

@@ -2,6 +2,7 @@
 """
 File: /app/node/poot_calculator.py
 x-lucid-file-path: /app/node/poot_calculator.py
+x-lucid-file-directory: /app/node
 x-lucid-file-type: python
 
 Lucid Node Management - PoOT (Proof of Ownership of Token) Calculator

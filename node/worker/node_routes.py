@@ -1,8 +1,9 @@
-﻿# Path: api/routes/node_routes.py
+# Path: api/routes/node_routes.py
 
 """
 File: /app/node/worker/node_routes.py
 x-lucid-file-path: /app/node/worker/node_routes.py
+x-lucid-file-directory: /app/node/worker
 x-lucid-file-type: python
 """
 

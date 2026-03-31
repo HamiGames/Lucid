@@ -1,6 +1,7 @@
 """
 File: /app/03_api_gateway/api/app/middleware/rate_limit.py
 x-lucid-file-path: /app/03_api_gateway/api/app/middleware/rate_limit.py
+x-lucid-file-directory: /app/03_api_gateway/api/app/middleware
 x-lucid-file-type: python
 
 Rate Limiting Middleware

@@ -1,3 +1,8 @@
+# File: /app/RDP/xrdp/config/service-config.yaml
+# x-lucid-file-path: /app/RDP/xrdp/config/service-config.yaml
+# x-lucid-file-directory: /app/RDP/xrdp/config
+# x-lucid-file-type: YAML
+
 # XRDP Service Enhanced Configuration
 # File: RDP/xrdp/config/service-config.yaml
 # Purpose: Enhanced service configuration with detailed settings for rdp-xrdp container

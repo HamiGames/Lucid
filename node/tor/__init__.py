@@ -5,6 +5,7 @@
 """
 File: /app/node/tor/__init__.py
 x-lucid-file-path: /app/node/tor/__init__.py
+x-lucid-file-directory: /app/node/tor
 x-lucid-file-type: python
 
 Tor module for Lucid node operations.

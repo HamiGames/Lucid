@@ -1,6 +1,7 @@
 """
 File: /app/common/tor/onion_service.py
 x-lucid-file-path: /app/common/tor/onion_service.py
+x-lucid-file-directory: /app/common/tor
 x-lucid-file-type: python
 
 Onion service management for Lucid RDP.

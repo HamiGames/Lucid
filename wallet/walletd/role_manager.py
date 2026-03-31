@@ -5,6 +5,7 @@
 """
 File: /app/wallet/walletd/role_manager.py
 x-lucid-file-path: /app/wallet/walletd/role_manager.py
+x-lucid-file-directory: /app/wallet/walletd
 x-lucid-file-type: python
 """
 

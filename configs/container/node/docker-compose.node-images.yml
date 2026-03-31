@@ -1,3 +1,8 @@
+# File: /app/configs/container/node/docker-compose.node-images.yml
+# x-lucid-file-path: /app/configs/container/node/docker-compose.node-images.yml
+# x-lucid-file-directory: /app/configs/container/node
+# x-lucid-file-type: YAML
+
 # Path: infrastructure/containers/node/docker-compose.node-images.yml
 # Builds and runs: node-worker (8600), node-registry (8610), node-gov (8620), node-utils (8630)
 # aligned with infrastructure/containers/node/Dockerfile.node-* and node/docker-compose.yml patterns.

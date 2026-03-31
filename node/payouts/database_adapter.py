@@ -1,6 +1,7 @@
 """
 File: /app/node/payouts/database_adapter.py
 x-lucid-file-path: /app/node/payouts/database_adapter.py
+x-lucid-file-directory: /app/node/payouts
 x-lucid-file-type: python
 
 LUCID Node Payouts Database Adapter

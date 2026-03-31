@@ -1,3 +1,8 @@
+# File: /app/configs/compose/docker-compose.core.yaml
+# x-lucid-file-path: /app/configs/compose/docker-compose.core.yaml
+# x-lucid-file-directory: /app/infrastructure/compose
+# x-lucid-file-type: YAML
+
 # LUCID CORE SERVICES - Distroless Deployment
 # Phase 1: Core Support Services (MongoDB, Tor, API Gateway, API Server, Tools)
 # Aligned with essentials.md and path_plan.md Phase 1 & 2
@@ -7,10 +12,9 @@
 # configs/environment/.env.secrets is bind-mounted to /app/configs/.env.secrets and listed in env_file for Compose.
 # Do not list master-env-config.txt in env_file: Compose interpolates ${...} and breaks on required placeholders.
 # Optional per-service env fragments (e.g. .env.node): bind-mount from configs/environment/ into /app/configs/ when present; omitted from env_file so compose does not require those files on the host.
-# Host registry: infrastructure/containers/host-config.yml -> /app/service_configs/host-config.yml (x-lucid-file-path).
+# Host registry: infrastructure/containers/host-config.yml -> /app/configs/host-config.yml (x-lucid-file-path).
 # Packaged service configs tree: infrastructure/containers/services/ -> /app/service_configs/ (container-runtime-layout.yml).
 # Build references: infrastructure/containers/<stack>/Dockerfile* (repo root build context).
-
 
 services:
   lucid-mongodb:
@@ -35,7 +39,7 @@ services:
       - ../../master-env-config.txt:/app/configs/.env.master:ro
       - ../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
       - ../../infrastructure/containers/services:/app/service_configs:ro
-      - ../../infrastructure/containers/host-config.yml:/app/service_configs/host-config.yml:ro
+      - ../../infrastructure/containers/host-config.yml:/app/configs/host-config.yml:ro
 
       - /mnt/myssd/Lucid/Lucid/data/mongodb:/data/db:rw
       - /mnt/myssd/Lucid/Lucid/logs/mongodb:/var/log/mongodb:rw
@@ -100,7 +104,7 @@ services:
       - ../../master-env-config.txt:/app/configs/.env.master:ro
       - ../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
       - ../../infrastructure/containers/services:/app/service_configs:ro
-      - ../../infrastructure/containers/host-config.yml:/app/service_configs/host-config.yml:ro
+      - ../../infrastructure/containers/host-config.yml:/app/configs/host-config.yml:ro
 
       - /mnt/myssd/Lucid/Lucid/data/redis:/data:rw
       - /mnt/myssd/Lucid/Lucid/logs/redis:/var/log/redis:rw
@@ -163,7 +167,7 @@ services:
       - ../../master-env-config.txt:/app/configs/.env.master:ro
       - ../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
       - ../../infrastructure/containers/services:/app/service_configs:ro
-      - ../../infrastructure/containers/host-config.yml:/app/service_configs/host-config.yml:ro
+      - ../../infrastructure/containers/host-config.yml:/app/configs/host-config.yml:ro
 
       - /mnt/myssd/Lucid/Lucid/data/elasticsearch:/usr/share/elasticsearch/data:rw
       - /mnt/myssd/Lucid/Lucid/logs/elasticsearch:/usr/share/elasticsearch/logs:rw
@@ -231,7 +235,7 @@ services:
       - ../../master-env-config.txt:/app/configs/.env.master:ro
       - ../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
       - ../../infrastructure/containers/services:/app/service_configs:ro
-      - ../../infrastructure/containers/host-config.yml:/app/service_configs/host-config.yml:ro
+      - ../../infrastructure/containers/host-config.yml:/app/configs/host-config.yml:ro
 
       - /mnt/myssd/Lucid/Lucid/data/tor:/app/var/lib/tor:rw
       - /mnt/myssd/Lucid/Lucid/data/onion:/app/run/lucid/onion:rw
@@ -298,7 +302,7 @@ services:
       - ../../master-env-config.txt:/app/configs/.env.master:ro
       - ../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
       - ../../infrastructure/containers/services:/app/service_configs:ro
-      - ../../infrastructure/containers/host-config.yml:/app/service_configs/host-config.yml:ro
+      - ../../infrastructure/containers/host-config.yml:/app/configs/host-config.yml:ro
 
       - /mnt/myssd/Lucid/Lucid/data/onion:/app/run/lucid/onion:ro
       - /mnt/myssd/Lucid/Lucid/logs/api-server:/app/logs:rw
@@ -371,7 +375,7 @@ services:
       - ../../master-env-config.txt:/app/configs/.env.master:ro
       - ../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
       - ../../infrastructure/containers/services:/app/service_configs:ro
-      - ../../infrastructure/containers/host-config.yml:/app/service_configs/host-config.yml:ro
+      - ../../infrastructure/containers/host-config.yml:/app/configs/host-config.yml:ro
 
       - /mnt/myssd/Lucid/Lucid/data/onion:/app/run/lucid/onion:ro
       - /mnt/myssd/Lucid/Lucid/logs/api-gateway:/app/logs:rw
@@ -438,7 +442,7 @@ services:
       - ../../master-env-config.txt:/app/configs/.env.master:ro
       - ../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
       - ../../infrastructure/containers/services:/app/service_configs:ro
-      - ../../infrastructure/containers/host-config.yml:/app/service_configs/host-config.yml:ro
+      - ../../infrastructure/containers/host-config.yml:/app/configs/host-config.yml:ro
 
       - /mnt/myssd/Lucid/Lucid/data/onion:/app/run/lucid/onion:rw
       - /mnt/myssd/Lucid/Lucid/data/tunnel:/var/lib/tunnel:rw
@@ -451,7 +455,13 @@ services:
     ports:
       - "7000:7000"
     healthcheck:
-      test: ["CMD", "/usr/bin/python3.11", "-c", "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('tor-proxy', 9051)); s.close(); exit(0 if result == 0 else 1)"]
+      test:
+        [
+          "CMD",
+          "/usr/bin/python3.11",
+          "-c",
+          "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('tor-proxy', 9051)); s.close(); exit(0 if result == 0 else 1)",
+        ]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -501,7 +511,7 @@ services:
       - ../../master-env-config.txt:/app/configs/.env.master:ro
       - ../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
       - ../../infrastructure/containers/services:/app/service_configs:ro
-      - ../../infrastructure/containers/host-config.yml:/app/service_configs/host-config.yml:ro
+      - ../../infrastructure/containers/host-config.yml:/app/configs/host-config.yml:ro
 
       - /mnt/myssd/Lucid/Lucid/data/onion:/app/run/lucid/onion:ro
       - /mnt/myssd/Lucid/Lucid/data/tunnel:/var/lib/tunnel:ro

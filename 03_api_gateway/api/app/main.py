@@ -1,6 +1,7 @@
 """
 File: /app/03_api_gateway/api/app/main.py
 x-lucid-file-path: /app/03_api_gateway/api/app/main.py
+x-lucid-file-directory: /app/03_api_gateway/api/app
 x-lucid-file-type: python
 
 API Gateway Main Application

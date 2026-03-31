@@ -1,6 +1,7 @@
 """
 File: /app/database/models/transaction.py
 x-lucid-file-path: /app/database/models/transaction.py
+x-lucid-file-directory: /app/database/models
 x-lucid-file-type: python
 
 Transaction Data Models

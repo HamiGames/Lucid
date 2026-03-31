@@ -2,6 +2,7 @@
 """
 File: /app/admin/api/nodes.py
 x-lucid-file-path: /app/admin/api/nodes.py
+x-lucid-file-directory: /app/admin/api
 x-lucid-file-type: python
 
 Lucid Admin Interface - Node Management API

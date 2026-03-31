@@ -1,4 +1,9 @@
 """
+File: /app/tests/load/test_concurrent_users.py
+x-lucid-file-path: /app/tests/load/test_concurrent_users.py
+x-lucid-file-directory: /app/tests/load
+x-lucid-file-type: python
+
 Concurrent Users Load Testing
 
 Tests the system's ability to handle 1000 concurrent user operations

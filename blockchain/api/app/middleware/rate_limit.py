@@ -1,6 +1,7 @@
 """
 File: /app/blockchain/api/app/middleware/rate_limit.py
 x-lucid-file-path: /app/blockchain/api/app/middleware/rate_limit.py
+x-lucid-file-directory: /app/blockchain/api/app/middleware
 x-lucid-file-type: python
 
 Rate Limiting Middleware

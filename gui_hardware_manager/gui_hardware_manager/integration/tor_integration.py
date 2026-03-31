@@ -1,6 +1,7 @@
 """
 File: /app/gui_hardware_manager/gui_hardware_manager/integration/tor_integration.py
 x-lucid-file-path: /app/gui_hardware_manager/gui_hardware_manager/integration/tor_integration.py
+x-lucid-file-directory: /app/gui_hardware_manager/gui_hardware_manager/integration
 x-lucid-file-type: python
 
 Tor Proxy Integration Module for GUI Hardware Manager

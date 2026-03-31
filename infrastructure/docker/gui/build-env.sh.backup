@@ -1,5 +1,5 @@
 #!/bin/bash
-# Path: infrastructure/docker/gui/build-env.sh
+# Path: configs/docker/gui/build-env.sh
 # Build Environment Script for Lucid GUI Services
 # Generates .env files for graphical user interface containers
 

@@ -1,6 +1,7 @@
 """
 File: /app/03_api_gateway/repositories/session_repository.py
 x-lucid-file-path: /app/03_api_gateway/repositories/session_repository.py
+x-lucid-file-directory: /app/03_api_gateway/repositories
 x-lucid-file-type: python
 
 Lucid API Gateway - Session Repository

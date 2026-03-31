@@ -11,7 +11,16 @@ LABEL maintainer="Lucid Development Team" \
       description="NGINX API gateway for Lucid sessions (Distroless)" \
       com.lucid.plane="ops" \
       com.lucid.service="api-gateway" \
-      com.lucid.expose="8080"
+      com.lucid.layer="1" \
+      org.lucid.layer="1" \
+      com.lucid.platform="arm64" \
+      com.lucid.architecture="linux/arm64" \
+      com.lucid.security="distroless" \
+      com.lucid.vulnerabilities="zero" \
+      com.lucid.expose="8080" \
+      com.lucid.cluster="core" \
+      com.lucid.tor.compatible="true" \
+      com.lucid.env.config=".env.foundation,.env.secrets"
 
 # Install build tools and dependencies
 RUN apk add --no-cache \
@@ -223,12 +232,12 @@ COPY --from=nginx-builder /var/log/nginx /var/log/nginx
 ENV API_UPSTREAM="lucid_api:8081" \
     CLIENT_MAX_BODY_SIZE="16m" \
     GATEWAY_PORT="8080" \
-    NGINX_WORKER_PROCESSES="1" \
-    NGINX_WORKER_CONNECTIONS="1024" \
-    NGINX_KEEPALIVE_TIMEOUT="65" \
-    NGINX_CLIENT_HEADER_TIMEOUT="60" \
     NGINX_CLIENT_BODY_TIMEOUT="60" \
-    NGINX_SEND_TIMEOUT="60"
+    NGINX_CLIENT_HEADER_TIMEOUT="60" \
+    NGINX_KEEPALIVE_TIMEOUT="65" \
+    NGINX_SEND_TIMEOUT="60" \
+    NGINX_WORKER_CONNECTIONS="1024" \
+    NGINX_WORKER_PROCESSES="1"
 
 # Security and runtime configuration
 EXPOSE 8080

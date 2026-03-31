@@ -1,3 +1,8 @@
+# File: /app/service_configs/kubernetes/04-auth/auth-service.yaml
+# x-lucid-file-path: /app/service_configs/kubernetes/04-auth/auth-service.yaml
+# x-lucid-file-directory: /app/service_configs/kubernetes/04-auth
+# x-lucid-file-type: YAML
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:

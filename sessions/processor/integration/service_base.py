@@ -2,6 +2,7 @@
 """
 File: /app/sessions/processor/integration/service_base.py
 x-lucid-file-path: /app/sessions/processor/integration/service_base.py
+x-lucid-file-directory: /app/sessions/processor/integration
 x-lucid-file-type: python
 
 Base Service Client for Integration Modules

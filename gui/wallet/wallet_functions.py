@@ -1,7 +1,10 @@
-""" Wallet functions for Lucid RDP.
-file: /app/gui/wallet/wallet_functions.py
+"""
+File: /app/gui/wallet/wallet_functions.py
 x-lucid-file-path: /app/gui/wallet/wallet_functions.py
+x-lucid-file-directory: /app/gui/wallet
 x-lucid-file-type: python
+
+Wallet functions for Lucid RDP.
 
 Contains functions for the Wallet interface.
 container_directory: /app/gui/wallet/

@@ -4,6 +4,7 @@
 """
 File: /app/tools/ops/backup/__init__.py
 x-lucid-file-path: /app/tools/ops/backup/__init__.py
+x-lucid-file-directory: /app/tools/ops/backup
 x-lucid-file-type: python
 
 Backup tools package for Lucid RDP.

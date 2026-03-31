@@ -1,5 +1,9 @@
 #!/bin/bash
 # Health Report Generation Script
+# File: /app/scripts/monitoring/generate-health-report.sh
+# x-lucid-file-path: /app/scripts/monitoring/generate-health-report.sh
+# x-lucid-file-directory: /app/scripts/monitoring
+# x-lucid-file-type: shell
 # LUCID-STRICT Layer 2 Monitoring
 # Purpose: Generate detailed health report for system diagnostics
 # Compatibility: Distroless, API compliant

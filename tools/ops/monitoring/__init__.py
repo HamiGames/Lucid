@@ -1,6 +1,7 @@
 """
 File: /app/tools/ops/monitoring/__init__.py
 x-lucid-file-path: /app/tools/ops/monitoring/__init__.py
+x-lucid-file-directory: /app/tools/ops/monitoring
 x-lucid-file-type: python
 
 System monitoring module for Lucid RDP.

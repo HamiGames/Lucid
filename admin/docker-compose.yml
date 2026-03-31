@@ -1,3 +1,8 @@
+# File: /app/admin/docker-compose.yml
+# x-lucid-file-path: /app/admin/docker-compose.yml
+# x-lucid-file-directory: /app/admin
+# x-lucid-file-type: YAML
+
 # Lucid Admin Interface - Phase 4 Docker Compose Configuration
 # Step 33: Phase 4 Container Builds
 #

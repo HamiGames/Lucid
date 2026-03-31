@@ -1,5 +1,9 @@
 #!/bin/bash
 # TRON Isolation Security Scan
+# File: /app/scripts/verification/verify-tron-isolation.sh
+# x-lucid-file-path: /app/scripts/verification/verify-tron-isolation.sh
+# x-lucid-file-directory: /app/scripts/verification
+# x-lucid-file-type: shell
 # Implements Step 16 from docker-build-process-plan.md
 
 set -e

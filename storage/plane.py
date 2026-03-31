@@ -2,6 +2,7 @@
 """
 File: /app/storage/plane.py
 x-lucid-file-path: /app/storage/plane.py
+x-lucid-file-directory: /app/storage
 x-lucid-file-type: python
 
 Lucid storage plane: bind to mounted capacity, layout, and free-space health (not database logic).

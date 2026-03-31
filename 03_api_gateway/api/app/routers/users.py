@@ -1,6 +1,7 @@
 """
 File: /app/03_api_gateway/api/app/routers/users.py
 x-lucid-file-path: /app/03_api_gateway/api/app/routers/users.py
+x-lucid-file-directory: /app/03_api_gateway/api/app/routers
 x-lucid-file-type: python
 
 User Management Endpoints Router

@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 # Rotate the ephemeral onion: try to delete existing, then create a new one.
+# File: /app/02_network_security/tunnels/scripts/rotate_onion.sh
+# x-lucid-file-path: /app/02_network_security/tunnels/scripts/rotate_onion.sh
+# x-lucid-file-directory: /app/02_network_security/tunnels/scripts
+# x-lucid-file-type: shell
 # Path: 02_network_security/tunnels/scripts/rotate_onion.sh
 
 set -Eeuo pipefail

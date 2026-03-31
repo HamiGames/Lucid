@@ -1,5 +1,9 @@
 #!/bin/bash
 # Lucid RDP Raspberry Pi 5 Deployment Script
+# File: /app/scripts/deployment/deploy-lucid-pi.sh
+# x-lucid-file-path: /app/scripts/deployment/deploy-lucid-pi.sh
+# x-lucid-file-directory: /app/scripts/deployment
+# x-lucid-file-type: shell
 # Handles deployment and operations on Raspberry Pi 5 (ARM64)
 # Based on LUCID-STRICT requirements
 # MUST RUN ON PI CONSOLE - NOT FROM WINDOWS
@@ -15,8 +19,16 @@ CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
 # Runtime variables aligned for Raspberry Pi 5
+# Terminal DIR: scripts/deployment/deploy-lucid-pi.sh — repo root from scripts/lib/lucid-repo-paths.sh
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="${SCRIPT_DIR}"
+if [[ -f "${SCRIPT_DIR}/../lib/lucid-repo-paths.sh" ]]; then
+    # shellcheck source=../lib/lucid-repo-paths.sh
+    source "${SCRIPT_DIR}/../lib/lucid-repo-paths.sh" || exit 1
+else
+    echo "ERROR: missing ${SCRIPT_DIR}/../lib/lucid-repo-paths.sh" >&2
+    exit 1
+fi
+PROJECT_ROOT="$LUCID_REPO_ROOT"
 BUILD_DIR="${PROJECT_ROOT}/_build"
 LOG_DIR="${PROJECT_ROOT}/logs"
 DATA_DIR="${PROJECT_ROOT}/data"
@@ -188,8 +200,8 @@ initialize_environment() {
     
     # Initialize Docker networks
     log_info "Creating Docker networks..."
-    if [[ -f "${SCRIPT_DIR}/06-orchestration-runtime/net/setup_lucid_networks.sh" ]]; then
-        "${SCRIPT_DIR}/06-orchestration-runtime/net/setup_lucid_networks.sh" create "$ENVIRONMENT"
+    if [[ -f "${PROJECT_ROOT}/scripts/network/setup/setup_lucid_networks.sh" ]]; then
+        "${PROJECT_ROOT}/scripts/network/setup/setup_lucid_networks.sh" create "$ENVIRONMENT"
     else
         log_warning "Network setup script not found, creating basic networks..."
         
@@ -216,13 +228,13 @@ build_images() {
     docker pull --platform linux/arm64 alpine:3.22.1
     
     # Build custom images if Dockerfiles exist
-    if [[ -f "${SCRIPT_DIR}/.devcontainer/Dockerfile" ]]; then
+    if [[ -f "${PROJECT_ROOT}/.devcontainer/Dockerfile" ]]; then
         log_info "Building custom development image..."
         docker build \
             --platform linux/arm64 \
             -t pickme/lucid-dev:latest \
-            -f "${SCRIPT_DIR}/.devcontainer/Dockerfile" \
-            "${SCRIPT_DIR}"
+            -f "${PROJECT_ROOT}/.devcontainer/Dockerfile" \
+            "${PROJECT_ROOT}"
         
         if [[ $? -eq 0 ]]; then
             log_success "Development image built successfully"
@@ -240,14 +252,19 @@ build_images() {
 start_services() {
     log_info "Starting Lucid services..."
     
-    # Check if compose file exists
-    local compose_file="${SCRIPT_DIR}/_compose_resolved.yaml"
-    if [[ ! -f "$compose_file" ]]; then
-        compose_file="${SCRIPT_DIR}/infrastructure/compose/docker-compose.yml"
-    fi
-    
-    if [[ ! -f "$compose_file" ]]; then
-        log_error "Docker compose file not found"
+    # Stack compose: container-runtime-layout.yml → configs/docker/*.yml; dev slice → infrastructure/compose/lucid-dev.yaml
+    local compose_file="" c
+    for c in \
+        "${PROJECT_ROOT}/_compose_resolved.yaml" \
+        "${LUCID_DEFAULT_STACK_COMPOSE}" \
+        "${LUCID_DEV_COMPOSE_FILE}"; do
+        if [[ -f "$c" ]]; then
+            compose_file="$c"
+            break
+        fi
+    done
+    if [[ -z "$compose_file" ]]; then
+        log_error "Docker compose file not found (tried _compose_resolved.yaml, ${LUCID_DEFAULT_STACK_COMPOSE}, ${LUCID_DEV_COMPOSE_FILE})"
         return 1
     fi
     
@@ -293,12 +310,18 @@ start_services() {
 stop_services() {
     log_info "Stopping Lucid services..."
     
-    local compose_file="${SCRIPT_DIR}/_compose_resolved.yaml"
-    if [[ ! -f "$compose_file" ]]; then
-        compose_file="${SCRIPT_DIR}/infrastructure/compose/docker-compose.yml"
-    fi
-    
-    if [[ -f "$compose_file" ]]; then
+    local compose_file="" c
+    for c in \
+        "${PROJECT_ROOT}/_compose_resolved.yaml" \
+        "${LUCID_DEFAULT_STACK_COMPOSE}" \
+        "${LUCID_DEV_COMPOSE_FILE}"; do
+        if [[ -f "$c" ]]; then
+            compose_file="$c"
+            break
+        fi
+    done
+
+    if [[ -n "$compose_file" ]]; then
         docker-compose -f "$compose_file" --profile dev down
         
         if [[ $? -eq 0 ]]; then

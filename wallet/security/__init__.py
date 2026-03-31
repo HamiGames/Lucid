@@ -4,6 +4,7 @@
 """
 File: /app/wallet/security/__init__.py
 x-lucid-file-path: /app/wallet/security/__init__.py
+x-lucid-file-directory: /app/wallet/security
 x-lucid-file-type: python
 """
 

@@ -1,3 +1,8 @@
+# File: /app/configs/container/auth/docker-compose.auth.yml
+# x-lucid-file-path: /app/configs/container/auth/docker-compose.auth.yml
+# x-lucid-file-directory: /app/configs/container/auth
+# x-lucid-file-type: YAML
+
 # LUCID AUTH - Distroless Deployment
 # Path: infrastructure/containers/auth/docker-compose.auth.yml
 #

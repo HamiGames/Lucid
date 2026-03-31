@@ -2,6 +2,7 @@
 """
 File: /app/apps/recorder/merkle.py
 x-lucid-file-path: /app/apps/recorder/merkle.py
+x-lucid-file-directory: /app/apps/recorder
 x-lucid-file-type: python
 
 Merkle Tree Builder Module for Lucid RDP Recorder

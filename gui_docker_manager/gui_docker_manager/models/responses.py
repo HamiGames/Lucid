@@ -1,6 +1,7 @@
 """
 File: /app/gui_docker_manager/gui_docker_manager/models/responses.py
 x-lucid-file-path: /app/gui_docker_manager/gui_docker_manager/models/responses.py
+x-lucid-file-directory: /app/gui_docker_manager/gui_docker_manager/models
 x-lucid-file-type: python
 
 Response Models for API Responses

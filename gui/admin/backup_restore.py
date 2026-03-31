@@ -1,7 +1,9 @@
 """
-file: /app/gui/admin/backup_restore.py
+File: /app/gui/admin/backup_restore.py
 x-lucid-file-path: /app/gui/admin/backup_restore.py
+x-lucid-file-directory: /app/gui/admin
 x-lucid-file-type: python
+
 Comprehensive backup and restore operations for Lucid RDP GUI.
 Provides system-wide backup functionality for configurations, keys, sessions, and user data.
 """

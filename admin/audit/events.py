@@ -2,6 +2,7 @@
 """
 File: /app/admin/audit/events.py
 x-lucid-file-path: /app/admin/audit/events.py
+x-lucid-file-directory: /app/admin/audit
 x-lucid-file-type: python
 
 Lucid Admin Interface - Audit Events

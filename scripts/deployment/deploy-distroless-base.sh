@@ -1,5 +1,9 @@
 #!/bin/bash
 # Path: scripts/deployment/deploy-distroless-base.sh
+# File: /app/scripts/deployment/deploy-distroless-base.sh
+# x-lucid-file-path: /app/scripts/deployment/deploy-distroless-base.sh
+# x-lucid-file-directory: /app/scripts/deployment
+# x-lucid-file-type: shell
 # Deploy Distroless Base Infrastructure
 # Deploys distroless runtime, development, and security configurations
 # MUST RUN ON PI CONSOLE
@@ -19,8 +23,9 @@ log_success() { echo -e "${GREEN}[SUCCESS]${NC} $1"; }
 log_warning() { echo -e "${YELLOW}[WARNING]${NC} $1"; }
 log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 
-# Project root
-PROJECT_ROOT="${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}"
+# Project root (host checkout; override with export PROJECT_ROOT=... if needed)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="${PROJECT_ROOT:-$(cd "$SCRIPT_DIR/../.." && pwd)}"
 
 echo ""
 log_info "========================================"

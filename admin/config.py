@@ -2,6 +2,7 @@
 """
 File: /app/admin/config.py
 x-lucid-file-path: /app/admin/config.py
+x-lucid-file-directory: /app/admin
 x-lucid-file-type: python
 
 Lucid Admin Interface - Configuration Management

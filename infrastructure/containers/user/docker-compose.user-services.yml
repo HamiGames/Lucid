@@ -1,3 +1,8 @@
+# File: /app/configs/user/docker-compose.user-services.yml
+# x-lucid-file-path: /app/configs/user/docker-compose.user-services.yml
+# x-lucid-file-directory: /app/configs/user
+# x-lucid-file-type: YAML
+
 # User Services Docker Compose — user-plane mesh
 # Path (repo): infrastructure/containers/user/docker-compose.user-services.yml
 # Container path note: service definitions align with /app/service_configs/*.yml (container-runtime-layout.yml).

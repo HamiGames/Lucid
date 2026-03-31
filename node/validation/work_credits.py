@@ -1,6 +1,7 @@
 """
 File: /app/node/validation/work_credits.py
 x-lucid-file-path: /app/node/validation/work_credits.py
+x-lucid-file-directory: /app/node/validation
 x-lucid-file-type: python
 
 Lucid RDP Node Work Credits - Specialized Work Credits Calculation

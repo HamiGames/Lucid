@@ -1,6 +1,7 @@
 """
 File: /app/common/load_host_config.py
 x-lucid-file-path: /app/common/load_host_config.py
+x-lucid-file-directory: /app/common
 x-lucid-file-type: python
 
 Loads host config for Lucid common services.
@@ -8,6 +9,7 @@ Loads host config for Lucid common services.
 Aligns with infrastructure/containers/host-config.yml (mounted at
 /app/configs/host-config.yml in container images). See also
 service_mesh.service_mesh_translator.load_host_registry for mesh vocabulary.
+Per-contact-profile secrets: common/contact_profile_env.py and common/profile_secrets_registry.yml.
 """
 
 from __future__ import annotations

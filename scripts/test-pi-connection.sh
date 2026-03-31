@@ -1,5 +1,9 @@
 #!/bin/bash
 # Test Pi Connection Script
+# File: /app/scripts/test-pi-connection.sh
+# x-lucid-file-path: /app/scripts/test-pi-connection.sh
+# x-lucid-file-directory: /app/scripts
+# x-lucid-file-type: shell
 # Tests basic SSH connectivity and permissions
 
 set -euo pipefail

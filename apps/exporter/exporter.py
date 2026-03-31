@@ -2,6 +2,7 @@
 """
 File: /app/apps/exporter/exporter.py
 x-lucid-file-path: /app/apps/exporter/exporter.py
+x-lucid-file-directory: /app/apps/exporter
 x-lucid-file-type: python
 
 Lucid RDP Exporter

@@ -1,9 +1,14 @@
+# File: /app/configs/electron_gui/docker-compose.electron-gui.yml
+# x-lucid-file-path: /app/configs/electron_gui/docker-compose.electron-gui.yml
+# x-lucid-file-directory: /app/configs/electron_gui
+# x-lucid-file-type: YAML
+
 # LUCID ELECTRON GUI — infrastructure plane
 # Path: infrastructure/containers/electron_gui/docker-compose.electron-gui.yml
 #
 # Aligned with: ports.txt (electron_gui_user 3001, electron_gui_node 3002), host-config.yml,
 #   infrastructure/containers/env/env.secrets.template (populate configs/environment/.env.secrets from template).
-# Networks: lucid-pi-network, lucid-gui-network, lucid-session-network (see infrastructure/containers/network/network.txt).
+# Networks: lucid-pi-network, lucid-gui-network, lucid-session-network, lucid-tor-egress-network (see infrastructure/containers/network/network.txt).
 #
 # Admin image (Dockerfile.admin) listens on 8120 inside the container; host-config admin_ui_backend also uses 8120 —
 # default host publish 38120→8120 to reduce collisions when admin-ui-backend runs on the same Pi.
@@ -64,6 +69,7 @@ services:
       - lucid_electron_gui_admin_logs:/app/logs:rw
     networks:
       - lucid-pi-network
+      - lucid-tor-egress-network
       - lucid-gui-network
       - lucid-session-network
     user: "65532:65532"
@@ -103,6 +109,7 @@ services:
       - lucid_electron_gui_user_logs:/app/logs:rw
     networks:
       - lucid-pi-network
+      - lucid-tor-egress-network
       - lucid-gui-network
       - lucid-session-network
     user: "65532:65532"
@@ -142,6 +149,7 @@ services:
       - lucid_electron_gui_node_logs:/app/logs:rw
     networks:
       - lucid-pi-network
+      - lucid-tor-egress-network
       - lucid-gui-network
       - lucid-session-network
     user: "65532:65532"
@@ -166,6 +174,9 @@ networks:
   lucid-session-network:
     external: true
     name: lucid-session-network
+  lucid-tor-egress-network:
+    external: true
+    name: lucid-tor-egress-network
 
 volumes:
   lucid_electron_gui_admin_data:

@@ -1,6 +1,7 @@
 """
 File: /app/database/models/user.py
 x-lucid-file-path: /app/database/models/user.py
+x-lucid-file-directory: /app/database/models
 x-lucid-file-type: python
 
 User Data Models
@@ -70,6 +71,10 @@ class UserCreate(UserBase):
     password: Optional[str] = Field(None, min_length=8, description="User password (optional for TRON auth)")
     hardware_wallet: Optional[HardwareWalletInfo] = Field(None, description="Hardware wallet info")
     referral_code: Optional[str] = Field(None, description="Referral code")
+    contact_profile_key: Optional[str] = Field(
+        None,
+        description="Optional secrets overlay (profiles/<key>/.env.secrets)",
+    )
 
 
 class UserUpdate(BaseModel):
@@ -78,6 +83,7 @@ class UserUpdate(BaseModel):
     username: Optional[str] = Field(None, min_length=3, max_length=50)
     role: Optional[UserRole] = None
     status: Optional[UserStatus] = None
+    contact_profile_key: Optional[str] = None
     profile: Optional[Dict[str, Any]] = None
     preferences: Optional[Dict[str, Any]] = None
     
@@ -88,6 +94,10 @@ class UserUpdate(BaseModel):
 class User(UserBase):
     """User model for API responses"""
     user_id: str = Field(..., description="Unique user identifier")
+    contact_profile_key: Optional[str] = Field(
+        None,
+        description="Secrets overlay key (profiles/<key>/.env.secrets); see common/profile_secrets_registry.yml",
+    )
     profile: Optional[Dict[str, Any]] = Field(default_factory=dict, description="User profile data")
     preferences: Optional[Dict[str, Any]] = Field(default_factory=dict, description="User preferences")
     created_at: datetime = Field(..., description="Account creation timestamp")

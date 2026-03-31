@@ -1,8 +1,10 @@
 
 """
-file: /app/gui/admin/bootstrap_wizard.py
+File: /app/gui/admin/bootstrap_wizard.py
 x-lucid-file-path: /app/gui/admin/bootstrap_wizard.py
+x-lucid-file-directory: /app/gui/admin
 x-lucid-file-type: python
+
 Enhanced bootstrap wizard for Lucid RDP appliance initial setup and provisioning.
 Provides step-by-step wizard interface with validation, progress tracking, and advanced configuration options.
 """
@@ -1869,7 +1871,7 @@ class DockerEnvironmentManager:
         env_files = [
             '.env',
             'gui/admin/.env',
-            'infrastructure/docker/admin/env/admin-ui.env'
+            'configs/docker/admin/env/admin-ui.env'
         ]
         
         for env_file in env_files:

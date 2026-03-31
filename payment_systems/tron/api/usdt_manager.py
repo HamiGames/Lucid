@@ -1,6 +1,7 @@
 """
 File: /app/payment_systems/tron/api/usdt_manager.py
 x-lucid-file-path: /app/payment_systems/tron/api/usdt_manager.py
+x-lucid-file-directory: /app/payment_systems/tron/api
 x-lucid-file-type: python
 
 TRON USDT Manager API - USDT Token Operations

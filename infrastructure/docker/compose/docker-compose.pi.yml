@@ -1,8 +1,27 @@
-# Path: infrastructure/docker/compose/docker-compose.pi.yml
-# Raspberry Pi infrastructure Docker Compose file for Lucid project
-# Optimized for ARM64 architecture and limited Pi resources
+# File: /app/configs/docker/compose/docker-compose.pi.yml
+# x-lucid-file-path: /app/configs/docker/compose/docker-compose.pi.yml
+# x-lucid-file-directory: /app/configs/docker/compose
+# x-lucid-file-type: YAML
+#
+# Repo path: infrastructure/docker/compose/docker-compose.pi.yml
+# x-files.json section_to_canonical: infrastructure/docker/compose/docker-compose.pi.yml → /app/configs/docker/compose/docker-compose.pi.yml
+# Host registry: infrastructure/containers/host-config.yml — use matching ports when substituting Pi variants for production service names.
+# host_ip registry (172.20.10.1–172.20.10.76): service-ip.txt / host-config.yml for Pi ops — not compose ipv4_address on lucid-pi-network.
+# Pi networking: align with infrastructure/containers/network/network.txt (subnets / external lucid-pi-network).
+# Bind mounts: mongodb/mongod.conf, redis/redis.conf, nginx/nginx.conf, nats/nats-server.conf, vault/vault.hcl exist under this compose directory; other paths are operator-local.
 
-version: '3.8'
+# Raspberry Pi–oriented upstream stack — ARM64, resource limits.
+
+version: "3.8"
+
+x-lucid-host-config:
+  file: ../../containers/host-config.yml
+  repo_path: infrastructure/containers/host-config.yml
+  version: "1.0"
+  description: Lucid container host registry for Docker DNS hostnames, ports, discovery URLs, and static host IPs.
+  http_path_template: "http://{service_name}:{port}/app"
+  host_ip_range: "172.20.10.1–172.20.10.76"
+  in_container_path: /app/configs/host-config.yml
 
 services:
   # MongoDB Database (Pi Optimized)
@@ -20,7 +39,7 @@ services:
     volumes:
       - lucid_mongodb_pi_data:/data/db
       - lucid_mongodb_pi_config:/data/configdb
-      - ./mongodb/mongod-pi.conf:/etc/mongod.conf:ro
+      - ./mongodb/mongod.conf:/etc/mongod.conf:ro
     networks:
       - lucid-infra-pi-network
     command: ["mongod", "--config", "/etc/mongod.conf"]
@@ -28,10 +47,10 @@ services:
       resources:
         limits:
           memory: 1G
-          cpus: '1.0'
+          cpus: "1.0"
         reservations:
           memory: 512M
-          cpus: '0.5'
+          cpus: "0.5"
     healthcheck:
       test: ["CMD", "mongosh", "--eval", "db.runCommand('ping').ok"]
       interval: 60s
@@ -49,7 +68,7 @@ services:
       - "6379:6379"
     volumes:
       - lucid_redis_pi_data:/data
-      - ./redis/redis-pi.conf:/usr/local/etc/redis/redis.conf:ro
+      - ./redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
     networks:
       - lucid-infra-pi-network
     command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
@@ -57,10 +76,10 @@ services:
       resources:
         limits:
           memory: 256M
-          cpus: '0.25'
+          cpus: "0.25"
         reservations:
           memory: 128M
-          cpus: '0.1'
+          cpus: "0.1"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 30s
@@ -89,10 +108,10 @@ services:
       resources:
         limits:
           memory: 512M
-          cpus: '0.5'
+          cpus: "0.5"
         reservations:
           memory: 256M
-          cpus: '0.25'
+          cpus: "0.25"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${LUCID_POSTGRES_USER:-lucid_pi}"]
       interval: 30s
@@ -125,12 +144,13 @@ services:
       resources:
         limits:
           memory: 1G
-          cpus: '1.0'
+          cpus: "1.0"
         reservations:
           memory: 512M
-          cpus: '0.5'
+          cpus: "0.5"
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      test:
+        ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
       interval: 60s
       timeout: 30s
       retries: 3
@@ -155,10 +175,10 @@ services:
       resources:
         limits:
           memory: 512M
-          cpus: '0.5'
+          cpus: "0.5"
         reservations:
           memory: 256M
-          cpus: '0.25'
+          cpus: "0.25"
 
   # Prometheus (Pi Optimized)
   lucid-prometheus-pi:
@@ -174,18 +194,18 @@ services:
     networks:
       - lucid-infra-pi-network
     command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-      - '--storage.tsdb.retention.time=7d'
-      - '--web.enable-lifecycle'
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=7d"
+      - "--web.enable-lifecycle"
     deploy:
       resources:
         limits:
           memory: 512M
-          cpus: '0.5'
+          cpus: "0.5"
         reservations:
           memory: 256M
-          cpus: '0.25'
+          cpus: "0.25"
 
   # Grafana (Pi Optimized)
   lucid-grafana-pi:
@@ -215,10 +235,10 @@ services:
       resources:
         limits:
           memory: 512M
-          cpus: '0.5'
+          cpus: "0.5"
         reservations:
           memory: 256M
-          cpus: '0.25'
+          cpus: "0.25"
 
   # Jaeger (Pi Optimized)
   lucid-jaeger-pi:
@@ -242,10 +262,10 @@ services:
       resources:
         limits:
           memory: 512M
-          cpus: '0.5'
+          cpus: "0.5"
         reservations:
           memory: 256M
-          cpus: '0.25'
+          cpus: "0.25"
 
   # MinIO (Pi Optimized)
   lucid-minio-pi:
@@ -268,10 +288,10 @@ services:
       resources:
         limits:
           memory: 512M
-          cpus: '0.5'
+          cpus: "0.5"
         reservations:
           memory: 256M
-          cpus: '0.25'
+          cpus: "0.25"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
       interval: 30s
@@ -291,7 +311,7 @@ services:
       VAULT_DEV_LISTEN_ADDRESS: 0.0.0.0:8200
     volumes:
       - lucid_vault_pi_data:/vault/data
-      - ./vault/vault-pi.hcl:/vault/config/vault.hcl:ro
+      - ./vault/vault.hcl:/vault/config/vault.hcl:ro
     networks:
       - lucid-infra-pi-network
     cap_add:
@@ -301,10 +321,10 @@ services:
       resources:
         limits:
           memory: 256M
-          cpus: '0.25'
+          cpus: "0.25"
         reservations:
           memory: 128M
-          cpus: '0.1'
+          cpus: "0.1"
 
   # Consul (Pi Optimized)
   lucid-consul-pi:
@@ -319,15 +339,25 @@ services:
       - ./consul/consul-pi.json:/consul/config/consul.json:ro
     networks:
       - lucid-infra-pi-network
-    command: ["consul", "agent", "-server", "-ui", "-node=pi-server-1", "-bootstrap-expect=1", "-client=0.0.0.0", "-config-file=/consul/config/consul.json"]
+    command:
+      [
+        "consul",
+        "agent",
+        "-server",
+        "-ui",
+        "-node=pi-server-1",
+        "-bootstrap-expect=1",
+        "-client=0.0.0.0",
+        "-config-file=/consul/config/consul.json",
+      ]
     deploy:
       resources:
         limits:
           memory: 256M
-          cpus: '0.25'
+          cpus: "0.25"
         reservations:
           memory: 128M
-          cpus: '0.1'
+          cpus: "0.1"
 
   # NATS (Pi Optimized)
   lucid-nats-pi:
@@ -340,7 +370,7 @@ services:
       - "8222:8222"
     volumes:
       - lucid_nats_pi_data:/data
-      - ./nats/nats-server-pi.conf:/etc/nats/nats-server.conf:ro
+      - ./nats/nats-server.conf:/etc/nats/nats-server.conf:ro
     networks:
       - lucid-infra-pi-network
     command: ["-c", "/etc/nats/nats-server.conf"]
@@ -348,12 +378,20 @@ services:
       resources:
         limits:
           memory: 256M
-          cpus: '0.25'
+          cpus: "0.25"
         reservations:
           memory: 128M
-          cpus: '0.1'
+          cpus: "0.1"
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8222/varz"]
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:8222/varz",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -393,10 +431,10 @@ services:
       resources:
         limits:
           memory: 1G
-          cpus: '1.0'
+          cpus: "1.0"
         reservations:
           memory: 512M
-          cpus: '0.5'
+          cpus: "0.5"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 60s
@@ -439,10 +477,10 @@ services:
       resources:
         limits:
           memory: 1G
-          cpus: '1.0'
+          cpus: "1.0"
         reservations:
           memory: 512M
-          cpus: '0.5'
+          cpus: "0.5"
 
   # Storage Service (Pi Optimized)
   lucid-storage-pi:
@@ -459,7 +497,7 @@ services:
       - LUCID_ELASTICSEARCH_URL=http://lucid-elasticsearch-pi:9200
       - LUCID_WORKERS=2
       - LUCID_LOG_LEVEL=INFO
-      - LUCID_CLEANUP_INTERVAL=7200  # 2 hours for Pi
+      - LUCID_CLEANUP_INTERVAL=7200 # 2 hours for Pi
     volumes:
       - lucid_storage_pi_data:/app/storage
       - lucid_storage_pi_logs:/app/logs
@@ -474,10 +512,10 @@ services:
       resources:
         limits:
           memory: 1G
-          cpus: '1.0'
+          cpus: "1.0"
         reservations:
           memory: 512M
-          cpus: '0.5'
+          cpus: "0.5"
 
   # Backup Service (Pi Optimized)
   lucid-backup-pi:
@@ -500,10 +538,10 @@ services:
       resources:
         limits:
           memory: 256M
-          cpus: '0.25'
+          cpus: "0.25"
         reservations:
           memory: 128M
-          cpus: '0.1'
+          cpus: "0.1"
 
   # Log Aggregator (Pi Optimized)
   lucid-log-aggregator-pi:
@@ -523,10 +561,10 @@ services:
       resources:
         limits:
           memory: 128M
-          cpus: '0.1'
+          cpus: "0.1"
         reservations:
           memory: 64M
-          cpus: '0.05'
+          cpus: "0.05"
 
   # Pi System Monitor
   lucid-pi-monitor:
@@ -546,15 +584,15 @@ services:
       resources:
         limits:
           memory: 64M
-          cpus: '0.1'
+          cpus: "0.1"
         reservations:
           memory: 32M
-          cpus: '0.05'
+          cpus: "0.05"
     command:
-      - '--path.procfs=/host/proc'
-      - '--path.rootfs=/rootfs'
-      - '--path.sysfs=/host/sys'
-      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+      - "--path.procfs=/host/proc"
+      - "--path.rootfs=/rootfs"
+      - "--path.sysfs=/host/sys"
+      - "--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)"
 
   # Pi Temperature Monitor
   lucid-temp-monitor:
@@ -574,10 +612,10 @@ services:
       resources:
         limits:
           memory: 64M
-          cpus: '0.05'
+          cpus: "0.05"
         reservations:
           memory: 32M
-          cpus: '0.02'
+          cpus: "0.02"
 
 # Networks
 networks:
@@ -598,21 +636,21 @@ volumes:
     driver: local
   lucid_postgres_pi_data:
     driver: local
-  
+
   # Search and logging volumes
   lucid_elasticsearch_pi_data:
     driver: local
-  
+
   # Monitoring volumes
   lucid_prometheus_pi_data:
     driver: local
   lucid_grafana_pi_data:
     driver: local
-  
+
   # Storage volumes
   lucid_minio_pi_data:
     driver: local
-  
+
   # Infrastructure volumes
   lucid_vault_pi_data:
     driver: local
@@ -620,7 +658,7 @@ volumes:
     driver: local
   lucid_nats_pi_data:
     driver: local
-  
+
   # Application volumes
   lucid_api_pi_logs:
     driver: local

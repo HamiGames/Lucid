@@ -1,5 +1,9 @@
 # Lucid Electron-GUI Distroless Build Script
 # Builds all 3 Electron-GUI distroless packages for Raspberry Pi (linux/arm64)
+# File: /app/electron_gui/distroless/build-distroless.sh
+# x-lucid-file-path: /app/electron_gui/distroless/build-distroless.sh
+# x-lucid-file-directory: /app/electron_gui/distroless
+# x-lucid-file-type: shell
 # Date: 2025-01-24
 
 #!/bin/bash

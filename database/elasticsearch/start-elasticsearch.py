@@ -2,6 +2,7 @@
 """
 File: /app/database/elasticsearch/start-elasticsearch.py
 x-lucid-file-path: /app/database/elasticsearch/start-elasticsearch.py
+x-lucid-file-directory: /app/database/elasticsearch
 x-lucid-file-type: python
 
 Elasticsearch Distroless Startup Script

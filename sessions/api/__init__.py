@@ -1,6 +1,7 @@
 """
 File: /app/sessions/api/__init__.py
 x-lucid-file-path: /app/sessions/api/__init__.py
+x-lucid-file-directory: /app/sessions/api
 x-lucid-file-type: python
 
 Lucid Session Management API Service

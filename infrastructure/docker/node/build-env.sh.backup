@@ -1,5 +1,5 @@
 #!/bin/bash
-# Path: infrastructure/docker/node/build-env.sh
+# Path: configs/docker/node/build-env.sh
 # Build Environment Script for Lucid Node Services
 # Generates .env files for distributed node containers
 

@@ -4,6 +4,14 @@
 
 set -e
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+_lucid_scripts="$SCRIPT_DIR"
+while [[ "$_lucid_scripts" != "/" && "$(basename "$_lucid_scripts")" != "scripts" ]]; do
+    _lucid_scripts="$(dirname "$_lucid_scripts")"
+done
+# shellcheck source=../lib/lucid-repo-paths.sh
+source "$_lucid_scripts/lib/lucid-repo-paths.sh"
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -12,7 +20,7 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Configuration
-PROJECT_ROOT="$(pwd)"
+PROJECT_ROOT="${LUCID_REPO_ROOT:-$(pwd)}"
 REGISTRY="pickme"
 PLATFORM="linux/arm64"
 BUILD_TAG="latest-arm64"
@@ -191,7 +199,7 @@ build_storage_database() {
 build_mongodb() {
     log_info "Building MongoDB container..."
     
-    local mongo_dir="$PROJECT_ROOT/infrastructure/containers/database"
+    local mongo_dir="$LUCID_FOUNDATION_STORAGE_DOCKER_DIR"
     
     if [[ ! -d "$mongo_dir" ]]; then
         log_error "MongoDB container directory not found: $mongo_dir"
@@ -221,7 +229,7 @@ build_mongodb() {
 build_redis() {
     log_info "Building Redis container..."
     
-    local redis_dir="$PROJECT_ROOT/infrastructure/containers/database"
+    local redis_dir="$LUCID_FOUNDATION_STORAGE_DOCKER_DIR"
     
     if [[ ! -d "$redis_dir" ]]; then
         log_error "Redis container directory not found: $redis_dir"
@@ -251,7 +259,7 @@ build_redis() {
 build_elasticsearch() {
     log_info "Building Elasticsearch container..."
     
-    local es_dir="$PROJECT_ROOT/infrastructure/containers/database"
+    local es_dir="$LUCID_FOUNDATION_STORAGE_DOCKER_DIR"
     
     if [[ ! -d "$es_dir" ]]; then
         log_error "Elasticsearch container directory not found: $es_dir"

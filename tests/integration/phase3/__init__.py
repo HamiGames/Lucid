@@ -1,4 +1,9 @@
 """
+File: /app/tests/integration/phase3/__init__.py
+x-lucid-file-path: /app/tests/integration/phase3/__init__.py
+x-lucid-file-directory: /app/tests/integration/phase3
+x-lucid-file-type: python
+
 Phase 3 Integration Tests
 
 This module contains integration tests for Phase 3 services:

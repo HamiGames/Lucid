@@ -6,6 +6,7 @@
 """
 File: /app/blockchain/core/merkle_tree_builder.py
 x-lucid-file-path: /app/blockchain/core/merkle_tree_builder.py
+x-lucid-file-directory: /app/blockchain/core
 x-lucid-file-type: python
 """
 

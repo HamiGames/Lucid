@@ -1,3 +1,8 @@
+# File: /app/payment_systems/tron/config/payout-router-extended-config.yaml
+# x-lucid-file-path: /app/payment_systems/tron/config/payout-router-extended-config.yaml
+# x-lucid-file-directory: /app/payment_systems/tron/config
+# x-lucid-file-type: YAML
+
 # LUCID TRON Payout Router Configuration
 # Extended payout routing and management service
 

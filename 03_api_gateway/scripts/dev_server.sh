@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 # Start the API in-dev with reload, safe PYTHONPATH, and optional PORT
+# File: /app/03_api_gateway/scripts/dev_server.sh
+# x-lucid-file-path: /app/03_api_gateway/scripts/dev_server.sh
+# x-lucid-file-directory: /app/03_api_gateway/scripts
+# x-lucid-file-type: shell
 set -euo pipefail
 export PYTHONPATH="${PYTHONPATH:-/workspaces/Lucid}"
 PORT="${PORT:-8081}"

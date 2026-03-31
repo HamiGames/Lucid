@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # Start the GUI API Bridge in development mode with reload
-# File: /app/gui_api_bridge/gui_api_bridge/scripts/dev_server.sh
-# x-lucid-file-path: /app/gui_api_bridge/gui_api_bridge/scripts/dev_server.sh
-# x-lucid-file-type: bash
+# File: /app/gui_api_bridge/scripts/dev_server.sh
+# x-lucid-file-path: /app/gui_api_bridge/scripts/dev_server.sh
+# x-lucid-file-directory: /app/gui_api_bridge/scripts
+# x-lucid-file-type: shell
 # No hardcoded values - all from environment variables or defaults
 # Safe PYTHONPATH and optional PORT configuration
 

@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# File: /app/service_configs/kubernetes/deploy.sh
+# x-lucid-file-path: /app/service_configs/kubernetes/deploy.sh
+# x-lucid-file-directory: /app/service_configs/kubernetes
+# x-lucid-file-type: shell
 # Lucid Blockchain System Kubernetes Deployment Script
 # This script deploys the complete Lucid blockchain system to Kubernetes
 

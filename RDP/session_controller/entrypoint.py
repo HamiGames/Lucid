@@ -3,6 +3,7 @@
 """
 File: /app/RDP/session_controller/entrypoint.py
 x-lucid-file-path: /app/RDP/session_controller/entrypoint.py
+x-lucid-file-directory: /app/RDP/session_controller
 x-lucid-file-type: python
 
 RDP Controller Service Entrypoint

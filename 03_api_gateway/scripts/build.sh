@@ -1,5 +1,9 @@
 #!/bin/bash
 # Build script for API Gateway
+# File: /app/03_api_gateway/scripts/build.sh
+# x-lucid-file-path: /app/03_api_gateway/scripts/build.sh
+# x-lucid-file-directory: /app/03_api_gateway/scripts
+# x-lucid-file-type: shell
 # File: 03-api-gateway/scripts/build.sh
 # Build Host: Windows 11 console
 # Target Host: Raspberry Pi

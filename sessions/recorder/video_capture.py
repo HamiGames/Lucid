@@ -6,6 +6,7 @@
 """
 File: /app/sessions/recorder/video_capture.py
 x-lucid-file-path: /app/sessions/recorder/video_capture.py
+x-lucid-file-directory: /app/sessions/recorder
 x-lucid-file-type: python
 """
 

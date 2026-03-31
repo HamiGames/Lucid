@@ -6,6 +6,7 @@
 """
 File: /app/RDP/recorder/clipboard_handler.py
 x-lucid-file-path: /app/RDP/recorder/clipboard_handler.py
+x-lucid-file-directory: /app/RDP/recorder
 x-lucid-file-type: python
 """
 

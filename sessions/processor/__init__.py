@@ -1,6 +1,7 @@
 """
 File: /app/sessions/processor/__init__.py
 x-lucid-file-path: /app/sessions/processor/__init__.py
+x-lucid-file-directory: /app/sessions/processor
 x-lucid-file-type: python
 
 LUCID Session Processor Components

@@ -1,5 +1,9 @@
 #!/bin/bash
 # Master Secret Coordination Script for Lucid Project
+# File: /app/scripts/secrets/coordinate-all-secrets.sh
+# x-lucid-file-path: /app/scripts/secrets/coordinate-all-secrets.sh
+# x-lucid-file-directory: /app/scripts/secrets
+# x-lucid-file-type: shell
 # Ensures all secrets are generated without conflicts
 # Coordinates between generate-secrets.sh and config directory scripts
 # Generated: 2025-01-27

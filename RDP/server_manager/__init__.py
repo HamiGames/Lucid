@@ -1,6 +1,7 @@
 """
 File: /app/RDP/server_manager/__init__.py
 x-lucid-file-path: /app/RDP/server_manager/__init__.py
+x-lucid-file-directory: /app/RDP/server_manager
 x-lucid-file-type: python
 
 Lucid RDP Server Manager Service

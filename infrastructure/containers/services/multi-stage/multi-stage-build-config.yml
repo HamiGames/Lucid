@@ -1,3 +1,9 @@
+# File: /app/service_configs/multi-stage/multi-stage-build-config.yml
+# x-lucid-file-path: /app/service_configs/multi-stage/multi-stage-build-config.yml
+# x-lucid-file-directory: /app/service_configs/multi-stage
+# x-lucid-file-type: YAML
+# Lucid alignment: host_registry=infrastructure/containers/host-config.yml (container /app/configs/host-config.yml); path_index=x-files.json section_to_canonical
+
 # Runtime (container): /app/service_configs/multi-stage/multi-stage-build-config.yml — see ../container-runtime-layout.yml
 # Multi-Stage Build Configuration for Lucid Project
 # Container-hosted: cache/logs/analysis use named volumes; optional Docker socket for sibling builds.

@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 # Generate coverage HTML report and terminal summary.
+# File: /app/08-quality/scripts/coverage_report.sh
+# x-lucid-file-path: /app/08-quality/scripts/coverage_report.sh
+# x-lucid-file-directory: /app/08-quality/scripts
+# x-lucid-file-type: shell
 
 set -euo pipefail
 

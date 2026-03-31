@@ -5,6 +5,7 @@
 """
 File: /app/node/worker/node_service.py
 x-lucid-file-path: /app/node/worker/node_service.py
+x-lucid-file-directory: /app/node/worker
 x-lucid-file-type: python
 """
 

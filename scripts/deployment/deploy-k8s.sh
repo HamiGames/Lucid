@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# File: /app/scripts/deployment/deploy-k8s.sh
+# x-lucid-file-path: /app/scripts/deployment/deploy-k8s.sh
+# x-lucid-file-directory: /app/scripts/deployment
+# x-lucid-file-type: shell
 # Lucid Kubernetes Deployment Script
 # Step 52: Production Kubernetes Deployment
 # Version: 1.0.0

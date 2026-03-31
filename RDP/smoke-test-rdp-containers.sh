@@ -1,5 +1,9 @@
 #!/bin/bash
 # LUCID RDP Services Container Smoke Test Script
+# File: /app/RDP/smoke-test-rdp-containers.sh
+# x-lucid-file-path: /app/RDP/smoke-test-rdp-containers.sh
+# x-lucid-file-directory: /app/RDP
+# x-lucid-file-type: shell
 # Step 21-22: RDP Services Containers Smoke Testing
 # Tests all RDP containers for basic functionality and health
 

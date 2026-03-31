@@ -1,15 +1,25 @@
 #!/bin/bash
 # Deploy All Systems Script
+# File: /app/scripts/deployment/deploy-all-systems.sh
+# x-lucid-file-path: /app/scripts/deployment/deploy-all-systems.sh
+# x-lucid-file-directory: /app/scripts/deployment
+# x-lucid-file-type: shell
 # Deploys the complete Lucid system including GUI integration
 # Coordinates deployment across all phases and systems
 
 set -euo pipefail
 
+
+# x-files-listing.txt → LUCID_HOST_COMPOSE_* (scripts/lib/lucid-repo-paths.sh)
+_LUCID_W="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+while [[ "$_LUCID_W" != "/" && "$(basename "$_LUCID_W")" != "scripts" ]]; do _LUCID_W="$(dirname "$_LUCID_W")"; done
+# shellcheck source=lib/lucid-repo-paths.sh
+source "${_LUCID_W}/lib/lucid-repo-paths.sh"
 # Script configuration
 SCRIPT_NAME="deploy-all-systems.sh"
 SCRIPT_VERSION="1.0.0"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+PROJECT_ROOT="$LUCID_REPO_ROOT"
 
 # Color codes for output
 RED='\033[0;31m'
@@ -44,16 +54,16 @@ DEPLOY_TIMEOUT="${DEPLOY_TIMEOUT:-1800}"  # 30 minutes
 
 # Directories
 CONFIGS_DIR="$PROJECT_ROOT/configs"
-DOCKER_DIR="$CONFIGS_DIR/docker"
-SCRIPTS_DIR="$PROJECT_ROOT/scripts"
+DOCKER_DIR="$LUCID_CONFIGS_DOCKER_DIR"
+SCRIPTS_DIR="$LUCID_SCRIPTS_DIR"
 
-# Docker Compose files
-COMPOSE_FOUNDATION="$DOCKER_DIR/docker-compose.foundation.yml"
-COMPOSE_CORE="$DOCKER_DIR/docker-compose.core.yml"
-COMPOSE_APPLICATION="$DOCKER_DIR/docker-compose.application.yml"
-COMPOSE_SUPPORT="$DOCKER_DIR/docker-compose.support.yml"
-COMPOSE_GUI="$DOCKER_DIR/docker-compose.gui-integration.yml"
-COMPOSE_ALL="$DOCKER_DIR/docker-compose.all.yml"
+# Docker Compose files (host paths per x-files-listing.txt → LUCID_HOST_COMPOSE_*; in-image: LUCID_X_IMAGE_COMPOSE_*)
+COMPOSE_FOUNDATION="$LUCID_HOST_COMPOSE_FOUNDATION"
+COMPOSE_CORE="$LUCID_HOST_COMPOSE_CORE"
+COMPOSE_APPLICATION="$LUCID_HOST_COMPOSE_APPLICATION"
+COMPOSE_SUPPORT="$LUCID_HOST_COMPOSE_SUPPORT"
+COMPOSE_GUI="$LUCID_HOST_COMPOSE_GUI_INTEGRATION"
+COMPOSE_ALL="$LUCID_HOST_COMPOSE_ALL"
 
 # Function to validate deployment environment
 validate_deployment_environment() {
@@ -130,15 +140,15 @@ deploy_phase1_foundation() {
         cd $PI_DEPLOY_DIR
         
         # Deploy foundation services
-        docker-compose --env-file configs/environment/.env.foundation -f configs/docker/docker-compose.foundation.yml pull
-        docker-compose --env-file configs/environment/.env.foundation -f configs/docker/docker-compose.foundation.yml up -d
+        docker-compose --env-file configs/environment/.env.foundation -f "${LUCID_HOST_COMPOSE_FOUNDATION}" pull
+        docker-compose --env-file configs/environment/.env.foundation -f "${LUCID_HOST_COMPOSE_FOUNDATION}" up -d
         
         # Wait for services to be healthy
         echo "Waiting for foundation services to be healthy..."
-        timeout 300 bash -c 'until docker-compose --env-file configs/environment/.env.foundation -f configs/docker/docker-compose.foundation.yml ps | grep -q "healthy\|Up"; do sleep 10; done'
+        timeout 300 bash -c 'until docker-compose --env-file configs/environment/.env.foundation -f "${LUCID_HOST_COMPOSE_FOUNDATION}" ps | grep -q "healthy\|Up"; do sleep 10; done'
         
         # Verify foundation services
-        docker-compose --env-file configs/environment/.env.foundation -f configs/docker/docker-compose.foundation.yml ps
+        docker-compose --env-file configs/environment/.env.foundation -f "${LUCID_HOST_COMPOSE_FOUNDATION}" ps
 EOF
     
     log_success "Phase 1: Foundation Services deployed"
@@ -152,15 +162,15 @@ deploy_phase2_core() {
         cd $PI_DEPLOY_DIR
         
         # Deploy core services
-        docker-compose --env-file configs/environment/.env.foundation --env-file configs/environment/.env.core -f configs/docker/docker-compose.core.yml pull
-        docker-compose --env-file configs/environment/.env.foundation --env-file configs/environment/.env.core -f configs/docker/docker-compose.core.yml up -d
+        docker-compose --env-file configs/environment/.env.foundation --env-file configs/environment/.env.core -f "${LUCID_HOST_COMPOSE_CORE}" pull
+        docker-compose --env-file configs/environment/.env.foundation --env-file configs/environment/.env.core -f "${LUCID_HOST_COMPOSE_CORE}" up -d
         
         # Wait for services to be healthy
         echo "Waiting for core services to be healthy..."
-        timeout 300 bash -c 'until docker-compose --env-file configs/environment/.env.foundation --env-file configs/environment/.env.core -f configs/docker/docker-compose.core.yml ps | grep -q "healthy\|Up"; do sleep 10; done'
+        timeout 300 bash -c 'until docker-compose --env-file configs/environment/.env.foundation --env-file configs/environment/.env.core -f "${LUCID_HOST_COMPOSE_CORE}" ps | grep -q "healthy\|Up"; do sleep 10; done'
         
         # Verify core services
-        docker-compose --env-file configs/environment/.env.foundation --env-file configs/environment/.env.core -f configs/docker/docker-compose.core.yml ps
+        docker-compose --env-file configs/environment/.env.foundation --env-file configs/environment/.env.core -f "${LUCID_HOST_COMPOSE_CORE}" ps
 EOF
     
     log_success "Phase 2: Core Services deployed"
@@ -174,15 +184,15 @@ deploy_phase3_application() {
         cd $PI_DEPLOY_DIR
         
         # Deploy application services
-        docker-compose --env-file configs/environment/.env.foundation --env-file configs/environment/.env.application -f configs/docker/docker-compose.application.yml pull
-        docker-compose --env-file configs/environment/.env.foundation --env-file configs/environment/.env.application -f configs/docker/docker-compose.application.yml up -d
+        docker-compose --env-file configs/environment/.env.foundation --env-file configs/environment/.env.application -f "${LUCID_HOST_COMPOSE_APPLICATION}" pull
+        docker-compose --env-file configs/environment/.env.foundation --env-file configs/environment/.env.application -f "${LUCID_HOST_COMPOSE_APPLICATION}" up -d
         
         # Wait for services to be healthy
         echo "Waiting for application services to be healthy..."
-        timeout 300 bash -c 'until docker-compose --env-file configs/environment/.env.foundation --env-file configs/environment/.env.application -f configs/docker/docker-compose.application.yml ps | grep -q "healthy\|Up"; do sleep 10; done'
+        timeout 300 bash -c 'until docker-compose --env-file configs/environment/.env.foundation --env-file configs/environment/.env.application -f "${LUCID_HOST_COMPOSE_APPLICATION}" ps | grep -q "healthy\|Up"; do sleep 10; done'
         
         # Verify application services
-        docker-compose --env-file configs/environment/.env.foundation --env-file configs/environment/.env.application -f configs/docker/docker-compose.application.yml ps
+        docker-compose --env-file configs/environment/.env.foundation --env-file configs/environment/.env.application -f "${LUCID_HOST_COMPOSE_APPLICATION}" ps
 EOF
     
     log_success "Phase 3: Application Services deployed"
@@ -196,15 +206,15 @@ deploy_phase4_support() {
         cd $PI_DEPLOY_DIR
         
         # Deploy support services
-        docker-compose --env-file configs/environment/.env.foundation --env-file configs/environment/.env.support -f configs/docker/docker-compose.support.yml pull
-        docker-compose --env-file configs/environment/.env.foundation --env-file configs/environment/.env.support -f configs/docker/docker-compose.support.yml up -d
+        docker-compose --env-file configs/environment/.env.foundation --env-file configs/environment/.env.support -f "${LUCID_HOST_COMPOSE_SUPPORT}" pull
+        docker-compose --env-file configs/environment/.env.foundation --env-file configs/environment/.env.support -f "${LUCID_HOST_COMPOSE_SUPPORT}" up -d
         
         # Wait for services to be healthy
         echo "Waiting for support services to be healthy..."
-        timeout 300 bash -c 'until docker-compose --env-file configs/environment/.env.foundation --env-file configs/environment/.env.support -f configs/docker/docker-compose.support.yml ps | grep -q "healthy\|Up"; do sleep 10; done'
+        timeout 300 bash -c 'until docker-compose --env-file configs/environment/.env.foundation --env-file configs/environment/.env.support -f "${LUCID_HOST_COMPOSE_SUPPORT}" ps | grep -q "healthy\|Up"; do sleep 10; done'
         
         # Verify support services
-        docker-compose --env-file configs/environment/.env.foundation --env-file configs/environment/.env.support -f configs/docker/docker-compose.support.yml ps
+        docker-compose --env-file configs/environment/.env.foundation --env-file configs/environment/.env.support -f "${LUCID_HOST_COMPOSE_SUPPORT}" ps
 EOF
     
     log_success "Phase 4: Support Services deployed"
@@ -218,15 +228,15 @@ deploy_gui_integration() {
         cd $PI_DEPLOY_DIR
         
         # Deploy GUI integration services
-        docker-compose --env-file configs/environment/.env.foundation --env-file configs/environment/.env.gui -f configs/docker/docker-compose.gui-integration.yml pull
-        docker-compose --env-file configs/environment/.env.foundation --env-file configs/environment/.env.gui -f configs/docker/docker-compose.gui-integration.yml up -d
+        docker-compose --env-file configs/environment/.env.foundation --env-file configs/environment/.env.gui -f "${LUCID_HOST_COMPOSE_GUI_INTEGRATION}" pull
+        docker-compose --env-file configs/environment/.env.foundation --env-file configs/environment/.env.gui -f "${LUCID_HOST_COMPOSE_GUI_INTEGRATION}" up -d
         
         # Wait for services to be healthy
         echo "Waiting for GUI integration services to be healthy..."
-        timeout 300 bash -c 'until docker-compose --env-file configs/environment/.env.foundation --env-file configs/environment/.env.gui -f configs/docker/docker-compose.gui-integration.yml ps | grep -q "healthy\|Up"; do sleep 10; done'
+        timeout 300 bash -c 'until docker-compose --env-file configs/environment/.env.foundation --env-file configs/environment/.env.gui -f "${LUCID_HOST_COMPOSE_GUI_INTEGRATION}" ps | grep -q "healthy\|Up"; do sleep 10; done'
         
         # Verify GUI integration services
-        docker-compose --env-file configs/environment/.env.foundation --env-file configs/environment/.env.gui -f configs/docker/docker-compose.gui-integration.yml ps
+        docker-compose --env-file configs/environment/.env.foundation --env-file configs/environment/.env.gui -f "${LUCID_HOST_COMPOSE_GUI_INTEGRATION}" ps
 EOF
     
     log_success "GUI Integration Services deployed"
@@ -292,7 +302,7 @@ generate_deployment_report() {
     local report_file="$PROJECT_ROOT/logs/deployment-report-$(date +%Y%m%d-%H%M%S).json"
     
     # Get service status from Pi
-    local service_status=$(ssh "$PI_USER@$PI_HOST" "cd $PI_DEPLOY_DIR && docker-compose --env-file configs/environment/.env.foundation --env-file configs/environment/.env.core --env-file configs/environment/.env.application --env-file configs/environment/.env.support -f configs/docker/docker-compose.all.yml ps --format json" 2>/dev/null || echo "[]")
+    local service_status=$(ssh "$PI_USER@$PI_HOST" "cd $PI_DEPLOY_DIR && docker-compose --env-file configs/environment/.env.foundation --env-file configs/environment/.env.core --env-file configs/environment/.env.application --env-file configs/environment/.env.support -f "${LUCID_HOST_COMPOSE_ALL}" ps --format json" 2>/dev/null || echo "[]")
     
     cat > "$report_file" << EOF
 {

@@ -1,6 +1,7 @@
 """
 File: /app/database/models/block.py
 x-lucid-file-path: /app/database/models/block.py
+x-lucid-file-directory: /app/database/models
 x-lucid-file-type: python
 
 Block Data Models

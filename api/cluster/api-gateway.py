@@ -2,6 +2,7 @@
 """
 File: /app/api/cluster/api-gateway.py
 x-lucid-file-path: /app/api/cluster/api-gateway.py
+x-lucid-file-directory: /app/api/cluster
 x-lucid-file-type: python
 
 LUCID API Gateway - SPEC-1B Implementation

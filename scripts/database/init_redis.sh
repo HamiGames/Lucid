@@ -1,5 +1,9 @@
 #!/bin/bash
 # Redis Initialization Script
+# File: /app/scripts/database/init_redis.sh
+# x-lucid-file-path: /app/scripts/database/init_redis.sh
+# x-lucid-file-directory: /app/scripts/database
+# x-lucid-file-type: shell
 # Database Cluster 08: Storage Database
 # Step 3: Redis & Elasticsearch Setup
 

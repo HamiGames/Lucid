@@ -1,5 +1,9 @@
 #!/bin/bash
 # Path: scripts/deployment/reset-pi-networks.sh
+# File: /app/scripts/deployment/reset-pi-networks.sh
+# x-lucid-file-path: /app/scripts/deployment/reset-pi-networks.sh
+# x-lucid-file-directory: /app/scripts/deployment
+# x-lucid-file-type: shell
 # Complete Docker Network Reset for Raspberry Pi with Buildx Rebuild
 # Based on: docker-build-process-plan.md network specifications
 # MUST RUN DIRECTLY ON PI CONSOLE
@@ -10,6 +14,12 @@
 
 set -euo pipefail
 
+
+# x-files-listing.txt → LUCID_HOST_COMPOSE_* (scripts/lib/lucid-repo-paths.sh)
+_LUCID_W="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+while [[ "$_LUCID_W" != "/" && "$(basename "$_LUCID_W")" != "scripts" ]]; do _LUCID_W="$(dirname "$_LUCID_W")"; done
+# shellcheck source=lib/lucid-repo-paths.sh
+source "${_LUCID_W}/lib/lucid-repo-paths.sh"
 # Configuration per plan/build_instruction_docs/pre-build/04-distroless-base-images.md
 REBUILD_BUILDX="${1:-yes}"  # Default: rebuild buildx
 BUILDER_NAME="lucid-builder"  # Per plan specs (hyphen, not underscore)
@@ -389,5 +399,5 @@ log_info "     bash scripts/config/generate-all-env-complete.sh"
 echo ""
 log_info "  2. Deploy Phase 1 (Foundation):"
 log_info "     docker-compose --env-file configs/environment/.env.foundation \\"
-log_info "                    -f configs/docker/docker-compose.foundation.yml up -d"
+log_info "                    -f "${LUCID_HOST_COMPOSE_FOUNDATION}" up -d"
 echo ""

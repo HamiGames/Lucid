@@ -7,6 +7,7 @@
 """
 File: /app/sessions/integration/blockchain_client.py
 x-lucid-file-path: /app/sessions/integration/blockchain_client.py
+x-lucid-file-directory: /app/sessions/integration
 x-lucid-file-type: python
 """
 

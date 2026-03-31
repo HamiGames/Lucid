@@ -4,6 +4,7 @@
 """
 File: /app/apps/recorder/__init__.py
 x-lucid-file-path: /app/apps/recorder/__init__.py
+x-lucid-file-directory: /app/apps/recorder
 x-lucid-file-type: python
 
 Recorder package for Lucid RDP.

@@ -1,5 +1,9 @@
 #!/bin/bash
 # Pre-Phase 1 Pi Deployment Script
+# File: /app/scripts/deployment/pre-phase1-pi-deploy.sh
+# x-lucid-file-path: /app/scripts/deployment/pre-phase1-pi-deploy.sh
+# x-lucid-file-directory: /app/scripts/deployment
+# x-lucid-file-type: shell
 # Ensures all pre-build requirements are complete on the Pi side
 # Based on docker-build-process-plan.md requirements
 

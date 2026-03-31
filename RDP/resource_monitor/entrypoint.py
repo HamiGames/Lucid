@@ -3,6 +3,7 @@
 """
 File: /app/RDP/resource_monitor/entrypoint.py
 x-lucid-file-path: /app/RDP/resource_monitor/entrypoint.py
+x-lucid-file-directory: /app/RDP/resource_monitor
 x-lucid-file-type: python
 
 RDP Resource Monitor Service Entrypoint

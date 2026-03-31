@@ -1,3 +1,8 @@
+# File: /app/configs/container/payment_systems/docker-compose.payment-internal.yml
+# x-lucid-file-path: /app/configs/container/payment_systems/docker-compose.payment-internal.yml
+# x-lucid-file-directory: /app/configs/container/payment_systems
+# x-lucid-file-type: YAML
+
 # LUCID PAYMENT INTERNAL — TRON microservices on lucid-tron-isolated + lucid-pi-network
 # Path: infrastructure/containers/payment_systems/docker-compose.payment-internal.yml
 #

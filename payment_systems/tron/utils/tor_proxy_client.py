@@ -1,6 +1,7 @@
 """
 File: /app/payment_systems/tron/utils/tor_proxy_client.py
 x-lucid-file-path: /app/payment_systems/tron/utils/tor_proxy_client.py
+x-lucid-file-directory: /app/payment_systems/tron/utils
 x-lucid-file-type: python
 
 LUCID TRON Services - Tor Proxy HTTP Client Manager

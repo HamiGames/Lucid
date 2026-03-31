@@ -1,6 +1,7 @@
 """
 File: /app/auth/services/mongodb_clone.py
 x-lucid-file-path: /app/auth/services/mongodb_clone.py
+x-lucid-file-directory: /app/auth/services
 x-lucid-file-type: python
 
 Lucid Authentication Service - MongoDB Clone Manager

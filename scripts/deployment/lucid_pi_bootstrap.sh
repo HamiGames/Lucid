@@ -1,5 +1,9 @@
 # ===== lucid_pi_bootstrap.sh =====
 # One-time (or safe to re-run) bootstrap for Lucid on Raspberry Pi (Ubuntu Server 64-bit)
+# File: /app/scripts/deployment/lucid_pi_bootstrap.sh
+# x-lucid-file-path: /app/scripts/deployment/lucid_pi_bootstrap.sh
+# x-lucid-file-directory: /app/scripts/deployment
+# x-lucid-file-type: shell
 # - Installs Docker Engine + Compose v2 + git
 # - Clones/updates the repo at /opt/lucid (from GitHub)
 # - Builds Tor image (lucid/tor:dev)
@@ -13,9 +17,9 @@ PI_USER="${PI_USER:-$USER}"
 REPO_URL="${REPO_URL:-https://github.com/HamiGames/Lucid.git}"
 BRANCH="${BRANCH:-main}"
 PI_PATH="${PI_PATH:-/opt/lucid}"
-COMPOSE_DIR="$PI_PATH/06-orchestration-runtime/compose"
+COMPOSE_DIR="$PI_PATH/infrastructure/compose"
 COMPOSE_FILE="$COMPOSE_DIR/lucid-dev.yaml"
-TOR_PATH="$PI_PATH/02-network-security/tor"
+TOR_PATH="$PI_PATH/02_network_security/tor"
 TOR_IMAGE="lucid/tor:dev"
 OVERRIDE_FILE="$COMPOSE_DIR/tor-image-override.yaml"
 

@@ -33,15 +33,6 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     DEBIAN_FRONTEND=noninteractive
 
 WORKDIR /build
-# LUCID_IMAGE_CONFIG: .env.secrets + .env.master + host-config + container services (builder)
-RUN mkdir -p /build/configs /build/service_configs
-COPY configs/ ./configs/
-RUN rm -rf ./configs/environment && \
-    echo ".env.* files removed"
-COPY configs/environment/.env.secrets ./configs/.env.secrets
-COPY master-env-config.txt ./configs/.env.master
-COPY infrastructure/containers/host-config.yml /build/configs/host-config.yml
-COPY infrastructure/containers/services/ /build/service_configs/
 
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
@@ -63,6 +54,11 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
         python3-dev \
         python3-pip \
         python3-setuptools \
+        openssl \
+        dnsutils \
+        xxd \
+        rustc \
+        cargo \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
@@ -91,28 +87,58 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 # LUCID_X_FILES_SKELETON_BEGIN
 # Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
 RUN set -eux; \
-    mkdir -p '.' './common' './configs' './gui_api_bridge' './service_configs' './common/governance' './common/security' './common/server-tools' './common/tor' './configs/.ssh' './configs/container' './configs/database' './configs/docker' './configs/environment' './configs/integration' './configs/logging' './configs/pi' './configs/secrets' './configs/security' './configs/tor' './gui_api_bridge/config' './gui_api_bridge/gui_api_bridge' './gui_api_bridge/integration' './gui_api_bridge/middleware' './gui_api_bridge/models' './gui_api_bridge/routers' './gui_api_bridge/services' './gui_api_bridge/utils' './gui_api_bridge/{config,middleware,routers,services,integration,models,utils}' './service_configs/blockchain' './service_configs/distroless' './service_configs/logging' './service_configs/multi-stage' './service_configs/node' './service_configs/payment_services' './service_configs/rdp' './service_configs/security' './service_configs/service_mesh' './service_configs/sessions' './service_configs/x_lucid_cluster_calibration' './configs/container/admin' './configs/container/auth' './configs/container/base' './configs/container/blockchain' './configs/container/database' './configs/container/electron_gui' './configs/container/gui' './configs/container/node' './configs/container/payment_systems' './configs/container/rdp' './configs/container/server' './configs/container/sessions' './configs/container/storage' './configs/container/tor' './configs/database/elasticsearch' './configs/database/redis' './configs/docker/distroless' './configs/docker/docs' './configs/docker/multi-stage' './configs/environment/development' './configs/environment/pi' './configs/environment/production' './configs/environment/staging' './configs/pi/ssh' './gui_api_bridge/gui_api_bridge/integration' './gui_api_bridge/gui_api_bridge/middleware' './gui_api_bridge/gui_api_bridge/models' './gui_api_bridge/gui_api_bridge/routers' './gui_api_bridge/gui_api_bridge/services' './gui_api_bridge/gui_api_bridge/utils'; \
+    mkdir -p '.' './common' './configs' './electron_gui' './gui_api_bridge' './gui_hardware_manager' './gui_tor_manager' './scripts' './service_configs' './service_mesh' './common/governance' './common/security' './common/server-tools' './common/tor' './configs/.devcontainer' './configs/.ssh' './configs/admin' './configs/auth' './configs/base' './configs/blockchain' './configs/compose' './configs/container' './configs/database' './configs/docker' './configs/electron_gui' './configs/environment' './configs/gui' './configs/integration' './configs/logging' './configs/network' './configs/node' './configs/overlord' './configs/payment_systems' './configs/pi' './configs/rdp' './configs/secrets' './configs/security' './configs/server' './configs/tor' './configs/user' './electron_gui/assets' './electron_gui/configs' './electron_gui/dist' './electron_gui/distroless' './electron_gui/main' './electron_gui/renderer' './electron_gui/scripts' './electron_gui/shared' './electron_gui/tests' './electron_gui/utils' './gui_api_bridge/config' './gui_api_bridge/gui_api_bridge' './gui_api_bridge/integration' './gui_api_bridge/middleware' './gui_api_bridge/models' './gui_api_bridge/routers' './gui_api_bridge/services' './gui_api_bridge/utils' './gui_api_bridge/{config,middleware,routers,services,integration,models,utils}' './gui_hardware_manager/gui_hardware_manager' './gui_tor_manager/gui_tor_manager' './scripts/build' './scripts/compliance' './scripts/config' './scripts/contracts' './scripts/database' './scripts/deployment' './scripts/devcontainer' './scripts/docs' './scripts/foundation' './scripts/gui' './scripts/hardware' './scripts/integration' './scripts/lib' './scripts/load' './scripts/logging' './scripts/maintenance' './scripts/migration' './scripts/monitoring' './scripts/network' './scripts/registry' './scripts/secrets' './scripts/security' './scripts/services' './scripts/testing' './scripts/validation' './scripts/verification' './service_configs/blockchain' './service_configs/distroless' './service_configs/kubernetes' './service_configs/logging' './service_configs/multi-stage' './service_configs/node' './service_configs/payment_services' './service_configs/rdp' './service_configs/security' './service_configs/service_mesh' './service_configs/sessions' './service_configs/storage' './service_configs/tor' './service_configs/x_lucid_cluster_calibration' './service_mesh/communication' './service_mesh/config' './service_mesh/controller' './service_mesh/discovery' './service_mesh/docs' './service_mesh/security' './service_mesh/sidecar' './configs/admin/admin-system-gateway' './configs/admin/config' './configs/blockchain/chain-to-pay' './configs/blockchain/config' './configs/container/admin' './configs/container/auth' './configs/container/base' './configs/container/blockchain' './configs/container/database' './configs/container/electron_gui' './configs/container/gui' './configs/container/node' './configs/container/payment_systems' './configs/container/rdp' './configs/container/server' './configs/container/sessions' './configs/container/storage' './configs/container/tor' './configs/database/elasticsearch' './configs/database/redis' './configs/docker/compose' './configs/docker/distroless' './configs/docker/docs' './configs/docker/multi-stage' './configs/docker/on-system-chain' './configs/environment/development' './configs/environment/pi' './configs/environment/production' './configs/environment/staging' './configs/node/config' './configs/node/node-system-gateway' './configs/overlord/runtime' './configs/pi/ssh' './electron_gui/assets/icons' './electron_gui/assets/images' './electron_gui/assets/tor' './electron_gui/dist/main' './electron_gui/dist/shared' './electron_gui/main/ipc' './electron_gui/renderer/admin' './electron_gui/renderer/common' './electron_gui/renderer/developer' './electron_gui/renderer/node' './electron_gui/renderer/user' './electron_gui/tests/e2e' './gui_api_bridge/gui_api_bridge/integration' './gui_api_bridge/gui_api_bridge/middleware' './gui_api_bridge/gui_api_bridge/models' './gui_api_bridge/gui_api_bridge/routers' './gui_api_bridge/gui_api_bridge/services' './gui_api_bridge/gui_api_bridge/utils' './gui_hardware_manager/gui_hardware_manager/integration' './gui_hardware_manager/gui_hardware_manager/middleware' './gui_hardware_manager/gui_hardware_manager/models' './gui_hardware_manager/gui_hardware_manager/routers' './gui_hardware_manager/gui_hardware_manager/services' './gui_hardware_manager/gui_hardware_manager/utils' './gui_tor_manager/gui_tor_manager/config' './gui_tor_manager/gui_tor_manager/integration' './gui_tor_manager/gui_tor_manager/middleware' './gui_tor_manager/gui_tor_manager/models' './gui_tor_manager/gui_tor_manager/routers' './gui_tor_manager/gui_tor_manager/services' './gui_tor_manager/gui_tor_manager/utils' './scripts/build/components' './scripts/build/core' './scripts/build/distroless' './scripts/build/utils' './scripts/compliance/distroless' './scripts/compliance/general' './scripts/deployment/devcontainer' './scripts/deployment/distroless' './scripts/deployment/pi' './scripts/deployment/utils' './scripts/maintenance/cleanup' './scripts/maintenance/optimization' './scripts/maintenance/recovery' './scripts/network/diagnostics' './scripts/network/security' './scripts/network/setup' './scripts/testing/integration' './scripts/testing/unit' './scripts/testing/utils' './service_configs/kubernetes/01_configmaps' './service_configs/kubernetes/02-secrets' './service_configs/kubernetes/03-databases' './service_configs/kubernetes/04-auth' './service_configs/kubernetes/04-network' './service_configs/kubernetes/05-core' './service_configs/kubernetes/06-application' './service_configs/kubernetes/07-support' './service_configs/kubernetes/08-ingress' './service_configs/kubernetes/patches' './service_mesh/config/policies' './service_mesh/config/services' './service_mesh/sidecar/envoy' './service_mesh/sidecar/proxy' './configs/docker/compose/mongodb' './configs/docker/compose/nats' './configs/docker/compose/nginx' './configs/docker/compose/redis' './configs/docker/compose/vault' './configs/docker/distroless/base' './electron_gui/dist/main/ipc' './electron_gui/renderer/admin/components' './electron_gui/renderer/admin/pages' './electron_gui/renderer/admin/services' './electron_gui/renderer/admin/store' './electron_gui/renderer/admin/styles' './electron_gui/renderer/common/components' './electron_gui/renderer/common/hooks' './electron_gui/renderer/common/store' './electron_gui/renderer/common/styles' './electron_gui/renderer/developer/components' './electron_gui/renderer/developer/pages' './electron_gui/renderer/developer/services' './electron_gui/renderer/developer/styles' './electron_gui/renderer/node/components' './electron_gui/renderer/node/pages' './electron_gui/renderer/node/services' './electron_gui/renderer/node/styles' './electron_gui/renderer/user/components' './electron_gui/renderer/user/pages' './electron_gui/renderer/user/services' './electron_gui/renderer/user/styles' './service_mesh/sidecar/envoy/config' './electron_gui/renderer/admin/components/modals'; \
     for d in \
       '.' \
       './common' \
       './configs' \
+      './electron_gui' \
       './gui_api_bridge' \
+      './gui_hardware_manager' \
+      './gui_tor_manager' \
+      './scripts' \
       './service_configs' \
+      './service_mesh' \
       './common/governance' \
       './common/security' \
       './common/server-tools' \
       './common/tor' \
+      './configs/.devcontainer' \
       './configs/.ssh' \
+      './configs/admin' \
+      './configs/auth' \
+      './configs/base' \
+      './configs/blockchain' \
+      './configs/compose' \
       './configs/container' \
       './configs/database' \
       './configs/docker' \
+      './configs/electron_gui' \
       './configs/environment' \
+      './configs/gui' \
       './configs/integration' \
       './configs/logging' \
+      './configs/network' \
+      './configs/node' \
+      './configs/overlord' \
+      './configs/payment_systems' \
       './configs/pi' \
+      './configs/rdp' \
       './configs/secrets' \
       './configs/security' \
+      './configs/server' \
       './configs/tor' \
+      './configs/user' \
+      './electron_gui/assets' \
+      './electron_gui/configs' \
+      './electron_gui/dist' \
+      './electron_gui/distroless' \
+      './electron_gui/main' \
+      './electron_gui/renderer' \
+      './electron_gui/scripts' \
+      './electron_gui/shared' \
+      './electron_gui/tests' \
+      './electron_gui/utils' \
       './gui_api_bridge/config' \
       './gui_api_bridge/gui_api_bridge' \
       './gui_api_bridge/integration' \
@@ -122,8 +148,37 @@ RUN set -eux; \
       './gui_api_bridge/services' \
       './gui_api_bridge/utils' \
       './gui_api_bridge/{config,middleware,routers,services,integration,models,utils}' \
+      './gui_hardware_manager/gui_hardware_manager' \
+      './gui_tor_manager/gui_tor_manager' \
+      './scripts/build' \
+      './scripts/compliance' \
+      './scripts/config' \
+      './scripts/contracts' \
+      './scripts/database' \
+      './scripts/deployment' \
+      './scripts/devcontainer' \
+      './scripts/docs' \
+      './scripts/foundation' \
+      './scripts/gui' \
+      './scripts/hardware' \
+      './scripts/integration' \
+      './scripts/lib' \
+      './scripts/load' \
+      './scripts/logging' \
+      './scripts/maintenance' \
+      './scripts/migration' \
+      './scripts/monitoring' \
+      './scripts/network' \
+      './scripts/registry' \
+      './scripts/secrets' \
+      './scripts/security' \
+      './scripts/services' \
+      './scripts/testing' \
+      './scripts/validation' \
+      './scripts/verification' \
       './service_configs/blockchain' \
       './service_configs/distroless' \
+      './service_configs/kubernetes' \
       './service_configs/logging' \
       './service_configs/multi-stage' \
       './service_configs/node' \
@@ -132,7 +187,20 @@ RUN set -eux; \
       './service_configs/security' \
       './service_configs/service_mesh' \
       './service_configs/sessions' \
+      './service_configs/storage' \
+      './service_configs/tor' \
       './service_configs/x_lucid_cluster_calibration' \
+      './service_mesh/communication' \
+      './service_mesh/config' \
+      './service_mesh/controller' \
+      './service_mesh/discovery' \
+      './service_mesh/docs' \
+      './service_mesh/security' \
+      './service_mesh/sidecar' \
+      './configs/admin/admin-system-gateway' \
+      './configs/admin/config' \
+      './configs/blockchain/chain-to-pay' \
+      './configs/blockchain/config' \
       './configs/container/admin' \
       './configs/container/auth' \
       './configs/container/base' \
@@ -149,42 +217,128 @@ RUN set -eux; \
       './configs/container/tor' \
       './configs/database/elasticsearch' \
       './configs/database/redis' \
+      './configs/docker/compose' \
       './configs/docker/distroless' \
       './configs/docker/docs' \
       './configs/docker/multi-stage' \
+      './configs/docker/on-system-chain' \
       './configs/environment/development' \
       './configs/environment/pi' \
       './configs/environment/production' \
       './configs/environment/staging' \
+      './configs/node/config' \
+      './configs/node/node-system-gateway' \
+      './configs/overlord/runtime' \
       './configs/pi/ssh' \
+      './electron_gui/assets/icons' \
+      './electron_gui/assets/images' \
+      './electron_gui/assets/tor' \
+      './electron_gui/dist/main' \
+      './electron_gui/dist/shared' \
+      './electron_gui/main/ipc' \
+      './electron_gui/renderer/admin' \
+      './electron_gui/renderer/common' \
+      './electron_gui/renderer/developer' \
+      './electron_gui/renderer/node' \
+      './electron_gui/renderer/user' \
+      './electron_gui/tests/e2e' \
       './gui_api_bridge/gui_api_bridge/integration' \
       './gui_api_bridge/gui_api_bridge/middleware' \
       './gui_api_bridge/gui_api_bridge/models' \
       './gui_api_bridge/gui_api_bridge/routers' \
       './gui_api_bridge/gui_api_bridge/services' \
       './gui_api_bridge/gui_api_bridge/utils' \
+      './gui_hardware_manager/gui_hardware_manager/integration' \
+      './gui_hardware_manager/gui_hardware_manager/middleware' \
+      './gui_hardware_manager/gui_hardware_manager/models' \
+      './gui_hardware_manager/gui_hardware_manager/routers' \
+      './gui_hardware_manager/gui_hardware_manager/services' \
+      './gui_hardware_manager/gui_hardware_manager/utils' \
+      './gui_tor_manager/gui_tor_manager/config' \
+      './gui_tor_manager/gui_tor_manager/integration' \
+      './gui_tor_manager/gui_tor_manager/middleware' \
+      './gui_tor_manager/gui_tor_manager/models' \
+      './gui_tor_manager/gui_tor_manager/routers' \
+      './gui_tor_manager/gui_tor_manager/services' \
+      './gui_tor_manager/gui_tor_manager/utils' \
+      './scripts/build/components' \
+      './scripts/build/core' \
+      './scripts/build/distroless' \
+      './scripts/build/utils' \
+      './scripts/compliance/distroless' \
+      './scripts/compliance/general' \
+      './scripts/deployment/devcontainer' \
+      './scripts/deployment/distroless' \
+      './scripts/deployment/pi' \
+      './scripts/deployment/utils' \
+      './scripts/maintenance/cleanup' \
+      './scripts/maintenance/optimization' \
+      './scripts/maintenance/recovery' \
+      './scripts/network/diagnostics' \
+      './scripts/network/security' \
+      './scripts/network/setup' \
+      './scripts/testing/integration' \
+      './scripts/testing/unit' \
+      './scripts/testing/utils' \
+      './service_configs/kubernetes/01_configmaps' \
+      './service_configs/kubernetes/02-secrets' \
+      './service_configs/kubernetes/03-databases' \
+      './service_configs/kubernetes/04-auth' \
+      './service_configs/kubernetes/04-network' \
+      './service_configs/kubernetes/05-core' \
+      './service_configs/kubernetes/06-application' \
+      './service_configs/kubernetes/07-support' \
+      './service_configs/kubernetes/08-ingress' \
+      './service_configs/kubernetes/patches' \
+      './service_mesh/config/policies' \
+      './service_mesh/config/services' \
+      './service_mesh/sidecar/envoy' \
+      './service_mesh/sidecar/proxy' \
+      './configs/docker/compose/mongodb' \
+      './configs/docker/compose/nats' \
+      './configs/docker/compose/nginx' \
+      './configs/docker/compose/redis' \
+      './configs/docker/compose/vault' \
+      './configs/docker/distroless/base' \
+      './electron_gui/dist/main/ipc' \
+      './electron_gui/renderer/admin/components' \
+      './electron_gui/renderer/admin/pages' \
+      './electron_gui/renderer/admin/services' \
+      './electron_gui/renderer/admin/store' \
+      './electron_gui/renderer/admin/styles' \
+      './electron_gui/renderer/common/components' \
+      './electron_gui/renderer/common/hooks' \
+      './electron_gui/renderer/common/store' \
+      './electron_gui/renderer/common/styles' \
+      './electron_gui/renderer/developer/components' \
+      './electron_gui/renderer/developer/pages' \
+      './electron_gui/renderer/developer/services' \
+      './electron_gui/renderer/developer/styles' \
+      './electron_gui/renderer/node/components' \
+      './electron_gui/renderer/node/pages' \
+      './electron_gui/renderer/node/services' \
+      './electron_gui/renderer/node/styles' \
+      './electron_gui/renderer/user/components' \
+      './electron_gui/renderer/user/pages' \
+      './electron_gui/renderer/user/services' \
+      './electron_gui/renderer/user/styles' \
+      './service_mesh/sidecar/envoy/config' \
+      './electron_gui/renderer/admin/components/modals' \
     ; do \
       printf 'LUCID_X_FILES_SKELETON_%s' "$(date +%s)" > "$d/.keep"; \
       touch "$d/.keep"; \
     done
 # LUCID_X_FILES_SKELETON_END
 
-RUN pip install --no-cache-dir --no-index --find-links /build/wheels -r ./requirements.txt && \
-    echo "pip install complete"
+COPY configs/ ./configs/
+RUN rm -rf ./configs/environment && \
+    echo ".env.* files removed"
+COPY configs/environment/.env.secrets ./configs/.env.secrets
+COPY master-env-config.txt ./configs/.env.master
+COPY infrastructure/containers/host-config.yml ./service_configs/host-config.yml
+COPY infrastructure/containers/services/ ./service_configs/
 
-RUN echo "=== Verifying pip installation ===" && \
-    python3.11 -c "import fastapi, uvicorn, pydantic, motor, pymongo, redis, cryptography, httpx, websockets, aiohttp, structlog, prometheus_client; print('critical packages OK')" && \
-    test -d /usr/local/lib/python3.11/site-packages
-
-RUN echo "LUCID_GUI_API_BRIDGE_PACKAGES_$(date +%s)" > /usr/local/lib/python3.11/site-packages/.lucid-marker && \
-    echo "LUCID_GUI_API_BRIDGE_BIN_$(date +%s)" > /usr/local/bin/.lucid-marker && \
-    chmod 644 /usr/local/lib/python3.11/site-packages/.lucid-marker /usr/local/bin/.lucid-marker
-
-# Container directory layout (03_api_gateway/Dockerfile): tmp, common/tor, kubernetes configmaps
-RUN mkdir -p /build/tmp /build/common /build/kubernetes && \
-    printf "LUCID_GUI_API_BRIDGE_TMP_$(date +%s)" > /build/tmp/.keep && \
-    printf "LUCID_GUI_API_BRIDGE_COMMON_$(date +%s)" > /build/common/.keep && \
-    printf "LUCID_GUI_API_BRIDGE_K8S_$(date +%s)" > /build/configs/.keep
+COPY scripts/ ./scripts/
 
 COPY common/__init__.py /build/common/__init__.py
 COPY common/tor/ /build/common/tor/
@@ -192,25 +346,12 @@ COPY service_configs/kubernetes/01_configmaps/ /build/configs/
 
 # Application modules (explicit per-directory COPY)
 COPY gui_api_bridge/gui_api_bridge/ ./gui_api_bridge/
-COPY gui_api_bridge/gui_api_bridge/config/ ./gui_api_bridge/config/
-COPY gui_api_bridge/gui_api_bridge/routers/ ./gui_api_bridge/routers/
-COPY gui_api_bridge/gui_api_bridge/middleware/ ./gui_api_bridge/middleware/
-COPY gui_api_bridge/gui_api_bridge/integration/ ./gui_api_bridge/integration/
-COPY gui_api_bridge/gui_api_bridge/models/ ./gui_api_bridge/models/
-COPY gui_api_bridge/gui_api_bridge/services/ ./gui_api_bridge/services/
-COPY gui_api_bridge/gui_api_bridge/utils/ ./gui_api_bridge/utils/
+COPY gui_hardware_manager/ ./gui_hardware_manager/
+COPY gui_tor_manager/ ./gui_tor_manager/
+COPY infrastructure/service_mesh/ ./service_mesh/
+COPY electron_gui/ ./electron_gui/
 
-RUN echo "=== Verifying gui_api_bridge sources ===" && \
-    test -f ./gui_api_bridge/entrypoint.py && \
-    test -f ./gui_api_bridge/main.py && \
-    test -f ./gui_api_bridge/config.py && \
-    test -f ./gui_api_bridge/gui_api_bridge_service.py && \
-    test -d ./gui_api_bridge/routers && \
-    test -d ./gui_api_bridge/services && \
-    test -d ./gui_api_bridge/middleware && \
-    test -f ./common/__init__.py && \
-    test -f ./configs/api-gateway-config.yaml && \
-    PYTHONPATH=/build python3.11 -c "from gui_api_bridge.main import app; print('import OK')"
+
 
 COPY <<'PY' /build/tmp/verify_runtime_gui_api_bridge.py
 import os
@@ -224,7 +365,7 @@ def main() -> int:
         "/app/gui_api_bridge/main.py",
         "/app/configs/host-config.yml",
         "/app/common/__init__.py",
-        "/build/configs/api-gateway-config.yaml",
+        "/app/configs/api-gateway-config.yaml",
     ]
     req_dirs = [
         "/app/usr/local/lib/python3.11/site-packages",
@@ -258,53 +399,63 @@ WORKDIR /app
 ARG BUILD_DATE
 ARG VCS_REF
 ARG VERSION=1.0.0
+# Lucid Tor egress / network isolation (PUBLIC_TOR_IP: master-env-config.txt; compose: lucid-tor-egress-network)
+ARG PUBLIC_TOR_IP=${PUBLIC_TOR_IP}
+ARG LUCID_INTERNAL_NETWORK_NAME=lucid-pi-network
+ARG LUCID_TOR_EGRESS_NETWORK_NAME=lucid-tor-egress-network
 
 LABEL maintainer="Lucid Development Team" \
+      com.lucid.network.internal="${LUCID_INTERNAL_NETWORK_NAME}" \
+      com.lucid.network.tor_egress="${LUCID_TOR_EGRESS_NETWORK_NAME}" \
+      com.lucid.tor.public_egress_ip="${PUBLIC_TOR_IP}" \
       org.opencontainers.image.title="Lucid GUI API Bridge" \
       org.opencontainers.image.description="Distroless GUI API Bridge for Lucid project" \
       org.opencontainers.image.version="${VERSION}" \
       org.opencontainers.image.revision="${VCS_REF}" \
       org.opencontainers.image.created="${BUILD_DATE}" \
+      com.lucid.plane="support" \
       com.lucid.service="gui-api-bridge" \
+      com.lucid.layer="3" \
       com.lucid.platform="arm64" \
-      com.lucid.cluster="gui-integration" \
+      com.lucid.architecture="linux/arm64" \
       com.lucid.security="distroless" \
-      com.lucid.hostconfig.service_name="gui-api-bridge" \
-      com.lucid.hostconfig.port="8102" \
-      com.lucid.hostconfig.upstream_api_gateway_host="api-gateway" \
-      com.lucid.hostconfig.upstream_api_gateway_port="8080"
+      com.lucid.vulnerabilities="zero" \
+      com.lucid.expose="8203" \
+      com.lucid.cluster="gui-integration" \
+      com.lucid.tor.compatible="true" \
+      com.lucid.env.config=".env.master,.env.secrets" \
+      com.lucid.phase="gui" \
+      com.lucid.service_id="com.lucid.dockerfile.v1.ae1e151ee8579eac.infrastructure.containers.gui.Dockerfile.gui-api-bridge" \
+      onion.lucid.service_id="lucid-ae1e151ee8579eac-infrastructure-container" \
+      org.lucid.service_id="org.lucid.dockerfile.v1.ae1e151ee8579eac:infrastructure/containers/gui/Dockerfile.gui-api-bridge" \
 
-ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
-    PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONPATH=/app:/app/usr/local/lib/python3.11/site-packages \
-    PYTHONIOENCODING=utf-8 \
-    LANG=C.UTF-8 \
-    LC_ALL=C.UTF-8 \
-    PORT=8102 \
-    SERVICE_NAME=gui-api-bridge \
-    LUCID_HOST_CONFIG_PATH=/app/configs/host-config.yml \
-    LUCID_HOST_CONFIG_SERVICE_KEY=gui_api_bridge \
+ENV     PUBLIC_TOR_IP="${PUBLIC_TOR_IP}" \
+    LUCID_INTERNAL_NETWORK_NAME="${LUCID_INTERNAL_NETWORK_NAME}" \
+    LUCID_TOR_EGRESS_NETWORK_NAME="${LUCID_TOR_EGRESS_NETWORK_NAME}" \
+    PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
+    PYTHONUNBUFFERED="1" \
+    PYTHONDONTWRITEBYTECODE="1" \
+    PYTHONPATH="/app:/app/usr/local/lib/python3.11/site-packages" \
+    PYTHONIOENCODING="utf-8" \
+    LANG="C.UTF-8" \
+    LC_ALL="C.UTF-8" \
+    LUCID_API_GATEWAY_HOST="api-gateway" \
+    LUCID_API_GATEWAY_PORT="8080" \
+    LUCID_HOST_CONFIG_PATH="/app/configs/host-config.yml" \
+    LUCID_HOST_CONFIG_SERVICE_NAME=gui_api_bridge \
     LUCID_SERVICE_HOST_IP=172.20.10.61 \
-    LUCID_SERVICE_HTTP_PATH=http://gui-api-bridge:8102/app \
-    LUCID_API_GATEWAY_HOST=api-gateway \
-    LUCID_API_GATEWAY_PORT=8080 \
-    TOR_ONION_SERVICE_DIR=/app/run/lucid/onion \
-    TOR_COOKIE_TARGETS=/app/run/lucid/onion/control_auth_cookie
-# LUCID_RUNTIME_COPY_FROM_BUILD_BEGIN
-# Generated: same directory set as LUCID_X_FILES_SKELETON (./ under WORKDIR /build).
-COPY --from=builder --chown=65532:65532 /build/common/ /app/common/
-COPY --from=builder --chown=65532:65532 /build/configs/ /app/configs/
-COPY --from=builder --chown=65532:65532 /build/gui_api_bridge/ /app/gui_api_bridge/
-COPY --from=builder --chown=65532:65532 /build/service_configs/ /app/service_configs/
-# LUCID_RUNTIME_COPY_FROM_BUILD_END
-
+    LUCID_SERVICE_HTTP_PATH=http://gui-api-bridge:8203/app \
+    PORT="8102" \
+    SERVICE_NAME="gui-api-bridge" \
+    TOR_COOKIE_TARGETS="/app/run/lucid/onion/control_auth_cookie" \
+    TOR_ONION_SERVICE_DIR="/app/run/lucid/onion"
 # LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
 # Generated: apt + RUN scaffold (mkdir/printf/touch/chown) -> FHS (not ./ or /build/; lib_search_and_inject.py).
 COPY --from=builder --chown=65532:65532 /usr/lib/*/libffi.so* /app/usr/lib/
 COPY --from=builder --chown=65532:65532 /usr/lib/*/libssl.so* /app/usr/lib/
 COPY --from=builder --chown=65532:65532 /usr/lib/*/ossl-modules/ /app/usr/lib/
 COPY --from=builder --chown=65532:65532 /usr/lib/*/libcurl.so* /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /bin/ /app/bin/
 COPY --from=builder --chown=65532:65532 /etc/ssl/ /app/etc/ssl/
 COPY --from=builder --chown=65532:65532 /usr/bin/ /app/usr/bin/
 COPY --from=builder --chown=65532:65532 /usr/lib/python3.11/ /app/usr/lib/python3.11/
@@ -314,6 +465,19 @@ COPY --from=builder --chown=65532:65532 /usr/local/lib/python3.11/ /app/usr/loca
 COPY --from=builder --chown=65532:65532 /var/lib/ /app/var/lib/
 COPY --from=builder --chown=65532:65532 /var/run/ /app/var/run/
 # LUCID_RUNTIME_COPY_FROM_BUILDER_APT_END
+
+# LUCID_RUNTIME_COPY_FROM_BUILD_BEGIN
+# Generated: same directory set as LUCID_X_FILES_SKELETON (./ under WORKDIR /build).
+COPY --from=builder --chown=65532:65532 /build/common/ /app/common/
+COPY --from=builder --chown=65532:65532 /build/configs/ /app/configs/
+COPY --from=builder --chown=65532:65532 /build/electron_gui/ /app/electron_gui/
+COPY --from=builder --chown=65532:65532 /build/gui_api_bridge/ /app/gui_api_bridge/
+COPY --from=builder --chown=65532:65532 /build/gui_hardware_manager/ /app/gui_hardware_manager/
+COPY --from=builder --chown=65532:65532 /build/gui_tor_manager/ /app/gui_tor_manager/
+COPY --from=builder --chown=65532:65532 /build/scripts/ /app/scripts/
+COPY --from=builder --chown=65532:65532 /build/service_configs/ /app/service_configs/
+COPY --from=builder --chown=65532:65532 /build/service_mesh/ /app/service_mesh/
+# LUCID_RUNTIME_COPY_FROM_BUILD_END
 # LUCID_IMAGE_CONFIG: .env.secrets + .env.master + host-config + container services (runtime)
 COPY --from=builder --chown=65532:65532 /build/configs/.env.secrets /app/configs/.env.secrets
 COPY --from=builder --chown=65532:65532 /build/configs/.env.master /app/configs/.env.master
@@ -337,13 +501,13 @@ COPY --from=builder --chown=65532:65532 /build/tmp/verify_runtime_gui_api_bridge
 RUN ["/app/usr/bin/python3.11", "/app/tmp/verify_runtime_gui_api_bridge.py"]
 RUN ["rm", "-f", "/app/tmp/verify_runtime_gui_api_bridge.py"]
 
-EXPOSE 8102
+EXPOSE 8203
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD ["/app/usr/bin/python3.11", "-c", "import socket; s = socket.socket(); s.settimeout(2); r = s.connect_ex(('127.0.0.1', 8102)); s.close(); exit(0 if r == 0 else 1)"]
+    CMD ["/app/usr/bin/python3.11", "-c", "import socket; s = socket.socket(); s.settimeout(2); r = s.connect_ex(('gui-api-bridge', 8203)); s.close(); exit(0 if r == 0 else 1)"]
 
 USER 65532:65532
 
 ENTRYPOINT ["/app/usr/bin/tini", "--"]
 
-CMD ["/app/usr/bin/python3.11", "/app/gui_api_bridge/entrypoint.py"]
+CMD ["/app/usr/bin/python3.11", "-m", "gui_api_bridge.main"]

@@ -1,6 +1,7 @@
 """
 File: /app/sessions/processor/config.py
 x-lucid-file-path: /app/sessions/processor/config.py
+x-lucid-file-directory: /app/sessions/processor
 x-lucid-file-type: python
 
 Configuration Module for Chunk Processor

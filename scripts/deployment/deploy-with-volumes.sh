@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# File: /app/scripts/deployment/deploy-with-volumes.sh
+# x-lucid-file-path: /app/scripts/deployment/deploy-with-volumes.sh
+# x-lucid-file-directory: /app/scripts/deployment
+# x-lucid-file-type: shell
 # =============================================================================
 # Lucid Deployment with Automatic Volume Setup
 # Automatically creates volume mounts and deploys Docker Compose files
@@ -7,6 +11,12 @@
 
 set -euo pipefail
 
+
+# x-files-listing.txt → LUCID_HOST_COMPOSE_* (scripts/lib/lucid-repo-paths.sh)
+_LUCID_W="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+while [[ "$_LUCID_W" != "/" && "$(basename "$_LUCID_W")" != "scripts" ]]; do _LUCID_W="$(dirname "$_LUCID_W")"; done
+# shellcheck source=lib/lucid-repo-paths.sh
+source "${_LUCID_W}/lib/lucid-repo-paths.sh"
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -18,11 +28,10 @@ NC='\033[0m' # No Color
 PI_USER="${PI_USER:-pickme}"
 PI_HOST="${PI_HOST:-192.168.0.75}"
 PI_SSH_KEY_PATH="${PI_SSH_KEY_PATH:-~/.ssh/id_rsa}"
-LUCID_ROOT="/mnt/myssd/Lucid/Lucid"
-
 # Script directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+PROJECT_ROOT="$LUCID_REPO_ROOT"
+LUCID_ROOT="$PROJECT_ROOT"
 
 # Logging function
 log_step() {
@@ -62,17 +71,17 @@ show_help() {
     echo "  PI_HOST         Pi hostname/IP"
     echo "  PI_SSH_KEY_PATH SSH key path"
     echo ""
-    echo "Examples:"
-    echo "  $0 configs/docker/docker-compose.foundation.yml"
-    echo "  $0 -u pi -H 192.168.1.100 configs/docker/docker-compose.core.yml"
-    echo "  $0 --build --detach configs/docker/docker-compose.all.yml"
+    echo "Examples (x-files-listing host rel paths; run from repo root):"
+    echo "  $0 ${LUCID_HOST_REL_COMPOSE_FOUNDATION}"
+    echo "  $0 -u pi -H 192.168.1.100 ${LUCID_HOST_REL_COMPOSE_CORE}"
+    echo "  $0 --build --detach ${LUCID_HOST_REL_COMPOSE_ALL}"
     echo ""
     echo "Available Compose Files:"
-    echo "  - configs/docker/docker-compose.foundation.yml (Phase 1)"
-    echo "  - configs/docker/docker-compose.core.yml (Phase 2)"
-    echo "  - configs/docker/docker-compose.application.yml (Phase 3)"
-    echo "  - configs/docker/docker-compose.support.yml (Phase 4)"
-    echo "  - configs/docker/docker-compose.all.yml (All phases)"
+    echo "  - ${LUCID_HOST_REL_COMPOSE_FOUNDATION} (Phase 1)"
+    echo "  - ${LUCID_HOST_REL_COMPOSE_CORE} (Phase 2)"
+    echo "  - ${LUCID_HOST_REL_COMPOSE_APPLICATION} (Phase 3)"
+    echo "  - ${LUCID_HOST_REL_COMPOSE_SUPPORT} (Phase 4)"
+    echo "  - ${LUCID_HOST_REL_COMPOSE_ALL} (All phases)"
 }
 
 # Setup volumes on Pi

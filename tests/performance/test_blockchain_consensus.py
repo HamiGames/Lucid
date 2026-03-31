@@ -1,4 +1,9 @@
 """
+File: /app/tests/performance/test_blockchain_consensus.py
+x-lucid-file-path: /app/tests/performance/test_blockchain_consensus.py
+x-lucid-file-directory: /app/tests/performance
+x-lucid-file-type: python
+
 Blockchain Consensus Performance Tests
 
 Tests blockchain consensus performance benchmarks:

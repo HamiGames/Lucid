@@ -1,14 +1,24 @@
 #!/bin/bash
-# Path: /mnt/myssd/Lucid/Lucid/scripts/fix-build-env-scripts.sh
 # Script to fix all build-env.sh scripts to be Pi console native
+# File: /app/scripts/fix-build-env-scripts.sh
+# x-lucid-file-path: /app/scripts/fix-build-env-scripts.sh
+# x-lucid-file-directory: /app/scripts
+# x-lucid-file-type: shell
 # This script applies the standardized Pi console native improvements to all build-env.sh files
 
 set -euo pipefail
 
-# Fixed Pi Console Paths (adjusted for current environment)
-PROJECT_ROOT="$(pwd)"
-SCRIPTS_DIR="$(pwd)/scripts"
-INFRASTRUCTURE_DIR="$(pwd)/infrastructure/docker"
+_lucid_here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+_lucid_scripts="$_lucid_here"
+while [[ "$_lucid_scripts" != "/" && "$(basename "$_lucid_scripts")" != "scripts" ]]; do
+    _lucid_scripts="$(dirname "$_lucid_scripts")"
+done
+# shellcheck source=lib/lucid-repo-paths.sh
+source "$_lucid_scripts/lib/lucid-repo-paths.sh"
+
+PROJECT_ROOT="$LUCID_REPO_ROOT"
+SCRIPTS_DIR="$LUCID_SCRIPTS_DIR"
+INFRASTRUCTURE_DIR="$PROJECT_ROOT/infrastructure/docker"
 
 # Colors
 RED='\033[0;31m'
@@ -36,39 +46,29 @@ fix_build_env_script() {
     # Create the fixed script
     cat > "$script_path" << EOF
 #!/bin/bash
-# Path: /mnt/myssd/Lucid/Lucid/infrastructure/docker/$service_name/build-env.sh
+# Path: infrastructure/docker/$service_name/build-env.sh
 # Build Environment Script for Lucid $service_name Services
-# Generates .env files for $service_name containers
-# Pi Console Native - Optimized for Raspberry Pi 5 deployment
+# Repo root = directory containing master-env-config.txt (Docker COPY -> /app/configs/.env.master)
 
 set -euo pipefail
 
 # =============================================================================
-# PI CONSOLE NATIVE CONFIGURATION
+# PATHS (aligned with infrastructure/containers Docker layout)
 # =============================================================================
+SCRIPT_DIR="\$(cd "\$(dirname "\${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="\$(cd "\$SCRIPT_DIR/../../.." && pwd)"
+ENV_DIR="\$PROJECT_ROOT/configs/environment"
+SCRIPTS_DIR="\$PROJECT_ROOT/scripts"
+CONFIG_SCRIPTS_DIR="\$PROJECT_ROOT/scripts/config"
 
-# Fixed Pi Console Paths - No dynamic detection for Pi console reliability
-PROJECT_ROOT="/mnt/myssd/Lucid/Lucid"
-ENV_DIR="/mnt/myssd/Lucid/Lucid/configs/environment"
-SCRIPTS_DIR="/mnt/myssd/Lucid/Lucid/scripts"
-CONFIG_SCRIPTS_DIR="/mnt/myssd/Lucid/Lucid/scripts/config"
-SCRIPT_DIR="/mnt/myssd/Lucid/Lucid/infrastructure/docker/$service_name"
-
-# Validate Pi mount points exist
-validate_pi_mounts() {
-    local required_mounts=(
-        "/mnt/myssd"
-        "/mnt/myssd/Lucid"
-        "/mnt/myssd/Lucid/Lucid"
-    )
-    
-    for mount in "\${required_mounts[@]}"; do
-        if [[ ! -d "\$mount" ]]; then
-            echo "ERROR: Required Pi mount point not found: \$mount"
-            echo "Please ensure the SSD is properly mounted at /mnt/myssd"
-            exit 1
-        fi
-    done
+validate_repo_root() {
+    if [[ ! -f "\$PROJECT_ROOT/master-env-config.txt" ]]; then
+        echo "ERROR: master-env-config.txt not found at \$PROJECT_ROOT (required for image /app/configs/.env.master)"
+        exit 1
+    fi
+    if [[ ! -f "\$PROJECT_ROOT/infrastructure/containers/host-config.yml" ]]; then
+        echo "WARNING: host-config.yml missing (canonical in-image /app/service_configs/host-config.yml per x-files-listing.txt; equivalent /app/configs/host-config.yml)"
+    fi
 }
 
 # Check required packages for Pi console
@@ -131,7 +131,7 @@ log_error() { echo -e "\${RED}[ERROR]\${NC} \$1"; }
 # =============================================================================
 
 # Run all validations
-validate_pi_mounts
+validate_repo_root
 check_pi_packages
 validate_paths
 

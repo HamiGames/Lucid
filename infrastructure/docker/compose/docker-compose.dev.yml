@@ -1,8 +1,27 @@
-# Path: infrastructure/docker/compose/docker-compose.dev.yml
-# Development infrastructure Docker Compose file for Lucid project
-# Optimized for development with debugging and local development tools
+# File: /app/configs/docker/compose/docker-compose.dev.yml
+# x-lucid-file-path: /app/configs/docker/compose/docker-compose.dev.yml
+# x-lucid-file-directory: /app/configs/docker/compose
+# x-lucid-file-type: YAML
+#
+# Repo path: infrastructure/docker/compose/docker-compose.dev.yml
+# x-files.json section_to_canonical: infrastructure/docker/compose/docker-compose.dev.yml → /app/configs/docker/compose/docker-compose.dev.yml
+# Host registry: infrastructure/containers/host-config.yml (service_name / port); service-ip.txt host_ip range is for prod/Pi discovery — avoid ipv4_address on bridges in compose.
+# Dev stacks use *-dev names and lucid-infra-dev-network — not a literal copy of host-config ports; align env URLs when mirroring prod services.
+# Network plan: infrastructure/containers/network/network.txt → /app/configs/network/network.txt
+# Bind mounts under ./mongodb, ./postgres, ./prometheus, etc.: add missing paths locally or trim volumes — only mongodb/mongod.conf, redis/redis.conf, nginx/nginx.conf, nats/nats-server.conf, vault/vault.hcl ship in this directory tree.
 
-version: '3.8'
+# Development infrastructure — upstream images, debug-friendly defaults.
+
+version: "3.8"
+
+x-lucid-host-config:
+  file: ../../containers/host-config.yml
+  repo_path: infrastructure/containers/host-config.yml
+  version: "1.0"
+  description: Lucid container host registry for Docker DNS hostnames, ports, discovery URLs, and static host IPs.
+  http_path_template: "http://{service_name}:{port}/app"
+  host_ip_range: "172.20.10.1–172.20.10.76"
+  in_container_path: /app/configs/host-config.yml
 
 services:
   # MongoDB Database (Development)
@@ -97,10 +116,10 @@ services:
     networks:
       - lucid-infra-dev-network
     command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-      - '--storage.tsdb.retention.time=24h'
-      - '--web.enable-lifecycle'
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=24h"
+      - "--web.enable-lifecycle"
 
   # Grafana (Development)
   lucid-grafana-dev:
@@ -180,7 +199,16 @@ services:
       - lucid_consul_dev_data:/consul/data
     networks:
       - lucid-infra-dev-network
-    command: ["consul", "agent", "-server", "-ui", "-node=server-1", "-bootstrap-expect=1", "-client=0.0.0.0"]
+    command:
+      [
+        "consul",
+        "agent",
+        "-server",
+        "-ui",
+        "-node=server-1",
+        "-bootstrap-expect=1",
+        "-client=0.0.0.0",
+      ]
 
   # NATS (Development)
   lucid-nats-dev:
@@ -224,7 +252,18 @@ services:
       - lucid-mongodb-dev
       - lucid-redis-dev
       - lucid-postgres-dev
-    command: ["python", "-m", "uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    command:
+      [
+        "python",
+        "-m",
+        "uvicorn",
+        "api.main:app",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8000",
+        "--reload",
+      ]
 
   # Session Management Service (Development)
   lucid-sessions-dev:
@@ -252,7 +291,18 @@ services:
       - lucid-mongodb-dev
       - lucid-redis-dev
       - lucid-api-dev
-    command: ["python", "-m", "uvicorn", "sessions.main:app", "--host", "0.0.0.0", "--port", "8080", "--reload"]
+    command:
+      [
+        "python",
+        "-m",
+        "uvicorn",
+        "sessions.main:app",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8080",
+        "--reload",
+      ]
 
   # Storage Service (Development)
   lucid-storage-dev:
@@ -283,8 +333,8 @@ services:
     container_name: lucid-dev-tools
     restart: "no"
     ports:
-      - "8888:8888"  # Jupyter
-      - "8001:8001"  # Development server
+      - "8888:8888" # Jupyter
+      - "8001:8001" # Development server
     volumes:
       - ./:/app
       - lucid_dev_tools_cache:/root/.cache
@@ -346,8 +396,8 @@ services:
     container_name: lucid-mailhog
     restart: unless-stopped
     ports:
-      - "1025:1025"  # SMTP
-      - "8025:8025"  # Web UI
+      - "1025:1025" # SMTP
+      - "8025:8025" # Web UI
     networks:
       - lucid-infra-dev-network
 
@@ -381,21 +431,21 @@ volumes:
     driver: local
   lucid_postgres_dev_data:
     driver: local
-  
+
   # Search and logging volumes
   lucid_elasticsearch_dev_data:
     driver: local
-  
+
   # Monitoring volumes
   lucid_prometheus_dev_data:
     driver: local
   lucid_grafana_dev_data:
     driver: local
-  
+
   # Storage volumes
   lucid_minio_dev_data:
     driver: local
-  
+
   # Infrastructure volumes
   lucid_vault_dev_data:
     driver: local
@@ -403,7 +453,7 @@ volumes:
     driver: local
   lucid_nats_dev_data:
     driver: local
-  
+
   # Application volumes
   lucid_api_dev_logs:
     driver: local
@@ -415,7 +465,7 @@ volumes:
     driver: local
   lucid_storage_dev_logs:
     driver: local
-  
+
   # Development tools
   lucid_dev_tools_cache:
     driver: local

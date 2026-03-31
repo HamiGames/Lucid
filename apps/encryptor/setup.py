@@ -2,6 +2,7 @@
 """
 File: /app/apps/encryptor/setup.py
 x-lucid-file-path: /app/apps/encryptor/setup.py
+x-lucid-file-directory: /app/apps/encryptor
 x-lucid-file-type: python
 
 Setup script for native libsodium encryptor extension

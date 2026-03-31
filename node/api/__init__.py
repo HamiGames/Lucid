@@ -5,6 +5,7 @@
 """
 File: /app/node/api/__init__.py
 x-lucid-file-path: /app/node/api/__init__.py
+x-lucid-file-directory: /app/node/api
 x-lucid-file-type: python
 
 Lucid Node Management API Package

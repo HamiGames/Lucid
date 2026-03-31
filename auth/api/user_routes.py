@@ -1,6 +1,7 @@
 """
 File: /app/auth/api/user_routes.py
 x-lucid-file-path: /app/auth/api/user_routes.py
+x-lucid-file-directory: /app/auth/api
 x-lucid-file-type: python
 
 Lucid Authentication Service - User Routes

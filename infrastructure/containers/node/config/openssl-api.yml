@@ -1,3 +1,8 @@
+# File: /app/configs/node/config/openssl-api.yml
+# x-lucid-file-path: /app/configs/node/config/openssl-api.yml
+# x-lucid-file-directory: /app/configs/node/config
+# x-lucid-file-type: YAML
+
 # Lucid Node System Gateway — OpenSSL / TLS API contract (upstream HTTPS when route.tls_upstream: true)
 # Consumed at runtime by node_system_gateway_entrypoint.py. Override paths via NODE_SYSTEM_GATEWAY_SSL_*.
 #

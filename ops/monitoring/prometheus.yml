@@ -1,3 +1,8 @@
+# File: /app/ops/monitoring/prometheus.yml
+# x-lucid-file-path: /app/ops/monitoring/prometheus.yml
+# x-lucid-file-directory: /app/ops/monitoring
+# x-lucid-file-type: YAML
+
 # Prometheus configuration for Lucid RDP system
 # Aligned with essentials.md service names, ports, and IPs
 

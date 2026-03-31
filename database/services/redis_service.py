@@ -1,6 +1,7 @@
 """
 File: /app/database/services/redis_service.py
 x-lucid-file-path: /app/database/services/redis_service.py
+x-lucid-file-directory: /app/database/services
 x-lucid-file-type: python
 
 Redis Service for Lucid Database Infrastructure

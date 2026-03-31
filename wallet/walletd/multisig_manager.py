@@ -5,6 +5,7 @@
 """
 File: /app/wallet/walletd/multisig_manager.py
 x-lucid-file-path: /app/wallet/walletd/multisig_manager.py
+x-lucid-file-directory: /app/wallet/walletd
 x-lucid-file-type: python
 """
 

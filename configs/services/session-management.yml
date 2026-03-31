@@ -1,3 +1,8 @@
+# File: /app/configs/services/session-management.yml
+# x-lucid-file-path: /app/configs/services/session-management.yml
+# x-lucid-file-directory: /app/configs/services
+# x-lucid-file-type: YAML
+
 # Session Management Service Configuration
 # Cluster: 03-SESSION-MANAGEMENT
 # Service: Session Management Pipeline

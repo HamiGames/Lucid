@@ -1,3 +1,8 @@
+# File: /app/blockchain/config/block-storage-policies.yaml
+# x-lucid-file-path: /app/blockchain/config/block-storage-policies.yaml
+# x-lucid-file-directory: /app/blockchain/config
+# x-lucid-file-type: YAML
+
 # Lucid Block Manager - Block Storage Policies Configuration
 # Optional YAML configuration for block storage and retrieval
 # File: blockchain/config/block-storage-policies.yaml

@@ -1,10 +1,10 @@
-# infrastructure/docker/distroless/gui/Dockerfile.gui
-# Lucid Electron GUI strap image – prepares a full GUI bundle that can be unpacked
-# and rebuilt on the Pi (with the correct .env files) before producing a runtime image.
-#
-# Layout registry: infrastructure/containers/host-config.yml → canonical runtime /app/service_configs/host-config.yml
-# Service config root: infrastructure/containers/services/container-runtime-layout.yml (lucid_services_config_root: /app/service_configs)
-# Path equivalences: x-files-listing.txt (repository root)
+# syntax=docker/dockerfile:1.5
+# LUCID ELECTRON GUI STRAP - Distroless bundle image (Node tarballs + strap script)
+# Structure aligned with 03_api_gateway/Dockerfile (ARG order, LABELs, platform-aware FROMs)
+# Content aligned with configs/docker/distroless/gui/Dockerfile.gui
+# Image: pickme/lucid-gui:latest-arm64 (strap / configuration image, not the Python `gui/` package)
+# Build context: repository root
+# Build: docker build -f infrastructure/containers/gui/Dockerfile.gui -t pickme/lucid-gui:latest-arm64 .
 
 ARG BUILD_DATE
 ARG VCS_REF
@@ -12,39 +12,84 @@ ARG VERSION=1.0.0
 ARG TARGETPLATFORM=linux/arm64
 ARG BUILDPLATFORM=linux/amd64
 ARG NPM_INSTALL_FLAGS="--omit=dev"
-ARG STRAP_DIR="/opt/lucid/electron_gui"
-ARG BUNDLE_DIR="/opt/lucid/bundles"
+ARG STRAP_DIR=/opt/lucid/electron_gui
+ARG BUNDLE_DIR=/opt/lucid/bundles
 
-# -----------------------------------------------------------------------------
-# Stage 1 – gather source + dependencies
-# -----------------------------------------------------------------------------
-FROM node:20-bookworm AS strapper
+############################
+# Stage 1 – Strapper (electron_gui sources + node_modules tarballs)
+############################
+FROM --platform=$TARGETPLATFORM node:20-bookworm AS strapper
 
-ARG NPM_INSTALL_FLAGS
+ARG NPM_INSTALL_FLAGS="--omit=dev"
+ARG TARGETPLATFORM
+
 WORKDIR /work/electron_gui
-
-# Install dependencies (dev deps optional via NPM_INSTALL_FLAGS)
 # LUCID_X_FILES_SKELETON_BEGIN
 # Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
 RUN set -eux; \
-    mkdir -p '.'; \
+    mkdir -p '.' './scripts' './scripts/build' './scripts/compliance' './scripts/config' './scripts/contracts' './scripts/database' './scripts/deployment' './scripts/devcontainer' './scripts/docs' './scripts/foundation' './scripts/gui' './scripts/hardware' './scripts/integration' './scripts/lib' './scripts/load' './scripts/logging' './scripts/maintenance' './scripts/migration' './scripts/monitoring' './scripts/network' './scripts/registry' './scripts/secrets' './scripts/security' './scripts/services' './scripts/testing' './scripts/validation' './scripts/verification' './scripts/build/components' './scripts/build/core' './scripts/build/distroless' './scripts/build/utils' './scripts/compliance/distroless' './scripts/compliance/general' './scripts/deployment/devcontainer' './scripts/deployment/distroless' './scripts/deployment/pi' './scripts/deployment/utils' './scripts/maintenance/cleanup' './scripts/maintenance/optimization' './scripts/maintenance/recovery' './scripts/network/diagnostics' './scripts/network/security' './scripts/network/setup' './scripts/testing/integration' './scripts/testing/unit' './scripts/testing/utils'; \
     for d in \
       '.' \
+      './scripts' \
+      './scripts/build' \
+      './scripts/compliance' \
+      './scripts/config' \
+      './scripts/contracts' \
+      './scripts/database' \
+      './scripts/deployment' \
+      './scripts/devcontainer' \
+      './scripts/docs' \
+      './scripts/foundation' \
+      './scripts/gui' \
+      './scripts/hardware' \
+      './scripts/integration' \
+      './scripts/lib' \
+      './scripts/load' \
+      './scripts/logging' \
+      './scripts/maintenance' \
+      './scripts/migration' \
+      './scripts/monitoring' \
+      './scripts/network' \
+      './scripts/registry' \
+      './scripts/secrets' \
+      './scripts/security' \
+      './scripts/services' \
+      './scripts/testing' \
+      './scripts/validation' \
+      './scripts/verification' \
+      './scripts/build/components' \
+      './scripts/build/core' \
+      './scripts/build/distroless' \
+      './scripts/build/utils' \
+      './scripts/compliance/distroless' \
+      './scripts/compliance/general' \
+      './scripts/deployment/devcontainer' \
+      './scripts/deployment/distroless' \
+      './scripts/deployment/pi' \
+      './scripts/deployment/utils' \
+      './scripts/maintenance/cleanup' \
+      './scripts/maintenance/optimization' \
+      './scripts/maintenance/recovery' \
+      './scripts/network/diagnostics' \
+      './scripts/network/security' \
+      './scripts/network/setup' \
+      './scripts/testing/integration' \
+      './scripts/testing/unit' \
+      './scripts/testing/utils' \
     ; do \
       printf 'LUCID_X_FILES_SKELETON_%s' "$(date +%s)" > "$d/.keep"; \
       touch "$d/.keep"; \
     done
 # LUCID_X_FILES_SKELETON_END
+COPY scripts/ ./scripts/
+
 COPY electron_gui/package*.json ./
 RUN npm install ${NPM_INSTALL_FLAGS}
 
-# Copy the entire GUI workspace (sources, configs, assets, etc.)
 COPY electron_gui/ ./
 
-# Trim npm metadata a little
 RUN npm dedupe && npm cache clean --force
 
-# Produce tarballs the Pi console can unpack later
 RUN mkdir -p /tmp/strap \
  && tar --exclude-vcs \
         --exclude=.turbo \
@@ -68,40 +113,49 @@ RUN mkdir -p /tmp/strap \
                --files-from=/dev/null; \
     fi
 
-# -----------------------------------------------------------------------------
-# Stage 2 – prepare bundle using Debian (for shell utilities)
-# -----------------------------------------------------------------------------
-FROM debian:12-slim AS bundle-prep
+############################
+# Stage 2 – Bundle prep (Debian: bash, tar, gzip, lucid-gui-strap)
+############################
+FROM --platform=$TARGETPLATFORM debian:12-slim AS bundle-prep
 
-ARG STRAP_DIR
-ARG BUNDLE_DIR
+ARG STRAP_DIR=/opt/lucid/electron_gui
+ARG BUNDLE_DIR=/opt/lucid/bundles
+ARG TARGETPLATFORM
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install tooling the final container will need (bash, tar, gzip, core libs)
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
-    rm -rf /var/lib/apt/lists/* \
- && apt-get update --allow-releaseinfo-change \
- && apt-get install -y --no-install-recommends \
-      bash \
-      tar \
-      gzip \
-      ca-certificates \
- && apt-get clean \
- && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+    rm -rf /var/lib/apt/lists/* && \
+    apt-get update --allow-releaseinfo-change && \
+    apt-get install -y --no-install-recommends \
+        bash \
+        tar \
+        gzip \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# Ensure /bin/sh points to bash before exporting binaries
 RUN ln -sf /bin/bash /bin/sh
 
-# Prepare bundle and strap directories
 RUN mkdir -p "${BUNDLE_DIR}" "${STRAP_DIR}"
 
-# Copy tarballs from strapper
-COPY --from=strapper /tmp/strap/electron_gui-src.tar.gz "${BUNDLE_DIR}/electron_gui-src.tar.gz"
-COPY --from=strapper /tmp/strap/electron_gui-node_modules.tar.gz "${BUNDLE_DIR}/electron_gui-node_modules.tar.gz"
+# LUCID_IMAGE_CONFIG: .env.secrets + .env.master + host-config + container services (builder)
+COPY configs/ ./configs/
+RUN rm -rf ./configs/environment && \
+    echo ".env.* files removed"
+COPY configs/environment/.env.secrets ./configs/.env.secrets
+COPY master-env-config.txt ./configs/.env.master
+COPY infrastructure/containers/host-config.yml /build/configs/host-config.yml
+COPY infrastructure/containers/services/ /build/service_configs/
 
-# Install the helper script (uses bash provided above)
+# Container directory layout (03_api_gateway/Dockerfile): common/tor, kubernetes configmaps
+COPY common/__init__.py /build/common/__init__.py
+COPY common/tor/ /build/common/tor/
+COPYservice_configs/kubernetes/01_configmaps/ /build/configs/
+
+COPY --from=strapper /tmp/strap/electron_gui-src.tar.gz ${BUNDLE_DIR}/electron_gui-src.tar.gz
+COPY --from=strapper /tmp/strap/electron_gui-node_modules.tar.gz ${BUNDLE_DIR}/electron_gui-node_modules.tar.gz
+
 COPY <<'EOF' /usr/local/bin/lucid-gui-strap
 #!/bin/bash
 set -euo pipefail
@@ -140,19 +194,36 @@ EOF
 
 RUN chmod +x /usr/local/bin/lucid-gui-strap
 
-# -----------------------------------------------------------------------------
-# Stage 3 – final distroless bundle image
-# -----------------------------------------------------------------------------
-FROM gcr.io/distroless/base-debian12:latest
+############################
+# Stage 3 – Runtime (distroless base + bash/tar/gzip and libs)
+############################
+ARG TARGETPLATFORM=linux/arm64
+FROM --platform=$TARGETPLATFORM gcr.io/distroless/base-debian12:latest
+
+WORKDIR /
 
 ARG BUILD_DATE
 ARG VCS_REF
-ARG VERSION
-ARG STRAP_DIR
-ARG BUNDLE_DIR
+ARG VERSION=1.0.0
+# Lucid Tor egress / network isolation (PUBLIC_TOR_IP: master-env-config.txt; compose: lucid-tor-egress-network)
+ARG PUBLIC_TOR_IP=109.70.100.1
+ARG LUCID_INTERNAL_NETWORK_NAME=lucid-pi-network
+ARG LUCID_TOR_EGRESS_NETWORK_NAME=lucid-tor-egress-network
+ARG STRAP_DIR=/opt/lucid/electron_gui
+ARG BUNDLE_DIR=/opt/lucid/bundles
 
-COPY --from=bundle-prep "${BUNDLE_DIR}" "${BUNDLE_DIR}"
-COPY --from=bundle-prep "${STRAP_DIR}" "${STRAP_DIR}"
+COPY --from=bundle-prep ${BUNDLE_DIR} ${BUNDLE_DIR}
+# LUCID_IMAGE_CONFIG: .env.secrets + .env.master + host-config + container services (runtime)
+COPY --from=bundle-prep --chown=65532:65532 /build/configs/.env.secrets /app/configs/.env.secrets
+COPY --from=bundle-prep --chown=65532:65532 /build/configs/.env.master /app/configs/.env.master
+COPY --from=bundle-prep --chown=65532:65532 /build/configs/host-config.yml /app/configs/host-config.yml
+COPY --from=bundle-prep --chown=65532:65532 /build/service_configs /app/service_configs
+
+COPY --from=bundle-prep --chown=65532:65532 /build/common/__init__.py /app/common/__init__.py
+COPY --from=bundle-prep --chown=65532:65532 /build/common/tor/ /app/common/tor/
+COPY --from=bundle-prep --chown=65532:65532 /build/configs/ /build/configs/
+
+COPY --from=bundle-prep ${STRAP_DIR} ${STRAP_DIR}
 COPY --from=bundle-prep /usr/local/bin/lucid-gui-strap /usr/local/bin/lucid-gui-strap
 COPY --from=bundle-prep /bin/bash /bin/bash
 COPY --from=bundle-prep /bin/sh /bin/sh
@@ -168,26 +239,54 @@ COPY --from=bundle-prep /usr/lib/*/libtinfo.so.* /usr/lib/
 COPY --from=bundle-prep /usr/lib*/ld-linux-*.so.* /usr/lib64/
 
 LABEL maintainer="Lucid Development Team" \
-      version="${VERSION}" \
-      description="Lucid Electron GUI strap bundle (distroless configuration image)" \
-      org.opencontainers.image.created="${BUILD_DATE}" \
-      org.opencontainers.image.revision="${VCS_REF}" \
-      org.opencontainers.image.version="${VERSION}" \
+      com.lucid.network.internal="${LUCID_INTERNAL_NETWORK_NAME}" \
+      com.lucid.network.tor_egress="${LUCID_TOR_EGRESS_NETWORK_NAME}" \
+      com.lucid.tor.public_egress_ip="${PUBLIC_TOR_IP}" \
       org.opencontainers.image.title="Lucid Electron GUI Strap" \
-      org.opencontainers.image.description="Distroless GUI bundle for Pi console configuration" \
-      com.lucid.plane="support" \
+      org.opencontainers.image.description="Distroless Electron GUI bundle for Pi console configuration" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.created="${BUILD_DATE}" \
+      com.lucid.plane="ops" \
       com.lucid.service="gui-strap" \
+      com.lucid.layer="3" \
+      org.lucid.layer="3" \
       com.lucid.platform="arm64" \
       com.lucid.architecture="linux/arm64" \
       com.lucid.security="distroless" \
       com.lucid.vulnerabilities="zero" \
-      com.lucid.tor.compatible="true"
+      com.lucid.expose="" \
+      com.lucid.cluster="support" \
+      com.lucid.tor.compatible="true" \
+      com.lucid.env.config=".env.foundation,.env.secrets" \
+      com.lucid.hostconfig.upstream_api_gateway_host="api-gateway" \
+      com.lucid.hostconfig.upstream_api_gateway_port="8080"
 
-ENV STRAP_DIR=${STRAP_DIR} \
+ENV     PUBLIC_TOR_IP="${PUBLIC_TOR_IP}" \
+    LUCID_INTERNAL_NETWORK_NAME="${LUCID_INTERNAL_NETWORK_NAME}" \
+    LUCID_TOR_EGRESS_NETWORK_NAME="${LUCID_TOR_EGRESS_NETWORK_NAME}" \
     BUNDLE_DIR=${BUNDLE_DIR} \
-    NODE_ENV=development \
-    LUCID_PLATFORM=arm64
+    LUCID_API_GATEWAY_HOST="api-gateway" \
+    LUCID_API_GATEWAY_PORT="8080" \
+    LUCID_HOST_CONFIG_PATH="/app/configs/host-config.yml" \
+    LUCID_HOST_CONFIG_SERVICE_NAME="gui_docker_manager" \
+    LUCID_PLATFORM="arm64" \
+    LUCID_SERVICE_HOST_IP="172.20.10.60" \
+    LUCID_SERVICE_HTTP_PATH="http://gui-docker-manager:8098/app" \
+    NODE_ENV="development" \
+    STRAP_DIR=${STRAP_DIR}
+# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
+# Generated: apt + RUN scaffold (mkdir/printf/touch/chown) -> FHS (not ./ or /build/; lib_search_and_inject.py).
+COPY --from=strapper --chown=65532:65532 /bin/ /app/bin/
+COPY --from=strapper --chown=65532:65532 /usr/bin/ /app/usr/bin/
+# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_END
+
+# LUCID_RUNTIME_COPY_FROM_BUILD_BEGIN
+# Generated: same directory set as LUCID_X_FILES_SKELETON (./ under WORKDIR /build).
+COPY --from=strapper --chown=65532:65532 /build/scripts/ /app/scripts/
+# LUCID_RUNTIME_COPY_FROM_BUILD_END
+
 
 WORKDIR ${STRAP_DIR}
 
-ENTRYPOINT ["/bin/bash","/usr/local/bin/lucid-gui-strap"]
+ENTRYPOINT ["/bin/bash", "/usr/local/bin/lucid-gui-strap"]

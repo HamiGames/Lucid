@@ -1,5 +1,9 @@
 #!/bin/bash
 # Cryptographic Key Backup Script
+# File: /app/scripts/security/backup-keys.sh
+# x-lucid-file-path: /app/scripts/security/backup-keys.sh
+# x-lucid-file-directory: /app/scripts/security
+# x-lucid-file-type: shell
 # LUCID-STRICT Layer 2 Security Management
 # Purpose: Backup all cryptographic keys for key protection
 # Compatibility: Distroless, API compliant

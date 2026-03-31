@@ -1,4 +1,9 @@
 """
+File: /app/tests/integration/blockchain-integration/__init__.py
+x-lucid-file-path: /app/tests/integration/blockchain-integration/__init__.py
+x-lucid-file-directory: /app/tests/integration/blockchain-integration
+x-lucid-file-type: python
+
 Integration tests for blockchain components.
 
 Tests end-to-end session anchoring flow, PoOT consensus slot progression,

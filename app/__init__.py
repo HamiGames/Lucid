@@ -2,6 +2,7 @@
 """
 File: /app/app/__init__.py
 x-lucid-file-path: /app/app/__init__.py
+x-lucid-file-directory: /app/app
 x-lucid-file-type: python
 """
 

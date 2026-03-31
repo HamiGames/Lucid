@@ -1,5 +1,9 @@
 #!/bin/bash
 # Phase 1 Foundation Services Integration Test Script
+# File: /app/scripts/test-phase1-integration.sh
+# x-lucid-file-path: /app/scripts/test-phase1-integration.sh
+# x-lucid-file-directory: /app/scripts
+# x-lucid-file-type: shell
 # Tests: auth-service, storage-database, mongodb, redis, elasticsearch
 # Target: Raspberry Pi 5 (192.168.0.75)
 # Network: lucid-pi-network

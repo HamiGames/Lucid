@@ -2,6 +2,7 @@
 """
 File: /app/api/__init__.py
 x-lucid-file-path: /app/api/__init__.py
+x-lucid-file-directory: /app/api
 x-lucid-file-type: python
 
 API package for Lucid RDP.

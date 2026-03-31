@@ -2,6 +2,7 @@
 """
 File: /app/RDP/xrdp/config.py
 x-lucid-file-path: /app/RDP/xrdp/config.py
+x-lucid-file-directory: /app/RDP/xrdp
 x-lucid-file-type: python
 
 Lucid XRDP Configuration Management

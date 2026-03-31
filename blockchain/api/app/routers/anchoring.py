@@ -1,6 +1,7 @@
 """
 File: /app/blockchain/api/app/routers/anchoring.py
 x-lucid-file-path: /app/blockchain/api/app/routers/anchoring.py
+x-lucid-file-directory: /app/blockchain/api/app/routers
 x-lucid-file-type: python
 
 Anchoring Router

@@ -1,6 +1,7 @@
 """
 File: /app/blockchain/core/models.py
 x-lucid-file-path: /app/blockchain/core/models.py
+x-lucid-file-directory: /app/blockchain/core
 x-lucid-file-type: python
 
 Lucid Blockchain Core Data Models

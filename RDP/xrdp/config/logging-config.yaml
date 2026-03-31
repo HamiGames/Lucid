@@ -1,3 +1,8 @@
+# File: /app/RDP/xrdp/config/logging-config.yaml
+# x-lucid-file-path: /app/RDP/xrdp/config/logging-config.yaml
+# x-lucid-file-directory: /app/RDP/xrdp/config
+# x-lucid-file-type: YAML
+
 # XRDP Service Logging Configuration
 # File: RDP/xrdp/config/logging-config.yaml
 # Purpose: Structured logging configuration for rdp-xrdp container

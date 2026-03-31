@@ -6,6 +6,7 @@
 """
 File: /app/admin/governance/proposal_manager.py
 x-lucid-file-path: /app/admin/governance/proposal_manager.py
+x-lucid-file-directory: /app/admin/governance
 x-lucid-file-type: python
 """
 

@@ -36,7 +36,7 @@ CRITICAL COMPLIANCE VIOLATIONS
    
    Files Non-Compliant:
    - build/distroless/gui/Dockerfile.gui.distroless (Python-based, not Node.js)
-   - infrastructure/docker/gui/Dockerfile.gui-builder (Python-based)
+   - configs/docker/gui/Dockerfile.gui-builder (Python-based)
 
 4. TOR INTEGRATION MISSING - HIGH
    Current: No .onion service configuration for GUI access
@@ -148,7 +148,7 @@ HIGH PRIORITY FIXES:
 
 2. Update Docker configurations
    - build/distroless/gui/Dockerfile.gui.distroless → Node.js distroless
-   - infrastructure/docker/gui/Dockerfile.gui-builder → Node.js builder
+   - configs/docker/gui/Dockerfile.gui-builder → Node.js builder
    - docker-compose.yml → Three separate GUI services
 
 3. Create missing directory structure
@@ -189,7 +189,7 @@ COMPLIANCE STATUS BY FILE
 - gui/admin/admin_gui.py (Wrong technology, wrong architecture)
 - gui/node/node_gui.py (Wrong technology, wrong architecture)
 - build/distroless/gui/Dockerfile.gui.distroless (Wrong base image)
-- infrastructure/docker/gui/Dockerfile.gui-builder (Wrong base image)
+- configs/docker/gui/Dockerfile.gui-builder (Wrong base image)
 - docker-compose.yml (Single GUI service, wrong ports)
 - build/scripts/build-gui-distroless.sh (Wrong directory structure)
 - .github/workflows/build-distroless.yml (Builds non-existent services)

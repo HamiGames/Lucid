@@ -1,6 +1,7 @@
 """
 File: /app/sessions/processor/encryption.py
 x-lucid-file-path: /app/sessions/processor/encryption.py
+x-lucid-file-directory: /app/sessions/processor
 x-lucid-file-type: python
 
 Chunk Encryption Module

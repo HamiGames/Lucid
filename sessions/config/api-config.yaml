@@ -1,3 +1,8 @@
+# File: /app/sessions/config/api-config.yaml
+# x-lucid-file-path: /app/sessions/config/api-config.yaml
+# x-lucid-file-directory: /app/sessions/config
+# x-lucid-file-type: YAML
+
 # Lucid Session API — reference configuration (sessions/config/api-config.yaml)
 # Aligned with: infrastructure/containers/sessions/docker-compose.session-images.yml
 #

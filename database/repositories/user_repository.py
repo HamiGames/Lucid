@@ -1,6 +1,7 @@
 """
 File: /app/database/repositories/user_repository.py
 x-lucid-file-path: /app/database/repositories/user_repository.py
+x-lucid-file-directory: /app/database/repositories
 x-lucid-file-type: python
 
 User Repository

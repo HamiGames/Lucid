@@ -1,5 +1,9 @@
 #!/bin/bash
 # Restart All Services Script
+# File: /app/scripts/services/restart-all-services.sh
+# x-lucid-file-path: /app/scripts/services/restart-all-services.sh
+# x-lucid-file-directory: /app/scripts/services
+# x-lucid-file-type: shell
 # LUCID-STRICT Layer 2 Service Management
 # Purpose: Restart all Lucid services for service management
 # Compatibility: Distroless, API compliant

@@ -2,6 +2,7 @@
 """
 File: /app/api/cluster/monitoring.py
 x-lucid-file-path: /app/api/cluster/monitoring.py
+x-lucid-file-directory: /app/api/cluster
 x-lucid-file-type: python
 
 LUCID Monitoring Service - SPEC-1B Implementation

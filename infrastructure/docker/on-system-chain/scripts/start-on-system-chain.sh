@@ -1,5 +1,9 @@
 #!/bin/bash
 # On-System Chain Startup Script
+# File: /app/configs/docker//on-system-chain/scripts/start-on-system-chain.sh
+# x-lucid-file-path: /app/configs/docker//on-system-chain/scripts/start-on-system-chain.sh
+# x-lucid-file-directory: /app/configs/docker//on-system-chain/scripts
+# x-lucid-file-type: shell
 # Starts EVM-compatible blockchain for Lucid session anchoring
 
 set -euo pipefail

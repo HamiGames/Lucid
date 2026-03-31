@@ -1,8 +1,10 @@
 """
-Health Check Service for GUI API Bridge
 File: /app/gui_api_bridge/gui_api_bridge/healthcheck.py
 x-lucid-file-path: /app/gui_api_bridge/gui_api_bridge/healthcheck.py
+x-lucid-file-directory: /app/gui_api_bridge/gui_api_bridge
 x-lucid-file-type: python
+
+Health Check Service for GUI API Bridge
 """
 
 import logging

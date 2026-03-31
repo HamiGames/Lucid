@@ -1,5 +1,12 @@
 #!/usr/bin/env python3
-"""Distroless runtime verification for node-system-gateway (aligned with 03_api_gateway/verify_runtime.py)."""
+"""
+File: /app/configs/node/node-system-gateway/verify_runtime.py
+x-lucid-file-path: /app/configs/node/node-system-gateway/verify_runtime.py
+x-lucid-file-directory: /app/configs/node/node-system-gateway
+x-lucid-file-type: python
+
+Distroless runtime verification for node-system-gateway (aligned with 03_api_gateway/verify_runtime.py).
+"""
 import json
 import os
 import sys

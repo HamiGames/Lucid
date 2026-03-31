@@ -2,6 +2,7 @@
 """
 File: /app/database/redis/start-redis.py
 x-lucid-file-path: /app/database/redis/start-redis.py
+x-lucid-file-directory: /app/database/redis
 x-lucid-file-type: python
 
 Redis Distroless Startup Script

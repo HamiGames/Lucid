@@ -1,6 +1,7 @@
 """
 File: /app/api/cluster/__init__.py
 x-lucid-file-path: /app/api/cluster/__init__.py
+x-lucid-file-directory: /app/api/cluster
 x-lucid-file-type: python
 
 Lucid API Cluster Module

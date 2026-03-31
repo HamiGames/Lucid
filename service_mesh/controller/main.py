@@ -1,8 +1,11 @@
 """
+File: /app/old-service_mesh/controller/main.py
+x-lucid-file-path: /app/old-service_mesh/controller/main.py
+x-lucid-file-directory: /app/old-service_mesh/controller
+x-lucid-file-type: python
+
 Lucid Service Mesh Controller - Main Entry Point
 Wrapper module that imports and runs the main application
-
-File: service_mesh/controller/main.py
 """
 
 import asyncio

@@ -1,6 +1,7 @@
 """
 File: /app/gui_tor_manager/gui_tor_manager/middleware/cors.py
 x-lucid-file-path: /app/gui_tor_manager/gui_tor_manager/middleware/cors.py
+x-lucid-file-directory: /app/gui_tor_manager/gui_tor_manager/middleware
 x-lucid-file-type: python
 
 CORS Middleware Configuration for GUI Tor Manager
@@ -25,7 +26,7 @@ def setup_cors_middleware(app, allowed_origins: list[str] = None):
         allowed_origins = [
             "http://user-interface:3001",      # User Interface (docker)
             "http://node-interface:3002",      # Node Interface (docker)
-            "http://admin-interface:8120",     # Admin Interface (docker)
+            "http://admin-ui-backend:8120",     # Admin Interface (docker)
             "http://localhost:3001",           # Local development
             "http://localhost:3002",           # Local development
             "http://localhost:8120",           # Local development

@@ -1,6 +1,7 @@
 """
 File: /app/blockchain/core/poot_consensus.py
 x-lucid-file-path: /app/blockchain/core/poot_consensus.py
+x-lucid-file-directory: /app/blockchain/core
 x-lucid-file-type: python
 
 PoOT (Proof of Operational Tasks) Consensus Engine

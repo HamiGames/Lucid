@@ -1,6 +1,7 @@
 """
 File: /app/payment_systems/tron/services/payment_gateway_extended.py
 x-lucid-file-path: /app/payment_systems/tron/services/payment_gateway_extended.py
+x-lucid-file-directory: /app/payment_systems/tron/services
 x-lucid-file-type: python
 
 TRON Payment Gateway Service Module

@@ -2,6 +2,7 @@
 """
 File: /app/tools/ops/backup/encryption_manager.py
 x-lucid-file-path: /app/tools/ops/backup/encryption_manager.py
+x-lucid-file-directory: /app/tools/ops/backup
 x-lucid-file-type: python
 
 LUCID BACKUP ENCRYPTION MANAGER - SPEC-4 Backup Encryption System

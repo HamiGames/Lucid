@@ -1,4 +1,9 @@
 """
+File: /app/tests/integration/blockchain-integration/test_session_anchoring_flow.py
+x-lucid-file-path: /app/tests/integration/blockchain-integration/test_session_anchoring_flow.py
+x-lucid-file-directory: /app/tests/integration/blockchain-integration
+x-lucid-file-type: python
+
 Integration tests for end-to-end session anchoring flow.
 
 Tests complete session lifecycle from creation to On-System Chain anchoring

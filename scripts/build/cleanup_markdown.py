@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 """
+File: /app/scripts/build/cleanup_markdown.py
+x-lucid-file-path: /app/scripts/build/cleanup_markdown.py
+x-lucid-file-directory: /app/scripts
+x-lucid-file-type: python
+
 Markdown Linting Cleanup Script for Lucid Project
 
 This script fixes common Markdown linting errors in .md files:

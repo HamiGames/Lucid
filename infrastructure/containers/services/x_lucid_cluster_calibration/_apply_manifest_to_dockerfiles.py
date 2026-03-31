@@ -1,15 +1,24 @@
-"""Apply allocation_manifest.json calibration COPY lines to Dockerfiles under infrastructure/containers.
+"""
+File: /app/service_configs/x_lucid_cluster_calibration/_apply_manifest_to_dockerfiles.py
+x-lucid-file-path: /app/service_configs/x_lucid_cluster_calibration/_apply_manifest_to_dockerfiles.py
+x-lucid-file-directory: /app/service_configs/x_lucid_cluster_calibration
+x-lucid-file-type: python
+
+Apply allocation_manifest.json calibration COPY lines to Dockerfiles under
+infrastructure/containers and infrastructure/docker.
 
 Derives builder/runtime paths from the existing container-runtime-layout.yml COPY when present.
 """
 from __future__ import annotations
 
+import argparse
 import json
 import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[4]
 CONTAINERS = ROOT / "infrastructure" / "containers"
+DOCKER_INFRA = ROOT / "infrastructure" / "docker"
 MANIFEST = (
     CONTAINERS
     / "services"
@@ -22,6 +31,8 @@ def normalize_dockerfile_path(raw: str) -> str:
     p = raw.replace("\\", "/")
     if p.startswith("infrastructure/containers/"):
         return p
+    if p.startswith("infrastructure/docker/"):
+        return p
     return "infrastructure/containers/" + p.lstrip("/")
 
 
@@ -33,9 +44,24 @@ def under_containers(path: Path) -> bool:
         return False
 
 
-def load_manifest_entries() -> dict[str, dict]:
+def under_docker_infra(path: Path) -> bool:
+    try:
+        path.resolve().relative_to(DOCKER_INFRA.resolve())
+        return True
+    except ValueError:
+        return False
+
+
+def load_manifest_entries(
+    under: list[Path] | None = None,
+) -> dict[str, dict]:
     with MANIFEST.open(encoding="utf-8") as f:
         data = json.load(f)
+    bases = (
+        [(ROOT / u).resolve() for u in under]
+        if under
+        else None
+    )
     out: dict[str, dict] = {}
     for cluster, entries in (data.get("dockerfiles") or {}).items():
         if not isinstance(entries, list):
@@ -46,8 +72,21 @@ def load_manifest_entries() -> dict[str, dict]:
                 continue
             norm = normalize_dockerfile_path(df)
             full = (ROOT / norm).resolve()
-            if not full.is_file() or not under_containers(full):
+            if not full.is_file() or not (
+                under_containers(full) or under_docker_infra(full)
+            ):
                 continue
+            if bases is not None:
+                allowed = False
+                for b in bases:
+                    try:
+                        full.relative_to(b)
+                    except ValueError:
+                        continue
+                    allowed = True
+                    break
+                if not allowed:
+                    continue
             key = str(full)
             if key not in out:
                 out[key] = {"cluster": cluster, **e}
@@ -310,7 +349,25 @@ def patch_dockerfile(path: Path, meta: dict) -> str | None:
 
 
 def main() -> int:
-    entries = load_manifest_entries()
+    ap = argparse.ArgumentParser(
+        description=(
+            "Apply allocation_manifest.json calibration COPY lines to Dockerfiles "
+            "(infrastructure/containers and infrastructure/docker by default)."
+        ),
+    )
+    ap.add_argument(
+        "--under",
+        type=Path,
+        action="append",
+        default=None,
+        metavar="REL_PATH",
+        help=(
+            "Only patch Dockerfiles under this path relative to repo root (repeatable). "
+            "Example: infrastructure/docker"
+        ),
+    )
+    args = ap.parse_args()
+    entries = load_manifest_entries(args.under)
     changed = 0
     for path_str in sorted(entries):
         path = Path(path_str)
@@ -320,7 +377,12 @@ def main() -> int:
             path.write_text(new, encoding="utf-8", newline="\n")
             changed += 1
             print("updated", path.relative_to(ROOT))
-    print("manifest entries (under containers):", len(entries))
+    scope = (
+        ", ".join(str(u).replace("\\", "/") for u in args.under)
+        if args.under
+        else "containers + infrastructure/docker"
+    )
+    print(f"manifest entries ({scope}):", len(entries))
     print("files changed:", changed)
     return 0
 

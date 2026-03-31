@@ -5,6 +5,7 @@
 """
 File: /app/node/shards/__init__.py
 x-lucid-file-path: /app/node/shards/__init__.py
+x-lucid-file-directory: /app/node/shards
 x-lucid-file-type: python
 
 Shards module for Lucid node operations.

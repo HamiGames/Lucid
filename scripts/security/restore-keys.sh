@@ -1,5 +1,9 @@
 #!/bin/bash
 # Cryptographic Key Restore Script
+# File: /app/scripts/security/restore-keys.sh
+# x-lucid-file-path: /app/scripts/security/restore-keys.sh
+# x-lucid-file-directory: /app/scripts/security
+# x-lucid-file-type: shell
 # LUCID-STRICT Layer 2 Security Management
 # Purpose: Restore keys from backup for key recovery
 # Compatibility: Distroless, API compliant

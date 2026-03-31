@@ -1,3 +1,8 @@
+# File: /app/RDP/monitoring/prometheus.yml
+# x-lucid-file-path: /app/RDP/monitoring/prometheus.yml
+# x-lucid-file-directory: /app/RDP/monitoring
+# x-lucid-file-type: YAML
+
 global:
   scrape_interval: 15s
   evaluation_interval: 15s

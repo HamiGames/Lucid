@@ -1,9 +1,10 @@
 #!/bin/bash
 # ========================================================================
+# File: /app/gui_api_bridge/scripts/gui-exec.sh
+# x-lucid-file-path: /app/gui_api_bridge/scripts/gui-exec.sh
+# x-lucid-file-directory: /app/gui_api_bridge/scripts
+# x-lucid-file-type: shell
 # Lucid GUI API Bridge - GUI User Command Wrapper
-# File: /app/gui_api_bridge/gui_api_bridge/scripts/gui-exec.sh
-# x-lucid-file-path: /app/gui_api_bridge/gui_api_bridge/scripts/gui-exec.sh
-# x-lucid-file-type: bash
 # Purpose: Wrapper for GUI applications to execute commands in Linux context
 # Usage: gui-exec <command> [args...]
 # ========================================================================

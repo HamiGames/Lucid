@@ -1,6 +1,7 @@
 """
 File: /app/blockchain/evm/__init__.py
 x-lucid-file-path: /app/blockchain/evm/__init__.py
+x-lucid-file-directory: /app/blockchain/evm
 x-lucid-file-type: python
 
 EVM (Ethereum Virtual Machine) Components

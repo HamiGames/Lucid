@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 """
+File: /app/configs/node/node-system-gateway/entrypoint.py
+x-lucid-file-path: /app/configs/node/node-system-gateway/entrypoint.py
+x-lucid-file-directory: /app/configs/node/node-system-gateway
+x-lucid-file-type: python
+
 Lucid node system gateway — HTTP reverse proxy (node plane → api-gateway, admin-system-gateway).
 Config: NODE_SYSTEM_GATEWAY_CONFIG (default /app/node/config/node-system-gateway.connections.json).
 TLS policy: NODE_SYSTEM_GATEWAY_OPENSSL_API_YAML (default /app/node/config/openssl-api.yml).

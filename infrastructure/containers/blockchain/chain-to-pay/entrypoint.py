@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 """
+File: /app/configs/blockchain/chain-to-pay/entrypoint.py
+x-lucid-file-path: /app/configs/blockchain/chain-to-pay/entrypoint.py
+x-lucid-file-directory: /app/configs/blockchain/chain-to-pay
+x-lucid-file-type: python
+
 Lucid chain-to-pay gateway — HTTP reverse proxy (data-chain, consensus, session-chunk, tron-payment).
 Config: CHAIN_TO_PAY_CONFIG (default /app/chain/config/chain-to-pay.connections.json).
 TLS: CHAIN_TO_PAY_OPENSSL_API_YAML (default /app/chain/config/openssl-api.yml).

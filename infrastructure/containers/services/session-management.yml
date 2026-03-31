@@ -1,3 +1,9 @@
+# File: /app/service_configs/session-management.yml
+# x-lucid-file-path: /app/service_configs/session-management.yml
+# x-lucid-file-directory: /app/service_configs
+# x-lucid-file-type: YAML
+# Lucid alignment: host_registry=infrastructure/containers/host-config.yml (container /app/configs/host-config.yml); path_index=x-files.json section_to_canonical
+
 # Runtime (container): /app/service_configs/session-management.yml — see container-runtime-layout.yml
 # Session Management Service Configuration
 # Cluster: 03-SESSION-MANAGEMENT

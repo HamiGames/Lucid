@@ -1,4 +1,9 @@
 """
+File: /app/tests/integration/blockchain-integration/test_poot_consensus_progression.py
+x-lucid-file-path: /app/tests/integration/blockchain-integration/test_poot_consensus_progression.py
+x-lucid-file-directory: /app/tests/integration/blockchain-integration
+x-lucid-file-type: python
+
 Integration tests for PoOT consensus slot progression.
 
 Tests end-to-end PoOT consensus slot progression, leader selection,

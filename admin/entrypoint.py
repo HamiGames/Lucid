@@ -3,6 +3,7 @@
 """
 File: /app/admin/entrypoint.py
 x-lucid-file-path: /app/admin/entrypoint.py
+x-lucid-file-directory: /app/admin
 x-lucid-file-type: python
 
 Admin Interface Service Entrypoint

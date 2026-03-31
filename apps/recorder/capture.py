@@ -2,6 +2,7 @@
 """
 File: /app/apps/recorder/capture.py
 x-lucid-file-path: /app/apps/recorder/capture.py
+x-lucid-file-directory: /app/apps/recorder
 x-lucid-file-type: python
 
 Screen and Audio Capture Module for Lucid RDP Recorder

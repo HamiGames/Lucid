@@ -1,6 +1,7 @@
 """
 File: /app/electron_gui/utils/load_host_config.py
 x-lucid-file-path: /app/electron_gui/utils/load_host_config.py
+x-lucid-file-directory: /app/electron_gui/utils
 x-lucid-file-type: python
 
 Loads host config for Lucid Electron GUI.

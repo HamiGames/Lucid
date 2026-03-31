@@ -1,10 +1,23 @@
 #!/usr/bin/env python3
 """
-Search ``infrastructure/containers/**/Dockerfile*`` and ``infrastructure/docker/**/Dockerfile*`` for ``RUN … apt-get install`` blocks (same shape as
+File: /app/configs/lib_search_and_inject.py
+x-lucid-file-path: /app/configs/lib_search_and_inject.py
+x-lucid-file-directory: /app/configs
+x-lucid-file-type: python
+
+Search ``infrastructure/containers/**/Dockerfile*`` and ``configs/docker/**/Dockerfile*`` for ``RUN … apt-get install`` blocks (same shape as
 ``infrastructure/containers/blockchain/Dockerfile.chain-to-pay`` lines **65–86**: cache mounts + package list)
 and for **other** RUN lines that create FHS paths (e.g. ``printf … > /var/run/.keep``, ``mkdir -p /usr/local/bin``),
 then print **recommended directories** on the builder image to ``COPY`` into a distroless runtime under
 ``/app/…`` (FHS paths such as ``/usr/bin/``, ``/var/run/``, ``/usr/local/lib/…`` — **not** ``/build/`` or ``./`` skeleton trees).
+
+With ``--discover-docker``, runs a throwaway container on the given Debian image, runs ``apt-get install`` for the
+parsed package names (non-build-only), and uses ``dpkg -L`` per package to collect real paths (filtered for
+runtime use — no doc/man trees). Requires Docker; results are merged with built-in maps and
+``lib-inject-path.json``. Use ``--discover-docker-platform linux/arm64`` when the Pi image must match bookworm arm64 packages.
+
+Path hints: defaults are ``PACKAGE_RUNTIME_SUPPORT`` / ``PACKAGE_RUNTIME_ALIASES`` in this module; optional
+``infrastructure/containers/lib-inject-path.json`` overrides or extends those entries.
 
 By default nothing is written to disk. With ``--inject-dockerfile --apply``, splices the marked
 apt->FHS ``COPY`` block **into** each multi-stage Dockerfile **after** the **last** ``ENV`` in the
@@ -15,7 +28,11 @@ Clear command (repo root) — scan all container Dockerfiles in parallel (see ``
 
   python infrastructure/containers/lib_search_and_inject.py --recommend
 
-Same for one file::
+Discover real paths with Docker + ``dpkg -L`` (slow; use ``-j 1`` to avoid many concurrent pulls)::
+
+  python infrastructure/containers/lib_search_and_inject.py --recommend --discover-docker --only infrastructure/containers/blockchain/Dockerfile.chain-to-pay
+
+Same for one file (curated map only)::
 
   python infrastructure/containers/lib_search_and_inject.py --recommend --only infrastructure/containers/blockchain/Dockerfile.chain-to-pay
 
@@ -58,10 +75,14 @@ import json
 import os
 import re
 import shlex
+import subprocess
 import sys
+import threading
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path, PurePosixPath
-from typing import Iterable
+from typing import Any, Iterable
+
+from dockerfile_alignment import load_alignment_criteria, normalize_repo_rel, validate_alignment
 
 # Stage -2 = penultimate ``FROM`` stage (second-to-last multi-stage slice). See
 # :func:`extract_stage_minus2_copy_instructions`.
@@ -80,11 +101,17 @@ RUN_HELP_BANNER = f"""\
 ================================================================================
 lib_search_and_inject.py - recommended FHS directories for distroless COPY
 ================================================================================
-  Reads:  each Dockerfile under --containers-root (default: infrastructure/containers and infrastructure/docker)
+  Reads:  each Dockerfile under the scan roots (default: infrastructure/containers **and**
+          infrastructure/docker). If you pass ``--containers-root infrastructure/containers`` only,
+          ``infrastructure/docker`` is added automatically unless
+          ``--no-include-infrastructure-docker-sibling`` is set.
   Models: apt-get install package lists in RUN blocks, like {APT_RUN_REFERENCE}
           plus non-apt RUN lines (mkdir, printf >, touch, chown, chmod) that touch absolute FHS paths.
+  Discover: --discover-docker runs ``docker run`` on a Debian image, apt-get install + dpkg -L per package
+          (merged with built-in maps and lib-inject-path.json).
   Output: merged builder paths (e.g. /usr/bin/, /var/run/, /usr/local/bin/) -> COPY under /app/...
-  Write:   --inject-dockerfile --apply splices after the last ENV (or last LABEL) in the runtime stage.
+  Write:   --inject-dockerfile --apply splices after the last ENV (or last LABEL) in the runtime stage
+            (or after WORKDIR + leading ARGs if there is no ENV/LABEL; WORKDIR may be /app or other).
 ================================================================================
 """
 
@@ -153,6 +180,53 @@ PACKAGE_RUNTIME_SUPPORT: dict[str, tuple[str, ...]] = {
     "libpython3.11": ("/usr/lib/python3.11/",),
 }
 
+# Optional JSON next to this script: overrides/extends built-in maps (see ``lib-inject-path.json``).
+_LIB_INJECT_PATH_JSON = Path(__file__).resolve().with_name("lib-inject-path.json")
+_EFFECTIVE_INJECT_MAPS: tuple[frozenset[str], dict[str, tuple[str, ...]], dict[str, tuple[str, ...]]] | None = (
+    None
+)
+
+
+def get_effective_inject_maps() -> tuple[frozenset[str], dict[str, tuple[str, ...]], dict[str, tuple[str, ...]]]:
+    """
+    Built-in ``PACKAGE_RUNTIME_*`` / ``BUILD_ONLY_PACKAGES`` merged with ``lib-inject-path.json`` (if present).
+
+    JSON keys ``package_runtime_support`` and ``package_runtime_aliases`` override same-named packages;
+    ``build_only_packages`` (array of strings) is unioned with the built-in build-only set.
+    """
+    global _EFFECTIVE_INJECT_MAPS
+    if _EFFECTIVE_INJECT_MAPS is not None:
+        return _EFFECTIVE_INJECT_MAPS
+
+    build_only: set[str] = set(BUILD_ONLY_PACKAGES)
+    aliases: dict[str, tuple[str, ...]] = {
+        k: tuple(v) for k, v in PACKAGE_RUNTIME_ALIASES.items()
+    }
+    support: dict[str, tuple[str, ...]] = {
+        k: tuple(v) for k, v in PACKAGE_RUNTIME_SUPPORT.items()
+    }
+
+    if _LIB_INJECT_PATH_JSON.is_file():
+        try:
+            raw = json.loads(_LIB_INJECT_PATH_JSON.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            raw = {}
+        else:
+            if isinstance(raw, dict):
+                for k, v in (raw.get("package_runtime_aliases") or {}).items():
+                    if isinstance(k, str) and isinstance(v, list):
+                        aliases[k] = tuple(str(x) for x in v)
+                for k, v in (raw.get("package_runtime_support") or {}).items():
+                    if isinstance(k, str) and isinstance(v, list):
+                        support[k] = tuple(str(x) for x in v)
+                for x in raw.get("build_only_packages") or []:
+                    if isinstance(x, str):
+                        build_only.add(x)
+
+    _EFFECTIVE_INJECT_MAPS = (frozenset(build_only), aliases, support)
+    return _EFFECTIVE_INJECT_MAPS
+
+
 # Optional dirs created later in the same Dockerfile (e.g. chain-to-pay touches /var/run).
 POST_INSTALL_HINT_PATHS: tuple[str, ...] = (
     "/var/run/",
@@ -162,12 +236,154 @@ POST_INSTALL_HINT_PATHS: tuple[str, ...] = (
 # Absolute path prefixes never copied from builder for distroless (caches, build context, apt state).
 RUN_SCAFFOLD_EXCLUDE_PREFIXES: tuple[str, ...] = (
     "/build/",
+    "/root/",  # rustup/cargo home on builder — not a distroless runtime tree
     "/root/.cache",
     "/tmp/",
     "/var/tmp/",
     "/var/cache/apt",
     "/var/lib/apt",
 )
+
+# Paths from ``dpkg -L`` that are poor distroless COPY candidates (docs, unit files, etc.).
+DPKG_DISCOVERY_PATH_EXCLUDE_PREFIXES: tuple[str, ...] = (
+    "/usr/share/doc/",
+    "/usr/share/man/",
+    "/usr/share/info/",
+    "/usr/share/lintian/",
+    "/usr/share/bug/",
+    "/usr/lib/systemd/",
+    "/usr/share/locale/",
+)
+
+_DOCKER_DISCOVER_LOCK = threading.Lock()
+_docker_discover_cache: dict[tuple[str, str, tuple[str, ...]], tuple[dict[str, list[str]], str | None]] = {}
+
+
+def validate_apt_package_token(name: str) -> bool:
+    """Allow only tokens safe for shell and apt (no metacharacters)."""
+    return bool(re.match(r"^[a-zA-Z0-9][a-zA-Z0-9.+-]*$", name))
+
+
+def filter_dpkg_path_for_runtime_copy(path: str) -> bool:
+    """True if a ``dpkg -L`` line should feed COPY recommendations."""
+    p = path.strip()
+    if not p.startswith("/"):
+        return False
+    pl = p.rstrip("/")
+    for ex in RUN_SCAFFOLD_EXCLUDE_PREFIXES:
+        e = ex.rstrip("/")
+        if pl == e or p.startswith(ex):
+            return False
+    for ex in DPKG_DISCOVERY_PATH_EXCLUDE_PREFIXES:
+        if p.startswith(ex):
+            return False
+    return True
+
+
+def discover_package_paths_via_docker(
+    packages: list[str],
+    image: str,
+    *,
+    platform: str | None = None,
+    timeout_sec: int = 900,
+) -> tuple[dict[str, list[str]], str | None]:
+    """
+    In a fresh container: ``apt-get update``, ``apt-get install`` all given packages, then ``dpkg -L`` each.
+
+    Returns ``({package: [abs paths, ...], ...}, error)``. Cached by (image, platform, sorted packages).
+    ``error`` is set if Docker fails or the script exits non-zero.
+    """
+    bo, _, _ = get_effective_inject_maps()
+    pkgs = sorted({p for p in packages if p not in bo and validate_apt_package_token(p)})
+    if not pkgs:
+        return {}, None
+
+    plat = platform or ""
+    cache_key = (image, plat, tuple(pkgs))
+    with _DOCKER_DISCOVER_LOCK:
+        if cache_key in _docker_discover_cache:
+            return _docker_discover_cache[cache_key]
+
+    quoted = " ".join(shlex.quote(p) for p in pkgs)
+    inner = f"""set -euo pipefail
+export DEBIAN_FRONTEND=noninteractive
+apt-get update -qq
+apt-get install -y --no-install-recommends {quoted}
+pkgs=({quoted})
+for p in "${{pkgs[@]}}"; do
+  echo "@@@PKG@@@$p"
+  dpkg -L "$p" 2>/dev/null || true
+done
+"""
+    cmd: list[str] = ["docker", "run", "--rm"]
+    if platform:
+        cmd.extend(["--platform", platform])
+    cmd.extend([image, "bash", "-c", inner])
+
+    try:
+        proc = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=timeout_sec,
+        )
+    except FileNotFoundError:
+        err = "docker: command not found (install Docker or omit --discover-docker)"
+        with _DOCKER_DISCOVER_LOCK:
+            _docker_discover_cache[cache_key] = ({}, err)
+        return {}, err
+    except subprocess.TimeoutExpired:
+        err = f"docker discover timed out after {timeout_sec}s for {image}"
+        with _DOCKER_DISCOVER_LOCK:
+            _docker_discover_cache[cache_key] = ({}, err)
+        return {}, err
+
+    out = proc.stdout or ""
+    if proc.returncode != 0:
+        tail = (proc.stderr or "")[-4000:]
+        err = f"docker run exit {proc.returncode}: {tail.strip() or proc.stdout[-2000:]}"
+        with _DOCKER_DISCOVER_LOCK:
+            _docker_discover_cache[cache_key] = ({}, err)
+        return {}, err
+
+    by_pkg: dict[str, list[str]] = {}
+    current: str | None = None
+    for line in out.splitlines():
+        if line.startswith("@@@PKG@@@"):
+            current = line[len("@@@PKG@@@") :].strip()
+            by_pkg.setdefault(current, [])
+            continue
+        if current is None:
+            continue
+        line_st = line.strip()
+        if not line_st or not line_st.startswith("/"):
+            continue
+        if filter_dpkg_path_for_runtime_copy(line_st):
+            by_pkg[current].append(line_st)
+
+    with _DOCKER_DISCOVER_LOCK:
+        _docker_discover_cache[cache_key] = (by_pkg, None)
+    return by_pkg, None
+
+
+def flatten_discovered_paths(
+    by_pkg: dict[str, list[str]],
+    *,
+    only_packages: frozenset[str] | None = None,
+) -> list[str]:
+    """Ordered deduped path list; if ``only_packages``, keep paths only from those package keys."""
+    seen: set[str] = set()
+    ordered: list[str] = []
+    for pkg, paths in by_pkg.items():
+        if only_packages is not None and pkg not in only_packages:
+            continue
+        for p in paths:
+            if p not in seen:
+                seen.add(p)
+                ordered.append(p)
+    return ordered
 
 
 def repo_root_from_here() -> Path:
@@ -186,6 +402,31 @@ def resolve_path_from_repo(path: Path, repo_root: Path) -> Path:
     if p.is_absolute():
         return p.resolve()
     return (repo_root / p).resolve()
+
+
+def expand_infrastructure_docker_sibling_roots(roots: list[Path]) -> list[Path]:
+    """
+    Lucid layout: Dockerfiles under ``infrastructure/docker`` are part of the same tooling tree as
+    ``infrastructure/containers``. When a scan root resolves to ``.../infrastructure/containers``,
+    also include ``.../infrastructure/docker`` if that directory exists and is not already listed.
+    """
+    out = list(roots)
+    seen: set[Path] = {p.resolve() for p in out}
+    for p in roots:
+        pr = p.resolve()
+        if pr.name != "containers":
+            continue
+        if pr.parent.name != "infrastructure":
+            continue
+        sib = (pr.parent / "docker").resolve()
+        if sib.is_dir() and sib not in seen:
+            out.append(sib)
+            seen.add(sib)
+    return out
+
+
+def repo_rel_for_summary(file_rel: str) -> str:
+    return str(file_rel).replace("\\", "/")
 
 
 def discover_dockerfiles(containers_roots: list[Path]) -> list[Path]:
@@ -504,13 +745,14 @@ def merge_copy_roots(support_paths: Iterable[str]) -> list[str]:
 
 def expanded_packages_for_mapping(packages: Iterable[str]) -> list[str]:
     """Include alias runtime packages when a -dev/build package appears."""
+    _, aliases, _ = get_effective_inject_maps()
     out: list[str] = []
     seen: set[str] = set()
     for pkg in packages:
         if pkg not in seen:
             seen.add(pkg)
             out.append(pkg)
-        for alias in PACKAGE_RUNTIME_ALIASES.get(pkg, ()):
+        for alias in aliases.get(pkg, ()):
             if alias not in seen:
                 seen.add(alias)
                 out.append(alias)
@@ -519,25 +761,38 @@ def expanded_packages_for_mapping(packages: Iterable[str]) -> list[str]:
 
 def normalized_support_paths(packages: Iterable[str]) -> tuple[str, ...]:
     """Merge package paths; drop build-only; apply aliases; dedupe while preserving order."""
+    bo, _, support = get_effective_inject_maps()
     expanded = expanded_packages_for_mapping(packages)
     seen: set[str] = set()
     ordered: list[str] = []
     for pkg in expanded:
-        if pkg in BUILD_ONLY_PACKAGES:
+        if pkg in bo:
             continue
-        for path in PACKAGE_RUNTIME_SUPPORT.get(pkg, ()):
+        for path in support.get(pkg, ()):
             if path not in seen:
                 seen.add(path)
                 ordered.append(path)
     return tuple(ordered)
 
 
+def _path_is_under_builder_app(p: str) -> bool:
+    """True if ``p`` is the builder's application root ``/app`` or a path beneath it."""
+    pl = p.rstrip("/")
+    return pl == "/app" or pl.startswith("/app/")
+
+
 def app_dest_for_src(src: str, app_prefix: str) -> str:
-    """Map /usr/bin/tini -> /app/usr/bin/tini; /usr/bin/ -> /app/usr/bin/"""
-    p = src.rstrip("/") or src
-    if p.startswith("/"):
-        return f"{app_prefix.rstrip('/')}{src}" if src.endswith("/") else f"{app_prefix.rstrip('/')}{src}"
-    return f"{app_prefix.rstrip('/')}/{src}"
+    """Map /usr/bin/tini -> /app/usr/bin/tini; /usr/bin/ -> /app/usr/bin/.
+
+    Sources already under ``app_prefix`` (e.g. ``/app/configs/``) are unchanged so we never emit
+    ``/app/app/...`` (see inject_dockerfile_x_files_skeleton: configs copied to ``/app/...`` on builder).
+    """
+    ap = app_prefix.rstrip("/") or "/app"
+    if src.startswith("/") and (src.rstrip("/") == ap or src.startswith(ap + "/")):
+        return src
+    if src.startswith("/"):
+        return f"{ap}{src}"
+    return f"{ap}/{src}"
 
 
 def app_dest_dir_for_glob_src(src: str, app_prefix: str) -> str:
@@ -1068,8 +1323,13 @@ def find_insert_after_workdir_arg_label_env_runtime(plain: list[str]) -> int | N
     ``LABEL`` if there is no ``ENV``, so the apt->FHS block never sits **before** LABEL/ENV (e.g.
     ``Dockerfile.consensus-engine`` LABEL+ENV around lines 183-206).
 
-    If the stage has no LABEL/ENV at all, falls back to after ``WORKDIR /app`` plus any leading ``ARG``
-    run (before the first non-ARG instruction).
+    This does **not** require ``WORKDIR /app``: images such as ``Dockerfile.common`` use
+    ``WORKDIR /opt/lucid`` but still define ``LABEL``/``ENV`` in the final stage — those determine
+    the insert point first.
+
+    If the stage has no ``LABEL``/``ENV`` at all, falls back to after ``WORKDIR /app`` if present,
+    else after the **first** ``WORKDIR`` in that stage, then any leading ``ARG`` run (before the
+    first non-ARG instruction).
     """
     from_idx: list[int] = []
     for i, line in enumerate(plain):
@@ -1080,13 +1340,6 @@ def find_insert_after_workdir_arg_label_env_runtime(plain: list[str]) -> int | N
     k = len(from_idx) - 1
     stage_start = from_idx[k]
     stage_end = len(plain)
-    workdir_idx: int | None = None
-    for i in range(stage_start, stage_end):
-        if re.match(r"^\s*WORKDIR\s+/app(\s|$)", plain[i], re.IGNORECASE):
-            workdir_idx = i
-            break
-    if workdir_idx is None:
-        return None
 
     last_env_end: int | None = None
     last_label_end: int | None = None
@@ -1111,6 +1364,19 @@ def find_insert_after_workdir_arg_label_env_runtime(plain: list[str]) -> int | N
         return last_env_end
     if last_label_end is not None:
         return last_label_end
+
+    workdir_idx: int | None = None
+    for j in range(stage_start, stage_end):
+        if re.match(r"^\s*WORKDIR\s+/app(\s|$)", plain[j], re.IGNORECASE):
+            workdir_idx = j
+            break
+    if workdir_idx is None:
+        for j in range(stage_start, stage_end):
+            if re.match(r"^\s*WORKDIR\s+\S+", plain[j], re.IGNORECASE):
+                workdir_idx = j
+                break
+    if workdir_idx is None:
+        return None
 
     i = workdir_idx + 1
     insert_after = workdir_idx + 1
@@ -1155,7 +1421,10 @@ def inject_apt_fhs_block_content(
     plain, _ = strip_commented_copy_lines_in_last_stage(plain)
     insert_at = find_insert_after_workdir_arg_label_env_runtime(plain)
     if insert_at is None:
-        return None, "need 2+ FROM stages, WORKDIR /app in runtime stage, and a valid insert point"
+        return (
+            None,
+            "need 2+ FROM stages and a valid insert point (last ENV/LABEL in final stage, or WORKDIR+ARG)",
+        )
     new_plain = plain[:insert_at] + block_lines + plain[insert_at:]
     out = "\n".join(new_plain)
     if text.endswith("\n"):
@@ -1170,7 +1439,16 @@ def result_has_apt_fhs_mapping(r: dict) -> bool:
     return bool(r.get("merged_copy_roots")) or any("*" in p for p in r.get("runtime_support_paths", ()))
 
 
-def scan_file(path: Path, repo_root: Path) -> dict:
+def scan_file(
+    path: Path,
+    repo_root: Path,
+    *,
+    discover_docker: bool = False,
+    discover_docker_image: str = "debian:bookworm-slim",
+    discover_docker_platform: str | None = None,
+    discover_docker_timeout: int = 900,
+    discover_docker_unknown_only: bool = False,
+) -> dict:
     text = path.read_text(encoding="utf-8", errors="replace")
     as_name = extract_builder_stage_name(text)
     runtime_user = last_user_instruction(text)
@@ -1194,11 +1472,16 @@ def scan_file(path: Path, repo_root: Path) -> dict:
             seen_p.add(p)
             uniq_pkgs.append(p)
     expanded = expanded_packages_for_mapping(uniq_pkgs)
-    support = normalized_support_paths(uniq_pkgs)
-    run_scaffold_paths = collect_scaffold_fhs_paths_from_text(text)
+    bo, _, sup_dict = get_effective_inject_maps()
+    path_hints = normalized_support_paths(uniq_pkgs)
+    run_scaffold_paths = [
+        p
+        for p in collect_scaffold_fhs_paths_from_text(text)
+        if not _path_is_under_builder_app(p)
+    ]
     seen_support: set[str] = set()
     combined_support: list[str] = []
-    for p in support:
+    for p in path_hints:
         if p not in seen_support:
             seen_support.add(p)
             combined_support.append(p)
@@ -1206,12 +1489,48 @@ def scan_file(path: Path, repo_root: Path) -> dict:
         if p not in seen_support:
             seen_support.add(p)
             combined_support.append(p)
+
+    docker_by_pkg: dict[str, list[str]] = {}
+    docker_discover_error: str | None = None
+    docker_paths_flat: list[str] = []
+    if discover_docker:
+        to_install = [
+            p
+            for p in expanded
+            if p not in bo and validate_apt_package_token(p)
+        ]
+        unk_for_skip = frozenset(
+            p
+            for p in expanded
+            if p not in bo and p not in sup_dict
+        )
+        skip_docker = bool(discover_docker_unknown_only and not unk_for_skip)
+        if not to_install:
+            skip_docker = True
+        if not skip_docker:
+            docker_by_pkg, docker_discover_error = discover_package_paths_via_docker(
+                to_install,
+                discover_docker_image,
+                platform=discover_docker_platform,
+                timeout_sec=discover_docker_timeout,
+            )
+            if discover_docker_unknown_only:
+                docker_paths_flat = flatten_discovered_paths(
+                    docker_by_pkg, only_packages=unk_for_skip
+                )
+            else:
+                docker_paths_flat = flatten_discovered_paths(docker_by_pkg, only_packages=None)
+            for p in docker_paths_flat:
+                if p not in seen_support:
+                    seen_support.add(p)
+                    combined_support.append(p)
+
     merged_roots = merge_copy_roots(combined_support)
-    build_only_hit = [p for p in uniq_pkgs if p in BUILD_ONLY_PACKAGES]
+    build_only_hit = [p for p in uniq_pkgs if p in bo]
     unknown = [
         p
         for p in expanded
-        if p not in BUILD_ONLY_PACKAGES and p not in PACKAGE_RUNTIME_SUPPORT
+        if p not in bo and p not in sup_dict
     ]
     try:
         rel_file = str(path.relative_to(repo_root))
@@ -1232,6 +1551,9 @@ def scan_file(path: Path, repo_root: Path) -> dict:
         "unknown_packages_no_map": unknown,
         "expanded_packages_for_mapping": expanded,
         "post_install_fhs_hints": list(POST_INSTALL_HINT_PATHS),
+        "docker_discover_error": docker_discover_error,
+        "docker_discovered_by_package": docker_by_pkg,
+        "docker_discovered_path_count": len(docker_paths_flat),
     }
 
 
@@ -1245,9 +1567,9 @@ def resolve_job_workers(jobs: int, num_tasks: int) -> int:
     return max(1, min(num_tasks, min(32, cpu * 4)))
 
 
-def _scan_one_safe(df: Path, repo_root: Path) -> tuple[dict | None, str | None]:
+def _scan_one_safe(df: Path, repo_root: Path, **scan_kw: Any) -> tuple[dict | None, str | None]:
     try:
-        return scan_file(df, repo_root), None
+        return scan_file(df, repo_root, **scan_kw), None
     except OSError as e:
         return None, f"error: {df}: {e}"
 
@@ -1373,6 +1695,8 @@ Examples (repo root):
   python infrastructure/containers/lib_search_and_inject.py --inject-dockerfile --apply --only infrastructure/containers/blockchain/Dockerfile.chain-to-pay
   python infrastructure/containers/lib_search_and_inject.py --cleanup-commented-copy --apply
   python infrastructure/containers/lib_search_and_inject.py --dedupe-build-app-copy --apply
+  python infrastructure/containers/lib_search_and_inject.py --recommend --discover-docker --only infrastructure/containers/blockchain/Dockerfile.chain-to-pay
+  python infrastructure/containers/lib_search_and_inject.py --recommend --discover-docker --discover-docker-platform linux/arm64 --only path/to/Dockerfile
 
   --inject-dockerfile without --apply is dry-run. --apply persists with --inject-dockerfile, --cleanup-commented-copy, or --dedupe-build-app-copy.
 """,
@@ -1385,7 +1709,17 @@ Examples (repo root):
         metavar="DIR",
         help=(
             "Scan tree (repeatable; default: infrastructure/containers and infrastructure/docker). "
-            "Relative paths are resolved from the repository root, not the shell cwd."
+            "Relative paths are resolved from the repository root, not the shell cwd. "
+            "If you only pass infrastructure/containers, infrastructure/docker is auto-added "
+            "(sibling); disable with --no-include-infrastructure-docker-sibling."
+        ),
+    )
+    ap.add_argument(
+        "--no-include-infrastructure-docker-sibling",
+        action="store_true",
+        help=(
+            "Do not auto-append infrastructure/docker when infrastructure/containers appears in "
+            "--containers-root (use when you intentionally want to scan containers only)."
         ),
     )
     ap.add_argument(
@@ -1481,6 +1815,52 @@ Examples (repo root):
             "min(32, cpu*4), capped by file count)."
         ),
     )
+    ap.add_argument(
+        "--discover-docker",
+        action="store_true",
+        help=(
+            "For each Dockerfile, install parsed apt packages in a disposable container and collect "
+            "paths via dpkg -L (requires Docker; slow). Merged with built-in maps and lib-inject-path.json. "
+            "Match the builder distro/arch with --discover-docker-image / --discover-docker-platform."
+        ),
+    )
+    ap.add_argument(
+        "--discover-docker-image",
+        default="debian:bookworm-slim",
+        metavar="IMAGE",
+        help="Base image for apt+dpkg discovery (default: debian:bookworm-slim).",
+    )
+    ap.add_argument(
+        "--discover-docker-platform",
+        default=None,
+        metavar="PLATFORM",
+        help="Optional docker --platform (e.g. linux/arm64 for Pi-aligned package paths).",
+    )
+    ap.add_argument(
+        "--discover-docker-timeout",
+        type=int,
+        default=900,
+        metavar="SEC",
+        help="Timeout for each docker discover run (default: 900).",
+    )
+    ap.add_argument(
+        "--discover-docker-unknown-only",
+        action="store_true",
+        help=(
+            "Only append dpkg paths for packages not listed in the effective package map "
+            "(built-in + lib-inject-path.json) "
+            "(still apt-get installs the full expanded set so dependencies resolve)."
+        ),
+    )
+    ap.add_argument(
+        "--validate-service-alignment-config",
+        default=None,
+        metavar="PATH",
+        help=(
+            "Optional config-listings.json path to validate service_name/service_id labels on "
+            "matched Dockerfiles (repo-relative or absolute)."
+        ),
+    )
     args = ap.parse_args()
     if args.write:
         args.apply = True
@@ -1495,6 +1875,18 @@ Examples (repo root):
 
     if args.containers_roots:
         containers_roots = [resolve_path_from_repo(p, root) for p in args.containers_roots]
+        pre_roots = list(containers_roots)
+        if not args.no_include_infrastructure_docker_sibling:
+            containers_roots = expand_infrastructure_docker_sibling_roots(containers_roots)
+        if len(containers_roots) > len(pre_roots):
+            added = [
+                str(p.relative_to(root)) if p.is_relative_to(root) else str(p)
+                for p in containers_roots[len(pre_roots) :]
+            ]
+            print(
+                f"# lib_search_and_inject: auto-added scan root(s): {', '.join(added)}",
+                file=sys.stderr,
+            )
     else:
         containers_roots = list(default_scan_roots)
 
@@ -1515,11 +1907,22 @@ Examples (repo root):
         dockerfiles = discover_dockerfiles(containers_roots)
 
     workers = resolve_job_workers(args.jobs, len(dockerfiles))
+    scan_kw: dict[str, Any] = {}
+    if args.discover_docker:
+        scan_kw = {
+            "discover_docker": True,
+            "discover_docker_image": args.discover_docker_image,
+            "discover_docker_platform": args.discover_docker_platform,
+            "discover_docker_timeout": args.discover_docker_timeout,
+            "discover_docker_unknown_only": args.discover_docker_unknown_only,
+        }
     results: list[dict] = []
     if dockerfiles:
         pool = max(1, min(workers, len(dockerfiles)))
         with ThreadPoolExecutor(max_workers=pool) as ex:
-            scan_pairs = list(ex.map(lambda df: _scan_one_safe(df, root), dockerfiles))
+            scan_pairs = list(
+                ex.map(lambda df: _scan_one_safe(df, root, **scan_kw), dockerfiles)
+            )
         for r, err in scan_pairs:
             if err:
                 print(err, file=sys.stderr)
@@ -1648,7 +2051,23 @@ Examples (repo root):
         if r["build_only_packages"]:
             print(f"  build-only (skipped for runtime paths): {', '.join(r['build_only_packages'])}")
         if r["unknown_packages_no_map"]:
-            print(f"  unknown (add to PACKAGE_RUNTIME_SUPPORT): {', '.join(r['unknown_packages_no_map'])}")
+            print(
+                f"  unknown (add to lib-inject-path.json package_runtime_support): "
+                f"{', '.join(r['unknown_packages_no_map'])}"
+            )
+        if args.discover_docker:
+            err = r.get("docker_discover_error")
+            n = int(r.get("docker_discovered_path_count") or 0)
+            img = args.discover_docker_image
+            plat = args.discover_docker_platform or "host default"
+            if err:
+                tail = str(err) if len(str(err)) < 800 else str(err)[:797] + "..."
+                print(f"  docker dpkg discover ({img}, {plat}): ERROR {tail}", file=sys.stderr)
+            else:
+                print(
+                    f"  docker dpkg discover ({img}, {plat}): merged {n} path(s) from dpkg -L "
+                    "(plus curated map / scaffold)"
+                )
         if r.get("run_scaffold_fhs_paths"):
             print(
                 "  RUN scaffold dirs (mkdir / printf> / touch / chown / chmod, excluding apt install RUNs): "
@@ -1727,9 +2146,42 @@ Examples (repo root):
                 )
         print()
 
+    if args.validate_service_alignment_config:
+        cfg = Path(args.validate_service_alignment_config)
+        cfg = cfg if cfg.is_absolute() else (root / cfg).resolve()
+        if not cfg.is_file():
+            print(f"error: --validate-service-alignment-config not found: {cfg}", file=sys.stderr)
+            return 1
+        align_map = load_alignment_criteria(cfg)
+        mismatches = 0
+        checked = 0
+        for rr in results:
+            rel = normalize_repo_rel(str(rr.get("file", "")))
+            criteria = align_map.get(rel)
+            if criteria is None:
+                continue
+            checked += 1
+            text = Path(rr["path"]).read_text(encoding="utf-8", errors="replace")
+            problems = validate_alignment(text, criteria)
+            if problems:
+                mismatches += 1
+                print(f"[alignment] {rel}: {', '.join(problems)}", file=sys.stderr)
+        print(f"# alignment check: {checked} matched, {mismatches} mismatched")
+
     if args.apply and args.inject_dockerfile:
+        inj_d = inj_c = 0
+        if action_metas and len(action_metas) == len(results):
+            for idx, r in enumerate(results):
+                if not bool(action_metas[idx].get("injected_this")):
+                    continue
+                rel = repo_rel_for_summary(str(r.get("file", "")))
+                if rel.startswith("infrastructure/docker/"):
+                    inj_d += 1
+                elif rel.startswith("infrastructure/containers/"):
+                    inj_c += 1
         print(
-            f"# Apply summary: Dockerfiles injected: {docker_written}, skipped: {docker_skipped}."
+            f"# Apply summary: Dockerfiles injected: {docker_written}, skipped: {docker_skipped} "
+            f"(under infrastructure/docker: {inj_d}, under infrastructure/containers: {inj_c})."
         )
     elif args.apply and args.cleanup_commented_copy and not args.inject_dockerfile:
         print(

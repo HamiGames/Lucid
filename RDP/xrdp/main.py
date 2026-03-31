@@ -2,6 +2,7 @@
 """
 File: /app/RDP/xrdp/main.py
 x-lucid-file-path: /app/RDP/xrdp/main.py
+x-lucid-file-directory: /app/RDP/xrdp
 x-lucid-file-type: python
 
 LUCID XRDP Service - Main Entry Point

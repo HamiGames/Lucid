@@ -1,6 +1,7 @@
 """
 File: /app/blockchain/contracts/__init__.py
 x-lucid-file-path: /app/blockchain/contracts/__init__.py
+x-lucid-file-directory: /app/blockchain/contracts
 x-lucid-file-type: python
 
 Lucid Blockchain Smart Contracts

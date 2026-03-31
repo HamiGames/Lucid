@@ -1,10 +1,15 @@
+# File: /app/configs/gui/docker-compose.node-gui.yml
+# x-lucid-file-path: /app/configs/gui/docker-compose.node-gui.yml
+# x-lucid-file-directory: /app/configs/gui
+# x-lucid-file-type: YAML
+
 # LUCID GUI SYSTEM (node operator) — Distroless Deployment
 # Path: infrastructure/containers/gui/docker-compose.node-gui.yml
 #
 # Aligned with: ports.txt / host-config.yml (gui_api_bridge 8102, electron_gui_node 3002),
 #   infrastructure/containers/env/env.secrets.template → configs/environment/.env.secrets.
 #
-# Networks: lucid-gui-network (172.27.0.0/16), lucid-pi-network, lucid-session-network, lucid-tron-isolated
+# Networks: lucid-gui-network (172.27.0.0/16), lucid-pi-network, lucid-session-network, lucid-tron-isolated, lucid-tor-egress-network (Tor path; create per infrastructure/containers/network/network.txt)
 #   so gui-api-bridge can reach session-api, tron-client / payment peers, and pi-network discovery
 #   (see infrastructure/containers/network/network.txt).
 #
@@ -15,6 +20,15 @@
 #   docker compose -f infrastructure/containers/gui/docker-compose.node-gui.yml up -d
 
 name: lucid-node-gui
+
+x-lucid-host-config:
+  file: ../../../infrastructure/containers/host-config.yml
+  repo_path: infrastructure/containers/host-config.yml
+  version: '1.0'
+  description: Lucid container host registry for Docker DNS hostnames, ports, discovery URLs, and static host IPs.
+  http_path_template: 'http://{service_name}:{port}/app'
+  host_ip_range: '172.20.10.1–172.20.10.76'
+  in_container_path: /app/configs/host-config.yml
 
 x-repo-context: &repo-context
   context: ../../../
@@ -64,6 +78,7 @@ services:
       - lucid_node_gui_api_bridge_data:/app/data:rw
     networks:
       - lucid-pi-network
+      - lucid-tor-egress-network
       - lucid-gui-network
       - lucid-session-network
       - lucid-tron-isolated
@@ -117,6 +132,7 @@ services:
       - lucid_node_gui_interface_data:/app/data:rw
     networks:
       - lucid-pi-network
+      - lucid-tor-egress-network
       - lucid-gui-network
       - lucid-session-network
       - lucid-tron-isolated
@@ -174,6 +190,9 @@ networks:
     external: true
   lucid-tron-isolated:
     name: lucid-tron-isolated
+    external: true
+  lucid-tor-egress-network:
+    name: lucid-tor-egress-network
     external: true
 
 volumes:

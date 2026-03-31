@@ -5,6 +5,7 @@
 """
 File: /app/payment_systems/__init__.py
 x-lucid-file-path: /app/payment_systems/__init__.py
+x-lucid-file-directory: /app/payment_systems
 x-lucid-file-type: python
 """
 

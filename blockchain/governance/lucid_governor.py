@@ -2,6 +2,7 @@
 """
 File: /app/blockchain/governance/lucid_governor.py
 x-lucid-file-path: /app/blockchain/governance/lucid_governor.py
+x-lucid-file-directory: /app/blockchain/governance
 x-lucid-file-type: python
 
 LUCID Blockchain Governance System - Lucid Governor

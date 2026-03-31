@@ -1,6 +1,7 @@
 """
 File: /app/blockchain/core/__init__.py
 x-lucid-file-path: /app/blockchain/core/__init__.py
+x-lucid-file-directory: /app/blockchain/core
 x-lucid-file-type: python
 
 LUCID Blockchain Core Components

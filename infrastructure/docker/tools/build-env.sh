@@ -1,37 +1,30 @@
 #!/bin/bash
-# Path: /mnt/myssd/Lucid/Lucid/infrastructure/docker/tools/build-env.sh
-# Build Environment Script for Lucid Tools Services
-# Generates .env files for core infrastructure tools containers
-# Pi Console Native - Optimized for Raspberry Pi 5 deployment
+# Generation paths: x-lucid /app/configs, /app/scripts (override with LUCID_IMAGE_APP_ROOT / LUCID_IMAGE_CONFIG_DIR).
+# File: /app/configs/docker//tools/build-env.sh
+# x-lucid-file-path: /app/configs/docker//tools/build-env.sh
+# x-lucid-file-directory: /app/configs/docker//tools
+# x-lucid-file-type: shell
 
 set -euo pipefail
 
 # =============================================================================
-# PI CONSOLE NATIVE CONFIGURATION
+# PATH CONFIGURATION (x-lucid / container generation targets)
 # =============================================================================
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+LUCID_IMAGE_APP_ROOT="${LUCID_IMAGE_APP_ROOT:-/app}"
+LUCID_IMAGE_CONFIG_DIR="${LUCID_IMAGE_CONFIG_DIR:-/app/configs}"
+PROJECT_ROOT="$LUCID_IMAGE_APP_ROOT"
+ENV_DIR="$LUCID_IMAGE_CONFIG_DIR"
+SCRIPTS_DIR="$LUCID_IMAGE_APP_ROOT/scripts"
+CONFIG_SCRIPTS_DIR="$SCRIPTS_DIR/config"
 
-# Fixed Pi Console Paths - No dynamic detection for Pi console reliability
-PROJECT_ROOT="/mnt/myssd/Lucid/Lucid"
-ENV_DIR="/mnt/myssd/Lucid/Lucid/configs/environment"
-SCRIPTS_DIR="/mnt/myssd/Lucid/Lucid/scripts"
-CONFIG_SCRIPTS_DIR="/mnt/myssd/Lucid/Lucid/scripts/config"
-SCRIPT_DIR="/mnt/myssd/Lucid/Lucid/infrastructure/docker/tools"
-
-# Validate Pi mount points exist
+# Optional Pi mounts do not gate writes to ENV_DIR.
 validate_pi_mounts() {
-    local required_mounts=(
-        "/mnt/myssd"
-        "/mnt/myssd/Lucid"
-        "/mnt/myssd/Lucid/Lucid"
-    )
-    
-    for mount in "${required_mounts[@]}"; do
-        if [[ ! -d "$mount" ]]; then
-            echo "ERROR: Required Pi mount point not found: $mount"
-            echo "Please ensure the SSD is properly mounted at /mnt/myssd"
-            exit 1
-        fi
-    done
+    if [[ -d "/mnt/myssd" ]] || [[ -d "/mnt/usb" ]] || [[ -d "/mnt/sdcard" ]]; then
+        return 0
+    fi
+    echo "NOTE: No Pi SSD/USB mount detected; writing env files to $ENV_DIR"
+    return 0
 }
 
 # Check required packages for Pi console
@@ -59,15 +52,11 @@ check_pi_packages() {
     fi
 }
 
-# Validate paths exist
+# Validate paths exist (mkdir for x-lucid /app targets; only ENV_DIR must be writable)
 validate_paths() {
-    if [[ ! -d "$PROJECT_ROOT" ]]; then
-        echo "ERROR: Project root not found: $PROJECT_ROOT"
-        exit 1
-    fi
-    
-    if [[ ! -d "$SCRIPTS_DIR" ]]; then
-        echo "ERROR: Scripts directory not found: $SCRIPTS_DIR"
+    mkdir -p "$PROJECT_ROOT" "$ENV_DIR" "$SCRIPTS_DIR" 2>/dev/null || true
+    if [[ ! -d "$ENV_DIR" ]] || [[ ! -w "$ENV_DIR" ]]; then
+        echo "ERROR: Environment directory missing or not writable: $ENV_DIR"
         exit 1
     fi
 }
@@ -332,8 +321,8 @@ LUCID_ENV=dev
 
 # Service Configuration
 SERVICE_NAME=server-tools
-TOOLS_DIR=/opt/lucid/tools
-SCRIPTS_DIR=/opt/lucid/scripts
+TOOLS_DIR=/app/lucid/tools
+SCRIPTS_DIR=/app/lucid/scripts
 LOG_DIR=/var/log/lucid
 
 # Database Configuration
@@ -466,16 +455,16 @@ log_info "  - .env.server-tools"
 log_info "  - .env.openapi-gateway"
 log_info "  - .env.openapi-server"
 
-# Also create .env.api in 03-api-gateway/api/ directory for direct service use
-log_info "Creating .env.api in 03-api-gateway/api/ directory..."
-API_GATEWAY_DIR="$PROJECT_ROOT/03-api-gateway/api"
+# Also create .env.api in 03_api_gateway/api/ (x-lucid: /app/03_api_gateway/api)
+log_info "Creating .env.api in 03_api_gateway/api/ directory..."
+API_GATEWAY_DIR="$PROJECT_ROOT/03_api_gateway/api"
 mkdir -p "$API_GATEWAY_DIR"
 
 # Create .env.api from .env.api-gateway
 cp "$ENV_DIR/.env.api-gateway" "$API_GATEWAY_DIR/.env.api"
 log_info "  - Created $API_GATEWAY_DIR/.env.api"
 
-log_success "API Gateway environment file also created in 03-api-gateway/api/ directory"
+log_success "API Gateway environment file also created in 03_api_gateway/api/ directory"
 
 echo
 log_info "To use these environment files in Docker builds:"

@@ -1,6 +1,7 @@
 """
 File: /app/gui_tor_manager/gui_tor_manager/utils/validation.py
 x-lucid-file-path: /app/gui_tor_manager/gui_tor_manager/utils/validation.py
+x-lucid-file-directory: /app/gui_tor_manager/gui_tor_manager/utils
 x-lucid-file-type: python
 
 URL and Data Validation Utilities for GUI Tor Manager

@@ -5,6 +5,7 @@
 """
 File: /app/node/models/node.py
 x-lucid-file-path: /app/node/models/node.py
+x-lucid-file-directory: /app/node/models
 x-lucid-file-type: python
 
 Node data models for Lucid system.

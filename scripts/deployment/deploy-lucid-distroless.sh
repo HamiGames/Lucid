@@ -1,14 +1,26 @@
 #!/bin/bash
 # Lucid Distroless Deployment Script
+# File: /app/scripts/deployment/deploy-lucid-distroless.sh
+# x-lucid-file-path: /app/scripts/deployment/deploy-lucid-distroless.sh
+# x-lucid-file-directory: /app/scripts/deployment
+# x-lucid-file-type: shell
 # Deploys Lucid platform with proper order and distroless containers
 # Target: Raspberry Pi 5 (192.168.0.75)
 # MUST RUN ON PI CONSOLE - NOT FROM WINDOWS
 
 set -euo pipefail
 
+_lucid_here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+_lucid_scripts="$_lucid_here"
+while [[ "$_lucid_scripts" != "/" && "$(basename "$_lucid_scripts")" != "scripts" ]]; do
+    _lucid_scripts="$(dirname "$_lucid_scripts")"
+done
+# shellcheck source=../lib/lucid-repo-paths.sh
+source "$_lucid_scripts/lib/lucid-repo-paths.sh"
+
 # Configuration
-PROJECT_ROOT="/mnt/myssd/Lucid/Lucid"
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$LUCID_REPO_ROOT"
+SCRIPT_DIR="$_lucid_here"
 DEPLOYMENT_HOST="192.168.0.75"
 DEPLOYMENT_USER="pickme"
 
@@ -143,22 +155,22 @@ main() {
     # Phase 2: Foundation Services
     echo -e "${BLUE}📋 Phase 2: Foundation Services${NC}"
     echo "=================================="
-    deploy_phase "Foundation Services" "configs/docker/docker-compose.foundation.yml" "configs/environment/.env.foundation"
+    deploy_phase "Foundation Services" "$LUCID_HOST_REL_COMPOSE_FOUNDATION" "configs/environment/.env.foundation"
     
     # Phase 3: Core Services
     echo -e "${BLUE}📋 Phase 3: Core Services${NC}"
     echo "=============================="
-    deploy_phase "Core Services" "configs/docker/docker-compose.core.yml" "configs/environment/.env.foundation"
+    deploy_phase "Core Services" "$LUCID_HOST_REL_COMPOSE_CORE" "configs/environment/.env.foundation"
     
     # Phase 4: Application Services
     echo -e "${BLUE}📋 Phase 4: Application Services${NC}"
     echo "====================================="
-    deploy_phase "Application Services" "configs/docker/docker-compose.application.yml" "configs/environment/.env.foundation"
+    deploy_phase "Application Services" "$LUCID_HOST_REL_COMPOSE_APPLICATION" "configs/environment/.env.foundation"
     
     # Phase 5: Support Services
     echo -e "${BLUE}📋 Phase 5: Support Services${NC}"
     echo "=================================="
-    deploy_phase "Support Services" "configs/docker/docker-compose.support.yml" "configs/environment/.env.foundation"
+    deploy_phase "Support Services" "$LUCID_HOST_REL_COMPOSE_SUPPORT" "configs/environment/.env.foundation"
     
     # Final verification
     echo -e "${BLUE}📋 Final Verification${NC}"

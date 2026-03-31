@@ -2,6 +2,7 @@
 """
 File: /app/sessions/storage/chunk_store.py
 x-lucid-file-path: /app/sessions/storage/chunk_store.py
+x-lucid-file-directory: /app/sessions/storage
 x-lucid-file-type: python
 
 LUCID Chunk Store Service - Step 17 Implementation

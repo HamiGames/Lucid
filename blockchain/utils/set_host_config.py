@@ -1,6 +1,7 @@
 """
 File: /app/blockchain/utils/set_host_config.py
 x-lucid-file-path: /app/blockchain/utils/set_host_config.py
+x-lucid-file-directory: /app/blockchain/utils
 x-lucid-file-type: python
 
 Derive blockchain runtime targets from Lucid host-config.

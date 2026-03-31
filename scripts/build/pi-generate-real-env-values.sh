@@ -2,11 +2,19 @@
 ################################################################################
 # Pi ENV Real Value Generator - NO PLACEHOLDERS
 # File: scripts/build/pi-generate-real-env-values.sh
-# Target: /mnt/myssd/Lucid/Lucid on Raspberry Pi
+# Target: Pi or container; paths from lucid-repo-paths.sh (LUCID_REPO_ROOT / LUCID_IMAGE_CONFIG_DIR).
 # Purpose: Generate REAL values for ALL .env files - ZERO placeholders
 ################################################################################
 
 set -e
+
+_lucid_here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+_lucid_scripts="$_lucid_here"
+while [[ "$_lucid_scripts" != "/" && "$(basename "$_lucid_scripts")" != "scripts" ]]; do
+    _lucid_scripts="$(dirname "$_lucid_scripts")"
+done
+# shellcheck source=../lib/lucid-repo-paths.sh
+source "$_lucid_scripts/lib/lucid-repo-paths.sh"
 
 # Colors
 RED='\033[0;31m'
@@ -16,7 +24,8 @@ BLUE='\033[0;34m'
 NC='\033[0m'
 
 # Project root
-PROJECT_ROOT="/mnt/myssd/Lucid/Lucid"
+PROJECT_ROOT="$LUCID_REPO_ROOT"
+PI_DEPLOY_DIR="${PI_DEPLOY_DIR:-$PROJECT_ROOT}"
 
 log_info() { echo -e "${BLUE}[INFO]${NC} $1"; }
 log_success() { echo -e "${GREEN}[SUCCESS]${NC} $1"; }
@@ -60,7 +69,7 @@ log_success "All cryptographic values generated"
 log_info "Creating directory structure..."
 
 mkdir -p "$PROJECT_ROOT/configs/environment"
-mkdir -p "$PROJECT_ROOT/03-api-gateway/api"
+mkdir -p "$PROJECT_ROOT/03_api_gateway/api"
 mkdir -p "$PROJECT_ROOT/infrastructure/docker/blockchain/env"
 mkdir -p "$PROJECT_ROOT/infrastructure/docker/databases/env"
 mkdir -p "$PROJECT_ROOT/sessions/core"
@@ -83,7 +92,7 @@ cat > "$PROJECT_ROOT/configs/environment/env.pi-build" << EOF
 # ============================================================================
 PI_HOST=192.168.0.75
 PI_USER=pickme
-PI_DEPLOY_DIR=/mnt/myssd/Lucid/Lucid
+PI_DEPLOY_DIR=$PI_DEPLOY_DIR
 PI_ARCHITECTURE=linux/arm64
 PI_PLATFORM=linux/arm64
 
@@ -194,7 +203,7 @@ cat > "$PROJECT_ROOT/configs/environment/env.foundation" << EOF
 MONGODB_PASSWORD=$MONGODB_PASSWORD
 MONGODB_ROOT_PASSWORD=$MONGODB_PASSWORD
 MONGODB_URI=mongodb://lucid:$MONGODB_PASSWORD@lucid-mongodb:27017/lucid?authSource=admin
-MONGODB_DATABASE=lucid_production
+MONGODB_DATABASE=lucid
 MONGODB_PORT=27017
 
 REDIS_PASSWORD=$REDIS_PASSWORD
@@ -399,11 +408,11 @@ EOF
 log_success "env.support created"
 
 # ============================================================================
-# GENERATE 03-api-gateway/api/.env.api
+# GENERATE 03_api_gateway/api/.env.api
 # ============================================================================
-log_info "Generating 03-api-gateway/api/.env.api..."
+log_info "Generating 03_api_gateway/api/.env.api..."
 
-cat > "$PROJECT_ROOT/03-api-gateway/api/.env.api" << EOF
+cat > "$PROJECT_ROOT/03_api_gateway/api/.env.api" << EOF
 # API Gateway Configuration
 # Generated: $BUILD_DATE
 
@@ -442,7 +451,7 @@ TOR_CONTROL_PORT=9051
 TOR_CONTROL_PASSWORD=$TOR_PASSWORD
 EOF
 
-log_success "03-api-gateway/api/.env.api created"
+log_success "03_api_gateway/api/.env.api created"
 
 # ============================================================================
 # GENERATE BLOCKCHAIN ENV FILES
@@ -605,7 +614,7 @@ MONGO_INITDB_DATABASE=lucid
 MONGODB_URI=mongodb://lucid:$MONGODB_PASSWORD@lucid-mongodb:27017/lucid?authSource=admin
 MONGODB_PASSWORD=$MONGODB_PASSWORD
 MONGODB_PORT=27017
-MONGODB_DATABASE=lucid_production
+MONGODB_DATABASE=lucid
 EOF
 
 cat > "$PROJECT_ROOT/infrastructure/docker/databases/env/database-restore.env" << EOF
@@ -684,7 +693,7 @@ env_files=(
     "$PROJECT_ROOT/configs/environment/env.core"
     "$PROJECT_ROOT/configs/environment/env.application"
     "$PROJECT_ROOT/configs/environment/env.support"
-    "$PROJECT_ROOT/03-api-gateway/api/.env.api"
+    "$PROJECT_ROOT/03_api_gateway/api/.env.api"
     "$PROJECT_ROOT/infrastructure/docker/blockchain/env/deployment-orchestrator.env"
     "$PROJECT_ROOT/infrastructure/docker/blockchain/env/contract-compiler.env"
     "$PROJECT_ROOT/infrastructure/docker/blockchain/env/blockchain-ledger.env"
@@ -740,7 +749,7 @@ echo "  • TOR Password: $(echo $TOR_PASSWORD | cut -c1-8)... (32 bytes)"
 echo "  • TRON Private Key: $(echo $TRON_PRIVATE_KEY | cut -c1-16)... (32 bytes hex)"
 echo ""
 echo "Target: Raspberry Pi 5 (192.168.0.75)"
-echo "Project: /mnt/myssd/Lucid/Lucid"
+echo "Project: $PROJECT_ROOT"
 echo ""
 log_success "ALL ENV FILES READY FOR DEPLOYMENT - ZERO PLACEHOLDERS!"
 echo "============================================================================"

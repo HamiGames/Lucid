@@ -5,6 +5,7 @@
 """
 File: /app/node/payouts/payout_processor.py
 x-lucid-file-path: /app/node/payouts/payout_processor.py
+x-lucid-file-directory: /app/node/payouts
 x-lucid-file-type: python
 """
 

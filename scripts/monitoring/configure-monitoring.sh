@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# File: /app/scripts/monitoring/configure-monitoring.sh
+# x-lucid-file-path: /app/scripts/monitoring/configure-monitoring.sh
+# x-lucid-file-directory: /app/scripts/monitoring
+# x-lucid-file-type: shell
 # Lucid RDP Monitoring Configuration Script - Step 48
 # Comprehensive monitoring configuration for all Lucid services
 

@@ -6,6 +6,7 @@
 """
 File: /app/node/consensus/leader_selection.py
 x-lucid-file-path: /app/node/consensus/leader_selection.py
+x-lucid-file-directory: /app/node/consensus
 x-lucid-file-type: python
 """
 

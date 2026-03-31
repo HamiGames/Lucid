@@ -1,8 +1,10 @@
 # Path: gui/user/session_manager.py
 """
-file: /app/gui/user/session_manager.py
+File: /app/gui/user/session_manager.py
 x-lucid-file-path: /app/gui/user/session_manager.py
+x-lucid-file-directory: /app/gui/user
 x-lucid-file-type: python
+
 Session connection and management for Lucid RDP GUI.
 Provides session lifecycle management, connection handling, and session monitoring.
 """

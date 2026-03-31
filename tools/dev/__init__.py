@@ -1,6 +1,7 @@
 """
 File: /app/tools/dev/__init__.py
 x-lucid-file-path: /app/tools/dev/__init__.py
+x-lucid-file-directory: /app/tools/dev
 x-lucid-file-type: python
 
 Lucid RDP Development Tools

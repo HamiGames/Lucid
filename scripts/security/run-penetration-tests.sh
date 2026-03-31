@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# File: /app/scripts/security/run-penetration-tests.sh
+# x-lucid-file-path: /app/scripts/security/run-penetration-tests.sh
+# x-lucid-file-directory: /app/scripts/security
+# x-lucid-file-type: shell
 # Penetration Testing Script
 # Automated penetration testing for Lucid API system
 # Author: Lucid Development Team

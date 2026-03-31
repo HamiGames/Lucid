@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# File: /app/check_images.sh
+# x-lucid-file-path: /app/check_images.sh
+# x-lucid-file-directory: /app
+# x-lucid-file-type: shell
 echo "Ì¥ç LUCID PROJECT - 35 IMAGES AVAILABILITY CHECK"
 echo "================================================"
 echo ""

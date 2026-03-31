@@ -2,6 +2,7 @@
 """
 File: /app/blockchain/governance/timelock.py
 x-lucid-file-path: /app/blockchain/governance/timelock.py
+x-lucid-file-directory: /app/blockchain/governance
 x-lucid-file-type: python
 
 Lucid RDP Blockchain Governance Timelock System

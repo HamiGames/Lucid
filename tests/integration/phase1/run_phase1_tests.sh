@@ -1,5 +1,9 @@
 #!/bin/bash
 # tests/integration/phase1/run_phase1_tests.sh
+# File: /app/tests/integration/phase1/run_phase1_tests.sh
+# x-lucid-file-path: /app/tests/integration/phase1/run_phase1_tests.sh
+# x-lucid-file-directory: /app/tests/integration/phase1
+# x-lucid-file-type: shell
 # Run Phase 1 integration tests
 
 set -e

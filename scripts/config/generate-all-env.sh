@@ -1,12 +1,24 @@
 #!/bin/bash
 # Generate all environment configuration files
+# File: /app/scripts/config/generate-all-env.sh
+# x-lucid-file-path: /app/scripts/config/generate-all-env.sh
+# x-lucid-file-directory: /app/scripts/config
+# x-lucid-file-type: shell
 # Implements Step 2 from docker-build-process-plan.md
 
 set -e
 
-# Project root configuration - Dynamic detection
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+# Project root: same resolution as other scripts/config/*.sh (not fixed ../.. — breaks if layout or cwd differs).
+_lucid_here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+_lucid_scripts="$_lucid_here"
+while [[ "$_lucid_scripts" != "/" && "$(basename "$_lucid_scripts")" != "scripts" ]]; do
+    _lucid_scripts="$(dirname "$_lucid_scripts")"
+done
+# shellcheck source=../lib/lucid-repo-paths.sh
+source "$_lucid_scripts/lib/lucid-repo-paths.sh"
+
+SCRIPT_DIR="$_lucid_here"
+PROJECT_ROOT="$LUCID_REPO_ROOT"
 
 # Change to project root if not already there
 if [ "$(pwd)" != "$PROJECT_ROOT" ]; then

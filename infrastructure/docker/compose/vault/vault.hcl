@@ -1,3 +1,9 @@
+# Repo path: infrastructure/docker/compose/vault/vault.hcl
+# x-files.json section_to_canonical: infrastructure/docker/compose/vault/vault.hcl → /app/configs/docker/compose/vault/vault.hcl
+# Canonical (image layout): /app/configs/docker/compose/vault/vault.hcl
+# Referenced from: infrastructure/docker/compose/docker-compose*.yml
+# host-config.yml: cross-check vault-facing service ports exposed in compose
+
 # Vault configuration file for Lucid project
 
 # Storage backend

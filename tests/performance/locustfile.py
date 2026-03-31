@@ -1,4 +1,9 @@
 """
+File: /app/tests/performance/locustfile.py
+x-lucid-file-path: /app/tests/performance/locustfile.py
+x-lucid-file-directory: /app/tests/performance
+x-lucid-file-type: python
+
 Locust Performance Testing Configuration for Lucid RDP System
 
 This file defines Locust load testing scenarios for the Lucid RDP system.

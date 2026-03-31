@@ -1,48 +1,105 @@
+# File: /app/service_configs/master-endpoint.yml
+# x-lucid-file-path: /app/service_configs/master-endpoint.yml
+# x-lucid-file-directory: /app/service_configs
+# x-lucid-file-type: YAML
+# Lucid alignment: host_registry=infrastructure/containers/host-config.yml (container /app/configs/host-config.yml); path_index=x-files.json section_to_canonical
+
 # infrastructure/containers/services/master-endpoint.yml
-# Aggregates endpoint-file-list.txt sources; registry aligned to host-config.yml.
+# Aggregates endpoint sources; service registry mirrors host-config.yml; paths cross-checked to x-files.json section_to_canonical.
 
 version: '1.0'
-description: 'Master endpoint index: aggregates endpoint-file-list sources; service registry mirrors infrastructure/containers/host-config.yml.'
+description: 'Master endpoint index: endpoint_source_files use repo paths with container_path from x-files.json; services block mirrors infrastructure/containers/host-config.yml.'
+x-lucid-calibration:
+  source_host_config: infrastructure/containers/host-config.yml
+  source_x_files: x-files.json
+  master_index_repo_path: infrastructure/containers/services/master-endpoint.yml
+  description: Host registry (host-config.yml) plus canonical /app paths from x-files.json for this index.
+x-lucid-host-config:
+  repo_path: infrastructure/containers/host-config.yml
+  in_container_path: /app/configs/host-config.yml
+  source: ports.txt
+  ip_source: service-ip.txt
+  http_path_template: http://${service_name}:${port}/app
+  host_ip_range: 172.20.10.1–172.20.10.76
 meta:
   host_config_path: infrastructure/containers/host-config.yml
   host_config_container_path: /app/configs/host-config.yml
+  x_files_repo_path: x-files.json
+  source: ports.txt
+  ip_source: service-ip.txt
   http_path_template: http://${service_name}:${port}/app
   master_index_path: infrastructure/containers/services/master-endpoint.yml
+  master_index_container_path: /app/service_configs/master-endpoint.yml
   endpoint_source_files:
   - path: admin/config/admin-endpoints.yml
+    container_path: /app/admin/config/admin-endpoints.yml
     scope: admin-plane HTTP bases, cross-service
   - path: auth/config/endpoints.yaml
+    container_path: /app/auth/config/endpoints.yaml
     scope: lucid-auth-service route catalog (/app prefix)
   - path: configs/integration/master-integration-config.yml
+    container_path: /app/configs/integration/master-integration-config.yml
     scope: cross-system integration URLs
   - path: configs/services/gui-hardware-manager.yml
+    container_path: /app/configs/services/gui-hardware-manager.yml
     scope: gui-hardware-manager service + API paths
   - path: configs/services/session-management.yml
+    container_path: /app/configs/services/session-management.yml
     scope: session-management pipeline config
   - path: electron_gui/configs/electron-endpoints.yml
+    container_path: /app/electron_gui/configs/electron-endpoints.yml
     scope: Electron GUI backend bases
   - path: gui/config/gui-endpoints.yml
+    container_path: /app/gui/config/gui-endpoints.yml
     scope: GUI / desktop client bases
   - path: infrastructure/containers/blockchain/config/blockchain-endpoints.yml
+    container_path: /app/configs/blockchain/config/blockchain-endpoints.yml
     scope: blockchain + anchoring plane
   - path: infrastructure/containers/blockchain/config/block-pay-endpoints.yml
+    container_path: /app/configs/blockchain/config/block-pay-endpoints.yml
     scope: TRON / payment plane
   - path: infrastructure/containers/services/admin-interface.yml
+    container_path: /app/service_configs/admin-interface.yml
     scope: admin-interface bundle
+  - path: infrastructure/containers/services/api-gateway.yml
+    container_path: /app/service_configs/api-gateway.yml
+    scope: api-gateway service bundle
+  - path: infrastructure/containers/services/auth-service.yml
+    container_path: /app/service_configs/auth-service.yml
+    scope: auth-service container bundle
   - path: infrastructure/containers/services/beta-sidecar.yml
+    container_path: /app/service_configs/beta-sidecar.yml
     scope: beta sidecar mesh + health probes
   - path: infrastructure/containers/services/blockchain-core.yml
+    container_path: /app/service_configs/blockchain-core.yml
     scope: blockchain-core bundle
+  - path: infrastructure/containers/services/container-runtime-layout.yml
+    container_path: /app/service_configs/container-runtime-layout.yml
+    scope: runtime layout; links x_lucid_cluster_calibration host-alignment files
+  - path: infrastructure/containers/services/database.yml
+    container_path: /app/service_configs/database.yml
+    scope: database plane service bundle
   - path: infrastructure/containers/services/gui-hardware-manager.yml
+    container_path: /app/service_configs/gui-hardware-manager.yml
     scope: gui-hardware-manager bundle
   - path: infrastructure/containers/services/node-management.yml
+    container_path: /app/service_configs/node-management.yml
     scope: node-management bundle
+  - path: infrastructure/containers/services/payment_services/payment-services-host-alignment.yml
+    container_path: /app/service_configs/payment_services/payment-services-host-alignment.yml
+    scope: payment stack host alignment vs host-config
   - path: infrastructure/containers/services/rdp-services.yml
+    container_path: /app/service_configs/rdp-services.yml
     scope: RDP services bundle
   - path: infrastructure/containers/services/service-discovery.yml
+    container_path: /app/service_configs/service-discovery.yml
     scope: Consul / service mesh discovery
   - path: infrastructure/containers/services/session-management.yml
+    container_path: /app/service_configs/session-management.yml
     scope: session-management bundle
+  - path: infrastructure/containers/services/tron-payment.yml
+    container_path: /app/service_configs/tron-payment.yml
+    scope: TRON payment service bundle
 common_http:
   app_mount: /app
   health_relative: /health
@@ -92,6 +149,7 @@ audiences:
     - infrastructure/containers/services/node-management.yml
     host_registry_keys:
     - node_management
+    - node_management_staging
     - node_worker
     - node_registry
     - node_overlord
@@ -139,6 +197,8 @@ audiences:
     description: Isolated TRON / wallet
     primary_configs:
     - infrastructure/containers/blockchain/config/block-pay-endpoints.yml
+    - infrastructure/containers/services/payment_services/payment-services-host-alignment.yml
+    - infrastructure/containers/services/tron-payment.yml
     host_registry_keys:
     - tron_node_client
     - on_system_chain_client
@@ -566,8 +626,10 @@ collision_notes:
 - '8092: payout-router vs session-merkle-tree-builder — remap host publish if co-hosted.'
 - '8600: node-worker vs consul-lan-serf — remap host publish if co-hosted.'
 - '8101: rdp-session-controller vs tron-client-aux — remap host publish if co-hosted.'
-- 'RDP: rdp-services.yml may use 8001 for rdp-server-manager; Dockerfile uses 8090 (see rdp_server_manager entries).'
+- 'RDP: rdp-services.yml may use 8001 for rdp-server-manager; Dockerfile uses 8090 (see rdp_server_manager
+  entries).'
 - http_path is a template; real HTTP paths are often /health or /api/v1/... not /app.
 - Non-HTTP services (Redis, MongoDB, Tor, RDP binary) still carry http_path for uniform templating only.
 - 'admin-system-gateway: primary discovery port 8155 (/health in http_path); optional portal listens 28080→api-gateway:8080,
-  28120→admin-ui-backend:8120, 28050→admin-params-registry:8050, 27000→lucid-tunnel-tools:7000 (defaults in infrastructure/containers/admin/config/admin-system-gateway.connections.json).'
+  28120→admin-ui-backend:8120, 28050→admin-params-registry:8050, 27000→lucid-tunnel-tools:7000 (defaults
+  in infrastructure/containers/admin/config/admin-system-gateway.connections.json).'

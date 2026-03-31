@@ -1,4 +1,9 @@
 """
+File: /app/tests/validation/test_all_integrations.py
+x-lucid-file-path: /app/tests/validation/test_all_integrations.py
+x-lucid-file-directory: /app/tests/validation
+x-lucid-file-type: python
+
 Test All Integrations
 
 Validates that all integrations between the 10 Lucid clusters are working correctly.

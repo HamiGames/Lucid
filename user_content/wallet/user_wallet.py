@@ -5,6 +5,7 @@
 """
 File: /app/user_content/wallet/user_wallet.py
 x-lucid-file-path: /app/user_content/wallet/user_wallet.py
+x-lucid-file-directory: /app/user_content/wallet
 x-lucid-file-type: python
 """
 

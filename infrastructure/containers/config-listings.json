@@ -1,0 +1,1813 @@
+{
+  "version": "1.0",
+  "generated_at": "2026-03-31T12:47:32Z",
+  "sources": {
+    "host_config": "infrastructure/containers/host-config.yml",
+    "service_id_list": "infrastructure/containers/service_id-list.json",
+    "ports_txt": "ports.txt",
+    "service_ip_txt": "service-ip.txt"
+  },
+  "notes": [
+    "Each entry is keyed by stable_id (host registry / ports.txt service key).",
+    "service_name is the Docker DNS hostname (kebab-case).",
+    "tags_from_ports_txt come from merged ports.txt (dockerfile_services or services block).",
+    "service_ids are com/onion/org Lucid Dockerfile identifiers when source_dockerfile matches service_id-list.json.",
+    "host_ip is from host-config when present, else service-ip.txt for that stable_id.",
+    "infrastructure/containers paths in service_id-list.json with no host-config source_dockerfile are listed under unlinked."
+  ],
+  "services": {
+    "admin_overlord": {
+      "stable_id": "admin_overlord",
+      "service_name": "admin-overlord",
+      "port": 8140,
+      "http_path": "http://admin-overlord:8140/app",
+      "host_ip": "172.20.10.23",
+      "source_dockerfile": "infrastructure/containers/admin/dockerfile.admin-overlord",
+      "host_config_labels": {
+        "com.lucid.service": "admin-overlord",
+        "com.lucid.platform": "arm64",
+        "com.lucid.cluster": "core",
+        "com.lucid.security": "distroless",
+        "com.lucid.expose": "8140"
+      },
+      "tags_from_ports_txt": [
+        "admin_overlord",
+        "admin-overlord"
+      ],
+      "service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.c65a84c6523f4640.infrastructure.containers.admin.dockerfile.admin-overlord",
+        "onion_lucid_service_id": "lucid-c65a84c6523f4640-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.c65a84c6523f4640:infrastructure/containers/admin/dockerfile.admin-overlord"
+      }
+    },
+    "admin_system_gateway": {
+      "stable_id": "admin_system_gateway",
+      "service_name": "admin-system-gateway",
+      "port": 8155,
+      "http_path": "http://admin-system-gateway:8155/app",
+      "host_ip": "172.20.10.24",
+      "source_dockerfile": "infrastructure/containers/admin/Dockerfile.admin-system-gateway",
+      "host_config_labels": {
+        "com.lucid.service": "admin-system-gateway",
+        "com.lucid.platform": "arm64",
+        "com.lucid.cluster": "core",
+        "com.lucid.security": "distroless",
+        "com.lucid.expose": "8155",
+        "com.lucid.tor.compatible": "true"
+      },
+      "tags_from_ports_txt": [
+        "admin_system_gateway",
+        "admin-system-gateway"
+      ],
+      "service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.fc3684a4624a54de.infrastructure.containers.admin.Dockerfile.admin-system-gateway",
+        "onion_lucid_service_id": "lucid-fc3684a4624a54de-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.fc3684a4624a54de:infrastructure/containers/admin/Dockerfile.admin-system-gateway"
+      }
+    },
+    "admin_ui_backend": {
+      "stable_id": "admin_ui_backend",
+      "service_name": "admin-ui-backend",
+      "port": 8120,
+      "http_path": "http://admin-ui-backend:8120/app",
+      "host_ip": "172.20.10.21",
+      "source_dockerfile": "infrastructure/containers/admin/Dockerfile.admin-ui-backend",
+      "host_config_labels": {
+        "com.lucid.service": "admin-ui-backend",
+        "com.lucid.platform": "arm64",
+        "com.lucid.cluster": "core",
+        "com.lucid.security": "distroless",
+        "com.lucid.expose": "8120"
+      },
+      "tags_from_ports_txt": [
+        "admin_ui_backend",
+        "admin-ui-backend"
+      ],
+      "service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.0b6971fcfb5b84c4.infrastructure.containers.admin.Dockerfile.admin-ui-backend",
+        "onion_lucid_service_id": "lucid-0b6971fcfb5b84c4-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.0b6971fcfb5b84c4:infrastructure/containers/admin/Dockerfile.admin-ui-backend"
+      }
+    },
+    "admin_governance_client": {
+      "stable_id": "admin_governance_client",
+      "service_name": "admin-governance-client",
+      "port": 8070,
+      "http_path": "http://admin-governance-client:8070/app",
+      "host_ip": "172.20.10.20",
+      "source_dockerfile": "infrastructure/containers/admin/Dockerfile.gov-client",
+      "host_config_labels": {
+        "com.lucid.service": "admin-governance-client",
+        "com.lucid.platform": "arm64",
+        "com.lucid.cluster": "core",
+        "com.lucid.security": "distroless",
+        "com.lucid.expose": "8070"
+      },
+      "tags_from_ports_txt": [
+        "admin_governance_client",
+        "gov-client"
+      ],
+      "service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.69d01008a4c37ab6.infrastructure.containers.admin.Dockerfile.gov-client",
+        "onion_lucid_service_id": "lucid-69d01008a4c37ab6-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.69d01008a4c37ab6:infrastructure/containers/admin/Dockerfile.gov-client"
+      }
+    },
+    "admin_key_rotation": {
+      "stable_id": "admin_key_rotation",
+      "service_name": "admin-key-rotation",
+      "port": 8060,
+      "http_path": "http://admin-key-rotation:8060/app",
+      "host_ip": "172.20.10.19",
+      "source_dockerfile": "infrastructure/containers/admin/Dockerfile.key-rotation",
+      "host_config_labels": {
+        "com.lucid.service": "admin-key-rotation",
+        "com.lucid.platform": "arm64",
+        "com.lucid.cluster": "core",
+        "com.lucid.security": "distroless",
+        "com.lucid.expose": "8060"
+      },
+      "tags_from_ports_txt": [
+        "admin_key_rotation",
+        "key-rotation"
+      ],
+      "service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.1b8b18f128107333.infrastructure.containers.admin.Dockerfile.key-rotation",
+        "onion_lucid_service_id": "lucid-1b8b18f128107333-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.1b8b18f128107333:infrastructure/containers/admin/Dockerfile.key-rotation"
+      }
+    },
+    "admin_params_registry": {
+      "stable_id": "admin_params_registry",
+      "service_name": "admin-params-registry",
+      "port": 8050,
+      "http_path": "http://admin-params-registry:8050/app",
+      "host_ip": "172.20.10.18",
+      "source_dockerfile": "infrastructure/containers/admin/Dockerfile.params-registry",
+      "host_config_labels": {
+        "com.lucid.service": "admin-params-registry",
+        "com.lucid.platform": "arm64",
+        "com.lucid.cluster": "core",
+        "com.lucid.security": "distroless",
+        "com.lucid.expose": "8050"
+      },
+      "tags_from_ports_txt": [
+        "admin_params_registry",
+        "params-registry"
+      ],
+      "service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.7158b0580c4433ea.infrastructure.containers.admin.Dockerfile.params-registry",
+        "onion_lucid_service_id": "lucid-7158b0580c4433ea-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.7158b0580c4433ea:infrastructure/containers/admin/Dockerfile.params-registry"
+      }
+    },
+    "lucid_auth_service": {
+      "stable_id": "lucid_auth_service",
+      "service_name": "lucid-auth-service",
+      "port": 8089,
+      "http_path": "http://lucid-auth-service:8089/app",
+      "host_ip": "172.20.10.5",
+      "source_dockerfile": "infrastructure/containers/auth/Dockerfile.auth-service",
+      "host_config_labels": {
+        "com.lucid.service": "lucid-auth-service",
+        "com.lucid.platform": "arm64",
+        "com.lucid.cluster": "foundation",
+        "com.lucid.security": "distroless",
+        "com.lucid.expose": "8089"
+      },
+      "tags_from_ports_txt": [
+        "lucid_auth_service",
+        "auth-service"
+      ],
+      "service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.230145073e49c489.infrastructure.containers.auth.Dockerfile.auth-service",
+        "onion_lucid_service_id": "lucid-230145073e49c489-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.230145073e49c489:infrastructure/containers/auth/Dockerfile.auth-service"
+      }
+    },
+    "lucid_gov": {
+      "stable_id": "lucid_gov",
+      "service_name": "lucid-gov",
+      "port": 8108,
+      "http_path": "http://lucid-gov:8108/app",
+      "host_ip": "172.20.10.6",
+      "source_dockerfile": "infrastructure/containers/auth/Dockerfile.lucid-gov",
+      "host_config_labels": {
+        "com.lucid.service": "lucid-gov",
+        "com.lucid.platform": "arm64",
+        "com.lucid.cluster": "foundation",
+        "com.lucid.security": "distroless",
+        "com.lucid.expose": "8108"
+      },
+      "tags_from_ports_txt": [
+        "lucid_gov",
+        "lucid-gov"
+      ],
+      "service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.584438e85a616f1d.infrastructure.containers.auth.Dockerfile.lucid-gov",
+        "onion_lucid_service_id": "lucid-584438e85a616f1d-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.584438e85a616f1d:infrastructure/containers/auth/Dockerfile.lucid-gov"
+      }
+    },
+    "block_manager": {
+      "stable_id": "block_manager",
+      "service_name": "block-manager",
+      "port": 8086,
+      "http_path": "http://block-manager:8086/app",
+      "host_ip": "172.20.10.35",
+      "source_dockerfile": "infrastructure/containers/blockchain/Dockerfile.block-manager",
+      "host_config_labels": {
+        "com.lucid.service": "block-manager",
+        "com.lucid.platform": "arm64",
+        "com.lucid.cluster": "core",
+        "com.lucid.security": "distroless",
+        "com.lucid.expose": "8086"
+      },
+      "tags_from_ports_txt": [
+        "block-manager",
+        "block_manager",
+        "manager"
+      ],
+      "service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.3885187a8dcebe77.infrastructure.containers.blockchain.Dockerfile.block-manager",
+        "onion_lucid_service_id": "lucid-3885187a8dcebe77-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.3885187a8dcebe77:infrastructure/containers/blockchain/Dockerfile.block-manager"
+      }
+    },
+    "chain_to_pay": {
+      "stable_id": "chain_to_pay",
+      "service_name": "chain-to-pay",
+      "port": 8114,
+      "http_path": "http://chain-to-pay:8114/app",
+      "host_ip": "172.20.10.37",
+      "source_dockerfile": "infrastructure/containers/blockchain/Dockerfile.chain-to-pay",
+      "host_config_labels": {
+        "com.lucid.service": "chain-to-pay",
+        "com.lucid.platform": "arm64",
+        "com.lucid.cluster": "core",
+        "com.lucid.security": "distroless",
+        "com.lucid.expose": "8114"
+      },
+      "tags_from_ports_txt": [
+        "chain-to-pay",
+        "chain_to_pay",
+        "to-pay"
+      ],
+      "service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.c1ec1c20cc20c960.infrastructure.containers.blockchain.Dockerfile.chain-to-pay",
+        "onion_lucid_service_id": "lucid-c1ec1c20cc20c960-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.c1ec1c20cc20c960:infrastructure/containers/blockchain/Dockerfile.chain-to-pay"
+      }
+    },
+    "blockchain_consensus_engine": {
+      "stable_id": "blockchain_consensus_engine",
+      "service_name": "consensus-engine",
+      "port": 8185,
+      "http_path": "http://consensus-engine:8185/app",
+      "host_ip": "172.20.10.34",
+      "source_dockerfile": "infrastructure/containers/blockchain/Dockerfile.consensus-engine",
+      "host_config_labels": {
+        "com.lucid.service": "consensus-engine",
+        "com.lucid.platform": "arm64",
+        "com.lucid.cluster": "core",
+        "com.lucid.security": "distroless",
+        "com.lucid.expose": "8185"
+      },
+      "tags_from_ports_txt": [
+        "consensus-engine",
+        "consensus_engine",
+        "engine",
+        "blockchain_consensus_engine"
+      ],
+      "service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.a681fced58bc57eb.infrastructure.containers.blockchain.Dockerfile.consensus-engine",
+        "onion_lucid_service_id": "lucid-a681fced58bc57eb-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.a681fced58bc57eb:infrastructure/containers/blockchain/Dockerfile.consensus-engine"
+      }
+    },
+    "data_chain": {
+      "stable_id": "data_chain",
+      "service_name": "data-chain",
+      "port": 8087,
+      "http_path": "http://data-chain:8087/app",
+      "host_ip": "172.20.10.36",
+      "source_dockerfile": "infrastructure/containers/blockchain/Dockerfile.data",
+      "host_config_labels": {
+        "com.lucid.service": "data-chain",
+        "com.lucid.platform": "arm64",
+        "com.lucid.cluster": "core",
+        "com.lucid.security": "distroless",
+        "com.lucid.expose": "8087"
+      },
+      "tags_from_ports_txt": [
+        "data-chain",
+        "data_chain",
+        "data"
+      ],
+      "service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.a47b92cca69ac5cf.infrastructure.containers.blockchain.Dockerfile.data",
+        "onion_lucid_service_id": "lucid-a47b92cca69ac5cf-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.a47b92cca69ac5cf:infrastructure/containers/blockchain/Dockerfile.data"
+      }
+    },
+    "blockchain_engine": {
+      "stable_id": "blockchain_engine",
+      "service_name": "blockchain-engine",
+      "port": 8084,
+      "http_path": "http://blockchain-engine:8084/app",
+      "host_ip": "172.20.10.33",
+      "source_dockerfile": "infrastructure/containers/blockchain/Dockerfile.engine",
+      "host_config_labels": {
+        "com.lucid.service": "blockchain-engine",
+        "com.lucid.platform": "arm64",
+        "com.lucid.cluster": "core",
+        "com.lucid.security": "distroless",
+        "com.lucid.expose": "8084"
+      },
+      "tags_from_ports_txt": [
+        "blockchain-engine",
+        "blockchain_engine",
+        "engine"
+      ],
+      "service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.432fa3cdc353e5a9.infrastructure.containers.blockchain.Dockerfile.engine",
+        "onion_lucid_service_id": "lucid-432fa3cdc353e5a9-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.432fa3cdc353e5a9:infrastructure/containers/blockchain/Dockerfile.engine"
+      }
+    },
+    "mongodb_monitoring": {
+      "stable_id": "mongodb_monitoring",
+      "service_name": "mongodb-monitoring",
+      "port": 27018,
+      "http_path": "http://mongodb-monitoring:27018/app",
+      "host_ip": "172.20.10.71",
+      "source_dockerfile": "infrastructure/containers/database/Dockerfile.database",
+      "host_config_labels": {
+        "com.lucid.service": "mongodb-monitoring",
+        "com.lucid.platform": "arm64",
+        "com.lucid.cluster": "foundation",
+        "com.lucid.security": "distroless",
+        "com.lucid.expose": "27018",
+        "com.lucid.tor.compatible": "true"
+      },
+      "tags_from_ports_txt": [
+        "mongodb_monitoring",
+        "database"
+      ],
+      "service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.d33eb21629817b7b.infrastructure.containers.database.Dockerfile.database",
+        "onion_lucid_service_id": "lucid-d33eb21629817b7b-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.d33eb21629817b7b:infrastructure/containers/database/Dockerfile.database"
+      }
+    },
+    "database_overlord": {
+      "stable_id": "database_overlord",
+      "service_name": "database-overlord",
+      "port": 8121,
+      "http_path": "http://database-overlord:8121/app",
+      "host_ip": "172.20.10.22",
+      "source_dockerfile": "infrastructure/containers/database/Dockerfile.database-overlord",
+      "host_config_labels": {
+        "com.lucid.service": "database-overlord",
+        "com.lucid.platform": "arm64",
+        "com.lucid.cluster": "database",
+        "com.lucid.security": "distroless",
+        "com.lucid.expose": "8121"
+      },
+      "tags_from_ports_txt": [
+        "database_overlord",
+        "database-overlord"
+      ],
+      "service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.c59e13efce333887.infrastructure.containers.database.Dockerfile.database-overlord",
+        "onion_lucid_service_id": "lucid-c59e13efce333887-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.c59e13efce333887:infrastructure/containers/database/Dockerfile.database-overlord"
+      }
+    },
+    "lucid_elasticsearch_http": {
+      "stable_id": "lucid_elasticsearch_http",
+      "service_name": "elasticsearch-storage",
+      "port": 9300,
+      "http_path": "http://elasticsearch-storage:9300/app",
+      "host_ip": "172.20.10.68",
+      "source_dockerfile": "infrastructure/containers/storage/Dockerfile.elasticsearch",
+      "host_config_labels": {
+        "com.lucid.service": "elasticsearch-storage",
+        "com.lucid.platform": "arm64",
+        "com.lucid.cluster": "foundation",
+        "com.lucid.security": "distroless",
+        "com.lucid.expose": "9300",
+        "com.lucid.tor.compatible": "true"
+      },
+      "tags_from_ports_txt": [
+        "elasticsearch-storage",
+        "elasticsearch_storage",
+        "elasticsearch",
+        "lucid_elasticsearch_http"
+      ],
+      "service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.48701e1a21b14772.infrastructure.containers.storage.Dockerfile.elasticsearch",
+        "onion_lucid_service_id": "lucid-48701e1a21b14772-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.48701e1a21b14772:infrastructure/containers/storage/Dockerfile.elasticsearch"
+      }
+    },
+    "lucid_mongodb": {
+      "stable_id": "lucid_mongodb",
+      "service_name": "lucid-mongodb",
+      "port": 27019,
+      "http_path": "http://lucid-mongodb:27019/app",
+      "host_ip": "172.20.10.70",
+      "source_dockerfile": "infrastructure/containers/storage/Dockerfile.mongodb",
+      "host_config_labels": {
+        "com.lucid.service": "lucid-mongodb",
+        "com.lucid.platform": "arm64",
+        "com.lucid.cluster": "foundation",
+        "com.lucid.security": "distroless",
+        "com.lucid.expose": "27019",
+        "com.lucid.tor.compatible": "true"
+      },
+      "tags_from_ports_txt": [
+        "lucid_mongodb",
+        "mongodb"
+      ],
+      "service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.1a87ea332346d719.infrastructure.containers.storage.Dockerfile.mongodb",
+        "onion_lucid_service_id": "lucid-1a87ea332346d719-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.1a87ea332346d719:infrastructure/containers/storage/Dockerfile.mongodb"
+      }
+    },
+    "lucid_redis": {
+      "stable_id": "lucid_redis",
+      "service_name": "lucid-redis-storage",
+      "port": 6380,
+      "http_path": "http://lucid-redis-storage:6380/app",
+      "host_ip": "172.20.10.67",
+      "source_dockerfile": "infrastructure/containers/storage/Dockerfile.redis",
+      "host_config_labels": {
+        "com.lucid.service": "lucid-redis-storage",
+        "com.lucid.platform": "arm64",
+        "com.lucid.cluster": "foundation",
+        "com.lucid.security": "distroless",
+        "com.lucid.expose": "6380",
+        "com.lucid.tor.compatible": "true"
+      },
+      "tags_from_ports_txt": [
+        "lucid-redis-storage",
+        "lucid_redis_storage",
+        "redis-storage",
+        "lucid_redis"
+      ],
+      "service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.61fd3450f8ba8a48.infrastructure.containers.storage.Dockerfile.redis",
+        "onion_lucid_service_id": "lucid-61fd3450f8ba8a48-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.61fd3450f8ba8a48:infrastructure/containers/storage/Dockerfile.redis"
+      }
+    },
+    "electron_gui_node": {
+      "stable_id": "electron_gui_node",
+      "service_name": "electron-gui-node",
+      "port": 3002,
+      "http_path": "http://electron-gui-node:3002/app",
+      "host_ip": "172.20.10.76",
+      "source_dockerfile": "infrastructure/containers/electron_gui/Dockerfile.node",
+      "host_config_labels": {
+        "com.lucid.service": "electron-gui-node",
+        "com.lucid.platform": "arm64",
+        "com.lucid.cluster": "gui-integration",
+        "com.lucid.security": "distroless",
+        "com.lucid.expose": "3002",
+        "com.lucid.phase": "gui"
+      },
+      "tags_from_ports_txt": [
+        "electron-gui-node",
+        "electron_gui_node",
+        "node"
+      ],
+      "service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.1566acb8cc6665d1.infrastructure.containers.electron_gui.Dockerfile.node",
+        "onion_lucid_service_id": "lucid-1566acb8cc6665d1-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.1566acb8cc6665d1:infrastructure/containers/electron_gui/Dockerfile.node"
+      }
+    },
+    "electron_gui_user": {
+      "stable_id": "electron_gui_user",
+      "service_name": "electron-gui-user",
+      "port": 3001,
+      "http_path": "http://electron-gui-user:3001/app",
+      "host_ip": "172.20.10.75",
+      "source_dockerfile": "infrastructure/containers/electron_gui/Dockerfile.user",
+      "host_config_labels": {
+        "com.lucid.service": "electron-gui-user",
+        "com.lucid.platform": "arm64",
+        "com.lucid.cluster": "gui-integration",
+        "com.lucid.security": "distroless",
+        "com.lucid.expose": "3001",
+        "com.lucid.phase": "gui"
+      },
+      "tags_from_ports_txt": [
+        "electron-gui-user",
+        "electron_gui_user",
+        "user"
+      ],
+      "service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.a98923af26167049.infrastructure.containers.electron_gui.Dockerfile.user",
+        "onion_lucid_service_id": "lucid-a98923af26167049-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.a98923af26167049:infrastructure/containers/electron_gui/Dockerfile.user"
+      }
+    },
+    "gui_tor_manager_http": {
+      "stable_id": "gui_tor_manager_http",
+      "service_name": "gui-tor-manager",
+      "port": 8097,
+      "http_path": "http://gui-tor-manager:8097/app",
+      "host_ip": "172.20.10.63",
+      "source_dockerfile": "infrastructure/containers/gui/Dockerfile.gui-tor-manager",
+      "host_config_labels": {
+        "com.lucid.service": "gui-tor-manager",
+        "com.lucid.platform": "arm64",
+        "com.lucid.cluster": "gui-integration",
+        "com.lucid.security": "distroless",
+        "com.lucid.expose": "8097",
+        "com.lucid.tor.compatible": "true",
+        "com.lucid.phase": "gui"
+      },
+      "tags_from_ports_txt": [
+        "gui-tor-manager",
+        "gui_tor_manager",
+        "tor-manager",
+        "gui_tor_manager_http"
+      ],
+      "service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.49b98c1d2c183ab7.infrastructure.containers.gui.Dockerfile.gui-tor-manager",
+        "onion_lucid_service_id": "lucid-49b98c1d2c183ab7-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.49b98c1d2c183ab7:infrastructure/containers/gui/Dockerfile.gui-tor-manager"
+      }
+    },
+    "gui_docker_manager": {
+      "stable_id": "gui_docker_manager",
+      "service_name": "gui-docker-manager",
+      "port": 0,
+      "http_path": "http://gui-docker-manager:0/app",
+      "host_ip": "172.20.10.60",
+      "source_dockerfile": "infrastructure/containers/gui/Dockerfile.gui",
+      "host_config_labels": {
+        "com.lucid.service": "gui-docker-manager",
+        "com.lucid.platform": "arm64",
+        "com.lucid.cluster": "gui-integration",
+        "com.lucid.security": "distroless",
+        "com.lucid.expose": "0",
+        "com.lucid.tor.compatible": "true",
+        "com.lucid.phase": "gui"
+      },
+      "tags_from_ports_txt": [
+        "gui_docker_manager",
+        "gui"
+      ],
+      "service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.372035a9a8d68da4.infrastructure.containers.gui.Dockerfile.gui",
+        "onion_lucid_service_id": "lucid-372035a9a8d68da4-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.372035a9a8d68da4:infrastructure/containers/gui/Dockerfile.gui"
+      }
+    },
+    "gui_api_bridge": {
+      "stable_id": "gui_api_bridge",
+      "service_name": "gui-api-bridge",
+      "port": 8203,
+      "http_path": "http://gui-api-bridge:8203/app",
+      "host_ip": "172.20.10.61",
+      "source_dockerfile": "infrastructure/containers/gui/Dockerfile.gui-api-bridge",
+      "host_config_labels": {
+        "com.lucid.service": "gui-api-bridge",
+        "com.lucid.platform": "arm64",
+        "com.lucid.cluster": "gui-integration",
+        "com.lucid.security": "distroless",
+        "com.lucid.expose": "8203",
+        "com.lucid.tor.compatible": "true",
+        "com.lucid.phase": "gui"
+      },
+      "tags_from_ports_txt": [
+        "gui_api_bridge",
+        "gui-api-bridge"
+      ],
+      "service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.ae1e151ee8579eac.infrastructure.containers.gui.Dockerfile.gui-api-bridge",
+        "onion_lucid_service_id": "lucid-ae1e151ee8579eac-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.ae1e151ee8579eac:infrastructure/containers/gui/Dockerfile.gui-api-bridge"
+      }
+    },
+    "gui_hardware_manager": {
+      "stable_id": "gui_hardware_manager",
+      "service_name": "gui-hardware-manager",
+      "port": 8099,
+      "http_path": "http://gui-hardware-manager:8099/app",
+      "host_ip": "172.20.10.62",
+      "source_dockerfile": "infrastructure/containers/gui/Dockerfile.gui-hardware-manager",
+      "host_config_labels": {
+        "com.lucid.service": "gui-hardware-manager",
+        "com.lucid.platform": "arm64",
+        "com.lucid.cluster": "gui-integration",
+        "com.lucid.security": "distroless",
+        "com.lucid.expose": "8099",
+        "com.lucid.tor.compatible": "true",
+        "com.lucid.phase": "gui"
+      },
+      "tags_from_ports_txt": [
+        "gui-hardware-manager",
+        "gui_hardware_manager",
+        "hardware-manager"
+      ],
+      "service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.b531e524082b39cd.infrastructure.containers.gui.Dockerfile.gui-hardware-manager",
+        "onion_lucid_service_id": "lucid-b531e524082b39cd-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.b531e524082b39cd:infrastructure/containers/gui/Dockerfile.gui-hardware-manager"
+      }
+    },
+    "node_gov": {
+      "stable_id": "node_gov",
+      "service_name": "node-gov",
+      "port": 8620,
+      "http_path": "http://node-gov:8620/app",
+      "host_ip": "172.20.10.29",
+      "source_dockerfile": "infrastructure/containers/node/Dockerfile.node-gov",
+      "host_config_labels": {
+        "com.lucid.service": "node-gov",
+        "com.lucid.platform": "arm64",
+        "com.lucid.cluster": "application",
+        "com.lucid.security": "distroless",
+        "com.lucid.expose": "8620"
+      },
+      "tags_from_ports_txt": [
+        "node_gov",
+        "node-gov"
+      ],
+      "service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.d56efdab537567f2.infrastructure.containers.node.Dockerfile.node-gov",
+        "onion_lucid_service_id": "lucid-d56efdab537567f2-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.d56efdab537567f2:infrastructure/containers/node/Dockerfile.node-gov"
+      }
+    },
+    "node_management": {
+      "stable_id": "node_management",
+      "service_name": "node-management",
+      "port": 8095,
+      "http_path": "http://node-management:8095/app",
+      "host_ip": "172.20.10.25",
+      "source_dockerfile": "infrastructure/containers/node/Dockerfile.node-management",
+      "host_config_labels": {
+        "com.lucid.service": "node-management",
+        "com.lucid.platform": "arm64",
+        "com.lucid.cluster": "application",
+        "com.lucid.security": "distroless",
+        "com.lucid.expose": "8095"
+      },
+      "tags_from_ports_txt": [
+        "node_management",
+        "node-management"
+      ],
+      "service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.a6e21e69f127616e.infrastructure.containers.node.Dockerfile.node-management",
+        "onion_lucid_service_id": "lucid-a6e21e69f127616e-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.a6e21e69f127616e:infrastructure/containers/node/Dockerfile.node-management"
+      }
+    },
+    "node_overlord": {
+      "stable_id": "node_overlord",
+      "service_name": "node-overlord",
+      "port": 8130,
+      "http_path": "http://node-overlord:8130/app",
+      "host_ip": "172.20.10.32",
+      "source_dockerfile": "infrastructure/containers/node/Dockerfile.node-overlord",
+      "host_config_labels": {
+        "com.lucid.service": "node-overlord",
+        "com.lucid.platform": "arm64",
+        "com.lucid.cluster": "application",
+        "com.lucid.security": "distroless",
+        "com.lucid.expose": "8130"
+      },
+      "tags_from_ports_txt": [
+        "node_overlord",
+        "node-overlord"
+      ],
+      "service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.11c76e7e7b7b3429.infrastructure.containers.node.Dockerfile.node-overlord",
+        "onion_lucid_service_id": "lucid-11c76e7e7b7b3429-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.11c76e7e7b7b3429:infrastructure/containers/node/Dockerfile.node-overlord"
+      }
+    },
+    "node_registry": {
+      "stable_id": "node_registry",
+      "service_name": "node-registry",
+      "port": 8610,
+      "http_path": "http://node-registry:8610/app",
+      "host_ip": "172.20.10.28",
+      "source_dockerfile": "infrastructure/containers/node/Dockerfile.node-registry",
+      "host_config_labels": {
+        "com.lucid.service": "node-registry",
+        "com.lucid.platform": "arm64",
+        "com.lucid.cluster": "application",
+        "com.lucid.security": "distroless",
+        "com.lucid.expose": "8610"
+      },
+      "tags_from_ports_txt": [
+        "node_registry",
+        "node-registry"
+      ],
+      "service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.193af8946ff8b328.infrastructure.containers.node.Dockerfile.node-registry",
+        "onion_lucid_service_id": "lucid-193af8946ff8b328-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.193af8946ff8b328:infrastructure/containers/node/Dockerfile.node-registry"
+      }
+    },
+    "node_system_gateway": {
+      "stable_id": "node_system_gateway",
+      "service_name": "node-system-gateway",
+      "port": 8640,
+      "http_path": "http://node-system-gateway:8640/app",
+      "host_ip": "172.20.10.31",
+      "source_dockerfile": "infrastructure/containers/node/Dockerfile.node-system-gateway",
+      "host_config_labels": {
+        "com.lucid.service": "node-system-gateway",
+        "com.lucid.platform": "arm64",
+        "com.lucid.cluster": "application",
+        "com.lucid.security": "distroless",
+        "com.lucid.expose": "8640"
+      },
+      "tags_from_ports_txt": [
+        "node_system_gateway",
+        "node-system-gateway"
+      ],
+      "service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.5c60d7db4997343e.infrastructure.containers.node.Dockerfile.node-system-gateway",
+        "onion_lucid_service_id": "lucid-5c60d7db4997343e-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.5c60d7db4997343e:infrastructure/containers/node/Dockerfile.node-system-gateway"
+      }
+    },
+    "node_utils": {
+      "stable_id": "node_utils",
+      "service_name": "node-utils",
+      "port": 8630,
+      "http_path": "http://node-utils:8630/app",
+      "host_ip": "172.20.10.30",
+      "source_dockerfile": "infrastructure/containers/node/Dockerfile.node-utils",
+      "host_config_labels": {
+        "com.lucid.service": "node-utils",
+        "com.lucid.platform": "arm64",
+        "com.lucid.cluster": "application",
+        "com.lucid.security": "distroless",
+        "com.lucid.expose": "8630"
+      },
+      "tags_from_ports_txt": [
+        "node_utils",
+        "node-utils"
+      ],
+      "service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.844e38b5044a049f.infrastructure.containers.node.Dockerfile.node-utils",
+        "onion_lucid_service_id": "lucid-844e38b5044a049f-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.844e38b5044a049f:infrastructure/containers/node/Dockerfile.node-utils"
+      }
+    },
+    "node_worker": {
+      "stable_id": "node_worker",
+      "service_name": "node-worker",
+      "port": 8600,
+      "http_path": "http://node-worker:8600/app",
+      "host_ip": "172.20.10.27",
+      "source_dockerfile": "infrastructure/containers/node/Dockerfile.node-worker",
+      "host_config_labels": {
+        "com.lucid.service": "node-worker",
+        "com.lucid.platform": "arm64",
+        "com.lucid.cluster": "application",
+        "com.lucid.security": "distroless",
+        "com.lucid.expose": "8600"
+      },
+      "tags_from_ports_txt": [
+        "node_worker",
+        "node-worker"
+      ],
+      "service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.0a4af1e17fed523a.infrastructure.containers.node.Dockerfile.node-worker",
+        "onion_lucid_service_id": "lucid-0a4af1e17fed523a-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.0a4af1e17fed523a:infrastructure/containers/node/Dockerfile.node-worker"
+      }
+    },
+    "on_system_chain_client": {
+      "stable_id": "on_system_chain_client",
+      "service_name": "on-system-chain-client",
+      "port": 8040,
+      "http_path": "http://on-system-chain-client:8040/app",
+      "host_ip": "172.20.10.39",
+      "source_dockerfile": "infrastructure/containers/payment_systems/Dockerfile.on-system-chain-client",
+      "host_config_labels": {
+        "com.lucid.service": "on-system-chain-client",
+        "com.lucid.platform": "arm64",
+        "com.lucid.cluster": "payment",
+        "com.lucid.security": "distroless",
+        "com.lucid.expose": "8040",
+        "com.lucid.plane": "support",
+        "com.lucid.architecture": "linux/arm64",
+        "com.lucid.vulnerabilities": "zero",
+        "com.lucid.tor.compatible": "true"
+      },
+      "tags_from_ports_txt": [
+        "on_system_chain_client",
+        "on-system-chain-client"
+      ],
+      "service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.7cda0b5641f32450.infrastructure.containers.payment_systems.Dockerfile.on-system-chain-client",
+        "onion_lucid_service_id": "lucid-7cda0b5641f32450-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.7cda0b5641f32450:infrastructure/containers/payment_systems/Dockerfile.on-system-chain-client"
+      }
+    },
+    "payment_system_gateway": {
+      "stable_id": "payment_system_gateway",
+      "service_name": "payment-system-gateway",
+      "port": 8197,
+      "http_path": "http://payment-system-gateway:8197/app",
+      "host_ip": "172.20.10.46",
+      "source_dockerfile": "infrastructure/containers/payment_systems/Dockerfile.payment-gateway",
+      "host_config_labels": {
+        "com.lucid.service": "payment-system-gateway",
+        "com.lucid.platform": "arm64",
+        "com.lucid.cluster": "payment",
+        "com.lucid.security": "distroless",
+        "com.lucid.expose": "8197"
+      },
+      "tags_from_ports_txt": [
+        "payment_system_gateway",
+        "payment-gateway"
+      ],
+      "service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.ecb7d04499051884.infrastructure.containers.payment_systems.Dockerfile.payment-gateway",
+        "onion_lucid_service_id": "lucid-ecb7d04499051884-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.ecb7d04499051884:infrastructure/containers/payment_systems/Dockerfile.payment-gateway"
+      }
+    },
+    "tron_node_client": {
+      "stable_id": "tron_node_client",
+      "service_name": "tron-node-client",
+      "port": 8035,
+      "http_path": "http://tron-node-client:8035/app",
+      "host_ip": "172.20.10.38",
+      "source_dockerfile": "infrastructure/containers/payment_systems/Dockerfile.tron-node-client",
+      "host_config_labels": {
+        "com.lucid.service": "tron-node-client",
+        "com.lucid.platform": "arm64",
+        "com.lucid.cluster": "payment",
+        "com.lucid.security": "distroless",
+        "com.lucid.expose": "8035",
+        "com.lucid.plane": "support",
+        "com.lucid.architecture": "linux/arm64",
+        "com.lucid.vulnerabilities": "zero",
+        "com.lucid.tor.compatible": "true"
+      },
+      "tags_from_ports_txt": [
+        "tron_node_client",
+        "tron-node-client"
+      ],
+      "service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.0968fe4e5f1ddcbd.infrastructure.containers.payment_systems.Dockerfile.tron-node-client",
+        "onion_lucid_service_id": "lucid-0968fe4e5f1ddcbd-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.0968fe4e5f1ddcbd:infrastructure/containers/payment_systems/Dockerfile.tron-node-client"
+      }
+    },
+    "tron_payment_service": {
+      "stable_id": "tron_payment_service",
+      "service_name": "tron-payment-service",
+      "port": 8150,
+      "http_path": "http://tron-payment-service:8150/app",
+      "host_ip": "172.20.10.40",
+      "source_dockerfile": "infrastructure/containers/payment_systems/Dockerfile.tron-payment-service",
+      "host_config_labels": {
+        "com.lucid.service": "tron-payment-service",
+        "com.lucid.platform": "arm64",
+        "com.lucid.cluster": "payment",
+        "com.lucid.security": "distroless",
+        "com.lucid.expose": "8150",
+        "com.lucid.plane": "support",
+        "com.lucid.architecture": "linux/arm64",
+        "com.lucid.vulnerabilities": "zero",
+        "com.lucid.tor.compatible": "true"
+      },
+      "tags_from_ports_txt": [
+        "tron-payment-service",
+        "tron_payment_service",
+        "payment-service"
+      ],
+      "service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.f4941299577e6e8c.infrastructure.containers.payment_systems.Dockerfile.tron-payment-service",
+        "onion_lucid_service_id": "lucid-f4941299577e6e8c-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.f4941299577e6e8c:infrastructure/containers/payment_systems/Dockerfile.tron-payment-service"
+      }
+    },
+    "wallet_manager": {
+      "stable_id": "wallet_manager",
+      "service_name": "wallet-manager",
+      "port": 8093,
+      "http_path": "http://wallet-manager:8093/app",
+      "host_ip": "172.20.10.44",
+      "source_dockerfile": "infrastructure/containers/payment_systems/Dockerfile.wallet",
+      "host_config_labels": {
+        "com.lucid.service": "wallet-manager",
+        "com.lucid.platform": "arm64",
+        "com.lucid.cluster": "payment",
+        "com.lucid.security": "distroless",
+        "com.lucid.expose": "8093",
+        "com.lucid.plane": "support",
+        "com.lucid.architecture": "linux/arm64",
+        "com.lucid.vulnerabilities": "zero",
+        "com.lucid.tor.compatible": "true"
+      },
+      "tags_from_ports_txt": [
+        "wallet_manager",
+        "wallet"
+      ],
+      "service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.4c33f23318b42f7b.infrastructure.containers.payment_systems.Dockerfile.wallet",
+        "onion_lucid_service_id": "lucid-4c33f23318b42f7b-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.4c33f23318b42f7b:infrastructure/containers/payment_systems/Dockerfile.wallet"
+      }
+    },
+    "rdp_controller": {
+      "stable_id": "rdp_controller",
+      "service_name": "rdp-controller",
+      "port": 8192,
+      "http_path": "http://rdp-controller:8192/app",
+      "host_ip": null,
+      "source_dockerfile": "infrastructure/containers/rdp/Dockerfile.rdp-controller",
+      "host_config_labels": {
+        "com.lucid.service": "rdp-controller",
+        "com.lucid.platform": "arm64",
+        "com.lucid.cluster": "application",
+        "com.lucid.security": "distroless",
+        "com.lucid.expose": "8192"
+      },
+      "tags_from_ports_txt": [
+        "rdp-controller",
+        "rdp_controller",
+        "controller"
+      ],
+      "service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.29bb403f472c06f8.infrastructure.containers.rdp.Dockerfile.rdp-controller",
+        "onion_lucid_service_id": "lucid-29bb403f472c06f8-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.29bb403f472c06f8:infrastructure/containers/rdp/Dockerfile.rdp-controller"
+      }
+    },
+    "lucid_server_core": {
+      "stable_id": "lucid_server_core",
+      "service_name": "lucid-server-core",
+      "port": 8100,
+      "http_path": "http://lucid-server-core:8100/app",
+      "host_ip": "172.20.10.4",
+      "source_dockerfile": "infrastructure/containers/server/Dockerfile",
+      "host_config_labels": {
+        "com.lucid.service": "lucid-server-core",
+        "com.lucid.platform": "arm64",
+        "com.lucid.cluster": "core",
+        "com.lucid.security": "distroless",
+        "com.lucid.expose": "8100"
+      },
+      "tags_from_ports_txt": [
+        "lucid_server_core",
+        "lucid-lucid_server_core"
+      ],
+      "service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.81e12d75c5d335ef.infrastructure.containers.server.Dockerfile",
+        "onion_lucid_service_id": "lucid-81e12d75c5d335ef-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.81e12d75c5d335ef:infrastructure/containers/server/Dockerfile"
+      }
+    },
+    "rdp_server_manager": {
+      "stable_id": "rdp_server_manager",
+      "service_name": "lucid-rdp-server-manager",
+      "port": 8490,
+      "http_path": "http://lucid-rdp-server-manager:8490/app",
+      "host_ip": "172.20.10.49",
+      "source_dockerfile": "infrastructure/containers/server/Dockerfile.rdp-server-manager",
+      "host_config_labels": {
+        "com.lucid.service": "lucid-rdp-server-manager",
+        "com.lucid.platform": "arm64",
+        "com.lucid.cluster": "application",
+        "com.lucid.security": "distroless",
+        "com.lucid.expose": "8490"
+      },
+      "tags_from_ports_txt": [
+        "lucid-rdp-server-manager",
+        "lucid_rdp_server_manager",
+        "rdp-server-manager",
+        "rdp_server_manager"
+      ],
+      "service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.03f85ade52648b36.infrastructure.containers.server.Dockerfile.rdp-server-manager",
+        "onion_lucid_service_id": "lucid-03f85ade52648b36-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.03f85ade52648b36:infrastructure/containers/server/Dockerfile.rdp-server-manager"
+      }
+    },
+    "lucid_server_gateway": {
+      "stable_id": "lucid_server_gateway",
+      "service_name": "server-gateway",
+      "port": 8450,
+      "http_path": "http://server-gateway:8450/app",
+      "host_ip": "172.20.10.2",
+      "source_dockerfile": "infrastructure/containers/server/Dockerfile.server-gateway",
+      "host_config_labels": {
+        "com.lucid.service": "server-gateway",
+        "com.lucid.platform": "arm64",
+        "com.lucid.cluster": "core",
+        "com.lucid.security": "distroless",
+        "com.lucid.expose": "8450"
+      },
+      "tags_from_ports_txt": [
+        "server-gateway",
+        "server_gateway",
+        "gateway",
+        "lucid_server_gateway"
+      ],
+      "service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.43cd9ae831546923.infrastructure.containers.server.Dockerfile.server-gateway",
+        "onion_lucid_service_id": "lucid-43cd9ae831546923-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.43cd9ae831546923:infrastructure/containers/server/Dockerfile.server-gateway"
+      }
+    },
+    "lucid_server_manager": {
+      "stable_id": "lucid_server_manager",
+      "service_name": "lucid-server-manager",
+      "port": 8081,
+      "http_path": "http://lucid-server-manager:8081/app",
+      "host_ip": "172.20.10.3",
+      "source_dockerfile": "infrastructure/containers/server/Dockerfile.server-manager",
+      "host_config_labels": {
+        "com.lucid.service": "lucid-server-manager",
+        "com.lucid.platform": "arm64",
+        "com.lucid.cluster": "core",
+        "com.lucid.security": "distroless",
+        "com.lucid.expose": "8081"
+      },
+      "tags_from_ports_txt": [
+        "lucid_server_manager",
+        "server-manager"
+      ],
+      "service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.fec05bf9884b5d04.infrastructure.containers.server.Dockerfile.server-manager",
+        "onion_lucid_service_id": "lucid-fec05bf9884b5d04-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.fec05bf9884b5d04:infrastructure/containers/server/Dockerfile.server-manager"
+      }
+    },
+    "lucid_service_mesh_controller": {
+      "stable_id": "lucid_service_mesh_controller",
+      "service_name": "lucid-service-mesh-controller",
+      "port": 8500,
+      "http_path": "http://lucid-service-mesh-controller:8500/app",
+      "host_ip": "172.20.10.55",
+      "source_dockerfile": "infrastructure/containers/server/Dockerfile.service-mesh-controller",
+      "host_config_labels": {
+        "com.lucid.service": "lucid-service-mesh-controller",
+        "com.lucid.platform": "arm64",
+        "com.lucid.cluster": "core",
+        "com.lucid.security": "distroless",
+        "com.lucid.expose": "8500"
+      },
+      "tags_from_ports_txt": [
+        "lucid_service_mesh_controller",
+        "service-mesh-controller"
+      ],
+      "service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.8ad49f39ee138448.infrastructure.containers.server.Dockerfile.service-mesh-controller",
+        "onion_lucid_service_id": "lucid-8ad49f39ee138448-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.8ad49f39ee138448:infrastructure/containers/server/Dockerfile.service-mesh-controller"
+      }
+    },
+    "session_anchoring": {
+      "stable_id": "session_anchoring",
+      "service_name": "session-anchoring",
+      "port": 8085,
+      "http_path": "http://session-anchoring:8085/app",
+      "host_ip": "172.20.10.12",
+      "source_dockerfile": "infrastructure/containers/sessions/Dockerfile.anchoring",
+      "host_config_labels": {
+        "com.lucid.service": "session-anchoring",
+        "com.lucid.platform": "arm64",
+        "com.lucid.cluster": "core",
+        "com.lucid.security": "distroless",
+        "com.lucid.expose": "8085",
+        "com.lucid.api.gateway": "api-gateway"
+      },
+      "tags_from_ports_txt": [
+        "session_anchoring",
+        "anchoring"
+      ],
+      "service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.11933b3531e16165.infrastructure.containers.sessions.Dockerfile.anchoring",
+        "onion_lucid_service_id": "lucid-11933b3531e16165-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.11933b3531e16165:infrastructure/containers/sessions/Dockerfile.anchoring"
+      }
+    },
+    "session_api": {
+      "stable_id": "session_api",
+      "service_name": "session-api",
+      "port": 8113,
+      "http_path": "http://session-api:8113/app",
+      "host_ip": "172.20.10.17",
+      "source_dockerfile": "infrastructure/containers/sessions/Dockerfile.api",
+      "host_config_labels": {
+        "com.lucid.service": "session-api",
+        "com.lucid.platform": "arm64",
+        "com.lucid.cluster": "processing",
+        "com.lucid.security": "distroless",
+        "com.lucid.expose": "8113"
+      },
+      "tags_from_ports_txt": [
+        "session_api",
+        "api"
+      ],
+      "service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.6748fe5e53be162b.infrastructure.containers.sessions.Dockerfile.api",
+        "onion_lucid_service_id": "lucid-6748fe5e53be162b-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.6748fe5e53be162b:infrastructure/containers/sessions/Dockerfile.api"
+      }
+    },
+    "session_chunk_processor": {
+      "stable_id": "session_chunk_processor",
+      "service_name": "session-chunk-processor",
+      "port": 8010,
+      "http_path": "http://session-chunk-processor:8010/app",
+      "host_ip": "172.20.10.9",
+      "source_dockerfile": "infrastructure/containers/sessions/Dockerfile.chunk-processor",
+      "host_config_labels": {
+        "com.lucid.service": "session-chunk-processor",
+        "com.lucid.platform": "arm64",
+        "com.lucid.cluster": "processing",
+        "com.lucid.security": "distroless",
+        "com.lucid.expose": "8010",
+        "com.lucid.api.gateway": "api-gateway"
+      },
+      "tags_from_ports_txt": [
+        "session_chunk_processor",
+        "chunk-processor"
+      ],
+      "service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.c02ea0943f466134.infrastructure.containers.sessions.Dockerfile.chunk-processor",
+        "onion_lucid_service_id": "lucid-c02ea0943f466134-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.c02ea0943f466134:infrastructure/containers/sessions/Dockerfile.chunk-processor"
+      }
+    },
+    "session_merkle_tree_builder": {
+      "stable_id": "session_merkle_tree_builder",
+      "service_name": "merkle-tree-builder",
+      "port": 8392,
+      "http_path": "http://merkle-tree-builder:8392/app",
+      "host_ip": "172.20.10.15",
+      "source_dockerfile": "infrastructure/containers/sessions/Dockerfile.merkle-tree-builder",
+      "host_config_labels": {
+        "com.lucid.service": "merkle-tree-builder",
+        "com.lucid.platform": "arm64",
+        "com.lucid.cluster": "processing",
+        "com.lucid.security": "distroless",
+        "com.lucid.expose": "8392"
+      },
+      "tags_from_ports_txt": [
+        "merkle-tree-builder",
+        "merkle_tree_builder",
+        "tree-builder",
+        "session_merkle_tree_builder"
+      ],
+      "service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.88309208fd5b8f80.infrastructure.containers.sessions.Dockerfile.merkle-tree-builder",
+        "onion_lucid_service_id": "lucid-88309208fd5b8f80-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.88309208fd5b8f80:infrastructure/containers/sessions/Dockerfile.merkle-tree-builder"
+      }
+    },
+    "session_overlord": {
+      "stable_id": "session_overlord",
+      "service_name": "session-overlord",
+      "port": 8110,
+      "http_path": "http://session-overlord:8110/app",
+      "host_ip": "172.20.10.16",
+      "source_dockerfile": "infrastructure/containers/sessions/Dockerfile.session-overlord",
+      "host_config_labels": {
+        "com.lucid.service": "session-overlord",
+        "com.lucid.platform": "arm64",
+        "com.lucid.cluster": "processing",
+        "com.lucid.security": "distroless",
+        "com.lucid.expose": "8110"
+      },
+      "tags_from_ports_txt": [
+        "session_overlord",
+        "session-overlord"
+      ],
+      "service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.194515037502d9c5.infrastructure.containers.sessions.Dockerfile.session-overlord",
+        "onion_lucid_service_id": "lucid-194515037502d9c5-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.194515037502d9c5:infrastructure/containers/sessions/Dockerfile.session-overlord"
+      }
+    },
+    "session_pipeline": {
+      "stable_id": "session_pipeline",
+      "service_name": "session-pipeline",
+      "port": 8083,
+      "http_path": "http://session-pipeline:8083/app",
+      "host_ip": null,
+      "source_dockerfile": "infrastructure/containers/sessions/Dockerfile.session-pipeline",
+      "host_config_labels": {
+        "com.lucid.service": "session-pipeline",
+        "com.lucid.platform": "arm64",
+        "com.lucid.cluster": "processing",
+        "com.lucid.security": "distroless",
+        "com.lucid.expose": "8083"
+      },
+      "tags_from_ports_txt": [
+        "session_pipeline",
+        "session-pipeline"
+      ],
+      "service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.30ffa9b22f2792fb.infrastructure.containers.sessions.Dockerfile.session-pipeline",
+        "onion_lucid_service_id": "lucid-30ffa9b22f2792fb-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.30ffa9b22f2792fb:infrastructure/containers/sessions/Dockerfile.session-pipeline"
+      }
+    },
+    "session_pipeline_manager": {
+      "stable_id": "session_pipeline_manager",
+      "service_name": "session-pipeline-manager",
+      "port": 7990,
+      "http_path": "http://session-pipeline-manager:7990/app",
+      "host_ip": "172.20.10.8",
+      "source_dockerfile": "infrastructure/containers/sessions/Dockerfile.session-pipeline-manager",
+      "host_config_labels": {
+        "com.lucid.service": "session-pipeline-manager",
+        "com.lucid.platform": "arm64",
+        "com.lucid.cluster": "processing",
+        "com.lucid.security": "distroless",
+        "com.lucid.expose": "7990",
+        "com.lucid.api.gateway": "api-gateway"
+      },
+      "tags_from_ports_txt": [
+        "session_pipeline_manager",
+        "session-pipeline-manager"
+      ],
+      "service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.70fe865ea6b688fd.infrastructure.containers.sessions.Dockerfile.session-pipeline-manager",
+        "onion_lucid_service_id": "lucid-70fe865ea6b688fd-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.70fe865ea6b688fd:infrastructure/containers/sessions/Dockerfile.session-pipeline-manager"
+      }
+    },
+    "session_storage_service": {
+      "stable_id": "session_storage_service",
+      "service_name": "session-storage-service",
+      "port": 8020,
+      "http_path": "http://session-storage-service:8020/app",
+      "host_ip": "172.20.10.10",
+      "source_dockerfile": "infrastructure/containers/sessions/Dockerfile.session-storage-service",
+      "host_config_labels": {
+        "com.lucid.service": "session-storage-service",
+        "com.lucid.platform": "arm64",
+        "com.lucid.cluster": "storage",
+        "com.lucid.security": "distroless",
+        "com.lucid.expose": "8020"
+      },
+      "tags_from_ports_txt": [
+        "session_storage_service",
+        "session-storage-service"
+      ],
+      "service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.0491f551b52254df.infrastructure.containers.sessions.Dockerfile.session-storage-service",
+        "onion_lucid_service_id": "lucid-0491f551b52254df-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.0491f551b52254df:infrastructure/containers/sessions/Dockerfile.session-storage-service"
+      }
+    },
+    "session_system_control": {
+      "stable_id": "session_system_control",
+      "service_name": "session-system-control",
+      "port": 7988,
+      "http_path": "http://session-system-control:7988/app",
+      "host_ip": "172.20.10.7",
+      "source_dockerfile": "infrastructure/containers/sessions/Dockerfile.session-systems-control",
+      "host_config_labels": {
+        "com.lucid.service": "session-system-control",
+        "com.lucid.platform": "arm64",
+        "com.lucid.cluster": "processing",
+        "com.lucid.security": "distroless",
+        "com.lucid.expose": "7988"
+      },
+      "tags_from_ports_txt": [
+        "session_system_control",
+        "session-systems-control"
+      ],
+      "service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.9587e97e6a96ca34.infrastructure.containers.sessions.Dockerfile.session-systems-control",
+        "onion_lucid_service_id": "lucid-9587e97e6a96ca34-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.9587e97e6a96ca34:infrastructure/containers/sessions/Dockerfile.session-systems-control"
+      }
+    },
+    "lucid_system_storage": {
+      "stable_id": "lucid_system_storage",
+      "service_name": "lucid-system-storage",
+      "port": 9900,
+      "http_path": "http://lucid-system-storage:9900/app",
+      "host_ip": "172.20.10.72",
+      "source_dockerfile": "infrastructure/containers/storage/Dockerfile.storage",
+      "host_config_labels": {
+        "com.lucid.service": "lucid-system-storage",
+        "com.lucid.platform": "arm64",
+        "com.lucid.cluster": "storage",
+        "com.lucid.security": "distroless",
+        "com.lucid.expose": "9900",
+        "com.lucid.tor.compatible": "true"
+      },
+      "tags_from_ports_txt": [
+        "lucid_system_storage",
+        "storage"
+      ],
+      "service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.86b998f8d949cf9d.infrastructure.containers.storage.Dockerfile.storage",
+        "onion_lucid_service_id": "lucid-86b998f8d949cf9d-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.86b998f8d949cf9d:infrastructure/containers/storage/Dockerfile.storage"
+      }
+    },
+    "tor_socks": {
+      "stable_id": "tor_socks",
+      "service_name": "tor-socks",
+      "port": 9050,
+      "http_path": "http://tor-socks:9050/app",
+      "host_ip": "172.20.10.64",
+      "source_dockerfile": "infrastructure/containers/tor/Dockerfile.tor-proxy-02",
+      "host_config_labels": {
+        "com.lucid.service": "tor-socks",
+        "com.lucid.platform": "arm64",
+        "com.lucid.cluster": "foundation",
+        "com.lucid.security": "distroless",
+        "com.lucid.expose": "9050",
+        "com.lucid.tor.inherent": "true",
+        "com.lucid.tor.system": "built-in"
+      },
+      "tags_from_ports_txt": [
+        "tor_socks",
+        "tor-proxy-02"
+      ],
+      "service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.2143ae84c81ed42f.infrastructure.containers.tor.Dockerfile.tor-proxy-02",
+        "onion_lucid_service_id": "lucid-2143ae84c81ed42f-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.2143ae84c81ed42f:infrastructure/containers/tor/Dockerfile.tor-proxy-02"
+      }
+    },
+    "tunnel_tools": {
+      "stable_id": "tunnel_tools",
+      "service_name": "tunnel-tools",
+      "port": 7000,
+      "http_path": "http://tunnel-tools:7000/app",
+      "host_ip": "172.20.10.66",
+      "source_dockerfile": "infrastructure/containers/tor/Dockerfile.tunnels",
+      "host_config_labels": {
+        "com.lucid.service": "tunnel-tools",
+        "com.lucid.platform": "arm64",
+        "com.lucid.cluster": "foundation",
+        "com.lucid.security": "distroless",
+        "com.lucid.expose": "7000",
+        "com.lucid.plane": "ops",
+        "com.lucid.architecture": "linux/arm64",
+        "com.lucid.vulnerabilities": "zero",
+        "com.lucid.tor.compatible": "true"
+      },
+      "tags_from_ports_txt": [
+        "tunnel-tools",
+        "tunnel_tools",
+        "tunnels"
+      ],
+      "service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.1e0ab614e1003171.infrastructure.containers.tor.Dockerfile.tunnels",
+        "onion_lucid_service_id": "lucid-1e0ab614e1003171-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.1e0ab614e1003171:infrastructure/containers/tor/Dockerfile.tunnels"
+      }
+    },
+    "main_lucid_gateway": {
+      "stable_id": "main_lucid_gateway",
+      "service_name": "api-gateway",
+      "port": 8080,
+      "http_path": "http://api-gateway:8080/app",
+      "host_ip": "172.20.10.1",
+      "source_dockerfile": "infrastructure/containers/user/Dockerfile",
+      "host_config_labels": {
+        "com.lucid.service": "api-gateway",
+        "com.lucid.platform": "arm64",
+        "com.lucid.cluster": "core",
+        "com.lucid.security": "distroless",
+        "com.lucid.expose": "8080",
+        "com.lucid.plane": "ops"
+      },
+      "tags_from_ports_txt": [
+        "main_lucid_gateway",
+        "lucid-main_lucid_gateway"
+      ],
+      "service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.ccb15d3adc538585.infrastructure.containers.user.Dockerfile",
+        "onion_lucid_service_id": "lucid-ccb15d3adc538585-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.ccb15d3adc538585:infrastructure/containers/user/Dockerfile"
+      }
+    },
+    "vm_service": {
+      "stable_id": "vm_service",
+      "service_name": "vm-service",
+      "port": 8107,
+      "http_path": "http://vm-service:8107/app",
+      "host_ip": "172.20.10.73",
+      "source_dockerfile": "infrastructure/containers/vm/Dockerfile.vm",
+      "host_config_labels": {
+        "com.lucid.service": "vm-service",
+        "com.lucid.platform": "arm64",
+        "com.lucid.cluster": "application",
+        "com.lucid.security": "distroless",
+        "com.lucid.expose": "8107"
+      },
+      "tags_from_ports_txt": [
+        "vm_service",
+        "vm"
+      ],
+      "service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.be69280a098dd938.infrastructure.containers.vm.Dockerfile.vm",
+        "onion_lucid_service_id": "lucid-be69280a098dd938-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.be69280a098dd938:infrastructure/containers/vm/Dockerfile.vm"
+      }
+    },
+    "common": {
+      "stable_id": "common",
+      "service_name": "common",
+      "port": 0,
+      "http_path": "http://common:0/app",
+      "host_ip": null,
+      "source_dockerfile": "infrastructure/docker/common/Dockerfile.common",
+      "host_config_labels": {
+        "com.lucid.service": "common",
+        "com.lucid.platform": "arm64",
+        "com.lucid.cluster": "foundation",
+        "com.lucid.security": "distroless",
+        "com.lucid.expose": "0"
+      },
+      "tags_from_ports_txt": [
+        "common",
+        "lucid-common"
+      ],
+      "service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.68302a346e11898a.infrastructure.docker.common.Dockerfile.common",
+        "onion_lucid_service_id": "lucid-68302a346e11898a-infrastructure-docker-co",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.68302a346e11898a:infrastructure/docker/common/Dockerfile.common"
+      }
+    },
+    "timelock": {
+      "stable_id": "timelock",
+      "service_name": "timelock",
+      "port": 8109,
+      "http_path": "http://timelock:8109/app",
+      "host_ip": null,
+      "source_dockerfile": "infrastructure/docker/common/Dockerfile.timelock",
+      "host_config_labels": {
+        "com.lucid.service": "timelock",
+        "com.lucid.platform": "arm64",
+        "com.lucid.cluster": "foundation",
+        "com.lucid.security": "distroless",
+        "com.lucid.expose": "8109"
+      },
+      "tags_from_ports_txt": [
+        "timelock",
+        "lucid-timelock"
+      ],
+      "service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.855f1b999f3bc26a.infrastructure.docker.common.Dockerfile.timelock",
+        "onion_lucid_service_id": "lucid-855f1b999f3bc26a-infrastructure-docker-co",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.855f1b999f3bc26a:infrastructure/docker/common/Dockerfile.timelock"
+      }
+    },
+    "database_backup": {
+      "stable_id": "database_backup",
+      "service_name": "database-backup",
+      "port": 8189,
+      "http_path": "http://database-backup:8189/app",
+      "host_ip": null,
+      "source_dockerfile": "infrastructure/docker/databases/Dockerfile.database-backup",
+      "host_config_labels": {
+        "com.lucid.service": "database-backup",
+        "com.lucid.platform": "arm64",
+        "com.lucid.cluster": "database",
+        "com.lucid.security": "distroless",
+        "com.lucid.expose": "8189"
+      },
+      "tags_from_ports_txt": [
+        "database-backup",
+        "database_backup",
+        "backup"
+      ],
+      "service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.8d80ca9529f74202.infrastructure.docker.databases.Dockerfile.database-backup",
+        "onion_lucid_service_id": "lucid-8d80ca9529f74202-infrastructure-docker-da",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.8d80ca9529f74202:infrastructure/docker/databases/Dockerfile.database-backup"
+      }
+    },
+    "database_monitoring": {
+      "stable_id": "database_monitoring",
+      "service_name": "database-monitoring",
+      "port": 27020,
+      "http_path": "http://database-monitoring:27020/app",
+      "host_ip": null,
+      "source_dockerfile": "infrastructure/docker/databases/Dockerfile.database-monitoring",
+      "host_config_labels": {
+        "com.lucid.service": "database-monitoring",
+        "com.lucid.platform": "arm64",
+        "com.lucid.cluster": "database",
+        "com.lucid.security": "distroless",
+        "com.lucid.expose": "27020"
+      },
+      "tags_from_ports_txt": [
+        "database-monitoring",
+        "database_monitoring",
+        "monitoring"
+      ],
+      "service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.c1584c59510bc35b.infrastructure.docker.databases.Dockerfile.database-monitoring",
+        "onion_lucid_service_id": "lucid-c1584c59510bc35b-infrastructure-docker-da",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.c1584c59510bc35b:infrastructure/docker/databases/Dockerfile.database-monitoring"
+      }
+    },
+    "base": {
+      "stable_id": "base",
+      "service_name": "base",
+      "port": 0,
+      "http_path": "http://base:0/app",
+      "host_ip": null,
+      "source_dockerfile": "infrastructure/docker/distroless/base/Dockerfile.base",
+      "host_config_labels": {
+        "com.lucid.service": "base",
+        "com.lucid.platform": "arm64",
+        "com.lucid.cluster": "foundation",
+        "com.lucid.security": "distroless",
+        "com.lucid.expose": "0"
+      },
+      "tags_from_ports_txt": [
+        "base",
+        "lucid-base"
+      ],
+      "service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.54a61bd53646289d.infrastructure.docker.distroless.base.Dockerfile.base",
+        "onion_lucid_service_id": "lucid-54a61bd53646289d-infrastructure-docker-di",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.54a61bd53646289d:infrastructure/docker/distroless/base/Dockerfile.base"
+      }
+    },
+    "rdp": {
+      "stable_id": "rdp",
+      "service_name": "rdp",
+      "port": 0,
+      "http_path": "http://rdp:0/app",
+      "host_ip": null,
+      "source_dockerfile": "infrastructure/docker/distroless/rdp/Dockerfile.rdp",
+      "host_config_labels": {
+        "com.lucid.service": "rdp",
+        "com.lucid.platform": "arm64",
+        "com.lucid.cluster": "application",
+        "com.lucid.security": "distroless",
+        "com.lucid.expose": "0"
+      },
+      "tags_from_ports_txt": [
+        "rdp",
+        "lucid-rdp"
+      ],
+      "service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.b3fd7496b0afd757.infrastructure.docker.distroless.rdp.Dockerfile.rdp",
+        "onion_lucid_service_id": "lucid-b3fd7496b0afd757-infrastructure-docker-di",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.b3fd7496b0afd757:infrastructure/docker/distroless/rdp/Dockerfile.rdp"
+      }
+    },
+    "vm_manager": {
+      "stable_id": "vm_manager",
+      "service_name": "vm-manager",
+      "port": 8285,
+      "http_path": "http://vm-manager:8285/app",
+      "host_ip": null,
+      "source_dockerfile": "infrastructure/docker/vm/Dockerfile.vm-manager",
+      "host_config_labels": {
+        "com.lucid.service": "vm-manager",
+        "com.lucid.platform": "arm64",
+        "com.lucid.cluster": "application",
+        "com.lucid.security": "distroless",
+        "com.lucid.expose": "8285"
+      },
+      "tags_from_ports_txt": [
+        "vm-manager",
+        "vm_manager",
+        "manager"
+      ],
+      "service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.4c55d8feaf895eae.infrastructure.docker.vm.Dockerfile.vm-manager",
+        "onion_lucid_service_id": "lucid-4c55d8feaf895eae-infrastructure-docker-vm",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.4c55d8feaf895eae:infrastructure/docker/vm/Dockerfile.vm-manager"
+      }
+    },
+    "vm_orchestrator": {
+      "stable_id": "vm_orchestrator",
+      "service_name": "vm-orchestrator",
+      "port": 8186,
+      "http_path": "http://vm-orchestrator:8186/app",
+      "host_ip": null,
+      "source_dockerfile": "infrastructure/docker/vm/Dockerfile.vm-orchestrator",
+      "host_config_labels": {
+        "com.lucid.service": "vm-orchestrator",
+        "com.lucid.platform": "arm64",
+        "com.lucid.cluster": "application",
+        "com.lucid.security": "distroless",
+        "com.lucid.expose": "8186"
+      },
+      "tags_from_ports_txt": [
+        "vm-orchestrator",
+        "vm_orchestrator",
+        "orchestrator"
+      ],
+      "service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.89b0b6926aa7f6d0.infrastructure.docker.vm.Dockerfile.vm-orchestrator",
+        "onion_lucid_service_id": "lucid-89b0b6926aa7f6d0-infrastructure-docker-vm",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.89b0b6926aa7f6d0:infrastructure/docker/vm/Dockerfile.vm-orchestrator"
+      }
+    },
+    "vm_resource_monitor": {
+      "stable_id": "vm_resource_monitor",
+      "service_name": "vm-resource-monitor",
+      "port": 8187,
+      "http_path": "http://vm-resource-monitor:8187/app",
+      "host_ip": null,
+      "source_dockerfile": "infrastructure/docker/vm/Dockerfile.vm-resource-monitor",
+      "host_config_labels": {
+        "com.lucid.service": "vm-resource-monitor",
+        "com.lucid.platform": "arm64",
+        "com.lucid.cluster": "application",
+        "com.lucid.security": "distroless",
+        "com.lucid.expose": "8187"
+      },
+      "tags_from_ports_txt": [
+        "vm-resource-monitor",
+        "vm_resource_monitor",
+        "resource-monitor"
+      ],
+      "service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.3d45c0194733900b.infrastructure.docker.vm.Dockerfile.vm-resource-monitor",
+        "onion_lucid_service_id": "lucid-3d45c0194733900b-infrastructure-docker-vm",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.3d45c0194733900b:infrastructure/docker/vm/Dockerfile.vm-resource-monitor"
+      }
+    },
+    "wallet_key_rotation": {
+      "stable_id": "wallet_key_rotation",
+      "service_name": "wallet-key-rotation",
+      "port": 8090,
+      "http_path": "http://wallet-key-rotation:8090/app",
+      "host_ip": null,
+      "source_dockerfile": "infrastructure/docker/wallet/Dockerfile.key-rotation",
+      "host_config_labels": {
+        "com.lucid.service": "wallet-key-rotation",
+        "com.lucid.platform": "arm64",
+        "com.lucid.cluster": "payment",
+        "com.lucid.security": "distroless",
+        "com.lucid.expose": "8090"
+      },
+      "tags_from_ports_txt": [
+        "wallet_key_rotation",
+        "key-rotation"
+      ],
+      "service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.5ce36efc4ec7184a.infrastructure.docker.wallet.Dockerfile.key-rotation",
+        "onion_lucid_service_id": "lucid-5ce36efc4ec7184a-infrastructure-docker-wa",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.5ce36efc4ec7184a:infrastructure/docker/wallet/Dockerfile.key-rotation"
+      }
+    },
+    "role_manager": {
+      "stable_id": "role_manager",
+      "service_name": "role-manager",
+      "port": 8102,
+      "http_path": "http://role-manager:8102/app",
+      "host_ip": null,
+      "source_dockerfile": "infrastructure/docker/wallet/Dockerfile.role-manager",
+      "host_config_labels": {
+        "com.lucid.service": "role-manager",
+        "com.lucid.platform": "arm64",
+        "com.lucid.cluster": "payment",
+        "com.lucid.security": "distroless",
+        "com.lucid.expose": "8102"
+      },
+      "tags_from_ports_txt": [
+        "role-manager",
+        "role_manager",
+        "manager"
+      ],
+      "service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.b093417fba8bf777.infrastructure.docker.wallet.Dockerfile.role-manager",
+        "onion_lucid_service_id": "lucid-b093417fba8bf777-infrastructure-docker-wa",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.b093417fba8bf777:infrastructure/docker/wallet/Dockerfile.role-manager"
+      }
+    },
+    "software_vault": {
+      "stable_id": "software_vault",
+      "service_name": "software-vault",
+      "port": 8101,
+      "http_path": "http://software-vault:8101/app",
+      "host_ip": null,
+      "source_dockerfile": "infrastructure/docker/wallet/Dockerfile.software-vault",
+      "host_config_labels": {
+        "com.lucid.service": "software-vault",
+        "com.lucid.platform": "arm64",
+        "com.lucid.cluster": "payment",
+        "com.lucid.security": "distroless",
+        "com.lucid.expose": "8101"
+      },
+      "tags_from_ports_txt": [
+        "software-vault",
+        "software_vault",
+        "vault"
+      ],
+      "service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.d0795488fdbd0fd6.infrastructure.docker.wallet.Dockerfile.software-vault",
+        "onion_lucid_service_id": "lucid-d0795488fdbd0fd6-infrastructure-docker-wa",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.d0795488fdbd0fd6:infrastructure/docker/wallet/Dockerfile.software-vault"
+      }
+    }
+  },
+  "by_docker_dns_service_name": {
+    "admin-overlord": "admin_overlord",
+    "admin-system-gateway": "admin_system_gateway",
+    "admin-ui-backend": "admin_ui_backend",
+    "admin-governance-client": "admin_governance_client",
+    "admin-key-rotation": "admin_key_rotation",
+    "admin-params-registry": "admin_params_registry",
+    "lucid-auth-service": "lucid_auth_service",
+    "lucid-gov": "lucid_gov",
+    "block-manager": "block_manager",
+    "chain-to-pay": "chain_to_pay",
+    "consensus-engine": "blockchain_consensus_engine",
+    "data-chain": "data_chain",
+    "blockchain-engine": "blockchain_engine",
+    "mongodb-monitoring": "mongodb_monitoring",
+    "database-overlord": "database_overlord",
+    "elasticsearch-storage": "lucid_elasticsearch_http",
+    "lucid-mongodb": "lucid_mongodb",
+    "lucid-redis-storage": "lucid_redis",
+    "electron-gui-node": "electron_gui_node",
+    "electron-gui-user": "electron_gui_user",
+    "gui-tor-manager": "gui_tor_manager_http",
+    "gui-docker-manager": "gui_docker_manager",
+    "gui-api-bridge": "gui_api_bridge",
+    "gui-hardware-manager": "gui_hardware_manager",
+    "node-gov": "node_gov",
+    "node-management": "node_management",
+    "node-overlord": "node_overlord",
+    "node-registry": "node_registry",
+    "node-system-gateway": "node_system_gateway",
+    "node-utils": "node_utils",
+    "node-worker": "node_worker",
+    "on-system-chain-client": "on_system_chain_client",
+    "payment-system-gateway": "payment_system_gateway",
+    "tron-node-client": "tron_node_client",
+    "tron-payment-service": "tron_payment_service",
+    "wallet-manager": "wallet_manager",
+    "rdp-controller": "rdp_controller",
+    "lucid-server-core": "lucid_server_core",
+    "lucid-rdp-server-manager": "rdp_server_manager",
+    "server-gateway": "lucid_server_gateway",
+    "lucid-server-manager": "lucid_server_manager",
+    "lucid-service-mesh-controller": "lucid_service_mesh_controller",
+    "session-anchoring": "session_anchoring",
+    "session-api": "session_api",
+    "session-chunk-processor": "session_chunk_processor",
+    "merkle-tree-builder": "session_merkle_tree_builder",
+    "session-overlord": "session_overlord",
+    "session-pipeline": "session_pipeline",
+    "session-pipeline-manager": "session_pipeline_manager",
+    "session-storage-service": "session_storage_service",
+    "session-system-control": "session_system_control",
+    "lucid-system-storage": "lucid_system_storage",
+    "tor-socks": "tor_socks",
+    "tunnel-tools": "tunnel_tools",
+    "api-gateway": "main_lucid_gateway",
+    "vm-service": "vm_service",
+    "common": "common",
+    "timelock": "timelock",
+    "database-backup": "database_backup",
+    "database-monitoring": "database_monitoring",
+    "base": "base",
+    "rdp": "rdp",
+    "vm-manager": "vm_manager",
+    "vm-orchestrator": "vm_orchestrator",
+    "vm-resource-monitor": "vm_resource_monitor",
+    "wallet-key-rotation": "wallet_key_rotation",
+    "role-manager": "role_manager",
+    "software-vault": "software_vault"
+  },
+  "unlinked": {
+    "service_id_list_paths_under_infrastructure_containers_not_in_host_config": [
+      "infrastructure/containers/.devcontainer/Dockerfile.network-friendly",
+      "infrastructure/containers/.devcontainer/Dockerfile.simple",
+      "infrastructure/containers/admin/Dockerfile.governance-client",
+      "infrastructure/containers/base/Dockerfile.base",
+      "infrastructure/containers/base/Dockerfile.java-base",
+      "infrastructure/containers/base/Dockerfile.python-base",
+      "infrastructure/containers/database/Dockerfile.elasticsearch",
+      "infrastructure/containers/database/Dockerfile.mongodb",
+      "infrastructure/containers/database/Dockerfile.redis",
+      "infrastructure/containers/electron_gui/Dockerfile.admin",
+      "infrastructure/containers/services/node/Dockerfile",
+      "infrastructure/containers/services/node/Dockerfile.node-management",
+      "infrastructure/containers/tor/Dockerfile"
+    ],
+    "count": 13
+  }
+}

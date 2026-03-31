@@ -1,3 +1,9 @@
+# File: /app/service_configs/sessions/api-config.yaml
+# x-lucid-file-path: /app/service_configs/sessions/api-config.yaml
+# x-lucid-file-directory: /app/service_configs/sessions
+# x-lucid-file-type: YAML
+# Lucid alignment: host_registry=infrastructure/containers/host-config.yml (container /app/configs/host-config.yml); path_index=x-files.json section_to_canonical
+
 # Runtime (container): /app/service_configs/sessions/api-config.yaml — see ../container-runtime-layout.yml
 # Lucid Session API — reference configuration (sessions/config/api-config.yaml)
 # Canonical hostname/port/host_ip: infrastructure/containers/host-config.yml (session_* keys + peers below).

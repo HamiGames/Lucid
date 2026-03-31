@@ -1,3 +1,8 @@
+# File: /app/configs/database/elasticsearch/elasticsearch.yml
+# x-lucid-file-path: /app/configs/database/elasticsearch/elasticsearch.yml
+# x-lucid-file-directory: /app/configs/database/elasticsearch
+# x-lucid-file-type: YAML
+
 # Elasticsearch 8.11.0 Configuration for Lucid Blockchain System
 # Database Cluster 08: Storage Database
 # Aligned with essentials.md - Elasticsearch Service Configuration

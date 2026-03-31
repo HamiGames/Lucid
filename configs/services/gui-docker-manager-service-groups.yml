@@ -1,3 +1,8 @@
+# File: /app/configs/services/gui-docker-manager-service-groups.yml
+# x-lucid-file-path: /app/configs/services/gui-docker-manager-service-groups.yml
+# x-lucid-file-directory: /app/configs/services
+# x-lucid-file-type: YAML
+
 # =============================================================================
 # LUCID GUI Docker Manager Service - Service Groups Configuration
 # =============================================================================

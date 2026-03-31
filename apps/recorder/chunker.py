@@ -2,6 +2,7 @@
 """
 File: /app/apps/recorder/chunker.py
 x-lucid-file-path: /app/apps/recorder/chunker.py
+x-lucid-file-directory: /app/apps/recorder
 x-lucid-file-type: python
 
 Chunk Processor Module for Lucid RDP Recorder

@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# File: /app/scripts/set-env-permissions.sh
+# x-lucid-file-path: /app/scripts/set-env-permissions.sh
+# x-lucid-file-directory: /app/scripts
+# x-lucid-file-type: shell
 # =============================================================================
 # LUCID Environment File Permission Setting Script
 # =============================================================================
@@ -12,7 +16,7 @@
 # - Secure Secret Files (600): Files containing secrets, passwords, or sensitive data
 #
 # Target Platform: Raspberry Pi (linux/arm64)
-# Base Path: /mnt/myssd/Lucid/Lucid/
+# Project root: resolved via scripts/lib/lucid-repo-paths.sh (master-env-config.txt)
 #
 # Error Handling:
 # - Missing files are handled gracefully (expected behavior)
@@ -23,6 +27,14 @@
 
 set -euo pipefail
 
+_lucid_here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+_lucid_scripts="$_lucid_here"
+while [[ "$_lucid_scripts" != "/" && "$(basename "$_lucid_scripts")" != "scripts" ]]; do
+    _lucid_scripts="$(dirname "$_lucid_scripts")"
+done
+# shellcheck source=lib/lucid-repo-paths.sh
+source "$_lucid_scripts/lib/lucid-repo-paths.sh"
+
 # Color codes for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -32,9 +44,9 @@ NC='\033[0m' # No Color
 
 # Script configuration
 SCRIPT_NAME="set-env-permissions.sh"
-PROJECT_ROOT="/mnt/myssd/Lucid/Lucid"
-ENV_DIR="/mnt/myssd/Lucid/Lucid/configs/environment"
-SECRETS_DIR="/mnt/myssd/Lucid/Lucid/configs/secrets"
+PROJECT_ROOT="$LUCID_REPO_ROOT"
+ENV_DIR="$LUCID_ENV_CONFIG_DIR"
+SECRETS_DIR="$PROJECT_ROOT/configs/secrets"
 
 # Permission settings
 REGULAR_PERMISSIONS="664"  # rw-rw-r--

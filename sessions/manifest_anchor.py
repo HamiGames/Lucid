@@ -3,6 +3,7 @@
 """
 File: /app/sessions/manifest_anchor.py
 x-lucid-file-path: /app/sessions/manifest_anchor.py
+x-lucid-file-directory: /app/sessions
 x-lucid-file-type: python
 """
 

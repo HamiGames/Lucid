@@ -88,10 +88,18 @@ LABEL maintainer="Lucid Development Team" \
       org.opencontainers.image.version="${VERSION}" \
       org.opencontainers.image.revision="${VCS_REF}" \
       org.opencontainers.image.created="${BUILD_DATE}" \
-      com.lucid.service="admin-interface" \
+      com.lucid.plane="ops" \
+      com.lucid.service="admin-ui-backend" \
+      com.lucid.layer="1" \
+      org.lucid.layer="1" \
       com.lucid.platform="arm64" \
-      com.lucid.cluster="support" \
-      com.lucid.security="distroless"
+      com.lucid.architecture="linux/arm64" \
+      com.lucid.security="distroless" \
+      com.lucid.vulnerabilities="zero" \
+      com.lucid.expose="8120" \
+      com.lucid.cluster="core" \
+      com.lucid.tor.compatible="true" \
+      com.lucid.env.config=".env.foundation,.env.secrets"
 
 WORKDIR /app
 
@@ -107,7 +115,7 @@ COPY --from=builder --chown=65532:65532 /build/configs/ ./configs/
 RUN ["/nodejs/bin/node", "-e", "const fs = require('fs'); const path = require('path'); const checks = { buildMarker: fs.existsSync('/app/.build-marker'), packMarker: fs.existsSync('/app/.packages-marker'), dist: fs.existsSync('/app/dist'), configs: fs.existsSync('/app/configs'), dockerConfig: fs.existsSync('/app/configs/docker.config.json'), prodConfig: fs.existsSync('/app/configs/env.production.json'), torConfig: fs.existsSync('/app/configs/tor.config.json'), apiServices: fs.existsSync('/app/configs/api-services.conf') }; if (!Object.values(checks).every(v => v)) { console.error('❌ Verification failed:', checks); process.exit(1); } console.log('✅ Build artifacts verified (configs and .json files present)');"]
 
 # Set environment variables with defaults
-ENV NODE_ENV=production
+ENV NODE_ENV="production"
 ENV ELECTRON_GUI_PROFILE=admin
 ENV ELECTRON_GUI_NETWORK=lucid-pi-network
 ENV ELECTRON_GUI_API_BASE_URL=http://172.20.0.10:8080/api/v1

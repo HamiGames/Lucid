@@ -1,4 +1,9 @@
 """
+File: /app/tests/performance/test_session_processing.py
+x-lucid-file-path: /app/tests/performance/test_session_processing.py
+x-lucid-file-directory: /app/tests/performance
+x-lucid-file-type: python
+
 Session Processing Performance Tests
 
 Tests session processing performance benchmarks:

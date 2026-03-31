@@ -1,6 +1,7 @@
 """
 File: /app/server/__init__.py
 x-lucid-file-path: /app/server/__init__.py
+x-lucid-file-directory: /app/server
 x-lucid-file-type: python
 
 Server module pack: host-config discovery, mesh validation, uvicorn launch.

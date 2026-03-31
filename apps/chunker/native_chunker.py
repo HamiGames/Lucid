@@ -2,6 +2,7 @@
 """
 File: /app/apps/chunker/native_chunker.py
 x-lucid-file-path: /app/apps/chunker/native_chunker.py
+x-lucid-file-directory: /app/apps/chunker
 x-lucid-file-type: python
 
 Native Chunker Addon for Lucid RDP

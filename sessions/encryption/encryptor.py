@@ -2,6 +2,7 @@
 """
 File: /app/sessions/encryption/encryptor.py
 x-lucid-file-path: /app/sessions/encryption/encryptor.py
+x-lucid-file-directory: /app/sessions/encryption
 x-lucid-file-type: python
 
 LUCID Session Encryptor - SPEC-1B Implementation

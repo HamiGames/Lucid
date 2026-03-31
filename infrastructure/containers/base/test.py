@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 """
+File: /app/configs/base/test.py
+x-lucid-file-path: /app/configs/base/test.py
+x-lucid-file-directory: /app/configs/base
+x-lucid-file-type: python
+
 Lucid Base Images Test Script
 Tests the Python base image functionality
 """

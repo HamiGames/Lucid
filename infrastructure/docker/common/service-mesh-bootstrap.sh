@@ -1,5 +1,9 @@
 #!/bin/bash
 # -----------------------------------------------------------------------------
+# File: /app/configs/docker//common/service-mesh-bootstrap.sh
+# x-lucid-file-path: /app/configs/docker//common/service-mesh-bootstrap.sh
+# x-lucid-file-directory: /app/configs/docker//common
+# x-lucid-file-type: shell
 # Lucid Service Mesh bootstrap helper
 # Ensures the pickme/lucid-service-mesh:latest-arm64 container runs with the
 # same runtime profile used by docker-compose on the Pi
@@ -8,7 +12,7 @@
 set -euo pipefail
 
 SCRIPT_NAME="$(basename "$0")"
-LOG_DIR="/opt/lucid/logs"
+LOG_DIR="/app/lucid/logs"
 LOG_FILE="${LOG_DIR}/service-mesh-bootstrap.log"
 
 CONTAINER_NAME="lucid-service-mesh"
@@ -17,11 +21,12 @@ NETWORK_NAME="${LUCID_PI_NETWORK:-lucid-pi-network}"
 RESERVED_IP="${SERVICE_MESH_CONTROLLER_HOST:-172.20.0.19}"
 VOLUME_NAME="lucid-service-mesh-cache"
 
-ROOT_CONFIG="/mnt/myssd/Lucid/Lucid"
+LUCID_CONFIG_ROOT="${LUCID_IMAGE_CONFIG_DIR:-/app/configs}"
+LUCID_APP_ROOT="${LUCID_IMAGE_APP_ROOT:-/app}"
 ENV_FILES=(
-  "${ROOT_CONFIG}/configs/environment/.env.foundation"
-  "${ROOT_CONFIG}/configs/environment/.env.core"
-  "${ROOT_CONFIG}/configs/environment/.env.secrets"
+  "${LUCID_CONFIG_ROOT}/.env.foundation"
+  "${LUCID_CONFIG_ROOT}/.env.core"
+  "${LUCID_CONFIG_ROOT}/.env.secrets"
 )
 
 HOST_PORT_8500="${SERVICE_MESH_PORT:-8500}"
@@ -34,8 +39,8 @@ PORT_FLAGS=(
 )
 
 VOLUME_FLAGS=(
-  "-v" "${ROOT_CONFIG}/logs/service-mesh:/app/logs:rw"
-  "-v" "${ROOT_CONFIG}/data/service-mesh/config:/app/config:rw"
+  "-v" "${LUCID_APP_ROOT}/logs/service-mesh:/app/logs:rw"
+  "-v" "${LUCID_APP_ROOT}/data/service-mesh/config:/app/config:rw"
   "-v" "${VOLUME_NAME}:/tmp/mesh"
 )
 

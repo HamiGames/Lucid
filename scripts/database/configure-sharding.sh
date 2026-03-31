@@ -1,5 +1,9 @@
 #!/bin/bash
 # scripts/database/configure-sharding.sh
+# File: /app/scripts/database/configure-sharding.sh
+# x-lucid-file-path: /app/scripts/database/configure-sharding.sh
+# x-lucid-file-directory: /app/scripts/database
+# x-lucid-file-type: shell
 # Configure MongoDB sharding for scalability
 # LUCID-STRICT: Distroless build method, API compliant
 

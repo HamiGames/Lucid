@@ -1,17 +1,25 @@
+# File: /app/configs/sessions/docker-compose.session-images.yml
+# x-lucid-file-path: /app/configs/sessions/docker-compose.session-images.yml
+# x-lucid-file-directory: /app/configs/sessions
+# x-lucid-file-type: YAML
+
 # Docker Compose for Lucid Session Images
-# Path: infrastructure/containers/sessions/docker-compose.session-images.yml
-#
-# Aligned with: ports.txt (service_name, port, image), sessions/Dockerfile.* EXPOSE/runtime PORT.
-# env_file: master-env-config.txt + configs/environment/.env.secrets (repo root paths).
-# Bind mounts: same files at /app/configs/.env.master and /app/configs/.env.secrets (LUCID_IMAGE_CONFIG).
+# x-lucid-file-path: /app/service_configs/sessions/docker-compose.session-images.yml
+# x-lucid-file-type: yaml
+# About:
+# - builds the session-pipeline, session-recorder, session-chunk-processor, session-storage-service, session-api, session-anchoring, session-pipeline-manager, session-management, and session-systems-control services
+# - uses the ports.txt (session_pipeline 8083, session_recorder 8090, session_chunk-processor 8010, session_storage-service 8020, session_api 8113, session_anchoring 8085, session_pipeline-manager 7990, session_management 9090, session_systems-control 7988) to build the services
+# - uses the host-config.yml to build the services
+# - uses the master-env-config.txt and configs/environment/.env.secrets to build the services
+# - uses the x-lucid-file-path and x-lucid-file-type to identify the file path and file type
 
 x-lucid-host-config:
   file: ../host-config.yml
   repo_path: infrastructure/containers/host-config.yml
-  version: '1.0'
+  version: "1.0"
   description: Lucid container host registry for Docker DNS hostnames, ports, discovery URLs, and static host IPs.
-  http_path_template: 'http://{service_name}:{port}/app'
-  host_ip_range: '172.20.10.1–172.20.10.76'
+  http_path_template: "http://{service_name}:{port}/app"
+  host_ip_range: "172.20.10.1–172.20.10.76"
   in_container_path: /app/configs/host-config.yml
 
 x-lucid-env-files: &lucid-env-files

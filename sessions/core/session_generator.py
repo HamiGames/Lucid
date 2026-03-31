@@ -5,6 +5,7 @@
 """
 File: /app/sessions/core/session_generator.py
 x-lucid-file-path: /app/sessions/core/session_generator.py
+x-lucid-file-directory: /app/sessions/core
 x-lucid-file-type: python
 """
 

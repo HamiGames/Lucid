@@ -1,4 +1,9 @@
 """
+File: /app/tests/integration/phase3/test_poot_calculation.py
+x-lucid-file-path: /app/tests/integration/phase3/test_poot_calculation.py
+x-lucid-file-directory: /app/tests/integration/phase3
+x-lucid-file-type: python
+
 Phase 3 Integration Tests - PoOT Score Calculation
 
 This module tests PoOT (Proof of Operational Trust) score calculation:

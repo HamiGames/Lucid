@@ -5,6 +5,7 @@
 """
 File: /app/node/economy/node_economy.py
 x-lucid-file-path: /app/node/economy/node_economy.py
+x-lucid-file-directory: /app/node/economy
 x-lucid-file-type: python
 """
 

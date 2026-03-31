@@ -1,3 +1,8 @@
+# File: /app/payment_systems/tron/docker-compose.yml
+# x-lucid-file-path: /app/payment_systems/tron/docker-compose.yml
+# x-lucid-file-directory: /app/payment_systems/tron
+# x-lucid-file-type: YAML
+
 # LUCID PAYMENT SYSTEMS - Distroless Deployment
 # Phase 4: Payment Systems (TRON Integration, Payment Governance, Distribution)
 # Aligned with essentials.md and service-ip-configuration.md

@@ -1,3 +1,8 @@
+# File: /app/blockchain/config/session-anchoring-logging.yaml
+# x-lucid-file-path: /app/blockchain/config/session-anchoring-logging.yaml
+# x-lucid-file-directory: /app/blockchain/config
+# x-lucid-file-type: YAML
+
 # Session Anchoring Service Logging Configuration
 # Purpose: Centralize logging settings for session-anchoring container
 # Aligns with docker-compose.core.yml volume mounts

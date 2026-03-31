@@ -1,9 +1,10 @@
 """
-CORS Middleware for GUI API Bridge
 File: /app/gui_api_bridge/gui_api_bridge/middleware/cors.py
 x-lucid-file-path: /app/gui_api_bridge/gui_api_bridge/middleware/cors.py
+x-lucid-file-directory: /app/gui_api_bridge/gui_api_bridge/middleware
 x-lucid-file-type: python
 
+CORS Middleware for GUI API Bridge
 """
 
 import logging

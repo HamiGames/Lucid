@@ -1,5 +1,9 @@
 #!/bin/bash
 # RDP/scripts/build-on-pi.sh
+# File: /app/RDP/scripts/build-on-pi.sh
+# x-lucid-file-path: /app/RDP/scripts/build-on-pi.sh
+# x-lucid-file-directory: /app/RDP/scripts
+# x-lucid-file-type: shell
 # Build script optimized for Raspberry Pi console
 # Handles network retries and provides clear error messages
 

@@ -1,5 +1,9 @@
 #!/bin/bash
 # scripts/hardware/test-hardware-accel.sh
+# File: /app/scripts/hardware/test-hardware-accel.sh
+# x-lucid-file-path: /app/scripts/hardware/test-hardware-accel.sh
+# x-lucid-file-directory: /app/scripts/hardware
+# x-lucid-file-type: shell
 # Test hardware acceleration on Pi 5 for distroless containers
 # LUCID-STRICT: Comprehensive hardware acceleration validation
 

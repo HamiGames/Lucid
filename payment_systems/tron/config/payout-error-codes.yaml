@@ -1,3 +1,8 @@
+# File: /app/payment_systems/tron/config/payout-error-codes.yaml
+# x-lucid-file-path: /app/payment_systems/tron/config/payout-error-codes.yaml
+# x-lucid-file-directory: /app/payment_systems/tron/config
+# x-lucid-file-type: YAML
+
 # LUCID TRON Payout Router - Error Codes Configuration
 # File: payment-systems/tron/config/payout-error-codes.yaml
 # Purpose: Payout-specific error codes and recovery strategies

@@ -1,5 +1,12 @@
 #!/usr/bin/env python3
-"""Builder-stage checks for chain-to-pay gateway."""
+"""
+File: /app/configs/blockchain/chain-to-pay/verify_files.py
+x-lucid-file-path: /app/configs/blockchain/chain-to-pay/verify_files.py
+x-lucid-file-directory: /app/configs/blockchain/chain-to-pay
+x-lucid-file-type: python
+
+Builder-stage checks for chain-to-pay gateway.
+"""
 import os
 import sys
 

@@ -6,6 +6,7 @@
 """
 File: /app/RDP/server/session_controller.py
 x-lucid-file-path: /app/RDP/server/session_controller.py
+x-lucid-file-directory: /app/RDP/server
 x-lucid-file-type: python
 """
 

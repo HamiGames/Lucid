@@ -1,6 +1,7 @@
 """
 File: /app/03_api_gateway/api/app/middleware/cors.py
 x-lucid-file-path: /app/03_api_gateway/api/app/middleware/cors.py
+x-lucid-file-directory: /app/03_api_gateway/api/app/middleware
 x-lucid-file-type: python
 
 CORS Configuration

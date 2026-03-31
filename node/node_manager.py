@@ -3,6 +3,7 @@
 """
 File: /app/node/node_manager.py
 x-lucid-file-path: /app/node/node_manager.py
+x-lucid-file-directory: /app/node
 x-lucid-file-type: python
 """
 

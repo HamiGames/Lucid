@@ -1,5 +1,9 @@
 #!/bin/bash
 # Admin Key Rotation Script
+# File: /app/scripts/security/rotate-admin-keys.sh
+# x-lucid-file-path: /app/scripts/security/rotate-admin-keys.sh
+# x-lucid-file-directory: /app/scripts/security
+# x-lucid-file-type: shell
 # LUCID-STRICT Layer 2 Security Management
 # Purpose: Rotate admin authentication keys for security compliance
 # Compatibility: Distroless, API compliant

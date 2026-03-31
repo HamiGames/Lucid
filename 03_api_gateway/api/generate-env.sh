@@ -1,22 +1,45 @@
 #!/bin/bash
 # =============================================================================
+# File: /app/03_api_gateway/api/generate-env.sh
+# x-lucid-file-path: /app/03_api_gateway/api/generate-env.sh
+# x-lucid-file-directory: /app/03_api_gateway/api
+# x-lucid-file-type: shell
 # Lucid API Gateway Environment Generator - Pi Console Native
 # =============================================================================
 # This script generates environment configuration files for API Gateway service
 # Uses the master environment generator with Pi console native optimizations
+# Content targets: LUCID_IMAGE_* from x-files-listing.txt via scripts/lib/lucid-repo-paths.sh (x-lucid-file-path lines).
 # =============================================================================
 
 set -euo pipefail
 
+# When run from a repo checkout, load paths from x-files-listing.txt (same as scripts under scripts/).
+_lucid_walk="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+_lucid_repo_paths_loaded=0
+while [[ "$_lucid_walk" != "/" ]]; do
+    if [[ -f "$_lucid_walk/scripts/lib/lucid-repo-paths.sh" ]]; then
+        # shellcheck disable=SC1091
+        source "$_lucid_walk/scripts/lib/lucid-repo-paths.sh" || exit 1
+        _lucid_repo_paths_loaded=1
+        break
+    fi
+    _lucid_walk="$(dirname "$_lucid_walk")"
+done
+unset _lucid_walk
+
 # =============================================================================
-# GLOBAL PATH CONFIGURATION
+# GLOBAL PATH CONFIGURATION (in-image targets; defaults if no checkout / listing)
 # =============================================================================
-# Set global path variables for consistent file management
-PROJECT_ROOT="/mnt/myssd/Lucid/Lucid"
-ENV_CONFIG_DIR="$PROJECT_ROOT/configs/environment"
-SCRIPTS_CONFIG_DIR="$PROJECT_ROOT/scripts/config"
-SCRIPTS_DIR="$PROJECT_ROOT/scripts"
-API_GATEWAY_DIR="$PROJECT_ROOT/03-api-gateway/api"
+if [[ "$_lucid_repo_paths_loaded" -eq 0 ]]; then
+    LUCID_IMAGE_APP_ROOT="${LUCID_IMAGE_APP_ROOT:-/app}"
+    LUCID_IMAGE_CONFIG_DIR="${LUCID_IMAGE_CONFIG_DIR:-/app/configs}"
+fi
+unset _lucid_repo_paths_loaded
+PROJECT_ROOT="$LUCID_IMAGE_APP_ROOT"
+ENV_CONFIG_DIR="$LUCID_IMAGE_CONFIG_DIR"
+SCRIPTS_DIR="$LUCID_IMAGE_APP_ROOT/scripts"
+SCRIPTS_CONFIG_DIR="$SCRIPTS_DIR/config"
+API_GATEWAY_DIR="$LUCID_IMAGE_APP_ROOT/03_api_gateway/api"
 
 # Current script directory (for relative operations)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -115,6 +138,11 @@ check_pi_packages() {
         "sed"
         "awk"
         "bash"
+        "curl"
+        "tini"
+        "git"
+        "date"
+        "mkdir"
     )
     
     local missing_packages=()
@@ -256,10 +284,10 @@ LUCID_CLUSTER_ID=pi-production
 # Database Configuration
 MONGODB_HOST=lucid-mongodb
 MONGODB_PORT=27017
-MONGODB_DATABASE=lucid_production
+MONGODB_DATABASE=lucid
 MONGODB_USERNAME=lucid
 MONGODB_PASSWORD=$MONGODB_PASSWORD
-MONGODB_URI=mongodb://lucid:$MONGODB_PASSWORD@lucid-mongodb:27017/lucid_production?authSource=admin
+MONGODB_URI=mongodb://lucid:$MONGODB_PASSWORD@lucid-mongodb:27017/lucid?authSource=admin
 MONGODB_AUTH_SOURCE=admin
 MONGODB_POOL_SIZE=50
 
@@ -344,9 +372,9 @@ UPSTREAM_FAIL_TIMEOUT=30
 
 # SSL/TLS Configuration
 SSL_ENABLED=false
-SSL_CERT_PATH=/etc/ssl/certs/lucid-api-gateway.crt
-SSL_KEY_PATH=/etc/ssl/private/lucid-api-gateway.key
-SSL_CA_PATH=/etc/ssl/certs/ca.crt
+SSL_CERT_PATH=/app/etc/ssl/certs/lucid-api-gateway.crt
+SSL_KEY_PATH=/app/etc/ssl/private/lucid-api-gateway.key
+SSL_CA_PATH=/app/etc/ssl/certs/ca.crt
 
 # Security Headers
 SECURITY_HEADERS_ENABLED=true
@@ -425,15 +453,15 @@ AUTH_SERVICE_ONION=$AUTH_SERVICE_ONION
 BLOCKCHAIN_ONION=$BLOCKCHAIN_ONION
 
 # Data Directories
-DATA_DIR=/data/api-gateway
-LOG_DIR=/var/log/lucid
-TEMP_DIR=/tmp/api-gateway
-CACHE_DIR=/var/cache/lucid
+DATA_DIR=$LUCID_IMAGE_APP_ROOT/data/api-gateway
+LOG_DIR=$LUCID_IMAGE_APP_ROOT/logs/api-gateway
+TEMP_DIR=$LUCID_IMAGE_APP_ROOT/tmp/api-gateway
+CACHE_DIR=$LUCID_IMAGE_APP_ROOT/cache/api-gateway
 
 # Pi Deployment Configuration
 PI_HOST=192.168.0.75
 PI_USER=pickme
-PI_DEPLOY_DIR=/opt/lucid/production
+PI_DEPLOY_DIR=$LUCID_IMAGE_APP_ROOT/opt/lucid/production
 PI_SSH_PORT=22
 PI_ARCHITECTURE=aarch64
 PI_OPTIMIZATION=true
@@ -455,7 +483,7 @@ BACKUP_SCHEDULE=0 2 * * *
 BACKUP_RETENTION_DAYS=30
 BACKUP_COMPRESSION=true
 BACKUP_ENCRYPTION=true
-BACKUP_STORAGE_PATH=/var/backups/lucid
+BACKUP_STORAGE_PATH=$LUCID_IMAGE_APP_ROOT/var/backups/lucid
 
 # Alerting Configuration
 ALERTING_ENABLED=true

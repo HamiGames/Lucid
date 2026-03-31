@@ -1,6 +1,7 @@
 """
 File: /app/blockchain/tests/__init__.py
 x-lucid-file-path: /app/blockchain/tests/__init__.py
+x-lucid-file-directory: /app/blockchain/tests
 x-lucid-file-type: python
 
 Blockchain Tests

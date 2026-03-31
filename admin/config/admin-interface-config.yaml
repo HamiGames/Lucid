@@ -1,3 +1,8 @@
+# File: /app/admin/config/admin-interface-config.yaml
+# x-lucid-file-path: /app/admin/config/admin-interface-config.yaml
+# x-lucid-file-directory: /app/admin/config
+# x-lucid-file-type: YAML
+
 # Lucid Admin Interface - Admin Interface Configuration
 # Reference/Documentation YAML file - NOT loaded by application
 # File: admin/config/admin-interface-config.yaml

@@ -1,3 +1,8 @@
+# File: /app/configs/logging/elasticsearch-logging.yml
+# x-lucid-file-path: /app/configs/logging/elasticsearch-logging.yml
+# x-lucid-file-directory: /app/configs/logging
+# x-lucid-file-type: YAML
+
 # Lucid RDP System - Elasticsearch Logging Configuration
 # Step 49: Logging Configuration
 # Document: BUILD_REQUIREMENTS_GUIDE.md Step 49

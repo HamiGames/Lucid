@@ -1,5 +1,12 @@
 #!/usr/bin/env python3
-"""Build-time layout check for distroless blockchain images (engine + consensus-engine)."""
+"""
+File: /app/configs/blockchain/verify_runtime.py
+x-lucid-file-path: /app/configs/blockchain/verify_runtime.py
+x-lucid-file-directory: /app/configs/blockchain
+x-lucid-file-type: python
+
+Build-time layout check for distroless blockchain images (engine + consensus-engine).
+"""
 from __future__ import annotations
 
 import os
@@ -38,7 +45,7 @@ CONSENSUS_EXTRA_DIRS: tuple[str, ...] = (
 )
 
 REQUIRED_FILES: tuple[str, ...] = (
-    "/app/api/app/entrypoint.py",
+    "/app/blockchain/api/app/entrypoint.py",
     "/app/api/app/main.py",
 )
 

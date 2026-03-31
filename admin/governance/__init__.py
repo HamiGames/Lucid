@@ -1,6 +1,7 @@
 """
 File: /app/admin/governance/__init__.py
 x-lucid-file-path: /app/admin/governance/__init__.py
+x-lucid-file-directory: /app/admin/governance
 x-lucid-file-type: python
 
 Admin Governance

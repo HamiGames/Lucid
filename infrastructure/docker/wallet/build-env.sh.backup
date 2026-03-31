@@ -1,5 +1,5 @@
 #!/bin/bash
-# Path: infrastructure/docker/wallet/build-env.sh
+# Path: configs/docker/wallet/build-env.sh
 # Build Environment Script for Lucid Wallet Services
 # Generates .env files for wallet management containers
 

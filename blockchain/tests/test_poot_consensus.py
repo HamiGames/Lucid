@@ -2,6 +2,7 @@
 """
 File: /app/blockchain/tests/test_poot_consensus.py
 x-lucid-file-path: /app/blockchain/tests/test_poot_consensus.py
+x-lucid-file-directory: /app/blockchain/tests
 x-lucid-file-type: python
 
 Unit Tests for PoOT Consensus Engine

@@ -1,5 +1,9 @@
 #!/bin/bash
 # LUCID CORE SUPPORT - Master Deployment Script
+# File: /app/scripts/deployment/utils/master-deploy-core-support.sh
+# x-lucid-file-path: /app/scripts/deployment/utils/master-deploy-core-support.sh
+# x-lucid-file-directory: /app/scripts/deployment/utils
+# x-lucid-file-type: shell
 # Orchestrates build in DevContainer and deployment to Pi
 # GENIUS-LEVEL implementation with LUCID-STRICT compliance
 

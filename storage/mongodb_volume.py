@@ -4,6 +4,7 @@
 """
 File: /app/storage/mongodb_volume.py
 x-lucid-file-path: /app/storage/mongodb_volume.py
+x-lucid-file-directory: /app/storage
 x-lucid-file-type: python
 """
 

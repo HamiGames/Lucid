@@ -5,6 +5,7 @@
 """
 File: /app/auth/hardware_wallet.py
 x-lucid-file-path: /app/auth/hardware_wallet.py
+x-lucid-file-directory: /app/auth
 x-lucid-file-type: python
 """
 

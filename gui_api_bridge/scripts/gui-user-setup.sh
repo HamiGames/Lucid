@@ -1,9 +1,10 @@
 #!/bin/bash
 # ========================================================================
+# File: /app/gui_api_bridge/scripts/gui-user-setup.sh
+# x-lucid-file-path: /app/gui_api_bridge/scripts/gui-user-setup.sh
+# x-lucid-file-directory: /app/gui_api_bridge/scripts
+# x-lucid-file-type: shell
 # Lucid GUI API Bridge - GUI User Setup & Initialization
-# File: /app/gui_api_bridge/gui_api_bridge/scripts/gui-user-setup.sh
-# x-lucid-file-path: /app/gui_api_bridge/gui_api_bridge/scripts/gui-user-setup.sh
-# x-lucid-file-type: bash
 # Purpose: Initialize GUI user environment for cross-platform support
 # ========================================================================
 

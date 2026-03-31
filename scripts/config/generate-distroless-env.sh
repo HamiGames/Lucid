@@ -1,5 +1,9 @@
 #!/bin/bash
 # Generate .env.distroless file for Raspberry Pi deployment
+# File: /app/scripts/config/generate-distroless-env.sh
+# x-lucid-file-path: /app/scripts/config/generate-distroless-env.sh
+# x-lucid-file-directory: /app/scripts/config
+# x-lucid-file-type: shell
 # Based on: plan/build_instruction_docs/ directory data
 # Design: Distroless + Secure (NO PLACEHOLDERS)
 # Generated: 2025-01-14
@@ -10,18 +14,23 @@ set -euo pipefail
 # =============================================================================
 # GLOBAL PATH CONFIGURATION
 # =============================================================================
+_lucid_here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+_lucid_scripts="$_lucid_here"
+while [[ "$_lucid_scripts" != "/" && "$(basename "$_lucid_scripts")" != "scripts" ]]; do
+    _lucid_scripts="$(dirname "$_lucid_scripts")"
+done
+# shellcheck source=../lib/lucid-repo-paths.sh
+source "$_lucid_scripts/lib/lucid-repo-paths.sh"
 
-# Project root configuration - Dynamic detection for Pi deployment
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="/mnt/myssd/Lucid/Lucid"
-SCRIPTS_DIR="/mnt/myssd/Lucid/Lucid/scripts"
-CONFIGS_DIR="/mnt/myssd/Lucid/Lucid/configs"
-ENVIRONMENT_DIR="/mnt/myssd/Lucid/Lucid/configs/environment"
+SCRIPT_DIR="$_lucid_here"
+PROJECT_ROOT="$LUCID_REPO_ROOT"
+SCRIPTS_DIR="$LUCID_SCRIPTS_DIR"
+CONFIGS_DIR="$PROJECT_ROOT/configs"
+ENVIRONMENT_DIR="$LUCID_ENV_CONFIG_DIR"
 
 # Validate project root exists
 if [ ! -d "$PROJECT_ROOT" ]; then
     echo "Error: Project root directory not found: $PROJECT_ROOT"
-    echo "Please ensure the Pi is properly mounted and accessible"
     exit 1
 fi
 
@@ -670,7 +679,7 @@ USDT_DECIMALS=6
 DEPLOYMENT_TARGET=raspberry-pi
 DEPLOYMENT_HOST=192.168.0.75
 DEPLOYMENT_USER=pickme
-DEPLOYMENT_PATH=/mnt/myssd/Lucid/Lucid
+DEPLOYMENT_PATH=${PI_DEPLOY_DIR:-$PROJECT_ROOT}
 
 # Registry Configuration
 REGISTRY=docker.io

@@ -1,5 +1,9 @@
 #!/bin/bash
 # scripts/foundation/fix-permissions-simple.sh
+# File: /app/scripts/foundation/fix-permissions-simple.sh
+# x-lucid-file-path: /app/scripts/foundation/fix-permissions-simple.sh
+# x-lucid-file-directory: /app/scripts/foundation
+# x-lucid-file-type: shell
 # Simple and fast permission fix for Lucid project
 
 set -e

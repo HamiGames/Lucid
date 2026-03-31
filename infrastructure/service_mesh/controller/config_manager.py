@@ -1,7 +1,7 @@
 """
 File: /app/service_mesh/controller/config_manager.py
 x-lucid-file-path: /app/service_mesh/controller/config_manager.py
-x-lucid-file-directory: /app/service_mesh
+x-lucid-file-directory: /app/service_mesh/controller
 x-lucid-file-type: python
 
 Lucid Service Mesh Controller - Configuration Manager

@@ -5,6 +5,7 @@
 """
 File: /app/node/economy/__init__.py
 x-lucid-file-path: /app/node/economy/__init__.py
+x-lucid-file-directory: /app/node/economy
 x-lucid-file-type: python
 
 Economy module for Lucid node operations.

@@ -1,5 +1,9 @@
 #!/bin/bash
 # TPM Key Generation Script
+# File: /app/scripts/security/generate-tpm-keys.sh
+# x-lucid-file-path: /app/scripts/security/generate-tpm-keys.sh
+# x-lucid-file-directory: /app/scripts/security
+# x-lucid-file-type: shell
 # LUCID-STRICT Layer 2 Security Management
 # Purpose: Generate TPM-based keys for hardware security
 # Compatibility: Distroless, API compliant

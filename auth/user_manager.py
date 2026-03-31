@@ -5,6 +5,7 @@
 """
 File: /app/auth/user_manager.py
 x-lucid-file-path: /app/auth/user_manager.py
+x-lucid-file-directory: /app/auth
 x-lucid-file-type: python
 """
 

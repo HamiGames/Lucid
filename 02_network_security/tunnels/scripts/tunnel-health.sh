@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 # Tunnel Tools Health Check Script
+# File: /app/02_network_security/tunnels/scripts/tunnel-health.sh
+# x-lucid-file-path: /app/02_network_security/tunnels/scripts/tunnel-health.sh
+# x-lucid-file-directory: /app/02_network_security/tunnels/scripts
+# x-lucid-file-type: shell
 # Path: 02_network_security/tunnels/scripts/tunnel-health.sh
 # See: 02_network_security/tunnels/Dockerfile ENV (CONTROL_*, COOKIE_FILE, WRITE_ENV)
 

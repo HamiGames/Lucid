@@ -1,6 +1,7 @@
 """
 File: /app/auth/permissions.py
 x-lucid-file-path: /app/auth/permissions.py
+x-lucid-file-directory: /app/auth
 x-lucid-file-type: python
 
 Lucid Authentication Service - RBAC (Role-Based Access Control)

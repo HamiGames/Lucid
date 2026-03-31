@@ -1,5 +1,9 @@
 #!/bin/bash
 # LUCID Project Environment Validation Script
+# File: /app/scripts/foundation/validate-environment.sh
+# x-lucid-file-path: /app/scripts/foundation/validate-environment.sh
+# x-lucid-file-directory: /app/scripts/foundation
+# x-lucid-file-type: shell
 # Phase 1: Foundation Setup - Step 1
 # Based on: BUILD_REQUIREMENTS_GUIDE.md - Section 1, Step 1
 #

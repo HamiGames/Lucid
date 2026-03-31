@@ -4,6 +4,7 @@
 """
 File: /app/tools/__init__.py
 x-lucid-file-path: /app/tools/__init__.py
+x-lucid-file-directory: /app/tools
 x-lucid-file-type: python
 
 Tools package for Lucid RDP.

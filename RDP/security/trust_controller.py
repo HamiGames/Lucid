@@ -6,6 +6,7 @@
 """
 File: /app/RDP/security/trust_controller.py
 x-lucid-file-path: /app/RDP/security/trust_controller.py
+x-lucid-file-directory: /app/RDP/security
 x-lucid-file-type: python
 """
 

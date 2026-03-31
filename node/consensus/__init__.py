@@ -5,6 +5,7 @@
 """
 File: /app/node/consensus/__init__.py
 x-lucid-file-path: /app/node/consensus/__init__.py
+x-lucid-file-directory: /app/node/consensus
 x-lucid-file-type: python
 
 Consensus module for Lucid node operations.

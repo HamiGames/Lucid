@@ -1,3 +1,8 @@
+# File: /app/configs/services/service-discovery.yml
+# x-lucid-file-path: /app/configs/services/service-discovery.yml
+# x-lucid-file-directory: /app/configs/services
+# x-lucid-file-type: YAML
+
 # Service Discovery Configuration
 # Implements service discovery and registration for cross-system communication
 # Based on Beta sidecar pattern from architecture documents

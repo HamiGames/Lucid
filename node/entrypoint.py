@@ -3,6 +3,7 @@
 """
 File: /app/node/entrypoint.py
 x-lucid-file-path: /app/node/entrypoint.py
+x-lucid-file-directory: /app/node
 x-lucid-file-type: python
 
 Node Management Service Entrypoint

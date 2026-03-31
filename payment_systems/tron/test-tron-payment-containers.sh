@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# File: /app/payment_systems/tron/test-tron-payment-containers.sh
+# x-lucid-file-path: /app/payment_systems/tron/test-tron-payment-containers.sh
+# x-lucid-file-directory: /app/payment_systems/tron
+# x-lucid-file-type: shell
 # ==============================================================================
 # TRON Payment Containers Test Script - Phase 4
 # Step 29-30: TRON Payment Containers (ISOLATED) - Integration Tests

@@ -1,5 +1,9 @@
 #!/bin/bash
 # LUCID SSH-BASED PI DEPLOYMENT SCRIPT
+# File: /app/scripts/deployment/ssh-deploy-pi.sh
+# x-lucid-file-path: /app/scripts/deployment/ssh-deploy-pi.sh
+# x-lucid-file-directory: /app/scripts/deployment
+# x-lucid-file-type: shell
 # Automated SSH deployment to Raspberry Pi with comprehensive error handling
 # Path: scripts/deployment/ssh-deploy-pi.sh
 

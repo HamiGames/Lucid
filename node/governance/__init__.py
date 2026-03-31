@@ -5,6 +5,7 @@
 """
 File: /app/node/governance/__init__.py
 x-lucid-file-path: /app/node/governance/__init__.py
+x-lucid-file-directory: /app/node/governance
 x-lucid-file-type: python
 
 Governance module for Lucid node operations.

@@ -1,5 +1,9 @@
 #!/bin/bash
 # Lucid API - Vulnerability Scanning Script
+# File: /app/scripts/security/scan-vulnerabilities.sh
+# x-lucid-file-path: /app/scripts/security/scan-vulnerabilities.sh
+# x-lucid-file-directory: /app/scripts/security
+# x-lucid-file-type: shell
 # Scans containers for vulnerabilities using Trivy
 
 set -euo pipefail

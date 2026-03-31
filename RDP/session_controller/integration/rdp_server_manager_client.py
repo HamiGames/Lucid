@@ -1,6 +1,7 @@
 """
 File: /app/RDP/session_controller/integration/rdp_server_manager_client.py
 x-lucid-file-path: /app/RDP/session_controller/integration/rdp_server_manager_client.py
+x-lucid-file-directory: /app/RDP/session_controller/integration
 x-lucid-file-type: python
 
 RDP Server Manager Client

@@ -1,6 +1,7 @@
 """
 File: /app/03_api_gateway/middleware/__init__.py
 x-lucid-file-path: /app/03_api_gateway/middleware/__init__.py
+x-lucid-file-directory: /app/03_api_gateway/middleware
 x-lucid-file-type: python
 
 Lucid API Gateway - Middleware Package

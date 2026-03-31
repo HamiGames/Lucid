@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 # Create a Tor v3 *ephemeral* onion via the ControlPort.
+# File: /app/02_network_security/tunnels/scripts/create_ephemeral_onion.sh
+# x-lucid-file-path: /app/02_network_security/tunnels/scripts/create_ephemeral_onion.sh
+# x-lucid-file-directory: /app/02_network_security/tunnels/scripts
+# x-lucid-file-type: shell
 # Path: 02_network_security/tunnels/scripts/create_ephemeral_onion.sh
 # Aligns with tunnels/Dockerfile (tunnel-tools) and tor/Dockerfile.tor-proxy-02 (Tor sidecar).
 

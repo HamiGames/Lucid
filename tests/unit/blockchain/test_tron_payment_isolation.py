@@ -1,4 +1,9 @@
 """
+File: /app/tests/unit/blockchain/test_tron_payment_isolation.py
+x-lucid-file-path: /app/tests/unit/blockchain/test_tron_payment_isolation.py
+x-lucid-file-directory: /app/tests/unit/blockchain
+x-lucid-file-type: python
+
 Unit tests for TRON payment isolation.
 
 Tests TRON as isolated payment service only (not in core consensus),

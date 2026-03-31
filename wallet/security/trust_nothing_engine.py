@@ -5,6 +5,7 @@
 """
 File: /app/wallet/security/trust_nothing_engine.py
 x-lucid-file-path: /app/wallet/security/trust_nothing_engine.py
+x-lucid-file-directory: /app/wallet/security
 x-lucid-file-type: python
 """
 

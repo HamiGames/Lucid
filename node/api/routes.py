@@ -5,6 +5,7 @@
 """
 File: /app/node/api/routes.py
 x-lucid-file-path: /app/node/api/routes.py
+x-lucid-file-directory: /app/node/api
 x-lucid-file-type: python
 
 Main API router for Lucid Node Management system.

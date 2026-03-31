@@ -2,6 +2,7 @@
 """
 File: /app/blockchain/contracts/evm_client.py
 x-lucid-file-path: /app/blockchain/contracts/evm_client.py
+x-lucid-file-directory: /app/blockchain/contracts
 x-lucid-file-type: python
 
 EVM Client for On-System Chain

@@ -1,8 +1,10 @@
 # Path: gui/user/connection_dialog.py
 """
-file: /app/gui/user/connection_dialog.py
+File: /app/gui/user/connection_dialog.py
 x-lucid-file-path: /app/gui/user/connection_dialog.py
+x-lucid-file-directory: /app/gui/user
 x-lucid-file-type: python
+
 Session connection configuration dialog for Lucid RDP GUI.
 Provides comprehensive session setup, policy configuration, and connection management.
 """

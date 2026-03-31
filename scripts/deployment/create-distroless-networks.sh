@@ -1,5 +1,9 @@
 #!/bin/bash
 # Path: scripts/deployment/create-distroless-networks.sh
+# File: /app/scripts/deployment/create-distroless-networks.sh
+# x-lucid-file-path: /app/scripts/deployment/create-distroless-networks.sh
+# x-lucid-file-directory: /app/scripts/deployment
+# x-lucid-file-type: shell
 # Create Enhanced Docker Networks for Distroless Deployment
 # MUST RUN DIRECTLY ON PI CONSOLE
 # Based on: distroless deployment plan network specifications
@@ -221,7 +225,7 @@ log_info "  • $MULTI_STAGE_NETWORK ($MULTI_STAGE_SUBNET) - Multi-stage build i
 echo ""
 log_info "Next steps (run on Pi console):"
 log_info "  1. Set project root:"
-log_info "     export PROJECT_ROOT=\"/mnt/myssd/Lucid/Lucid\""
+log_info "     export PROJECT_ROOT=\"/absolute/path/to/Lucid\"   # host checkout (see scripts/lib/lucid-repo-paths.sh)"
 log_info ""
 log_info "  2. Generate .env files:"
 log_info "     bash scripts/config/generate-all-env-complete.sh"

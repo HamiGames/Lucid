@@ -6,6 +6,7 @@
 """
 File: /app/RDP/protocol/rdp_session.py
 x-lucid-file-path: /app/RDP/protocol/rdp_session.py
+x-lucid-file-directory: /app/RDP/protocol
 x-lucid-file-type: python
 """
 

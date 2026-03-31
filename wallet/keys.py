@@ -1,6 +1,7 @@
 """
 File: /app/wallet/keys.py
 x-lucid-file-path: /app/wallet/keys.py
+x-lucid-file-directory: /app/wallet
 x-lucid-file-type: python
 """
 

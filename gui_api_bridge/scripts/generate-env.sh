@@ -1,8 +1,9 @@
 #!/bin/bash
 # GUI API Bridge Environment Generator
-# File: /app/gui_api_bridge/gui_api_bridge/scripts/generate-env.sh
-# x-lucid-file-path: /app/gui_api_bridge/gui_api_bridge/scripts/generate-env.sh
-# x-lucid-file-type: bash
+# File: /app/gui_api_bridge/scripts/generate-env.sh
+# x-lucid-file-path: /app/gui_api_bridge/scripts/generate-env.sh
+# x-lucid-file-directory: /app/gui_api_bridge/scripts
+# x-lucid-file-type: shell
 # Purpose: Generate environment configuration for GUI API Bridge
 # Aligned with 03-api-gateway patterns
 # No hardcoded values - all generated from environment or defaults
@@ -94,7 +95,7 @@ ENVIRONMENT=${ENVIRONMENT:-production}
 DEBUG=${DEBUG:-false}
 LUCID_ENV=${LUCID_ENV:-production}
 LUCID_PLATFORM=${LUCID_PLATFORM:-arm64}
-PROJECT_ROOT=${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}
+PROJECT_ROOT=${PROJECT_ROOT:-/app}
 
 # Database Configuration
 MONGODB_URL=${MONGODB_URL:-mongodb://lucid:\${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin}
@@ -177,7 +178,7 @@ ENVIRONMENT=production
 DEBUG=false
 LUCID_ENV=production
 LUCID_PLATFORM=arm64
-PROJECT_ROOT=/mnt/myssd/Lucid/Lucid
+PROJECT_ROOT=/app
 
 # Database Configuration
 MONGODB_URL=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin

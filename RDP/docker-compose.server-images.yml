@@ -1,3 +1,8 @@
+# File: /app/RDP/docker-compose.server-images.yml
+# x-lucid-file-path: /app/RDP/docker-compose.server-images.yml
+# x-lucid-file-directory: /app/RDP
+# x-lucid-file-type: YAML
+
 # RDP/docker-compose.yml
 # Lucid RDP services (Phase 3) – aligned with foundation/core configs
 
@@ -7,11 +12,10 @@ services:
     container_name: rdp-server-manager
     restart: unless-stopped
     env_file:
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.support
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.rdp-server-manager
+      - /app/configs/.env.master
+      - /app/configs/.env.support
+      - /app/configs/.env.secrets
+      - /app/configs/.env.rdp-server-manager
     networks:
       - lucid-pi-network
     ports:

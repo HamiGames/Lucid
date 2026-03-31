@@ -2,6 +2,7 @@
 """
 File: /app/blockchain/evm/transaction_monitor.py
 x-lucid-file-path: /app/blockchain/evm/transaction_monitor.py
+x-lucid-file-directory: /app/blockchain/evm
 x-lucid-file-type: python
 
 Transaction Monitor for EVM Transactions

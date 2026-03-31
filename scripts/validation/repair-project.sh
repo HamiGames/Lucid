@@ -1,5 +1,9 @@
 #!/bin/bash
 # LUCID Project Repair Script
+# File: /app/scripts/validation/repair-project.sh
+# x-lucid-file-path: /app/scripts/validation/repair-project.sh
+# x-lucid-file-directory: /app/scripts/validation
+# x-lucid-file-type: shell
 # 
 # This script automatically repairs failed validations from validate-project.sh
 # It addresses Python build alignment issues and Electron GUI alignment issues.

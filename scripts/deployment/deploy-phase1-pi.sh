@@ -1,10 +1,20 @@
 #!/bin/bash
 # Phase 1 Foundation Services Deployment to Raspberry Pi
+# File: /app/scripts/deployment/deploy-phase1-pi.sh
+# x-lucid-file-path: /app/scripts/deployment/deploy-phase1-pi.sh
+# x-lucid-file-directory: /app/scripts/deployment
+# x-lucid-file-type: shell
 # Based on lucid-container-build-plan.plan.md Step 8
 # Deploys MongoDB, Redis, Elasticsearch, and Authentication Service to Pi
 
 set -euo pipefail
 
+
+# x-files-listing.txt → LUCID_HOST_COMPOSE_* (scripts/lib/lucid-repo-paths.sh)
+_LUCID_W="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+while [[ "$_LUCID_W" != "/" && "$(basename "$_LUCID_W")" != "scripts" ]]; do _LUCID_W="$(dirname "$_LUCID_W")"; done
+# shellcheck source=lib/lucid-repo-paths.sh
+source "${_LUCID_W}/lib/lucid-repo-paths.sh"
 # Color codes for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -17,8 +27,8 @@ PI_HOST="192.168.0.75"
 PI_USER="pickme"
 PI_SSH_PORT="22"
 PI_SSH_KEY_PATH="$HOME/.ssh/id_rsa"
-PI_DEPLOY_DIR="/mnt/myssd/Lucid/Lucid"
-PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+PROJECT_ROOT="$LUCID_REPO_ROOT"
+PI_DEPLOY_DIR="${PI_DEPLOY_DIR:-$PROJECT_ROOT}"
 
 # Service configuration
 SERVICES=("lucid-mongodb" "lucid-redis" "lucid-elasticsearch" "lucid-auth-service")
@@ -133,71 +143,71 @@ create_data_directories() {
     
     ssh -o ConnectTimeout=300 -o ServerAliveInterval=60 -o ServerAliveCountMax=5 -o StrictHostKeyChecking=no -i "$PI_SSH_KEY_PATH" "$PI_USER@$PI_HOST" "
         # Create main data directory structure for all phases
-        sudo mkdir -p /mnt/myssd/Lucid/Lucid/data/mongodb
-        sudo mkdir -p /mnt/myssd/Lucid/Lucid/data/mongodb-config
-        sudo mkdir -p /mnt/myssd/Lucid/Lucid/data/redis
-        sudo mkdir -p /mnt/myssd/Lucid/Lucid/data/elasticsearch
-        sudo mkdir -p /mnt/myssd/Lucid/Lucid/data/auth
-        sudo mkdir -p /mnt/myssd/Lucid/Lucid/data/blockchain
-        sudo mkdir -p /mnt/myssd/Lucid/Lucid/data/blockchain-engine
-        sudo mkdir -p /mnt/myssd/Lucid/Lucid/data/anchoring
-        sudo mkdir -p /mnt/myssd/Lucid/Lucid/data/block-manager
-        sudo mkdir -p /mnt/myssd/Lucid/Lucid/data/data-chain
-        sudo mkdir -p /mnt/myssd/Lucid/Lucid/data/consul
-        sudo mkdir -p /mnt/myssd/Lucid/Lucid/data/session-pipeline
-        sudo mkdir -p /mnt/myssd/Lucid/Lucid/data/session-recorder
-        sudo mkdir -p /mnt/myssd/Lucid/Lucid/data/session-processor
-        sudo mkdir -p /mnt/myssd/Lucid/Lucid/data/session-storage
-        sudo mkdir -p /mnt/myssd/Lucid/Lucid/data/rdp-server-manager
-        sudo mkdir -p /mnt/myssd/Lucid/Lucid/data/rdp-xrdp
-        sudo mkdir -p /mnt/myssd/Lucid/Lucid/data/rdp-controller
-        sudo mkdir -p /mnt/myssd/Lucid/Lucid/data/rdp-monitor
-        sudo mkdir -p /mnt/myssd/Lucid/Lucid/data/node-management
-        sudo mkdir -p /mnt/myssd/Lucid/Lucid/data/admin-interface
-        sudo mkdir -p /mnt/myssd/Lucid/Lucid/data/tron-client
-        sudo mkdir -p /mnt/myssd/Lucid/Lucid/data/tron-payout-router
-        sudo mkdir -p /mnt/myssd/Lucid/Lucid/data/tron-wallet-manager
-        sudo mkdir -p /mnt/myssd/Lucid/Lucid/data/tron-usdt-manager
-        sudo mkdir -p /mnt/myssd/Lucid/Lucid/data/tron-staking
-        sudo mkdir -p /mnt/myssd/Lucid/Lucid/data/tron-payment-gateway
-        sudo mkdir -p /mnt/myssd/Lucid/Lucid/data/storage
-        sudo mkdir -p /mnt/myssd/Lucid/Lucid/backups
+        sudo mkdir -p $PI_DEPLOY_DIR/data/mongodb
+        sudo mkdir -p $PI_DEPLOY_DIR/data/mongodb-config
+        sudo mkdir -p $PI_DEPLOY_DIR/data/redis
+        sudo mkdir -p $PI_DEPLOY_DIR/data/elasticsearch
+        sudo mkdir -p $PI_DEPLOY_DIR/data/auth
+        sudo mkdir -p $PI_DEPLOY_DIR/data/blockchain
+        sudo mkdir -p $PI_DEPLOY_DIR/data/blockchain-engine
+        sudo mkdir -p $PI_DEPLOY_DIR/data/anchoring
+        sudo mkdir -p $PI_DEPLOY_DIR/data/block-manager
+        sudo mkdir -p $PI_DEPLOY_DIR/data/data-chain
+        sudo mkdir -p $PI_DEPLOY_DIR/data/consul
+        sudo mkdir -p $PI_DEPLOY_DIR/data/session-pipeline
+        sudo mkdir -p $PI_DEPLOY_DIR/data/session-recorder
+        sudo mkdir -p $PI_DEPLOY_DIR/data/session-processor
+        sudo mkdir -p $PI_DEPLOY_DIR/data/session-storage
+        sudo mkdir -p $PI_DEPLOY_DIR/data/rdp-server-manager
+        sudo mkdir -p $PI_DEPLOY_DIR/data/rdp-xrdp
+        sudo mkdir -p $PI_DEPLOY_DIR/data/rdp-controller
+        sudo mkdir -p $PI_DEPLOY_DIR/data/rdp-monitor
+        sudo mkdir -p $PI_DEPLOY_DIR/data/node-management
+        sudo mkdir -p $PI_DEPLOY_DIR/data/admin-interface
+        sudo mkdir -p $PI_DEPLOY_DIR/data/tron-client
+        sudo mkdir -p $PI_DEPLOY_DIR/data/tron-payout-router
+        sudo mkdir -p $PI_DEPLOY_DIR/data/tron-wallet-manager
+        sudo mkdir -p $PI_DEPLOY_DIR/data/tron-usdt-manager
+        sudo mkdir -p $PI_DEPLOY_DIR/data/tron-staking
+        sudo mkdir -p $PI_DEPLOY_DIR/data/tron-payment-gateway
+        sudo mkdir -p $PI_DEPLOY_DIR/data/storage
+        sudo mkdir -p $PI_DEPLOY_DIR/backups
         
         # Create log directory structure
-        sudo mkdir -p /mnt/myssd/Lucid/Lucid/logs/auth
-        sudo mkdir -p /mnt/myssd/Lucid/Lucid/logs/api-gateway
-        sudo mkdir -p /mnt/myssd/Lucid/Lucid/logs/blockchain
-        sudo mkdir -p /mnt/myssd/Lucid/Lucid/logs/blockchain-engine
-        sudo mkdir -p /mnt/myssd/Lucid/Lucid/logs/anchoring
-        sudo mkdir -p /mnt/myssd/Lucid/Lucid/logs/block-manager
-        sudo mkdir -p /mnt/myssd/Lucid/Lucid/logs/data-chain
-        sudo mkdir -p /mnt/myssd/Lucid/Lucid/logs/consul
-        sudo mkdir -p /mnt/myssd/Lucid/Lucid/logs/session-pipeline
-        sudo mkdir -p /mnt/myssd/Lucid/Lucid/logs/session-recorder
-        sudo mkdir -p /mnt/myssd/Lucid/Lucid/logs/session-processor
-        sudo mkdir -p /mnt/myssd/Lucid/Lucid/logs/session-storage
-        sudo mkdir -p /mnt/myssd/Lucid/Lucid/logs/session-api
-        sudo mkdir -p /mnt/myssd/Lucid/Lucid/logs/rdp-server-manager
-        sudo mkdir -p /mnt/myssd/Lucid/Lucid/logs/rdp-xrdp
-        sudo mkdir -p /mnt/myssd/Lucid/Lucid/logs/rdp-controller
-        sudo mkdir -p /mnt/myssd/Lucid/Lucid/logs/rdp-monitor
-        sudo mkdir -p /mnt/myssd/Lucid/Lucid/logs/node-management
-        sudo mkdir -p /mnt/myssd/Lucid/Lucid/logs/admin-interface
-        sudo mkdir -p /mnt/myssd/Lucid/Lucid/logs/tron-client
-        sudo mkdir -p /mnt/myssd/Lucid/Lucid/logs/tron-payout-router
-        sudo mkdir -p /mnt/myssd/Lucid/Lucid/logs/tron-wallet-manager
-        sudo mkdir -p /mnt/myssd/Lucid/Lucid/logs/tron-usdt-manager
-        sudo mkdir -p /mnt/myssd/Lucid/Lucid/logs/tron-staking
-        sudo mkdir -p /mnt/myssd/Lucid/Lucid/logs/tron-payment-gateway
-        sudo mkdir -p /mnt/myssd/Lucid/Lucid/logs/storage
+        sudo mkdir -p $PI_DEPLOY_DIR/logs/auth
+        sudo mkdir -p $PI_DEPLOY_DIR/logs/api-gateway
+        sudo mkdir -p $PI_DEPLOY_DIR/logs/blockchain
+        sudo mkdir -p $PI_DEPLOY_DIR/logs/blockchain-engine
+        sudo mkdir -p $PI_DEPLOY_DIR/logs/anchoring
+        sudo mkdir -p $PI_DEPLOY_DIR/logs/block-manager
+        sudo mkdir -p $PI_DEPLOY_DIR/logs/data-chain
+        sudo mkdir -p $PI_DEPLOY_DIR/logs/consul
+        sudo mkdir -p $PI_DEPLOY_DIR/logs/session-pipeline
+        sudo mkdir -p $PI_DEPLOY_DIR/logs/session-recorder
+        sudo mkdir -p $PI_DEPLOY_DIR/logs/session-processor
+        sudo mkdir -p $PI_DEPLOY_DIR/logs/session-storage
+        sudo mkdir -p $PI_DEPLOY_DIR/logs/session-api
+        sudo mkdir -p $PI_DEPLOY_DIR/logs/rdp-server-manager
+        sudo mkdir -p $PI_DEPLOY_DIR/logs/rdp-xrdp
+        sudo mkdir -p $PI_DEPLOY_DIR/logs/rdp-controller
+        sudo mkdir -p $PI_DEPLOY_DIR/logs/rdp-monitor
+        sudo mkdir -p $PI_DEPLOY_DIR/logs/node-management
+        sudo mkdir -p $PI_DEPLOY_DIR/logs/admin-interface
+        sudo mkdir -p $PI_DEPLOY_DIR/logs/tron-client
+        sudo mkdir -p $PI_DEPLOY_DIR/logs/tron-payout-router
+        sudo mkdir -p $PI_DEPLOY_DIR/logs/tron-wallet-manager
+        sudo mkdir -p $PI_DEPLOY_DIR/logs/tron-usdt-manager
+        sudo mkdir -p $PI_DEPLOY_DIR/logs/tron-staking
+        sudo mkdir -p $PI_DEPLOY_DIR/logs/tron-payment-gateway
+        sudo mkdir -p $PI_DEPLOY_DIR/logs/storage
         
         # Set proper ownership and permissions
-        sudo chown -R $PI_USER:$PI_USER /mnt/myssd/Lucid/Lucid
-        sudo chmod -R 755 /mnt/myssd/Lucid/Lucid
+        sudo chown -R $PI_USER:$PI_USER $PI_DEPLOY_DIR
+        sudo chmod -R 755 $PI_DEPLOY_DIR
         
         # Ensure MongoDB directories have proper permissions
-        sudo chmod 755 /mnt/myssd/Lucid/Lucid/data/mongodb
-        sudo chmod 755 /mnt/myssd/Lucid/Lucid/data/mongodb-config
+        sudo chmod 755 $PI_DEPLOY_DIR/data/mongodb
+        sudo chmod 755 $PI_DEPLOY_DIR/data/mongodb-config
     " >/dev/null 2>&1
     
     if [ $? -eq 0 ]; then
@@ -212,7 +222,7 @@ create_data_directories() {
 verify_compose_file() {
     echo -e "${BLUE}=== Verifying Docker Compose File ===${NC}"
     
-    local pi_compose_file="$PI_DEPLOY_DIR/configs/docker/docker-compose.foundation.yml"
+    local pi_compose_file="$PI_DEPLOY_DIR/$LUCID_HOST_REL_COMPOSE_FOUNDATION"
     
     ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no -i "$PI_SSH_KEY_PATH" "$PI_USER@$PI_HOST" "test -f $pi_compose_file" >/dev/null 2>&1
     
@@ -319,7 +329,7 @@ pull_arm64_images() {
     
     ssh -o ConnectTimeout=300 -o ServerAliveInterval=60 -o ServerAliveCountMax=5 -o StrictHostKeyChecking=no -i "$PI_SSH_KEY_PATH" "$PI_USER@$PI_HOST" "
         cd $PI_DEPLOY_DIR
-        docker-compose --env-file configs/environment/.env.foundation -f configs/docker/docker-compose.foundation.yml pull
+        docker-compose --env-file configs/environment/.env.foundation -f "${LUCID_HOST_COMPOSE_FOUNDATION}" pull
     " >/dev/null 2>&1
     
     if [ $? -eq 0 ]; then
@@ -336,7 +346,7 @@ deploy_phase1_services() {
     
     ssh -o ConnectTimeout=300 -o ServerAliveInterval=60 -o ServerAliveCountMax=5 -o StrictHostKeyChecking=no -i "$PI_SSH_KEY_PATH" "$PI_USER@$PI_HOST" "
         cd $PI_DEPLOY_DIR
-        docker-compose --env-file configs/environment/.env.foundation -f configs/docker/docker-compose.foundation.yml up -d
+        docker-compose --env-file configs/environment/.env.foundation -f "${LUCID_HOST_COMPOSE_FOUNDATION}" up -d
     " >/dev/null 2>&1
     
     if [ $? -eq 0 ]; then
@@ -516,9 +526,9 @@ verify_distroless_compliance() {
         
         # Check disk usage
         echo 'Checking disk usage...'
-        df -h /mnt/myssd/Lucid/Lucid/data/
-        du -sh /mnt/myssd/Lucid/Lucid/data/*
-        du -sh /mnt/myssd/Lucid/Lucid/logs/*
+        df -h $PI_DEPLOY_DIR/data/
+        du -sh $PI_DEPLOY_DIR/data/*
+        du -sh $PI_DEPLOY_DIR/logs/*
     " >/dev/null 2>&1
     
     if [ $? -eq 0 ]; then

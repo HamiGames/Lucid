@@ -1,6 +1,7 @@
 """
 File: /app/blockchain/governance/__init__.py
 x-lucid-file-path: /app/blockchain/governance/__init__.py
+x-lucid-file-directory: /app/blockchain/governance
 x-lucid-file-type: python
 
 Lucid RDP Blockchain Governance Module

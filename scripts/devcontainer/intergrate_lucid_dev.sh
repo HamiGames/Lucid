@@ -1,5 +1,9 @@
 #!/bin/bash
 set -e
+# File: /app/scripts/devcontainer/intergrate_lucid_dev.sh
+# x-lucid-file-path: /app/scripts/devcontainer/intergrate_lucid_dev.sh
+# x-lucid-file-directory: /app/scripts/devcontainer
+# x-lucid-file-type: shell
 
 # This script integrates lucid-dev.yaml into the Lucid DevContainer image
 # Run this script from the root of the Lucid repository on the Raspberry Pi 5
@@ -9,9 +13,9 @@ IMAGE_NAME="pickme/lucid"
 BASE_TAG="1.0"
 COMPOSE_TAG="1.0-compose"
 BUILDER_NAME="lucid_builder"
-COMPOSE_DIR="06-orchestration-runtime/compose"
+COMPOSE_DIR="infrastructure/compose"
 LUCID_DEV_YAML="$COMPOSE_DIR/lucid-dev.yaml"
-LUCID_BLOCKCHAIN_YAML="$COMPOSE_DIR/lucid-blockchain-core.dev.yaml"
+LUCID_BLOCKCHAIN_YAML="$COMPOSE_DIR/docker-compose.blockchain.yaml"
 
 echo "===== Integrating Compose Files into DevContainer Image ====="
 echo "Base Image: $IMAGE_NAME:$BASE_TAG"

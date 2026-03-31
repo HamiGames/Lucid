@@ -1,6 +1,7 @@
 """
 File: /app/tools/ops/ota/__init__.py
 x-lucid-file-path: /app/tools/ops/ota/__init__.py
+x-lucid-file-directory: /app/tools/ops/ota
 x-lucid-file-type: python
 
 Over-The-Air (OTA) update management module for Lucid RDP.

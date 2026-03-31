@@ -2,6 +2,7 @@
 """
 File: /app/sessions/pipeline/integration/blockchain_engine_client.py
 x-lucid-file-path: /app/sessions/pipeline/integration/blockchain_engine_client.py
+x-lucid-file-directory: /app/sessions/pipeline/integration
 x-lucid-file-type: python
 
 Blockchain Engine Integration Client

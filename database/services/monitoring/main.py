@@ -2,6 +2,7 @@
 """
 File: /app/database/services/monitoring/main.py
 x-lucid-file-path: /app/database/services/monitoring/main.py
+x-lucid-file-directory: /app/database/services/monitoring
 x-lucid-file-type: python
 
 LUCID Database Monitoring Service

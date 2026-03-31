@@ -5,6 +5,7 @@
 """
 File: /app/node/flags/node_flag_systems.py
 x-lucid-file-path: /app/node/flags/node_flag_systems.py
+x-lucid-file-directory: /app/node/flags
 x-lucid-file-type: python
 """
 

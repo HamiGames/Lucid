@@ -1,5 +1,9 @@
 #!/bin/bash
 # Docker Hub Registry Cleanup Script
+# File: /app/scripts/registry/cleanup-dockerhub.sh
+# x-lucid-file-path: /app/scripts/registry/cleanup-dockerhub.sh
+# x-lucid-file-directory: /app/scripts/registry
+# x-lucid-file-type: shell
 # Implements Step 1 from docker-build-process-plan.md
 
 set -e

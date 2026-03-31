@@ -2,6 +2,7 @@
 """
 File: /app/api/cluster/rate-limiter.py
 x-lucid-file-path: /app/api/cluster/rate-limiter.py
+x-lucid-file-directory: /app/api/cluster
 x-lucid-file-type: python
 
 LUCID Rate Limiter - SPEC-1B Implementation

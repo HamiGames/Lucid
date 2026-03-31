@@ -2,6 +2,7 @@
 """
 File: /app/tools/ops/ota/update_manager.py
 x-lucid-file-path: /app/tools/ops/ota/update_manager.py
+x-lucid-file-directory: /app/tools/ops/ota
 x-lucid-file-type: python
 
 LUCID UPDATE MANAGER - SPEC-4 OTA Update System

@@ -1,6 +1,7 @@
 """
 File: /app/02_network_security/tunnels/load_host_config.py
 x-lucid-file-path: /app/02_network_security/tunnels/load_host_config.py
+x-lucid-file-directory: /app/02_network_security/tunnels
 x-lucid-file-type: python
 
 Loads host config for Lucid tunnels service.

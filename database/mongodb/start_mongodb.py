@@ -2,6 +2,7 @@
 """
 File: /app/database/mongodb/start_mongodb.py
 x-lucid-file-path: /app/database/mongodb/start_mongodb.py
+x-lucid-file-directory: /app/database/mongodb
 x-lucid-file-type: python
 
 MongoDB Distroless Startup Script
@@ -399,7 +400,7 @@ class MongoDBDistroless:
         return False
     
     def create_admin_user(self):
-        """Create admin users (both root and lucid) and ensure lucid_auth database exists"""
+        """Create admin users (both root and lucid) and ensure lucid_auth and lucid_sessions exist."""
         password = os.getenv('MONGODB_PASSWORD')
         host = 'lucid-mongodb'
         port = int(os.getenv('MONGODB_PORT'))
@@ -409,7 +410,7 @@ class MongoDBDistroless:
         # Escape single quotes in password for JavaScript
         escaped_password = password.replace("'", "\\'").replace("\\", "\\\\")
         
-        # Create script that creates both root and lucid users, and ensures lucid_auth database exists
+        # Create script that creates both root and lucid users, and ensures lucid_auth + lucid_sessions exist
         init_script = f"""
         try {{
             db = db.getSiblingDB('admin');
@@ -474,6 +475,12 @@ class MongoDBDistroless:
             // Remove the dummy document
             db.dummy_collection.deleteOne({{ _id: 'init' }});
             print('✅ Database lucid_auth ensured to exist');
+            
+            // Ensure lucid_sessions exists (session-management / SESSION_VALIDATION_DB default)
+            db = db.getSiblingDB('lucid_sessions');
+            db.dummy_collection.insertOne({{ _id: 'init', created: new Date() }});
+            db.dummy_collection.deleteOne({{ _id: 'init' }});
+            print('✅ Database lucid_sessions ensured to exist');
             
         }} catch (e) {{
             print('❌ Error in initialization script: ' + e.message);

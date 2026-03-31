@@ -1,10 +1,10 @@
-# infrastructure/docker/common/Dockerfile
 # syntax=docker/dockerfile:1.5
-# Lucid server-tools style image: Debian builder → distroless runtime (Pi-friendly multi-arch).
+# Lucid server-tools — Debian builder → distroless runtime (multi-arch, Pi-friendly).
 # Build context: repository root (.)
+# Dockerfile path: infrastructure/docker/common/Dockerfile
 #
-# Layout registry: infrastructure/containers/host-config.yml → canonical runtime /app/service_configs/host-config.yml
-# Service config root: infrastructure/containers/services/container-runtime-layout.yml
+# Layout: infrastructure/containers/host-config.yml → runtime /app/configs/host-config.yml
+# Service config: infrastructure/containers/services/container-runtime-layout.yml
 
 ARG BUILD_DATE
 ARG VCS_REF
@@ -12,14 +12,12 @@ ARG VERSION=1.0.0
 ARG TARGETPLATFORM=linux/arm64
 ARG BUILDPLATFORM=linux/amd64
 
-# =============================================================================
-# Stage 1 – Builder (apt, pip wheels, app trees, helper scripts)
-# =============================================================================
+# -----------------------------------------------------------------------------
+# Stage 1 — Builder
+# -----------------------------------------------------------------------------
 FROM --platform=$TARGETPLATFORM debian:12-slim AS builder
 
 ARG TARGETARCH
-ARG BUILDPLATFORM
-ARG TARGETPLATFORM
 
 ENV DEBIAN_FRONTEND=noninteractive \
     PYTHONDONTWRITEBYTECODE=1 \
@@ -33,45 +31,52 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     apt-get update --allow-releaseinfo-change && \
     apt-get install -y --no-install-recommends \
         bash \
+        build-essential \
+        ca-certificates \
         curl \
-        wget \
+        dnsutils \
+        g++ \
+        gcc \
+        git \
+        gnupg \
+        gosu \
+        gzip \
+        htop \
+        inetutils-traceroute \
+        iperf3 \
+        iputils-ping \
         jq \
+        libffi-dev \
+        libpq-dev \
+        libssl-dev \
+        lsof \
+        nano \
+        netcat-openbsd \
+        nmap \
+        openssl \
+        pkg-config \
+        procps \
         python3 \
-        python3-venv \
+        python3-dev \
         python3-pip \
         python3-setuptools \
+        python3-venv \
         python3-wheel \
-        python3-dev \
-        dnsutils \
-        iputils-ping \
-        inetutils-traceroute \
-        netcat-openbsd \
-        socat \
-        nmap \
-        tcpdump \
-        iperf3 \
-        openssl \
-        ca-certificates \
-        gnupg \
-        htop \
-        procps \
-        lsof \
-        strace \
         rsync \
-        unzip \
+        socat \
+        strace \
         tar \
-        gzip \
-        git \
-        vim \
-        nano \
-        tree \
-        util-linux \
-        gosu \
+        tcpdump \
         tini \
+        tree \
+        unzip \
+        util-linux \
+        vim \
+        wget \
+        xxd \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# Pip + pinned wheelhouse (offline / supply-chain friendly); yq not in bookworm main — wheel + script wrapper
 RUN --mount=type=cache,target=/root/.cache/pip \
     mkdir -p /build/wheels && \
     pip3 install --break-system-packages --upgrade pip setuptools wheel && \
@@ -82,7 +87,6 @@ RUN --mount=type=cache,target=/root/.cache/pip \
         "wheel>=0.42.0" \
         "yq>=3.0"
 
-# MongoDB shell + database tools (arch-aware; builder TARGETARCH from BuildKit)
 RUN set -eux; \
     case "$TARGETARCH" in \
         arm64) \
@@ -104,22 +108,27 @@ RUN set -eux; \
     mv /tmp/mongodb-database-tools-*/bin/* /usr/local/bin/; \
     rm -rf /tmp/mongodb-database-tools-*
 
-RUN useradd --system --create-home --shell /bin/bash lucid
+RUN groupadd -g 65532 nonroot && \
+    useradd --system --no-create-home --shell /usr/sbin/nologin -u 65532 -g nonroot nonroot
 
-RUN mkdir -p /opt/lucid/tools /opt/lucid/scripts /var/log/lucid \
-    && chown -R lucid:lucid /opt/lucid /var/log/lucid
+RUN mkdir -p /build/lucid/tools /build/lucid/scripts /var/log/lucid && \
+    chown -R 65532:65532 /build/lucid /var/log/lucid
 
 WORKDIR /build
-
 # LUCID_X_FILES_SKELETON_BEGIN
 # Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
 RUN set -eux; \
-    mkdir -p '.' './admin' './node' './rdp' './tools' './admin/admin_ui' './admin/api' './admin/audit' './admin/config' './admin/emergency' './admin/governance' './admin/key_rotation' './admin/rbac' './admin/services' './admin/system' './admin/ui' './admin/utils' './node/api' './node/config' './node/consensus' './node/dht_crdt' './node/economy' './node/flags' './node/governance' './node/models' './node/payouts' './node/pools' './node/poot' './node/registration' './node/repositories' './node/resources' './node/shards' './node/sync' './node/tor' './node/validation' './node/worker' './rdp/client' './rdp/common' './rdp/config' './rdp/protocol' './rdp/recorder' './rdp/resource_monitor' './rdp/security' './rdp/server' './rdp/server_manager' './rdp/session_controller' './rdp/xrdp' './tools/build' './tools/dev' './tools/ops' './rdp/session_controller/integration' './tools/ops/backup' './tools/ops/monitoring' './tools/ops/ota'; \
+    mkdir -p '.' './admin' './common' './configs' './node' './rdp' './scripts' './service_configs' './sessions' './tools' './admin/admin_ui' './admin/api' './admin/audit' './admin/config' './admin/emergency' './admin/governance' './admin/key_rotation' './admin/over_lord' './admin/rbac' './admin/services' './admin/system' './admin/ui' './admin/utils' './common/governance' './common/security' './common/server-tools' './common/templates' './common/tor' './configs/.devcontainer' './configs/.ssh' './configs/admin' './configs/auth' './configs/base' './configs/blockchain' './configs/compose' './configs/container' './configs/database' './configs/docker' './configs/electron_gui' './configs/environment' './configs/gui' './configs/integration' './configs/logging' './configs/network' './configs/node' './configs/overlord' './configs/payment_systems' './configs/pi' './configs/rdp' './configs/secrets' './configs/security' './configs/server' './configs/tor' './configs/user' './node/api' './node/config' './node/consensus' './node/dht_crdt' './node/economy' './node/flags' './node/governance' './node/models' './node/over_lord' './node/payouts' './node/pools' './node/poot' './node/registration' './node/repositories' './node/resources' './node/shards' './node/sync' './node/tor' './node/validation' './node/worker' './rdp/client' './rdp/common' './rdp/config' './rdp/monitoring' './rdp/protocol' './rdp/recorder' './rdp/resource_monitor' './rdp/security' './rdp/server' './rdp/server_manager' './rdp/session_controller' './rdp/xrdp' './scripts/build' './scripts/compliance' './scripts/config' './scripts/contracts' './scripts/database' './scripts/deployment' './scripts/devcontainer' './scripts/docs' './scripts/foundation' './scripts/gui' './scripts/hardware' './scripts/integration' './scripts/lib' './scripts/load' './scripts/logging' './scripts/maintenance' './scripts/migration' './scripts/monitoring' './scripts/network' './scripts/registry' './scripts/secrets' './scripts/security' './scripts/services' './scripts/testing' './scripts/validation' './scripts/verification' './sessions/api' './sessions/config' './sessions/core' './sessions/encryption' './sessions/integration' './sessions/pipeline' './sessions/processor' './sessions/recorder' './sessions/security' './sessions/session_systems_control' './sessions/storage' './tools/build' './tools/dev' './tools/ops' './configs/admin/admin-system-gateway' './configs/admin/config' './configs/blockchain/chain-to-pay' './configs/blockchain/config' './configs/container/admin' './configs/container/auth' './configs/container/base' './configs/container/blockchain' './configs/container/database' './configs/container/electron_gui' './configs/container/gui' './configs/container/node' './configs/container/payment_systems' './configs/container/rdp' './configs/container/server' './configs/container/sessions' './configs/container/storage' './configs/container/tor' './configs/database/elasticsearch' './configs/database/redis' './configs/docker/compose' './configs/docker/distroless' './configs/docker/docs' './configs/docker/multi-stage' './configs/docker/on-system-chain' './configs/environment/development' './configs/environment/pi' './configs/environment/production' './configs/environment/staging' './configs/node/config' './configs/node/node-system-gateway' './configs/overlord/runtime' './configs/pi/ssh' './lucid/scripts/db-backup.sh' './lucid/scripts/health-check.sh' './lucid/scripts/network-test.sh' './rdp/monitoring/grafana' './rdp/session_controller/integration' './rdp/xrdp/config' './scripts/build/components' './scripts/build/core' './scripts/build/distroless' './scripts/build/utils' './scripts/compliance/distroless' './scripts/compliance/general' './scripts/deployment/devcontainer' './scripts/deployment/distroless' './scripts/deployment/pi' './scripts/deployment/utils' './scripts/maintenance/cleanup' './scripts/maintenance/optimization' './scripts/maintenance/recovery' './scripts/network/diagnostics' './scripts/network/security' './scripts/network/setup' './scripts/testing/integration' './scripts/testing/unit' './scripts/testing/utils' './sessions/api/config' './sessions/api/integration' './sessions/pipeline/integration' './sessions/processor/config' './sessions/processor/integration' './sessions/recorder/config' './sessions/recorder/integration' './sessions/storage/config' './tools/ops/backup' './tools/ops/monitoring' './tools/ops/ota' './configs/docker/compose/mongodb' './configs/docker/compose/nats' './configs/docker/compose/nginx' './configs/docker/compose/redis' './configs/docker/compose/vault' './configs/docker/distroless/base' './rdp/monitoring/grafana/datasources'; \
     for d in \
       '.' \
       './admin' \
+      './common' \
+      './configs' \
       './node' \
       './rdp' \
+      './scripts' \
+      './service_configs' \
+      './sessions' \
       './tools' \
       './admin/admin_ui' \
       './admin/api' \
@@ -128,11 +137,43 @@ RUN set -eux; \
       './admin/emergency' \
       './admin/governance' \
       './admin/key_rotation' \
+      './admin/over_lord' \
       './admin/rbac' \
       './admin/services' \
       './admin/system' \
       './admin/ui' \
       './admin/utils' \
+      './common/governance' \
+      './common/security' \
+      './common/server-tools' \
+      './common/templates' \
+      './common/tor' \
+      './configs/.devcontainer' \
+      './configs/.ssh' \
+      './configs/admin' \
+      './configs/auth' \
+      './configs/base' \
+      './configs/blockchain' \
+      './configs/compose' \
+      './configs/container' \
+      './configs/database' \
+      './configs/docker' \
+      './configs/electron_gui' \
+      './configs/environment' \
+      './configs/gui' \
+      './configs/integration' \
+      './configs/logging' \
+      './configs/network' \
+      './configs/node' \
+      './configs/overlord' \
+      './configs/payment_systems' \
+      './configs/pi' \
+      './configs/rdp' \
+      './configs/secrets' \
+      './configs/security' \
+      './configs/server' \
+      './configs/tor' \
+      './configs/user' \
       './node/api' \
       './node/config' \
       './node/consensus' \
@@ -141,6 +182,7 @@ RUN set -eux; \
       './node/flags' \
       './node/governance' \
       './node/models' \
+      './node/over_lord' \
       './node/payouts' \
       './node/pools' \
       './node/poot' \
@@ -155,6 +197,7 @@ RUN set -eux; \
       './rdp/client' \
       './rdp/common' \
       './rdp/config' \
+      './rdp/monitoring' \
       './rdp/protocol' \
       './rdp/recorder' \
       './rdp/resource_monitor' \
@@ -163,184 +206,255 @@ RUN set -eux; \
       './rdp/server_manager' \
       './rdp/session_controller' \
       './rdp/xrdp' \
+      './scripts/build' \
+      './scripts/compliance' \
+      './scripts/config' \
+      './scripts/contracts' \
+      './scripts/database' \
+      './scripts/deployment' \
+      './scripts/devcontainer' \
+      './scripts/docs' \
+      './scripts/foundation' \
+      './scripts/gui' \
+      './scripts/hardware' \
+      './scripts/integration' \
+      './scripts/lib' \
+      './scripts/load' \
+      './scripts/logging' \
+      './scripts/maintenance' \
+      './scripts/migration' \
+      './scripts/monitoring' \
+      './scripts/network' \
+      './scripts/registry' \
+      './scripts/secrets' \
+      './scripts/security' \
+      './scripts/services' \
+      './scripts/testing' \
+      './scripts/validation' \
+      './scripts/verification' \
+      './sessions/api' \
+      './sessions/config' \
+      './sessions/core' \
+      './sessions/encryption' \
+      './sessions/integration' \
+      './sessions/pipeline' \
+      './sessions/processor' \
+      './sessions/recorder' \
+      './sessions/security' \
+      './sessions/session_systems_control' \
+      './sessions/storage' \
       './tools/build' \
       './tools/dev' \
       './tools/ops' \
+      './configs/admin/admin-system-gateway' \
+      './configs/admin/config' \
+      './configs/blockchain/chain-to-pay' \
+      './configs/blockchain/config' \
+      './configs/container/admin' \
+      './configs/container/auth' \
+      './configs/container/base' \
+      './configs/container/blockchain' \
+      './configs/container/database' \
+      './configs/container/electron_gui' \
+      './configs/container/gui' \
+      './configs/container/node' \
+      './configs/container/payment_systems' \
+      './configs/container/rdp' \
+      './configs/container/server' \
+      './configs/container/sessions' \
+      './configs/container/storage' \
+      './configs/container/tor' \
+      './configs/database/elasticsearch' \
+      './configs/database/redis' \
+      './configs/docker/compose' \
+      './configs/docker/distroless' \
+      './configs/docker/docs' \
+      './configs/docker/multi-stage' \
+      './configs/docker/on-system-chain' \
+      './configs/environment/development' \
+      './configs/environment/pi' \
+      './configs/environment/production' \
+      './configs/environment/staging' \
+      './configs/node/config' \
+      './configs/node/node-system-gateway' \
+      './configs/overlord/runtime' \
+      './configs/pi/ssh' \
+      './lucid/scripts/db-backup.sh' \
+      './lucid/scripts/health-check.sh' \
+      './lucid/scripts/network-test.sh' \
+      './rdp/monitoring/grafana' \
       './rdp/session_controller/integration' \
+      './rdp/xrdp/config' \
+      './scripts/build/components' \
+      './scripts/build/core' \
+      './scripts/build/distroless' \
+      './scripts/build/utils' \
+      './scripts/compliance/distroless' \
+      './scripts/compliance/general' \
+      './scripts/deployment/devcontainer' \
+      './scripts/deployment/distroless' \
+      './scripts/deployment/pi' \
+      './scripts/deployment/utils' \
+      './scripts/maintenance/cleanup' \
+      './scripts/maintenance/optimization' \
+      './scripts/maintenance/recovery' \
+      './scripts/network/diagnostics' \
+      './scripts/network/security' \
+      './scripts/network/setup' \
+      './scripts/testing/integration' \
+      './scripts/testing/unit' \
+      './scripts/testing/utils' \
+      './sessions/api/config' \
+      './sessions/api/integration' \
+      './sessions/pipeline/integration' \
+      './sessions/processor/config' \
+      './sessions/processor/integration' \
+      './sessions/recorder/config' \
+      './sessions/recorder/integration' \
+      './sessions/storage/config' \
       './tools/ops/backup' \
       './tools/ops/monitoring' \
       './tools/ops/ota' \
+      './configs/docker/compose/mongodb' \
+      './configs/docker/compose/nats' \
+      './configs/docker/compose/nginx' \
+      './configs/docker/compose/redis' \
+      './configs/docker/compose/vault' \
+      './configs/docker/distroless/base' \
+      './rdp/monitoring/grafana/datasources' \
     ; do \
       printf 'LUCID_X_FILES_SKELETON_%s' "$(date +%s)" > "$d/.keep"; \
       touch "$d/.keep"; \
     done
 # LUCID_X_FILES_SKELETON_END
+COPY configs/ ./configs/
+RUN rm -rf configs/environment
+COPY master-env-config.txt ./configs/.env.master
+COPY configs/environment/.env.secrets ./configs/.env.secrets
+COPY configs/environment/.env.secure ./configs/.env.secure
+COPY sessions/ ./sessions/
+COPY infrastructure/compose/./configs/compose/
 
+COPY scripts/ ./scripts/
 COPY tools/ ./tools/
 COPY infrastructure/service_mesh/ ./infrastructure/service_mesh/
 COPY node/config/ ./node/config/
-COPY RDP/config/ ./RDP/config/
+COPY RDP/config/ ./rdp/config/
 COPY admin/config/ ./admin/config/
+COPY common/ ./common/
 
 COPY --chmod=755 infrastructure/docker/common/server-tools-bootstrap.sh /usr/local/bin/server-tools-bootstrap
 COPY --chmod=755 infrastructure/docker/common/service-mesh-bootstrap.sh /usr/local/bin/service-mesh-bootstrap
 
-RUN cat > /opt/lucid/scripts/health-check.sh <<'EOF' && chmod +x /opt/lucid/scripts/health-check.sh
-#!/bin/bash
-# Comprehensive health check for core support services
-set -euo pipefail
+# Server-tools scripts (repo: infrastructure/docker/common/scripts/server-tools/)
+COPY --chmod=755 infrastructure/docker/common/scripts/server-tools/health-check.sh ./lucid/scripts/health-check.sh
+COPY --chmod=755 infrastructure/docker/common/scripts/server-tools/network-test.sh ./lucid/scripts/network-test.sh
+COPY --chmod=755 infrastructure/docker/common/scripts/server-tools/db-backup.sh ./lucid/scripts/db-backup.sh
+COPY --chmod=755 infrastructure/docker/common/scripts/server-tools/server-tools-start.sh /usr/local/bin/server-tools-start.sh
 
-echo "[health-check] Lucid Core Support Health Check"
-echo "============================================"
+RUN chown -R 65532:65532 ./scripts ./lucid /var/log/lucid
 
-if curl -fsS --max-time 5 --socks5 tor-proxy:9050 http://check.torproject.org >/dev/null 2>&1; then
-    echo "✅ Tor proxy: HEALTHY"
-else
-    echo "❌ Tor proxy: UNHEALTHY"
-fi
-
-if mongosh --quiet --eval "db.runCommand({ ping: 1 })" "${MONGO_URL:-mongodb://localhost:27017}" >/dev/null 2>&1; then
-    echo "✅ MongoDB: HEALTHY"
-else
-    echo "❌ MongoDB: UNHEALTHY"
-fi
-
-if curl -fsS --max-time 5 http://lucid_api_gateway:8080/health >/dev/null 2>&1; then
-    echo "✅ API Gateway: HEALTHY"
-else
-    echo "❌ API Gateway: UNHEALTHY"
-fi
-
-if curl -fsS --max-time 5 http://lucid_api:8081/health >/dev/null 2>&1; then
-    echo "✅ API Server: HEALTHY"
-else
-    echo "❌ API Server: UNHEALTHY"
-fi
-
-echo "============================================"
-EOF
-
-RUN cat > /opt/lucid/scripts/network-test.sh <<'EOF' && chmod +x /opt/lucid/scripts/network-test.sh
-#!/bin/bash
-set -euo pipefail
-
-echo "[network-test] Core Support Network Test"
-echo "========================================"
-
-services=("tor-proxy:9050" "lucid_mongo:27017" "lucid_api_gateway:8080" "lucid_api:8081" "lucid_tunnel_tools:7000")
-
-for service in "${services[@]}"; do
-    host=$(echo "$service" | cut -d: -f1)
-    port=$(echo "$service" | cut -d: -f2)
-
-    if nc -z "$host" "$port" 2>/dev/null; then
-        echo "✅ $service: REACHABLE"
-    else
-        echo "❌ $service: UNREACHABLE"
-    fi
-done
-
-echo "========================================"
-EOF
-
-RUN cat > /opt/lucid/scripts/db-backup.sh <<'EOF' && chmod +x /opt/lucid/scripts/db-backup.sh
-#!/bin/bash
-set -euo pipefail
-
-BACKUP_DIR="/var/log/lucid/backups"
-TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-BACKUP_FILE="lucid_backup_${TIMESTAMP}.gz"
-
-echo "[db-backup] Starting MongoDB backup..."
-mkdir -p "$BACKUP_DIR"
-
-if mongodump --uri="${MONGO_URL:-mongodb://localhost:27017}" --archive="$BACKUP_DIR/$BACKUP_FILE" --gzip; then
-    echo "✅ Backup completed: $BACKUP_DIR/$BACKUP_FILE"
-    ls -t "$BACKUP_DIR"/lucid_backup_*.gz 2>/dev/null | tail -n +6 | xargs -r rm -f
-else
-    echo "❌ Backup failed"
-    exit 1
-fi
-EOF
-
-RUN cat > /usr/local/bin/server-tools-start.sh <<'EOF' && chmod +x /usr/local/bin/server-tools-start.sh
-#!/bin/bash
-set -euo pipefail
-
-echo "[server-tools] Lucid Server Tools starting..."
-echo "[server-tools] Environment: ${LUCID_ENV:-dev}"
-echo "[server-tools] Tools directory: ${TOOLS_DIR:-/opt/lucid/tools}"
-echo "[server-tools] Scripts directory: ${SCRIPTS_DIR:-/opt/lucid/scripts}"
-
-echo "[server-tools] Waiting for core services..."
-sleep 10
-
-echo "[server-tools] Running initial health check..."
-/opt/lucid/scripts/health-check.sh || true
-
-echo "[server-tools] Server tools ready."
-
-exec tail -f /dev/null
-EOF
-
-RUN chown -R lucid:lucid /opt/lucid/scripts /var/log/lucid
-
-# =============================================================================
-# Stage 2 – Distroless runtime (COPY --from=builder)
-# =============================================================================
+# -----------------------------------------------------------------------------
+# Stage 2 — Distroless runtime
+# -----------------------------------------------------------------------------
 FROM gcr.io/distroless/base-debian12:latest
 
 ARG BUILD_DATE
 ARG VCS_REF
 ARG VERSION=1.0.0
+# Lucid Tor egress / network isolation (PUBLIC_TOR_IP: master-env-config.txt; compose: lucid-tor-egress-network)
+ARG PUBLIC_TOR_IP=109.70.100.1
+ARG LUCID_INTERNAL_NETWORK_NAME=lucid-pi-network
+ARG LUCID_TOR_EGRESS_NETWORK_NAME=lucid-tor-egress-network
 
 LABEL maintainer="Lucid Development Team" \
+      com.lucid.network.internal="${LUCID_INTERNAL_NETWORK_NAME}" \
+      com.lucid.network.tor_egress="${LUCID_TOR_EGRESS_NETWORK_NAME}" \
+      com.lucid.tor.public_egress_ip="${PUBLIC_TOR_IP}" \
       version="${VERSION}" \
-      description="Server utilities for Lucid core support (distroless Debian 12)" \
-      org.opencontainers.image.created="${BUILD_DATE}" \
-      org.opencontainers.image.revision="${VCS_REF}" \
+      description="Lucid server-tools (distroless Debian 12)" \
+      org.opencontainers.image.title="Lucid Server Tools" \
+      org.opencontainers.image.description="Diagnostics and maintenance toolbox" \
       org.opencontainers.image.version="${VERSION}" \
-      org.opencontainers.image.title="Lucid Server Tools (common)" \
-      org.opencontainers.image.description="Diagnostics and maintenance toolbox; COPY --from=builder" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.created="${BUILD_DATE}" \
       com.lucid.plane="ops" \
-      com.lucid.service="server-tools" \
-      com.lucid.expose="none" \
+      com.lucid.service="server-common" \
+      com.lucid.layer="0" \
+      org.lucid.layer="0" \
+      com.lucid.platform="arm64" \
+      com.lucid.architecture="linux/arm64" \
       com.lucid.security="distroless" \
+      com.lucid.vulnerabilities="zero" \
+      com.lucid.expose="none" \
       com.lucid.tor.compatible="true" \
       com.lucid.env.config=".env.foundation,.env.core,.env.support,.env.server-tools"
 
-ENV PATH=/opt/lucid/scripts:/opt/lucid/tools:/usr/local/bin:/usr/bin:/bin \
-    LUCID_ENV=dev \
-    TOOLS_DIR=/opt/lucid/tools \
-    SCRIPTS_DIR=/opt/lucid/scripts \
-    LOG_DIR=/var/log/lucid \
-    SERVER_TOOLS_HOME=/opt/lucid \
-    SERVER_TOOLS_LOG_DIR=/opt/lucid/logs \
-    PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1
+ENV     PUBLIC_TOR_IP="${PUBLIC_TOR_IP}" \
+    LUCID_INTERNAL_NETWORK_NAME="${LUCID_INTERNAL_NETWORK_NAME}" \
+    LUCID_TOR_EGRESS_NETWORK_NAME="${LUCID_TOR_EGRESS_NETWORK_NAME}" \
+    PATH="/usr/local/bin:/app/scripts:/app/tools:/usr/bin:/bin" \
+    LOG_DIR="/var/log/lucid" \
+    LUCID_ENV="dev" \
+    SCRIPTS_DIR="/app/scripts" \
+    SERVER_HOME_DIR="/app" \
+    SERVER_LOG_DIR="/app/logs" \
+    TOOLS_DIR="/app/tools"
+# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
+# Generated: apt + RUN scaffold (mkdir/printf/touch/chown) -> FHS (not ./ or /build/; lib_search_and_inject.py).
+COPY --from=builder --chown=65532:65532 /usr/lib/*/libcurl.so* /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /usr/lib/*/libffi.so* /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /usr/lib/*/libpq.so.5 /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /usr/lib/*/libssl.so* /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /usr/lib/*/ossl-modules/ /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /bin/ /app/bin/
+COPY --from=builder --chown=65532:65532 /etc/ssl/ /app/etc/ssl/
+COPY --from=builder --chown=65532:65532 /usr/bin/ /app/usr/bin/
+COPY --from=builder --chown=65532:65532 /usr/lib/python3.11/ /app/usr/lib/python3.11/
+COPY --from=builder --chown=65532:65532 /usr/lib/python3/dist-packages/ /app/usr/lib/python3/dist-packages/
+COPY --from=builder --chown=65532:65532 /var/log/lucid/ /app/var/log/lucid/
+# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_END
 
-# Runtime support: full userland slices from builder (dynamic libs resolved)
+# LUCID_RUNTIME_COPY_FROM_BUILD_BEGIN
+# Generated: same directory set as LUCID_X_FILES_SKELETON (./ under WORKDIR /build).
+COPY --from=builder --chown=65532:65532 /build/admin/ /app/admin/
+COPY --from=builder --chown=65532:65532 /build/common/ /app/common/
+COPY --from=builder --chown=65532:65532 /build/configs/ /app/configs/
+COPY --from=builder --chown=65532:65532 /build/node/ /app/node/
+COPY --from=builder --chown=65532:65532 /build/rdp/ /app/rdp/
+COPY --from=builder --chown=65532:65532 /build/scripts/ /app/scripts/
+COPY --from=builder --chown=65532:65532 /build/service_configs/ /app/service_configs/
+COPY --from=builder --chown=65532:65532 /build/sessions/ /app/sessions/
+COPY --from=builder --chown=65532:65532 /build/tools/ /app/tools/
+COPY --from=builder --chown=65532:65532 /build/lucid/scripts/db-backup.sh/ /app/lucid/scripts/db-backup.sh/
+COPY --from=builder --chown=65532:65532 /build/lucid/scripts/health-check.sh/ /app/lucid/scripts/health-check.sh/
+COPY --from=builder --chown=65532:65532 /build/lucid/scripts/network-test.sh/ /app/lucid/scripts/network-test.sh/
+# LUCID_RUNTIME_COPY_FROM_BUILD_END
+
+COPY --from=builder --chown=65532:65532 /build/lucid/ /app/lucid/
+
 COPY --from=builder /bin/bash /bin/bash
+COPY --from=builder /usr/bin/tini /usr/bin/tini
 COPY --from=builder /usr/bin /usr/bin
 COPY --from=builder /usr/lib /usr/lib
 COPY --from=builder /lib /lib
-COPY --from=builder /opt/lucid /opt/lucid
-COPY --from=builder --chown=lucid:lucid /build/wheels/ /opt/lucid/tools/wheels/
-COPY --from=builder --chown=lucid:lucid /build/infrastructure/service_mesh/ /opt/lucid/tools/infrastructure/service_mesh/
-COPY --from=builder --chown=lucid:lucid /build/tools/ /opt/lucid/tools/repo-tools/
-COPY --from=builder --chown=lucid:lucid /build/node/config/ /opt/lucid/tools/node/config/
-COPY --from=builder --chown=lucid:lucid /build/RDP/config/ /opt/lucid/tools/RDP/config/
-COPY --from=builder --chown=lucid:lucid /build/admin/config/ /opt/lucid/tools/admin/config/
+COPY --from=builder --chown=65532:65532 /build/wheels/ /app/wheels/
+COPY --from=builder --chown=65532:65532 /build/infrastructure/service_mesh/ /app/infrastructure/service_mesh/
+COPY --from=builder --chown=65532:65532 /build/node/config/ /app/node/config/
+COPY --from=builder --chown=65532:65532 /build/rdp/config/ /app/rdp/config/
+COPY --from=builder --chown=65532:65532 /build/admin/config/ /app/admin/config/
+
+COPY --from=builder /usr/local/bin/ /usr/local/bin/
 
 COPY --chmod=755 infrastructure/docker/common/server-tools-bootstrap.sh /usr/local/bin/server-tools-bootstrap
 COPY --chmod=755 infrastructure/docker/common/service-mesh-bootstrap.sh /usr/local/bin/service-mesh-bootstrap
 
-COPY --from=builder /etc/passwd /etc/passwd
-COPY --from=builder /etc/group /etc/group
+COPY --from=builder /usr/local/bin/server-tools-start.sh /usr/local/bin/server-tools-start.sh
+
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 
-USER lucid:lucid
-WORKDIR /opt/lucid
+USER 65532:65532
+WORKDIR /app/lucid
 
 ENTRYPOINT ["/usr/bin/tini", "--"]
 CMD ["/usr/local/bin/server-tools-start.sh"]

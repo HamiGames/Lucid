@@ -1,6 +1,7 @@
 """
 File: /app/sessions/session_systems_control/main.py
 x-lucid-file-path: /app/sessions/session_systems_control/main.py
+x-lucid-file-directory: /app/sessions/session_systems_control
 x-lucid-file-type: python
 
 Session systems control plane — aggregates /health across Lucid session stack services.

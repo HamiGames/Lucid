@@ -1,6 +1,7 @@
 """
 File: /app/auth/api/__init__.py
 x-lucid-file-path: /app/auth/api/__init__.py
+x-lucid-file-directory: /app/auth/api
 x-lucid-file-type: python
 
 Lucid Authentication Service - API Routes Package

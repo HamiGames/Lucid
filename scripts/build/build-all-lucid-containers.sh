@@ -135,7 +135,7 @@ phase1_foundation() {
     # Step 5: Storage Database Containers
     log_info "Step 5: Building Storage Database Containers..."
     
-    cd infrastructure/containers/database
+    cd infrastructure/containers/storage
     
     build_container \
         "MongoDB" \

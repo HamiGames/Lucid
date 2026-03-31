@@ -1,6 +1,7 @@
 """
 File: /app/common/tor/socks_proxy.py
 x-lucid-file-path: /app/common/tor/socks_proxy.py
+x-lucid-file-directory: /app/common/tor
 x-lucid-file-type: python
 
 SOCKS proxy management for Lucid RDP.

@@ -5,6 +5,7 @@
 """
 File: /app/node/pools/__init__.py
 x-lucid-file-path: /app/node/pools/__init__.py
+x-lucid-file-directory: /app/node/pools
 x-lucid-file-type: python
 
 Pools module for Lucid node operations.

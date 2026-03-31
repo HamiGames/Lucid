@@ -1,4 +1,9 @@
 """
+File: /app/tests/validation/test_all_containers_running.py
+x-lucid-file-path: /app/tests/validation/test_all_containers_running.py
+x-lucid-file-directory: /app/tests/validation
+x-lucid-file-type: python
+
 Test All Containers Running
 
 Validates that all Docker containers for the 10 Lucid clusters are running correctly.

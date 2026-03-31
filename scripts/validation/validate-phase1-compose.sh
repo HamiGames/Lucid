@@ -1,20 +1,29 @@
 #!/bin/bash
 # scripts/validation/validate-phase1-compose.sh
-# Validate Phase 1 Docker Compose configuration
+# File: /app/scripts/validation/validate-phase1-compose.sh
+# x-lucid-file-path: /app/scripts/validation/validate-phase1-compose.sh
+# x-lucid-file-directory: /app/scripts/validation
+# x-lucid-file-type: shell
+# Validate Phase 1 Docker Compose configuration (x-files-listing → LUCID_HOST_COMPOSE_*)
 
 set -e
+
+_LUCID_W="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+while [[ "$_LUCID_W" != "/" && "$(basename "$_LUCID_W")" != "scripts" ]]; do _LUCID_W="$(dirname "$_LUCID_W")"; done
+# shellcheck source=lib/lucid-repo-paths.sh
+source "${_LUCID_W}/lib/lucid-repo-paths.sh"
 
 echo "Validating Phase 1 Docker Compose configuration..."
 
 # Check if compose file exists
-if [ ! -f "configs/docker/docker-compose.foundation.yml" ]; then
+if [ ! -f "$LUCID_HOST_COMPOSE_FOUNDATION" ]; then
     echo "ERROR: Docker Compose file not found"
     exit 1
 fi
 
 # Validate compose file syntax
 echo "Validating compose file syntax..."
-if ! docker-compose -f configs/docker/docker-compose.foundation.yml config > /dev/null 2>&1; then
+if ! docker-compose -f "${LUCID_HOST_COMPOSE_FOUNDATION}" config > /dev/null 2>&1; then
     echo "ERROR: Docker Compose file syntax invalid"
     exit 1
 fi

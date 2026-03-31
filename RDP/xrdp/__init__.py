@@ -6,6 +6,7 @@
 """
 File: /app/RDP/xrdp/__init__.py
 x-lucid-file-path: /app/RDP/xrdp/__init__.py
+x-lucid-file-directory: /app/RDP/xrdp
 x-lucid-file-type: python
 
 Lucid XRDP Service Package

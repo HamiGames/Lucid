@@ -1,5 +1,9 @@
 #!/bin/bash
 # Phase 3 Application Services Performance Tests
+# File: /app/tests/performance/phase3/run_phase3_performance.sh
+# x-lucid-file-path: /app/tests/performance/phase3/run_phase3_performance.sh
+# x-lucid-file-directory: /app/tests/performance/phase3
+# x-lucid-file-type: shell
 # Step 27: Phase 3 Performance Tests
 # Tests chunk processing throughput, RDP connection latency, node pool management
 # Target: Raspberry Pi deployment

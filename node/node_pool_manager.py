@@ -2,6 +2,7 @@
 """
 File: /app/node/node_pool_manager.py
 x-lucid-file-path: /app/node/node_pool_manager.py
+x-lucid-file-directory: /app/node
 x-lucid-file-type: python
 
 Lucid Node Management - Node Pool Manager

@@ -2,6 +2,7 @@
 """
 File: /app/sessions/pipeline/integration/api_gateway_client.py
 x-lucid-file-path: /app/sessions/pipeline/integration/api_gateway_client.py
+x-lucid-file-directory: /app/sessions/pipeline/integration
 x-lucid-file-type: python
 
 API Gateway Integration Client

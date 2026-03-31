@@ -1,6 +1,7 @@
 """
 File: /app/admin/api/__init__.py
 x-lucid-file-path: /app/admin/api/__init__.py
+x-lucid-file-directory: /app/admin/api
 x-lucid-file-type: python
 
 Admin Api

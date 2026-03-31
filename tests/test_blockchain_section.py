@@ -2,6 +2,13 @@
 # Validates session recording and blockchain anchoring functionality
 # Based on LUCID-STRICT requirements
 
+"""
+File: /app/tests/test_blockchain_section.py
+x-lucid-file-path: /app/tests/test_blockchain_section.py
+x-lucid-file-directory: /app/tests
+x-lucid-file-type: python
+"""
+
 import asyncio
 import os
 import tempfile

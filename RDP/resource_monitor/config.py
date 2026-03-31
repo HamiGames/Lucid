@@ -2,6 +2,7 @@
 """
 File: /app/RDP/resource_monitor/config.py
 x-lucid-file-path: /app/RDP/resource_monitor/config.py
+x-lucid-file-directory: /app/RDP/resource_monitor
 x-lucid-file-type: python
 
 Lucid RDP Resource Monitor Configuration
@@ -75,7 +76,7 @@ class MonitorSettings(BaseSettings):
     HEALTH_CHECK_ENABLED: bool = True
     
     # Integration Service URLs (from .env.application, .env.core)
-    RDP_SERVER_MANAGER_URL: str = ""  # From environment: RDP_SERVER_MANAGER_URL (e.g., http://rdp-server-manager:8081)
+    RDP_SERVER_MANAGER_URL: str = ""  # From environment: RDP_SERVER_MANAGER_URL (e.g., http://lucid-rdp-server-manager:8081)
     RDP_XRDP_URL: str = ""  # From environment: RDP_XRDP_URL (e.g., http://rdp-xrdp:3389)
     RDP_CONTROLLER_URL: str = ""  # From environment: RDP_CONTROLLER_URL (e.g., http://rdp-controller:8092)
     

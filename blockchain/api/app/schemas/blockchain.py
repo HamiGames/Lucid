@@ -1,6 +1,7 @@
 """
 File: /app/blockchain/api/app/schemas/blockchain.py
 x-lucid-file-path: /app/blockchain/api/app/schemas/blockchain.py
+x-lucid-file-directory: /app/blockchain/api/app/schemas
 x-lucid-file-type: python
 
 Blockchain Schema Models

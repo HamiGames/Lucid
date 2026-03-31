@@ -4,6 +4,7 @@
 """
 File: /app/admin/api/users.py
 x-lucid-file-path: /app/admin/api/users.py
+x-lucid-file-directory: /app/admin/api
 x-lucid-file-type: python
 
 Lucid Admin Interface - User Management API

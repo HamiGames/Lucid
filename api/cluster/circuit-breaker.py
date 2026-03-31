@@ -2,6 +2,7 @@
 """
 File: /app/api/cluster/circuit-breaker.py
 x-lucid-file-path: /app/api/cluster/circuit-breaker.py
+x-lucid-file-directory: /app/api/cluster
 x-lucid-file-type: python
 
 LUCID Circuit Breaker - SPEC-1B Implementation

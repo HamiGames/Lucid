@@ -1,5 +1,9 @@
 #!/bin/bash
 # Phase 1 Foundation Services Build Script
+# File: /app/scripts/build-phase1-foundation.sh
+# x-lucid-file-path: /app/scripts/build-phase1-foundation.sh
+# x-lucid-file-directory: /app/scripts
+# x-lucid-file-type: shell
 # Builds: auth-service, storage-database, mongodb, redis, elasticsearch
 # Target: Raspberry Pi (linux/arm64)
 # Registry: pickme/lucid namespace
@@ -173,7 +177,7 @@ build_storage_database() {
 build_mongodb() {
     log_info "Building MongoDB container..."
     
-    local mongo_dir="$PROJECT_ROOT/infrastructure/containers/database"
+    local mongo_dir="$PROJECT_ROOT/infrastructure/containers/storage"
     
     if [[ ! -d "$mongo_dir" ]]; then
         log_error "MongoDB container directory not found: $mongo_dir"
@@ -202,7 +206,7 @@ build_mongodb() {
 build_redis() {
     log_info "Building Redis container..."
     
-    local redis_dir="$PROJECT_ROOT/infrastructure/containers/database"
+    local redis_dir="$PROJECT_ROOT/infrastructure/containers/storage"
     
     if [[ ! -d "$redis_dir" ]]; then
         log_error "Redis container directory not found: $redis_dir"
@@ -231,7 +235,7 @@ build_redis() {
 build_elasticsearch() {
     log_info "Building Elasticsearch container..."
     
-    local es_dir="$PROJECT_ROOT/infrastructure/containers/database"
+    local es_dir="$PROJECT_ROOT/infrastructure/containers/storage"
     
     if [[ ! -d "$es_dir" ]]; then
         log_error "Elasticsearch container directory not found: $es_dir"

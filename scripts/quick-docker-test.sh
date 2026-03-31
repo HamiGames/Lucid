@@ -1,8 +1,21 @@
 #!/bin/bash
-# Quick Dockerfile path validation test
-# Focus on key Dockerfiles to identify main issues
+# Full path: scripts/quick-docker-test.sh
+# File: /app/scripts/quick-docker-test.sh
+# x-lucid-file-path: /app/scripts/quick-docker-test.sh
+# x-lucid-file-directory: /app/scripts
+# x-lucid-file-type: shell
+# Quick Dockerfile path validation test — run from repo root (resolves via scripts/lib/lucid-repo-paths.sh when sourced).
 
 set -euo pipefail
+
+_SCRIPT_QDT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [[ -f "${_SCRIPT_QDT}/lib/lucid-repo-paths.sh" ]]; then
+    # shellcheck source=lib/lucid-repo-paths.sh
+    source "${_SCRIPT_QDT}/lib/lucid-repo-paths.sh" || exit 1
+fi
+REPO_ROOT="${LUCID_REPO_ROOT:-$(cd "${_SCRIPT_QDT}/.." && pwd)}"
+cd "$REPO_ROOT" || { echo "Cannot cd to repo root: $REPO_ROOT" >&2; exit 1; }
+unset _SCRIPT_QDT
 
 # Colors for output
 RED='\033[0;31m'
@@ -144,7 +157,10 @@ main() {
     log_info "Testing docker-compose files"
     echo "----------------------------------------"
     
+    # container-runtime-layout.yml: phased stacks live under configs/docker/
     local compose_files=(
+        "${LUCID_HOST_COMPOSE_FOUNDATION}"
+        "${LUCID_HOST_COMPOSE_CORE}"
         "infrastructure/docker/compose/docker-compose.yml"
         "infrastructure/docker/compose/docker-compose.dev.yml"
         ".devcontainer/docker-compose.dev.yml"

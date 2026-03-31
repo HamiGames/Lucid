@@ -2,6 +2,7 @@
 """
 File: /app/sessions/api/config.py
 x-lucid-file-path: /app/sessions/api/config.py
+x-lucid-file-directory: /app/sessions/api
 x-lucid-file-type: python
 
 Lucid Session API Configuration

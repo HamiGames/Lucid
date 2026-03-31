@@ -1,5 +1,9 @@
 #!/bin/bash
 # Path: scripts/deployment/validate-distroless-setup.sh
+# File: /app/scripts/deployment/validate-distroless-setup.sh
+# x-lucid-file-path: /app/scripts/deployment/validate-distroless-setup.sh
+# x-lucid-file-directory: /app/scripts/deployment
+# x-lucid-file-type: shell
 # Validate Distroless Setup
 # Validates the distroless deployment configuration and environment
 
@@ -27,7 +31,7 @@ echo ""
 # Check if we're in the right directory
 if [ ! -f "configs/docker/distroless/distroless-runtime-config.yml" ]; then
     log_error "Not in project root directory!"
-    log_error "Please run from: /mnt/myssd/Lucid/Lucid"
+    log_error "Please run from repository root (directory containing master-env-config.txt)"
     exit 1
 fi
 

@@ -1,4 +1,9 @@
 """
+File: /app/configs/overlord/runtime/trigger_engine.py
+x-lucid-file-path: /app/configs/overlord/runtime/trigger_engine.py
+x-lucid-file-directory: /app/configs/overlord/runtime
+x-lucid-file-type: python
+
 YAML trigger runner for node-overlord (baked bundle under OVERLORD_BUNDLE_ROOT).
 """
 from __future__ import annotations

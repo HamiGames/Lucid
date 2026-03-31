@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# File: /app/scripts/config/validate-env.sh
+# x-lucid-file-path: /app/scripts/config/validate-env.sh
+# x-lucid-file-directory: /app/scripts/config
+# x-lucid-file-type: shell
 # Environment Configuration Validator for Lucid RDP System
 # This script validates environment configuration files for correctness and completeness
 

@@ -808,7 +808,7 @@ HEALTH_CHECK_TIMEOUT=10s
 HEALTH_CHECK_RETRIES=3
 
 # Service Health Endpoints (use container names for Docker DNS resolution)
-MONGODB_HEALTH_URL=mongodb://lucid:${MONGODB_PASSWORD:?MONGODB_PASSWORD not set}@lucid-mongodb:27017/lucid_dev?authSource=admin
+MONGODB_HEALTH_URL=mongodb://lucid:${MONGODB_PASSWORD:?MONGODB_PASSWORD not set}@lucid-mongodb:27017/lucid?authSource=admin
 REDIS_HEALTH_URL=redis://:${REDIS_PASSWORD:?REDIS_PASSWORD not set}@lucid-redis:6379
 ELASTICSEARCH_HEALTH_URL=http://elastic:${ELASTICSEARCH_PASSWORD:?ELASTICSEARCH_PASSWORD not set}@lucid-elasticsearch:9200/_cluster/health
 

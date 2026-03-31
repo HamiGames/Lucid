@@ -1,6 +1,7 @@
 """
 File: /app/auth/models/session.py
 x-lucid-file-path: /app/auth/models/session.py
+x-lucid-file-directory: /app/auth/models
 x-lucid-file-type: python
 
 Lucid Authentication Service - Session Model

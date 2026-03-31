@@ -1,4 +1,10 @@
-"""Load host config for Lucid GUI API Bridge.
+"""
+File: gui_api_bridge/config/load_host_config.py
+x-lucid-file-path: gui_api_bridge/config/load_host_config.py
+x-lucid-file-directory: gui_api_bridge/config
+x-lucid-file-type: python
+
+Load host config for Lucid GUI API Bridge.
 
 Host registry: ``/app/configs/host-config.yml`` (override with ``LUCID_HOST_CONFIG_PATH``).
 Service bundles: ``/app/configs/services/*`` (override with
@@ -6,8 +12,6 @@ Service bundles: ``/app/configs/services/*`` (override with
 infrastructure/containers/services/container-runtime-layout.yml).
 Entrypoints overlay: ``gui-bridge-entrypoints.yml`` resolved from that directory or
 beside this package (override filename with ``LUCID_GUI_API_BRIDGE_ENTRYPOINTS_FILE``).
-
-File: gui_api_bridge/config/load_host_config.py
 """
 
 from __future__ import annotations

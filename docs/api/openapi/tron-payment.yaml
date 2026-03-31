@@ -1,3 +1,8 @@
+# File: /app/docs/api/openapi/tron-payment.yaml
+# x-lucid-file-path: /app/docs/api/openapi/tron-payment.yaml
+# x-lucid-file-directory: /app/docs/api/openapi
+# x-lucid-file-type: YAML
+
 openapi: 3.0.3
 info:
   title: Lucid TRON Payment Service

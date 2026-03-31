@@ -5,6 +5,7 @@
 """
 File: /app/node/sync/node_operator_sync_systems.py
 x-lucid-file-path: /app/node/sync/node_operator_sync_systems.py
+x-lucid-file-directory: /app/node/sync
 x-lucid-file-type: python
 """
 

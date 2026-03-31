@@ -1,5 +1,9 @@
 #!/bin/bash
 # scripts/validation/validate-phase1-complete.sh
+# File: /app/scripts/validation/validate-phase1-complete.sh
+# x-lucid-file-path: /app/scripts/validation/validate-phase1-complete.sh
+# x-lucid-file-directory: /app/scripts/validation
+# x-lucid-file-type: shell
 # Complete Phase 1 Foundation Services validation
 # Validates all Phase 1 services, networks, distroless infrastructure, and compliance
 
@@ -16,8 +20,8 @@ NC='\033[0m' # No Color
 PI_HOST="192.168.0.75"
 PI_USER="pickme"
 PI_SSH_KEY_PATH="$HOME/.ssh/id_rsa"
-PI_DEPLOY_DIR="/mnt/myssd/Lucid/Lucid"
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+PI_DEPLOY_DIR="${PI_DEPLOY_DIR:-$PROJECT_ROOT}"
 
 # Service configuration
 FOUNDATION_SERVICES=("lucid-mongodb" "lucid-redis" "lucid-elasticsearch" "lucid-auth-service")
@@ -109,14 +113,14 @@ verify_data_directories() {
     echo -e "${BLUE}=== Verifying Data Directories ===${NC}"
     
     local required_dirs=(
-        "/mnt/myssd/Lucid/Lucid/data/mongodb"
-        "/mnt/myssd/Lucid/Lucid/data/redis"
-        "/mnt/myssd/Lucid/Lucid/data/elasticsearch"
-        "/mnt/myssd/Lucid/Lucid/data/auth"
-        "/mnt/myssd/Lucid/Lucid/logs/auth"
-        "/mnt/myssd/Lucid/Lucid/logs/mongodb"
-        "/mnt/myssd/Lucid/Lucid/logs/redis"
-        "/mnt/myssd/Lucid/Lucid/logs/elasticsearch"
+        "$PI_DEPLOY_DIR/data/mongodb"
+        "$PI_DEPLOY_DIR/data/redis"
+        "$PI_DEPLOY_DIR/data/elasticsearch"
+        "$PI_DEPLOY_DIR/data/auth"
+        "$PI_DEPLOY_DIR/logs/auth"
+        "$PI_DEPLOY_DIR/logs/mongodb"
+        "$PI_DEPLOY_DIR/logs/redis"
+        "$PI_DEPLOY_DIR/logs/elasticsearch"
     )
     
     local all_dirs_exist=true
@@ -331,7 +335,7 @@ verify_volume_mounts() {
     for service in "${FOUNDATION_SERVICES[@]}"; do
         local mount_check=$(ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no -i "$PI_SSH_KEY_PATH" "$PI_USER@$PI_HOST" "docker inspect $service | grep -A 10 'Mounts'" 2>/dev/null || echo "no-mounts")
         
-        if [[ "$mount_check" == *"/mnt/myssd/Lucid/Lucid"* ]]; then
+        if [[ "$mount_check" == *"$PI_DEPLOY_DIR"* ]]; then
             log_result "volume-mounts-$service" "PASS" "Service $service has correct volume mounts"
         else
             log_result "volume-mounts-$service" "FAIL" "Service $service volume mounts not found"

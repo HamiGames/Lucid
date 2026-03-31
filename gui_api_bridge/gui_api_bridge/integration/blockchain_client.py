@@ -1,7 +1,10 @@
 """
-Blockchain Engine Client for Session Token Recovery
 File: /app/gui_api_bridge/gui_api_bridge/integration/blockchain_client.py
 x-lucid-file-path: /app/gui_api_bridge/gui_api_bridge/integration/blockchain_client.py
+x-lucid-file-directory: /app/gui_api_bridge/gui_api_bridge/integration
+x-lucid-file-type: python
+
+Blockchain Engine Client for Session Token Recovery
 Pattern: Follow sessions/integration/blockchain_client.py and blockchain/core/blockchain_engine.py patterns
 Purpose: Integration with lucid-blockchain-engine for session data token recovery
 """

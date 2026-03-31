@@ -1,6 +1,7 @@
 """
 File: /app/blockchain/api/app/middleware/auth.py
 x-lucid-file-path: /app/blockchain/api/app/middleware/auth.py
+x-lucid-file-directory: /app/blockchain/api/app/middleware
 x-lucid-file-type: python
 
 Authentication Middleware

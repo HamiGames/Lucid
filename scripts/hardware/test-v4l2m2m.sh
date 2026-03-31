@@ -1,5 +1,9 @@
 #!/bin/bash
 # scripts/hardware/test-v4l2m2m.sh
+# File: /app/scripts/hardware/test-v4l2m2m.sh
+# x-lucid-file-path: /app/scripts/hardware/test-v4l2m2m.sh
+# x-lucid-file-directory: /app/scripts/hardware
+# x-lucid-file-type: shell
 # Test hardware-accelerated H.264 encoding with V4L2 M2M
 # LUCID-STRICT: Pi 5 hardware acceleration validation
 

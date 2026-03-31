@@ -1,6 +1,7 @@
 """
 File: /app/gui_hardware_manager/gui_hardware_manager/models/__init__.py
 x-lucid-file-path: /app/gui_hardware_manager/gui_hardware_manager/models/__init__.py
+x-lucid-file-directory: /app/gui_hardware_manager/gui_hardware_manager/models
 x-lucid-file-type: python
 
 Models module initialization

@@ -2,6 +2,7 @@
 """
 File: /app/sessions/processor/integration/session_pipeline_client.py
 x-lucid-file-path: /app/sessions/processor/integration/session_pipeline_client.py
+x-lucid-file-directory: /app/sessions/processor/integration
 x-lucid-file-type: python
 
 Session Pipeline Integration Client

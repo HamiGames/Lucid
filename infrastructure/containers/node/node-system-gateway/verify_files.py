@@ -1,5 +1,12 @@
 #!/usr/bin/env python3
-"""Builder-stage file checks for node-system-gateway (aligned with 03_api_gateway/verify_files.py)."""
+"""
+File: /app/configs/node/node-system-gateway/verify_files.py
+x-lucid-file-path: /app/configs/node/node-system-gateway/verify_files.py
+x-lucid-file-directory: /app/configs/node/node-system-gateway
+x-lucid-file-type: python
+
+Builder-stage file checks for node-system-gateway (aligned with 03_api_gateway/verify_files.py).
+"""
 import os
 import sys
 

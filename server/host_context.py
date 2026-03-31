@@ -1,6 +1,7 @@
 """
 File: /app/server/host_context.py
 x-lucid-file-path: /app/server/host_context.py
+x-lucid-file-directory: /app/server
 x-lucid-file-type: python
 
 Host registry + master-endpoint resolution for the Lucid server pack.
@@ -36,7 +37,7 @@ def default_master_endpoint_path() -> Path:
         return Path(env)
     for cand in (
         Path("/app/service_configs/master-endpoint.yml"),
-        Path("/app/service_configs/services/master-endpoint.yml"),
+        Path("/app/service_configs/master-endpoint.yml"),
     ):
         if cand.is_file():
             return cand

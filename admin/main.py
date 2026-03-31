@@ -2,6 +2,7 @@
 """
 File: /app/admin/main.py
 x-lucid-file-path: /app/admin/main.py
+x-lucid-file-directory: /app/admin
 x-lucid-file-type: python
 
 Lucid Admin Interface - Main Application

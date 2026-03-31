@@ -1,5 +1,9 @@
 #!/bin/bash
 # Lucid API - SBOM Generation Script
+# File: /app/scripts/security/generate-sbom.sh
+# x-lucid-file-path: /app/scripts/security/generate-sbom.sh
+# x-lucid-file-directory: /app/scripts/security
+# x-lucid-file-type: shell
 # Generates Software Bill of Materials for Phase 1 containers
 
 set -euo pipefail

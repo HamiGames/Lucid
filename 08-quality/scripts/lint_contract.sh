@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 # Lint & validate OpenAPI contract with Redocly + OpenAPI Generator.
+# File: /app/08-quality/scripts/lint_contract.sh
+# x-lucid-file-path: /app/08-quality/scripts/lint_contract.sh
+# x-lucid-file-directory: /app/08-quality/scripts
+# x-lucid-file-type: shell
 # Matches the tooling you've been using in logs.
 
 set -euo pipefail

@@ -1,3 +1,8 @@
+# File: /app/node/openapi.yaml
+# x-lucid-file-path: /app/node/openapi.yaml
+# x-lucid-file-directory: /app/node
+# x-lucid-file-type: YAML
+
 openapi: 3.0.3
 info:
   title: Lucid Node Management API

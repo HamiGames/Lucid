@@ -53,18 +53,37 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     apt-get update --allow-releaseinfo-change && \
     apt-get install -y --no-install-recommends \
         ca-certificates \
+        build-essential \
+        bash \
+        gcc \
+        g++ \
+        libffi-dev \
+        libssl-dev \
+        pkg-config \
+        curl \
+        ca-certificates \
+        cargo \
+        rustc \
         tini \
+        python3-wheel \
+        python3-dev \
+        python3-pip \
+        python3-setuptools \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 # LUCID_X_FILES_SKELETON_BEGIN
 # Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
 RUN set -eux; \
-    mkdir -p '.' './assets' './common' './configs' './main' './scripts' './service_configs' './shared' './assets/icons' './assets/images' './assets/tor' './common/governance' './common/security' './common/server-tools' './common/tor' './configs/.ssh' './configs/container' './configs/database' './configs/docker' './configs/environment' './configs/integration' './configs/logging' './configs/pi' './configs/secrets' './configs/security' './configs/tor' './main/ipc' './renderer/admin' './renderer/common' './service_configs/blockchain' './service_configs/distroless' './service_configs/logging' './service_configs/multi-stage' './service_configs/node' './service_configs/payment_services' './service_configs/rdp' './service_configs/security' './service_configs/service_mesh' './service_configs/sessions' './service_configs/x_lucid_cluster_calibration' './configs/container/admin' './configs/container/auth' './configs/container/base' './configs/container/blockchain' './configs/container/database' './configs/container/electron_gui' './configs/container/gui' './configs/container/node' './configs/container/payment_systems' './configs/container/rdp' './configs/container/server' './configs/container/sessions' './configs/container/storage' './configs/container/tor' './configs/database/elasticsearch' './configs/database/redis' './configs/docker/distroless' './configs/docker/docs' './configs/docker/multi-stage' './configs/environment/development' './configs/environment/pi' './configs/environment/production' './configs/environment/staging' './configs/pi/ssh' './renderer/admin/components' './renderer/admin/pages' './renderer/admin/services' './renderer/admin/store' './renderer/admin/styles' './renderer/common/components' './renderer/common/hooks' './renderer/common/store' './renderer/common/styles' './renderer/admin/components/modals'; \
+    mkdir -p '.' './assets' './common' './configs' './electron_gui' './gui_api' './gui_hardware_manager' './gui_tor_manager' './main' './scripts' './service_configs' './shared' './assets/icons' './assets/images' './assets/tor' './common/governance' './common/security' './common/server-tools' './common/templates' './common/tor' './configs/.devcontainer' './configs/.ssh' './configs/admin' './configs/auth' './configs/base' './configs/blockchain' './configs/compose' './configs/container' './configs/database' './configs/docker' './configs/electron_gui' './configs/environment' './configs/gui' './configs/integration' './configs/logging' './configs/network' './configs/node' './configs/overlord' './configs/payment_systems' './configs/pi' './configs/rdp' './configs/secrets' './configs/security' './configs/server' './configs/tor' './configs/user' './electron_gui/assets' './electron_gui/configs' './electron_gui/dist' './electron_gui/distroless' './electron_gui/main' './electron_gui/renderer' './electron_gui/scripts' './electron_gui/shared' './electron_gui/tests' './electron_gui/utils' './gui_hardware_manager/gui_hardware_manager' './gui_tor_manager/gui_tor_manager' './main/ipc' './renderer/admin' './renderer/common' './scripts/compliance' './scripts/config' './scripts/contracts' './scripts/database' './scripts/deployment' './scripts/devcontainer' './scripts/docs' './scripts/foundation' './scripts/gui' './scripts/hardware' './scripts/integration' './scripts/lib' './scripts/load' './scripts/logging' './scripts/maintenance' './scripts/monitoring' './scripts/network' './scripts/registry' './scripts/secrets' './scripts/security' './scripts/services' './scripts/testing' './scripts/validation' './scripts/verification' './service_configs/blockchain' './service_configs/distroless' './service_configs/kubernetes' './service_configs/logging' './service_configs/multi-stage' './service_configs/node' './service_configs/payment_services' './service_configs/rdp' './service_configs/security' './service_configs/service_mesh' './service_configs/sessions' './service_configs/storage' './service_configs/tor' './service_configs/x_lucid_cluster_calibration' './configs/admin/admin-system-gateway' './configs/admin/config' './configs/blockchain/chain-to-pay' './configs/blockchain/config' './configs/container/admin' './configs/container/auth' './configs/container/base' './configs/container/blockchain' './configs/container/database' './configs/container/electron_gui' './configs/container/gui' './configs/container/node' './configs/container/payment_systems' './configs/container/rdp' './configs/container/server' './configs/container/sessions' './configs/container/storage' './configs/container/tor' './configs/database/elasticsearch' './configs/database/redis' './configs/docker/compose' './configs/docker/distroless' './configs/docker/docs' './configs/docker/multi-stage' './configs/docker/on-system-chain' './configs/environment/development' './configs/environment/pi' './configs/environment/production' './configs/environment/staging' './configs/node/config' './configs/node/node-system-gateway' './configs/overlord/runtime' './configs/pi/ssh' './electron_gui/assets/icons' './electron_gui/assets/images' './electron_gui/assets/tor' './electron_gui/dist/main' './electron_gui/dist/shared' './electron_gui/main/ipc' './electron_gui/renderer/admin' './electron_gui/renderer/common' './electron_gui/renderer/developer' './electron_gui/renderer/node' './electron_gui/renderer/user' './electron_gui/tests/e2e' './gui_hardware_manager/gui_hardware_manager/integration' './gui_hardware_manager/gui_hardware_manager/middleware' './gui_hardware_manager/gui_hardware_manager/models' './gui_hardware_manager/gui_hardware_manager/routers' './gui_hardware_manager/gui_hardware_manager/services' './gui_hardware_manager/gui_hardware_manager/utils' './gui_tor_manager/gui_tor_manager/config' './gui_tor_manager/gui_tor_manager/integration' './gui_tor_manager/gui_tor_manager/middleware' './gui_tor_manager/gui_tor_manager/models' './gui_tor_manager/gui_tor_manager/routers' './gui_tor_manager/gui_tor_manager/services' './gui_tor_manager/gui_tor_manager/utils' './renderer/admin/components' './renderer/admin/pages' './renderer/admin/services' './renderer/admin/store' './renderer/admin/styles' './renderer/common/components' './renderer/common/hooks' './renderer/common/store' './renderer/common/styles' './scripts/deployment/devcontainer' './scripts/deployment/pi' './scripts/deployment/utils' './scripts/maintenance/cleanup' './scripts/maintenance/optimization' './scripts/network/setup' './scripts/testing/utils' './service_configs/kubernetes/01_configmaps' './service_configs/kubernetes/02-secrets' './service_configs/kubernetes/03-databases' './service_configs/kubernetes/04-auth' './service_configs/kubernetes/04-network' './service_configs/kubernetes/05-core' './service_configs/kubernetes/06-application' './service_configs/kubernetes/07-support' './service_configs/kubernetes/08-ingress' './service_configs/kubernetes/patches' './configs/docker/compose/mongodb' './configs/docker/compose/nats' './configs/docker/compose/nginx' './configs/docker/compose/redis' './configs/docker/compose/vault' './configs/docker/distroless/base' './electron_gui/dist/main/ipc' './electron_gui/renderer/admin/components' './electron_gui/renderer/admin/pages' './electron_gui/renderer/admin/services' './electron_gui/renderer/admin/store' './electron_gui/renderer/admin/styles' './electron_gui/renderer/common/components' './electron_gui/renderer/common/hooks' './electron_gui/renderer/common/store' './electron_gui/renderer/common/styles' './electron_gui/renderer/developer/components' './electron_gui/renderer/developer/pages' './electron_gui/renderer/developer/services' './electron_gui/renderer/developer/styles' './electron_gui/renderer/node/components' './electron_gui/renderer/node/pages' './electron_gui/renderer/node/services' './electron_gui/renderer/node/styles' './electron_gui/renderer/user/components' './electron_gui/renderer/user/pages' './electron_gui/renderer/user/services' './electron_gui/renderer/user/styles' './renderer/admin/components/modals' './electron_gui/renderer/admin/components/modals'; \
     for d in \
       '.' \
       './assets' \
       './common' \
       './configs' \
+      './electron_gui' \
+      './gui_api' \
+      './gui_hardware_manager' \
+      './gui_tor_manager' \
       './main' \
       './scripts' \
       './service_configs' \
@@ -75,23 +94,76 @@ RUN set -eux; \
       './common/governance' \
       './common/security' \
       './common/server-tools' \
+      './common/templates' \
       './common/tor' \
+      './configs/.devcontainer' \
       './configs/.ssh' \
+      './configs/admin' \
+      './configs/auth' \
+      './configs/base' \
+      './configs/blockchain' \
+      './configs/compose' \
       './configs/container' \
       './configs/database' \
       './configs/docker' \
+      './configs/electron_gui' \
       './configs/environment' \
+      './configs/gui' \
       './configs/integration' \
       './configs/logging' \
+      './configs/network' \
+      './configs/node' \
+      './configs/overlord' \
+      './configs/payment_systems' \
       './configs/pi' \
+      './configs/rdp' \
       './configs/secrets' \
       './configs/security' \
+      './configs/server' \
       './configs/tor' \
+      './configs/user' \
+      './electron_gui/assets' \
+      './electron_gui/configs' \
+      './electron_gui/dist' \
+      './electron_gui/distroless' \
+      './electron_gui/main' \
+      './electron_gui/renderer' \
+      './electron_gui/scripts' \
+      './electron_gui/shared' \
+      './electron_gui/tests' \
+      './electron_gui/utils' \
+      './gui_hardware_manager/gui_hardware_manager' \
+      './gui_tor_manager/gui_tor_manager' \
       './main/ipc' \
       './renderer/admin' \
       './renderer/common' \
+      './scripts/compliance' \
+      './scripts/config' \
+      './scripts/contracts' \
+      './scripts/database' \
+      './scripts/deployment' \
+      './scripts/devcontainer' \
+      './scripts/docs' \
+      './scripts/foundation' \
+      './scripts/gui' \
+      './scripts/hardware' \
+      './scripts/integration' \
+      './scripts/lib' \
+      './scripts/load' \
+      './scripts/logging' \
+      './scripts/maintenance' \
+      './scripts/monitoring' \
+      './scripts/network' \
+      './scripts/registry' \
+      './scripts/secrets' \
+      './scripts/security' \
+      './scripts/services' \
+      './scripts/testing' \
+      './scripts/validation' \
+      './scripts/verification' \
       './service_configs/blockchain' \
       './service_configs/distroless' \
+      './service_configs/kubernetes' \
       './service_configs/logging' \
       './service_configs/multi-stage' \
       './service_configs/node' \
@@ -100,7 +172,13 @@ RUN set -eux; \
       './service_configs/security' \
       './service_configs/service_mesh' \
       './service_configs/sessions' \
+      './service_configs/storage' \
+      './service_configs/tor' \
       './service_configs/x_lucid_cluster_calibration' \
+      './configs/admin/admin-system-gateway' \
+      './configs/admin/config' \
+      './configs/blockchain/chain-to-pay' \
+      './configs/blockchain/config' \
       './configs/container/admin' \
       './configs/container/auth' \
       './configs/container/base' \
@@ -117,14 +195,44 @@ RUN set -eux; \
       './configs/container/tor' \
       './configs/database/elasticsearch' \
       './configs/database/redis' \
+      './configs/docker/compose' \
       './configs/docker/distroless' \
       './configs/docker/docs' \
       './configs/docker/multi-stage' \
+      './configs/docker/on-system-chain' \
       './configs/environment/development' \
       './configs/environment/pi' \
       './configs/environment/production' \
       './configs/environment/staging' \
+      './configs/node/config' \
+      './configs/node/node-system-gateway' \
+      './configs/overlord/runtime' \
       './configs/pi/ssh' \
+      './electron_gui/assets/icons' \
+      './electron_gui/assets/images' \
+      './electron_gui/assets/tor' \
+      './electron_gui/dist/main' \
+      './electron_gui/dist/shared' \
+      './electron_gui/main/ipc' \
+      './electron_gui/renderer/admin' \
+      './electron_gui/renderer/common' \
+      './electron_gui/renderer/developer' \
+      './electron_gui/renderer/node' \
+      './electron_gui/renderer/user' \
+      './electron_gui/tests/e2e' \
+      './gui_hardware_manager/gui_hardware_manager/integration' \
+      './gui_hardware_manager/gui_hardware_manager/middleware' \
+      './gui_hardware_manager/gui_hardware_manager/models' \
+      './gui_hardware_manager/gui_hardware_manager/routers' \
+      './gui_hardware_manager/gui_hardware_manager/services' \
+      './gui_hardware_manager/gui_hardware_manager/utils' \
+      './gui_tor_manager/gui_tor_manager/config' \
+      './gui_tor_manager/gui_tor_manager/integration' \
+      './gui_tor_manager/gui_tor_manager/middleware' \
+      './gui_tor_manager/gui_tor_manager/models' \
+      './gui_tor_manager/gui_tor_manager/routers' \
+      './gui_tor_manager/gui_tor_manager/services' \
+      './gui_tor_manager/gui_tor_manager/utils' \
       './renderer/admin/components' \
       './renderer/admin/pages' \
       './renderer/admin/services' \
@@ -134,7 +242,53 @@ RUN set -eux; \
       './renderer/common/hooks' \
       './renderer/common/store' \
       './renderer/common/styles' \
+      './scripts/deployment/devcontainer' \
+      './scripts/deployment/pi' \
+      './scripts/deployment/utils' \
+      './scripts/maintenance/cleanup' \
+      './scripts/maintenance/optimization' \
+      './scripts/network/setup' \
+      './scripts/testing/utils' \
+      './service_configs/kubernetes/01_configmaps' \
+      './service_configs/kubernetes/02-secrets' \
+      './service_configs/kubernetes/03-databases' \
+      './service_configs/kubernetes/04-auth' \
+      './service_configs/kubernetes/04-network' \
+      './service_configs/kubernetes/05-core' \
+      './service_configs/kubernetes/06-application' \
+      './service_configs/kubernetes/07-support' \
+      './service_configs/kubernetes/08-ingress' \
+      './service_configs/kubernetes/patches' \
+      './configs/docker/compose/mongodb' \
+      './configs/docker/compose/nats' \
+      './configs/docker/compose/nginx' \
+      './configs/docker/compose/redis' \
+      './configs/docker/compose/vault' \
+      './configs/docker/distroless/base' \
+      './electron_gui/dist/main/ipc' \
+      './electron_gui/renderer/admin/components' \
+      './electron_gui/renderer/admin/pages' \
+      './electron_gui/renderer/admin/services' \
+      './electron_gui/renderer/admin/store' \
+      './electron_gui/renderer/admin/styles' \
+      './electron_gui/renderer/common/components' \
+      './electron_gui/renderer/common/hooks' \
+      './electron_gui/renderer/common/store' \
+      './electron_gui/renderer/common/styles' \
+      './electron_gui/renderer/developer/components' \
+      './electron_gui/renderer/developer/pages' \
+      './electron_gui/renderer/developer/services' \
+      './electron_gui/renderer/developer/styles' \
+      './electron_gui/renderer/node/components' \
+      './electron_gui/renderer/node/pages' \
+      './electron_gui/renderer/node/services' \
+      './electron_gui/renderer/node/styles' \
+      './electron_gui/renderer/user/components' \
+      './electron_gui/renderer/user/pages' \
+      './electron_gui/renderer/user/services' \
+      './electron_gui/renderer/user/styles' \
       './renderer/admin/components/modals' \
+      './electron_gui/renderer/admin/components/modals' \
     ; do \
       printf 'LUCID_X_FILES_SKELETON_%s' "$(date +%s)" > "$d/.keep"; \
       touch "$d/.keep"; \
@@ -146,6 +300,19 @@ RUN printf "LUCID_ELECTRON_GUI_ADMIN_VAR_RUN" > /var/run/.keep && \
     printf "LUCID_ELECTRON_GUI_ADMIN_VAR_LIB" > /var/lib/.keep && \
     chown -R 65532:65532 /var/run /var/lib && \
     chmod 644 /var/run/.keep /var/lib/.keep
+
+COPY electron_gui/ ./electron_gui/
+COPY infrastructure/containers/services/ ./service_configs/
+COPY configs/ ./configs/
+RUN rm -rf ./configs/environment
+COPY configs/environment/.env.secrets ./configs/.env.secrets
+COPY master-env-config.txt ./configs/.env.master
+COPY infrastructure/containers/host-config.yml ./service_configs/host-config.yml
+COPY infrastructure/containers/services/x_lucid_cluster_calibration/core-cluster-host-alignment.yml ./service_configs/x_lucid_cluster_calibration/core-cluster-host-alignment.yml
+COPY common/ ./common/
+COPY gui_api/ ./gui_api/
+COPY gui_hardware_manager/ ./gui_hardware_manager/
+COPY gui_tor_manager/ ./gui_tor_manager/
 
 COPY electron_gui/package*.json ./
 COPY electron_gui/tsconfig*.json ./
@@ -208,27 +375,18 @@ FROM --platform=$TARGETPLATFORM gcr.io/distroless/nodejs18-debian11
 
 WORKDIR /app
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 ARG BUILD_DATE
 ARG VCS_REF
 ARG VERSION=1.0.0
+# Lucid Tor egress / network isolation (PUBLIC_TOR_IP: master-env-config.txt; compose: lucid-tor-egress-network)
+ARG PUBLIC_TOR_IP=109.70.100.1
+ARG LUCID_INTERNAL_NETWORK_NAME=lucid-pi-network
+ARG LUCID_TOR_EGRESS_NETWORK_NAME=lucid-tor-egress-network
 
 LABEL maintainer="Lucid Development Team" \
+      com.lucid.network.internal="${LUCID_INTERNAL_NETWORK_NAME}" \
+      com.lucid.network.tor_egress="${LUCID_TOR_EGRESS_NETWORK_NAME}" \
+      com.lucid.tor.public_egress_ip="${PUBLIC_TOR_IP}" \
       org.opencontainers.image.title="Lucid Admin Interface" \
       org.opencontainers.image.description="electron_gui Admin Interface - Distroless Node" \
       org.opencontainers.image.version="${VERSION}" \
@@ -236,35 +394,64 @@ LABEL maintainer="Lucid Development Team" \
       org.opencontainers.image.created="${BUILD_DATE}" \
       com.lucid.service="admin-interface" \
       com.lucid.platform="arm64" \
+      com.lucid.expose="8125,8101" \
       com.lucid.cluster="core" \
       com.lucid.security="distroless" \
       com.lucid.hostconfig.peer_admin_ui_backend="admin-ui-backend" \
       com.lucid.hostconfig.peer_admin_ui_backend_port="8120" \
-      com.lucid.hostconfig.listen_port_http="8120" \
+      com.lucid.hostconfig.listen_port_http="8125" \
+      com.lucid.hostconfig.peer_admin_overlord="admin-overlord" \
+      com.lucid.hostconfig.peer_admin_overlord_port="8140" \
       com.lucid.hostconfig.listen_port_aux="8100" \
       com.lucid.hostconfig.upstream_api_gateway_host="api-gateway" \
-      com.lucid.hostconfig.upstream_api_gateway_port="8080"
+      com.lucid.hostconfig.upstream_api_gateway_port="8080" \
+      com.lucid.hostconfig.upstream_admin_overlord_host="server-core" \
+      com.lucid.hostconfig.upstream_admin_overlord_port="8101" \
 
-ENV NODE_ENV=production \
+
+ENV     PUBLIC_TOR_IP="${PUBLIC_TOR_IP}" \
+    LUCID_INTERNAL_NETWORK_NAME="${LUCID_INTERNAL_NETWORK_NAME}" \
+    LUCID_TOR_EGRESS_NETWORK_NAME="${LUCID_TOR_EGRESS_NETWORK_NAME}" \
+    NODE_ENV=production \
     ELECTRON_GUI_PROFILE=admin \
     ELECTRON_GUI_NETWORK=lucid-pi-network \
     ELECTRON_GUI_API_BASE_URL=http://api-gateway:8080/api/v1 \
     ELECTRON_GUI_CONFIG_FILE=/app/configs/api-services.conf \
     ADMIN_INTERFACE_HOST=0.0.0.0 \
-    ADMIN_INTERFACE_PORT=8120 \
+    ADMIN_INTERFACE_PORT=8125 \
     LOG_LEVEL=info \
     LUCID_ENV=production \
     LUCID_HOST_CONFIG_PATH=/app/configs/host-config.yml \
-    LUCID_HOST_CONFIG_SERVICE_KEY=admin_ui_backend \
-    LUCID_SERVICE_HOST_IP=172.20.10.21 \
-    LUCID_SERVICE_HTTP_PATH=http://admin-ui-backend:8120/app \
+    LUCID_HOST_CONFIG_SERVICE_NAME=admin_interface \
+    LUCID_SERVICE_HOST_IP=${ADMIN_INTERFACE_HOST_IP} \
+    LUCID_SERVICE_HTTP_PATH=http://admin-interface:8125/app \
     LUCID_API_GATEWAY_HOST=api-gateway \
     LUCID_API_GATEWAY_PORT=8080
+# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
+# Generated: apt + RUN scaffold (mkdir/printf/touch/chown) -> FHS (not ./ or /build/; lib_search_and_inject.py).
+COPY --from=builder --chown=65532:65532 /usr/lib/*/libffi.so* /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /usr/lib/*/libssl.so* /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /usr/lib/*/ossl-modules/ /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /usr/lib/*/libcurl.so* /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /bin/ /app/bin/
+COPY --from=builder --chown=65532:65532 /dev/null/ /app/dev/null/
+COPY --from=builder --chown=65532:65532 /etc/ssl/ /app/etc/ssl/
+COPY --from=builder --chown=65532:65532 /usr/bin/ /app/usr/bin/
+COPY --from=builder --chown=65532:65532 /usr/lib/python3.11/ /app/usr/lib/python3.11/
+COPY --from=builder --chown=65532:65532 /usr/lib/python3/dist-packages/ /app/usr/lib/python3/dist-packages/
+COPY --from=builder --chown=65532:65532 /var/lib/ /app/var/lib/
+COPY --from=builder --chown=65532:65532 /var/run/ /app/var/run/
+# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_END
+
 # LUCID_RUNTIME_COPY_FROM_BUILD_BEGIN
 # Generated: same directory set as LUCID_X_FILES_SKELETON (./ under WORKDIR /build).
 COPY --from=builder --chown=65532:65532 /build/assets/ /app/assets/
 COPY --from=builder --chown=65532:65532 /build/common/ /app/common/
 COPY --from=builder --chown=65532:65532 /build/configs/ /app/configs/
+COPY --from=builder --chown=65532:65532 /build/electron_gui/ /app/electron_gui/
+COPY --from=builder --chown=65532:65532 /build/gui_api/ /app/gui_api/
+COPY --from=builder --chown=65532:65532 /build/gui_hardware_manager/ /app/gui_hardware_manager/
+COPY --from=builder --chown=65532:65532 /build/gui_tor_manager/ /app/gui_tor_manager/
 COPY --from=builder --chown=65532:65532 /build/main/ /app/main/
 COPY --from=builder --chown=65532:65532 /build/scripts/ /app/scripts/
 COPY --from=builder --chown=65532:65532 /build/service_configs/ /app/service_configs/
@@ -272,15 +459,6 @@ COPY --from=builder --chown=65532:65532 /build/shared/ /app/shared/
 COPY --from=builder --chown=65532:65532 /build/renderer/admin/ /app/renderer/admin/
 COPY --from=builder --chown=65532:65532 /build/renderer/common/ /app/renderer/common/
 # LUCID_RUNTIME_COPY_FROM_BUILD_END
-
-# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
-# Generated: apt + RUN scaffold (mkdir/printf/touch/chown) -> FHS (not ./ or /build/; lib_search_and_inject.py).
-COPY --from=builder --chown=65532:65532 /dev/null/ /app/dev/null/
-COPY --from=builder --chown=65532:65532 /etc/ssl/certs/ /app/etc/ssl/certs/
-COPY --from=builder --chown=65532:65532 /usr/bin/ /app/usr/bin/
-COPY --from=builder --chown=65532:65532 /var/lib/ /app/var/lib/
-COPY --from=builder --chown=65532:65532 /var/run/ /app/var/run/
-# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_END
 
 
 
@@ -298,10 +476,10 @@ COPY --from=builder --chown=65532:65532 /build/infrastructure/ /app/infrastructu
 
 RUN ["/nodejs/bin/node", "-e", "const fs = require('fs'); const checks = { buildMarker: fs.existsSync('/app/.build-marker'), packMarker: fs.existsSync('/app/.packages-marker'), dist: fs.existsSync('/app/dist'), configs: fs.existsSync('/app/configs'), hostConfig: fs.existsSync('/app/configs/host-config.yml'), dockerConfig: fs.existsSync('/app/configs/docker.config.json'), prodConfig: fs.existsSync('/app/configs/env.production.json'), torConfig: fs.existsSync('/app/configs/tor.config.json'), apiServices: fs.existsSync('/app/configs/api-services.conf'), common: fs.existsSync('/app/common/__init__.py'), apiGwCm: fs.existsSync('/build/configs/api-gateway-config.yaml') }; if (!Object.values(checks).every(v => v)) { console.error('Verification failed:', checks); process.exit(1); } console.log('Runtime artifacts verified');"]
 
-EXPOSE 8120 8100
+EXPOSE 8125 8101
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-  CMD ["/nodejs/bin/node", "-e", "require('http').get('http://127.0.0.1:8120/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1); }).on('error', () => { process.exit(1); })"]
+  CMD ["/nodejs/bin/node", "-e", "require('http').get('http://127.0.0.1:8125/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1); }).on('error', () => { process.exit(1); })"]
 
 USER 65532:65532
 

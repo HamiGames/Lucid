@@ -1,6 +1,7 @@
 """
 File: /app/RDP/common/__init__.py
 x-lucid-file-path: /app/RDP/common/__init__.py
+x-lucid-file-directory: /app/RDP/common
 x-lucid-file-type: python
 
 RDP Common Module - Shared Components

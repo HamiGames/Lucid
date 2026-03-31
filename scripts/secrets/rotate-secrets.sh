@@ -1,5 +1,9 @@
 #!/bin/bash
 # Secret Rotation Script
+# File: /app/scripts/secrets/rotate-secrets.sh
+# x-lucid-file-path: /app/scripts/secrets/rotate-secrets.sh
+# x-lucid-file-directory: /app/scripts/secrets
+# x-lucid-file-type: shell
 # LUCID-STRICT Secret Management System
 # Purpose: Rotate secrets for all Lucid clusters with security compliance
 # Compatibility: Distroless, API compliant

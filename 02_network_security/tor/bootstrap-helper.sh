@@ -1,5 +1,9 @@
 #!/bin/bash
 # Bootstrap helper: Pre-bootstrap Tor and create required files
+# File: /app/02_network_security/tor/bootstrap-helper.sh
+# x-lucid-file-path: /app/02_network_security/tor/bootstrap-helper.sh
+# x-lucid-file-directory: /app/02_network_security/tor
+# x-lucid-file-type: shell
 # Standalone version - runs on host, uses docker to run tor
 
 set -euo pipefail
@@ -130,9 +134,9 @@ fi
 log "Starting Tor in temporary container..."
 CONTAINER_ID=$(docker run -d --rm \
   --name tor-bootstrap-temp \
-  --env-file /mnt/myssd/Lucid/Lucid/configs/environment/.env.tor-proxy \
-  --env-file /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation \
-  --env-file /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets \
+  --env-file /app/configs/.env.tor-proxy \
+  --env-file /app/configs/.env.foundation \
+  --env-file /app/configs/.env.secrets \
   --network lucid-pi-network \
   --cap-drop=ALL --security-opt no-new-privileges:true \
   --tmpfs /tmp:noexec,nosuid,size=64m \

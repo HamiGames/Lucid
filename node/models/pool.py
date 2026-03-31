@@ -5,6 +5,7 @@
 """
 File: /app/node/models/pool.py
 x-lucid-file-path: /app/node/models/pool.py
+x-lucid-file-directory: /app/node/models
 x-lucid-file-type: python
 
 Pool data models for Lucid system.

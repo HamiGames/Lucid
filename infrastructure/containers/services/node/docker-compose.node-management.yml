@@ -1,3 +1,9 @@
+# File: /app/service_configs/node/docker-compose.node-management.yml
+# x-lucid-file-path: /app/service_configs/node/docker-compose.node-management.yml
+# x-lucid-file-directory: /app/service_configs/node
+# x-lucid-file-type: YAML
+# Lucid alignment: host_registry=infrastructure/containers/host-config.yml (container /app/configs/host-config.yml); path_index=x-files.json section_to_canonical
+
 # LUCID NODE MANAGEMENT — primary + staging (/app/configs/host-config.yml: node_management, node_management_staging)
 # Path: infrastructure/containers/services/node/docker-compose.node-management.yml
 #
@@ -17,7 +23,7 @@ x-lucid-host-config:
   repo_path: infrastructure/containers/host-config.yml
   version: '1.0'
   description: Lucid container host registry for Docker DNS hostnames, ports, discovery URLs, and static host IPs.
-  http_path_template: 'http://{service_name}:{port}/app'
+  http_path_template: 'http://${service_name}:${port}/app'
   host_ip_range: '172.20.10.1–172.20.10.76'
   in_container_path: /app/configs/host-config.yml
 

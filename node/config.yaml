@@ -1,3 +1,8 @@
+# File: /app/node/config.yaml
+# x-lucid-file-path: /app/node/config.yaml
+# x-lucid-file-directory: /app/node
+# x-lucid-file-type: YAML
+
 # Lucid Node Management - Node Management Configuration
 # Optional YAML configuration for node management service
 # File: node/config/node-management-config.yaml

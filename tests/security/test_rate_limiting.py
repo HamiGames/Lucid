@@ -1,4 +1,9 @@
 """
+File: /app/tests/security/test_rate_limiting.py
+x-lucid-file-path: /app/tests/security/test_rate_limiting.py
+x-lucid-file-directory: /app/tests/security
+x-lucid-file-type: python
+
 Rate Limiting Security Tests
 
 Tests rate limiting enforcement, tiered rate limits,

@@ -4,6 +4,7 @@
 """
 File: /app/apps/merkle/__init__.py
 x-lucid-file-path: /app/apps/merkle/__init__.py
+x-lucid-file-directory: /app/apps/merkle
 x-lucid-file-type: python
 
 Merkle package for Lucid RDP.

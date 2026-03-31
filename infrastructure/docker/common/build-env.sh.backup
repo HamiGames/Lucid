@@ -1,5 +1,5 @@
 #!/bin/bash
-# Path: infrastructure/docker/common/build-env.sh
+# Path: configs/docker/common/build-env.sh
 # Build Environment Script for Lucid Common Services
 # Generates .env files for common infrastructure containers
 

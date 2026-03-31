@@ -2,6 +2,7 @@
 """
 File: /app/sessions/storage/session_storage_service.py
 x-lucid-file-path: /app/sessions/storage/session_storage_service.py
+x-lucid-file-directory: /app/sessions/storage
 x-lucid-file-type: python
 
 LUCID Session Storage Service - SPEC-1B Implementation

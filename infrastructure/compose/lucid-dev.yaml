@@ -1,3 +1,8 @@
+# File: /app/configs/compose/lucid-dev.yaml
+# x-lucid-file-path: /app/configs/compose/lucid-dev.yaml
+# x-lucid-file-directory: /app/infrastructure/compose
+# x-lucid-file-type: YAML
+
 # LUCID CORE SUPPORT SERVICES - Distroless Development Infrastructure
 # Professional Docker Compose for Core Support Services ONLY with Pre-built Distroless Images
 # SPEC-4 compliant: Stage 0 Common & Base with plane isolation
@@ -7,7 +12,7 @@
 # configs/environment/.env.secrets is bind-mounted to /app/configs/.env.secrets and listed in env_file for Compose.
 # Do not list master-env-config.txt in env_file: Compose interpolates ${...} and breaks on required placeholders.
 # Optional per-service env fragments (e.g. .env.node): bind-mount from configs/environment/ into /app/configs/ when present; omitted from env_file so compose does not require those files on the host.
-# Host registry: infrastructure/containers/host-config.yml -> /app/service_configs/host-config.yml (x-lucid-file-path).
+# Host registry: infrastructure/containers/host-config.yml -> /app/configs/host-config.yml (x-lucid-file-path).
 # Packaged service configs tree: infrastructure/containers/services/ -> /app/service_configs/ (container-runtime-layout.yml).
 # Build references: infrastructure/containers/<stack>/Dockerfile* (repo root build context).
 
@@ -195,7 +200,7 @@ services:
       - ../../master-env-config.txt:/app/configs/.env.master:ro
       - ../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
       - ../../infrastructure/containers/services:/app/service_configs:ro
-      - ../../infrastructure/containers/host-config.yml:/app/service_configs/host-config.yml:ro
+      - ../../infrastructure/containers/host-config.yml:/app/configs/host-config.yml:ro
 
       - mongo_data:/data/db
       - mongo_config:/data/configdb
@@ -255,7 +260,7 @@ services:
       - ../../master-env-config.txt:/app/configs/.env.master:ro
       - ../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
       - ../../infrastructure/containers/services:/app/service_configs:ro
-      - ../../infrastructure/containers/host-config.yml:/app/service_configs/host-config.yml:ro
+      - ../../infrastructure/containers/host-config.yml:/app/configs/host-config.yml:ro
 
       - tor_data:/var/lib/tor
       - tor_config:/etc/tor
@@ -318,7 +323,7 @@ services:
       - ../../master-env-config.txt:/app/configs/.env.master:ro
       - ../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
       - ../../infrastructure/containers/services:/app/service_configs:ro
-      - ../../infrastructure/containers/host-config.yml:/app/service_configs/host-config.yml:ro
+      - ../../infrastructure/containers/host-config.yml:/app/configs/host-config.yml:ro
     ports:
       - "8081:8081"  # External devcontainer access
     networks:
@@ -374,7 +379,7 @@ services:
       - ../../master-env-config.txt:/app/configs/.env.master:ro
       - ../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
       - ../../infrastructure/containers/services:/app/service_configs:ro
-      - ../../infrastructure/containers/host-config.yml:/app/service_configs/host-config.yml:ro
+      - ../../infrastructure/containers/host-config.yml:/app/configs/host-config.yml:ro
     ports:
       - "8080:8080"  # External devcontainer access
     networks:
@@ -424,7 +429,7 @@ services:
       - ../../master-env-config.txt:/app/configs/.env.master:ro
       - ../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
       - ../../infrastructure/containers/services:/app/service_configs:ro
-      - ../../infrastructure/containers/host-config.yml:/app/service_configs/host-config.yml:ro
+      - ../../infrastructure/containers/host-config.yml:/app/configs/host-config.yml:ro
 
       - onion_state:/app/run/lucid/onion
       - tunnel_data:/var/lib/tunnel
@@ -486,7 +491,7 @@ services:
       - ../../master-env-config.txt:/app/configs/.env.master:ro
       - ../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
       - ../../infrastructure/containers/services:/app/service_configs:ro
-      - ../../infrastructure/containers/host-config.yml:/app/service_configs/host-config.yml:ro
+      - ../../infrastructure/containers/host-config.yml:/app/configs/host-config.yml:ro
 
       - onion_state:/app/run/lucid/onion:ro
       - tunnel_data:/var/lib/tunnel:ro

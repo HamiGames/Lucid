@@ -2,6 +2,7 @@
 """
 File: /app/vm/main.py
 x-lucid-file-path: /app/vm/main.py
+x-lucid-file-directory: /app/vm
 x-lucid-file-type: python
 
 Lucid VM Management Service

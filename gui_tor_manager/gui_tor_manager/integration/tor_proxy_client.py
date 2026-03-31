@@ -1,6 +1,7 @@
 """
 File: /app/gui_tor_manager/gui_tor_manager/integration/tor_proxy_client.py
 x-lucid-file-path: /app/gui_tor_manager/gui_tor_manager/integration/tor_proxy_client.py
+x-lucid-file-directory: /app/gui_tor_manager/gui_tor_manager/integration
 x-lucid-file-type: python
 
 Tor Proxy Client for GUI Tor Manager

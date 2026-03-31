@@ -2,6 +2,7 @@
 """
 File: /app/sessions/core/merkle_builder.py
 x-lucid-file-path: /app/sessions/core/merkle_builder.py
+x-lucid-file-directory: /app/sessions/core
 x-lucid-file-type: python
 
 LUCID Merkle Tree Builder - SPEC-1B Implementation

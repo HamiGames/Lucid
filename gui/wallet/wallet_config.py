@@ -1,7 +1,10 @@
-""" Wallet configuration for Lucid RDP.
-file: /app/gui/wallet/wallet_config.py
+"""
+File: /app/gui/wallet/wallet_config.py
 x-lucid-file-path: /app/gui/wallet/wallet_config.py
+x-lucid-file-directory: /app/gui/wallet
 x-lucid-file-type: python
+
+Wallet configuration for Lucid RDP.
 
 Contains configuration for the Wallet interface.
 container_directory: /app/gui/wallet/
@@ -16,5 +19,4 @@ uses: /app/configs/host-config.yml for the host config
 uses: /app/gui/wallet/wallet_config.py for the wallet config
 
 outlines the wallet configuration for the Wallet interface.
-
 """

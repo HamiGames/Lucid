@@ -1,3 +1,8 @@
+# File: /app/sessions/processor/config.yaml
+# x-lucid-file-path: /app/sessions/processor/config.yaml
+# x-lucid-file-directory: /app/sessions/processor
+# x-lucid-file-type: YAML
+
 # Lucid Session Processor - Configuration File
 # Optional YAML configuration for chunk processor service
 # File: sessions/processor/config.yaml

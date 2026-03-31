@@ -2,6 +2,7 @@
 """
 File: /app/sessions/processor/integration/integration_manager.py
 x-lucid-file-path: /app/sessions/processor/integration/integration_manager.py
+x-lucid-file-directory: /app/sessions/processor/integration
 x-lucid-file-type: python
 
 Integration Manager for Session Processor

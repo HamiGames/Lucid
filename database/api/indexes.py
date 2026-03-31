@@ -1,6 +1,7 @@
 """
 File: /app/database/api/indexes.py
 x-lucid-file-path: /app/database/api/indexes.py
+x-lucid-file-directory: /app/database/api
 x-lucid-file-type: python
 
 Database Indexes Management API

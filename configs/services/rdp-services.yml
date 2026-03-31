@@ -1,3 +1,8 @@
+# File: /app/configs/services/rdp-services.yml
+# x-lucid-file-path: /app/configs/services/rdp-services.yml
+# x-lucid-file-directory: /app/configs/services
+# x-lucid-file-type: YAML
+
 # RDP Services Configuration
 # Cluster: 04-RDP-SERVICES
 # Service: RDP Server Management and Session Control

@@ -1,5 +1,9 @@
 #!/bin/bash
 # Phase 1 Foundation Services Deployment Script
+# File: /app/scripts/deploy-phase1-pi.sh
+# x-lucid-file-path: /app/scripts/deploy-phase1-pi.sh
+# x-lucid-file-directory: /app/scripts
+# x-lucid-file-type: shell
 # Deploys: auth-service, storage-database, mongodb, redis, elasticsearch
 # Target: Raspberry Pi 5 (192.168.0.75)
 # User: pickme
@@ -7,6 +11,12 @@
 
 set -euo pipefail
 
+
+# x-files-listing.txt → LUCID_HOST_COMPOSE_* (scripts/lib/lucid-repo-paths.sh)
+_LUCID_W="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+while [[ "$_LUCID_W" != "/" && "$(basename "$_LUCID_W")" != "scripts" ]]; do _LUCID_W="$(dirname "$_LUCID_W")"; done
+# shellcheck source=lib/lucid-repo-paths.sh
+source "${_LUCID_W}/lib/lucid-repo-paths.sh"
 # Configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
@@ -234,7 +244,7 @@ EOF
 create_docker_compose() {
     log_info "Creating Docker Compose configuration..."
     
-    local compose_file="$PROJECT_ROOT/configs/docker/docker-compose.foundation.yml"
+    local compose_file="${LUCID_HOST_COMPOSE_FOUNDATION}"
     
     # Create configs directory if it doesn't exist
     mkdir -p "$(dirname "$compose_file")"
@@ -402,7 +412,7 @@ deploy_configurations() {
     log_info "Deploying configuration files to Pi..."
     
     local env_file="$PROJECT_ROOT/configs/environment/.env.foundation"
-    local compose_file="$PROJECT_ROOT/configs/docker/docker-compose.foundation.yml"
+    local compose_file="${LUCID_HOST_COMPOSE_FOUNDATION}"
     
     # Copy environment file
     ssh_copy "$env_file" "$PI_DEPLOY_PATH/.env.foundation"

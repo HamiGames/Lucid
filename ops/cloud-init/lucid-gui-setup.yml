@@ -1,3 +1,8 @@
+# File: /app/ops/cloud-init/lucid-gui-setup.yml
+# x-lucid-file-path: /app/ops/cloud-init/lucid-gui-setup.yml
+# x-lucid-file-directory: /app/ops/cloud-init
+# x-lucid-file-type: YAML
+
 #cloud-config
 # Lucid GUI Services Cloud-Init Configuration
 # Automated setup for GUI services on Pi deployment

@@ -1,3 +1,8 @@
+# File: /app/sessions/api/config.yaml
+# x-lucid-file-path: /app/sessions/api/config.yaml
+# x-lucid-file-directory: /app/sessions/api
+# x-lucid-file-type: YAML
+
 # Lucid Session API - Configuration File
 # Optional YAML configuration for session API service
 # File: sessions/api/config.yaml

@@ -1,11 +1,23 @@
 #!/bin/bash
 # Path: scripts/config/generate-tron-env.sh
+# File: /app/scripts/config/generate-tron-env.sh
+# x-lucid-file-path: /app/scripts/config/generate-tron-env.sh
+# x-lucid-file-directory: /app/scripts/config
+# x-lucid-file-type: shell
 # TRON Payment System Environment File Generator
 # Generates all 6 TRON payment system .env files with cryptographically secure values
 # Aligns with path_plan.md and distroless_prog documentation
 # Pi-native implementation with no placeholders or blanks
 
 set -euo pipefail
+
+_lucid_here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+_lucid_scripts="$_lucid_here"
+while [[ "$_lucid_scripts" != "/" && "$(basename "$_lucid_scripts")" != "scripts" ]]; do
+    _lucid_scripts="$(dirname "$_lucid_scripts")"
+done
+# shellcheck source=../lib/lucid-repo-paths.sh
+source "$_lucid_scripts/lib/lucid-repo-paths.sh"
 
 # Colors for output
 RED='\033[0;31m'
@@ -24,10 +36,10 @@ log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 log_header() { echo -e "${PURPLE}═══════════════════════════════════════════════════════════════${NC}"; echo -e "${PURPLE}$1${NC}"; echo -e "${PURPLE}═══════════════════════════════════════════════════════════════${NC}"; }
 log_step() { echo -e "${CYAN}[STEP]${NC} $1"; }
 
-# Configuration - Pi Console Paths (from path_plan.md)
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="/mnt/myssd/Lucid/Lucid"
-ENV_DIR="/mnt/myssd/Lucid/Lucid/configs/environment"
+# Configuration (repo root from master-env-config.txt)
+SCRIPT_DIR="$_lucid_here"
+PROJECT_ROOT="$LUCID_REPO_ROOT"
+ENV_DIR="$LUCID_ENV_CONFIG_DIR"
 BUILD_TIMESTAMP=$(date '+%Y%m%d-%H%M%S')
 GIT_SHA=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 

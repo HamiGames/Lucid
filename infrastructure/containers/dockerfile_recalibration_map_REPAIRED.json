@@ -1,0 +1,3504 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-03-31T05:51:43.753498+00:00",
+  "sources": {
+    "service_ids": "infrastructure/containers/service_id-list.json",
+    "ports": "ports.txt",
+    "x_files": "x-files.json"
+  },
+  "stats": {
+    "with_canonical": 0,
+    "with_ports_key": 73,
+    "with_ports_row": 66,
+    "total_dockerfiles": 242
+  },
+  "dockerfiles": {
+    "02_network_security/tor/Dockerfile": {
+      "basename": "Dockerfile",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.a0bfc33f398625fa.02_network_security.tor.Dockerfile",
+        "onion_lucid_service_id": "lucid-a0bfc33f398625fa-02-network-security-tor",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.a0bfc33f398625fa:02_network_security/tor/Dockerfile"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "02_network_security/tor/Dockerfile.tor": {
+      "basename": "Dockerfile.tor",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.2ac14bccf298487d.02_network_security.tor.Dockerfile.tor",
+        "onion_lucid_service_id": "lucid-2ac14bccf298487d-02-network-security-tor",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.2ac14bccf298487d:02_network_security/tor/Dockerfile.tor"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "02_network_security/tor/Dockerfile.tor-proxy": {
+      "basename": "Dockerfile.tor-proxy",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.591364bf7014b2ea.02_network_security.tor.Dockerfile.tor-proxy",
+        "onion_lucid_service_id": "lucid-591364bf7014b2ea-02-network-security-tor",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.591364bf7014b2ea:02_network_security/tor/Dockerfile.tor-proxy"
+      },
+      "ports_service_key": "tor_socks",
+      "ports": {
+        "port": 9050,
+        "service_name": "tor-socks",
+        "http_path": "http://tor-socks:9050/app"
+      }
+    },
+    "02_network_security/tor/Dockerfile.tor-proxy-02": {
+      "basename": "Dockerfile.tor-proxy-02",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.54d39a62f7acb816.02_network_security.tor.Dockerfile.tor-proxy-02",
+        "onion_lucid_service_id": "lucid-54d39a62f7acb816-02-network-security-tor",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.54d39a62f7acb816:02_network_security/tor/Dockerfile.tor-proxy-02"
+      },
+      "ports_service_key": "tor_socks",
+      "ports": {
+        "port": 9050,
+        "service_name": "tor-socks",
+        "http_path": "http://tor-socks:9050/app"
+      }
+    },
+    "02_network_security/tunnels/Dockerfile": {
+      "basename": "Dockerfile",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.4f64d0e01ac457ea.02_network_security.tunnels.Dockerfile",
+        "onion_lucid_service_id": "lucid-4f64d0e01ac457ea-02-network-security-tunn",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.4f64d0e01ac457ea:02_network_security/tunnels/Dockerfile"
+      },
+      "ports_service_key": "tunnel_tools",
+      "ports": {
+        "port": 7000,
+        "service_name": "tunnel-tools",
+        "http_path": "http://tunnel-tools:7000/app"
+      }
+    },
+    "02_network_security/tunnels/Dockerfile.tunnels": {
+      "basename": "Dockerfile.tunnels",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.c06efa5c28671a57.02_network_security.tunnels.Dockerfile.tunnels",
+        "onion_lucid_service_id": "lucid-c06efa5c28671a57-02-network-security-tunn",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.c06efa5c28671a57:02_network_security/tunnels/Dockerfile.tunnels"
+      },
+      "ports_service_key": "tunnel_tools",
+      "ports": {
+        "port": 7000,
+        "service_name": "tunnel-tools",
+        "http_path": "http://tunnel-tools:7000/app"
+      }
+    },
+    "03_api_gateway/api/Dockerfile": {
+      "basename": "Dockerfile",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.dd963ba5327c1ea9.03_api_gateway.api.Dockerfile",
+        "onion_lucid_service_id": "lucid-dd963ba5327c1ea9-03-api-gateway-api-docke",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.dd963ba5327c1ea9:03_api_gateway/api/Dockerfile"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "03_api_gateway/Dockerfile": {
+      "basename": "Dockerfile",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.b848ec174bbd67eb.03_api_gateway.Dockerfile",
+        "onion_lucid_service_id": "lucid-b848ec174bbd67eb-03-api-gateway-dockerfil",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.b848ec174bbd67eb:03_api_gateway/Dockerfile"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "03_api_gateway/gateway/Dockerfile": {
+      "basename": "Dockerfile",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.e2847b2b55ab868d.03_api_gateway.gateway.Dockerfile",
+        "onion_lucid_service_id": "lucid-e2847b2b55ab868d-03-api-gateway-gateway-d",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.e2847b2b55ab868d:03_api_gateway/gateway/Dockerfile"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "03_api_gateway/legacy/api/Dockerfile.api": {
+      "basename": "Dockerfile.api",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.9540707d517bf659.03_api_gateway.legacy.api.Dockerfile.api",
+        "onion_lucid_service_id": "lucid-9540707d517bf659-03-api-gateway-legacy-ap",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.9540707d517bf659:03_api_gateway/legacy/api/Dockerfile.api"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "03_api_gateway/legacy/gateway/Dockerfile.gateway": {
+      "basename": "Dockerfile.gateway",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.60ad2a8b4faf86c7.03_api_gateway.legacy.gateway.Dockerfile.gateway",
+        "onion_lucid_service_id": "lucid-60ad2a8b4faf86c7-03-api-gateway-legacy-ga",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.60ad2a8b4faf86c7:03_api_gateway/legacy/gateway/Dockerfile.gateway"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "admin/Dockerfile": {
+      "basename": "Dockerfile",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.2c019e6353590271.admin.Dockerfile",
+        "onion_lucid_service_id": "lucid-2c019e6353590271-admin-dockerfile",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.2c019e6353590271:admin/Dockerfile"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "apps/admin_ui/Dockerfile": {
+      "basename": "Dockerfile",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.432d2790bfd6edba.apps.admin_ui.Dockerfile",
+        "onion_lucid_service_id": "lucid-432d2790bfd6edba-apps-admin-ui-dockerfile",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.432d2790bfd6edba:apps/admin_ui/Dockerfile"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "apps/Dockerfile": {
+      "basename": "Dockerfile",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.57403623baf65199.apps.Dockerfile",
+        "onion_lucid_service_id": "lucid-57403623baf65199-apps-dockerfile",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.57403623baf65199:apps/Dockerfile"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "apps/recorder/Dockerfile": {
+      "basename": "Dockerfile",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.9fc008d242959780.apps.recorder.Dockerfile",
+        "onion_lucid_service_id": "lucid-9fc008d242959780-apps-recorder-dockerfile",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.9fc008d242959780:apps/recorder/Dockerfile"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "auth/Dockerfile": {
+      "basename": "Dockerfile",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.e8d8092a4a621128.auth.Dockerfile",
+        "onion_lucid_service_id": "lucid-e8d8092a4a621128-auth-dockerfile",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.e8d8092a4a621128:auth/Dockerfile"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "blockchain/api/Dockerfile": {
+      "basename": "Dockerfile",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.3c3ca1f08c448415.blockchain.api.Dockerfile",
+        "onion_lucid_service_id": "lucid-3c3ca1f08c448415-blockchain-api-dockerfil",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.3c3ca1f08c448415:blockchain/api/Dockerfile"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "blockchain/Dockerfile.anchoring": {
+      "basename": "Dockerfile.anchoring",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.f837addf04006240.blockchain.Dockerfile.anchoring",
+        "onion_lucid_service_id": "lucid-f837addf04006240-blockchain-dockerfile-an",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.f837addf04006240:blockchain/Dockerfile.anchoring"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "blockchain/Dockerfile.data": {
+      "basename": "Dockerfile.data",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.e623bff8bf1ef983.blockchain.Dockerfile.data",
+        "onion_lucid_service_id": "lucid-e623bff8bf1ef983-blockchain-dockerfile-da",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.e623bff8bf1ef983:blockchain/Dockerfile.data"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "blockchain/Dockerfile.engine": {
+      "basename": "Dockerfile.engine",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.4106cc4c2d6fbc4d.blockchain.Dockerfile.engine",
+        "onion_lucid_service_id": "lucid-4106cc4c2d6fbc4d-blockchain-dockerfile-en",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.4106cc4c2d6fbc4d:blockchain/Dockerfile.engine"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "blockchain/Dockerfile.manager": {
+      "basename": "Dockerfile.manager",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.5f6169ce6b9b292e.blockchain.Dockerfile.manager",
+        "onion_lucid_service_id": "lucid-5f6169ce6b9b292e-blockchain-dockerfile-ma",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.5f6169ce6b9b292e:blockchain/Dockerfile.manager"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "docs/api/Dockerfile.docs": {
+      "basename": "Dockerfile.docs",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.6984f340ca0fca60.docs.api.Dockerfile.docs",
+        "onion_lucid_service_id": "lucid-6984f340ca0fca60-docs-api-dockerfile-docs",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.6984f340ca0fca60:docs/api/Dockerfile.docs"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "docs/verification/.verify/.devcontainer/Dockerfile.ref": {
+      "basename": "Dockerfile.ref",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.77e3cbf7a6cfa082.docs.verification.verify.devcontainer.Dockerfile.ref",
+        "onion_lucid_service_id": "lucid-77e3cbf7a6cfa082-docs-verification-verify",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.77e3cbf7a6cfa082:docs/verification/.verify/.devcontainer/Dockerfile.ref"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "docs/verification/.verify/02-network-security/tor/Dockerfile.ref": {
+      "basename": "Dockerfile.ref",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.4dc11861bd0d27f6.docs.verification.verify.02-network-security.tor.Dockerfile.ref",
+        "onion_lucid_service_id": "lucid-4dc11861bd0d27f6-docs-verification-verify",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.4dc11861bd0d27f6:docs/verification/.verify/02-network-security/tor/Dockerfile.ref"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "docs/verification/.verify/03-api-gateway/api/Dockerfile.api.ref": {
+      "basename": "Dockerfile.api.ref",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.95a46f42a867840b.docs.verification.verify.03-api-gateway.api.Dockerfile.api.ref",
+        "onion_lucid_service_id": "lucid-95a46f42a867840b-docs-verification-verify",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.95a46f42a867840b:docs/verification/.verify/03-api-gateway/api/Dockerfile.api.ref"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "electron_gui/distroless/Dockerfile.admin": {
+      "basename": "Dockerfile.admin",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.54a9c656f95fe5c0.electron_gui.distroless.Dockerfile.admin",
+        "onion_lucid_service_id": "lucid-54a9c656f95fe5c0-electron-gui-distroless",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.54a9c656f95fe5c0:electron_gui/distroless/Dockerfile.admin"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "electron_gui/distroless/Dockerfile.node": {
+      "basename": "Dockerfile.node",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.98120029fd850a84.electron_gui.distroless.Dockerfile.node",
+        "onion_lucid_service_id": "lucid-98120029fd850a84-electron-gui-distroless",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.98120029fd850a84:electron_gui/distroless/Dockerfile.node"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "electron_gui/distroless/Dockerfile.user": {
+      "basename": "Dockerfile.user",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.c8ddb5f90ceddb9e.electron_gui.distroless.Dockerfile.user",
+        "onion_lucid_service_id": "lucid-c8ddb5f90ceddb9e-electron-gui-distroless",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.c8ddb5f90ceddb9e:electron_gui/distroless/Dockerfile.user"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "gui/Dockerfile.gui": {
+      "basename": "Dockerfile.gui",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.55ad64419ecf83b4.gui.Dockerfile.gui",
+        "onion_lucid_service_id": "lucid-55ad64419ecf83b4-gui-dockerfile-gui",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.55ad64419ecf83b4:gui/Dockerfile.gui"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "gui_api_bridge/Dockerfile.gui-api-bridge": {
+      "basename": "Dockerfile.gui-api-bridge",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.c2d3d1236ab18661.gui_api_bridge.Dockerfile.gui-api-bridge",
+        "onion_lucid_service_id": "lucid-c2d3d1236ab18661-gui-api-bridge-dockerfil",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.c2d3d1236ab18661:gui_api_bridge/Dockerfile.gui-api-bridge"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "gui_docker_manager/Dockerfile.gui-docker-manager": {
+      "basename": "Dockerfile.gui-docker-manager",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.59ac9fdd972a718e.gui_docker_manager.Dockerfile.gui-docker-manager",
+        "onion_lucid_service_id": "lucid-59ac9fdd972a718e-gui-docker-manager-docke",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.59ac9fdd972a718e:gui_docker_manager/Dockerfile.gui-docker-manager"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "gui_hardware_manager/Dockerfile.gui-hardware-manager": {
+      "basename": "Dockerfile.gui-hardware-manager",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.3af4a5332bd81ac7.gui_hardware_manager.Dockerfile.gui-hardware-manager",
+        "onion_lucid_service_id": "lucid-3af4a5332bd81ac7-gui-hardware-manager-doc",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.3af4a5332bd81ac7:gui_hardware_manager/Dockerfile.gui-hardware-manager"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "gui_tor_manager/Dockerfile.gui-tor-manager": {
+      "basename": "Dockerfile.gui-tor-manager",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.c9e2492a20e2b5c1.gui_tor_manager.Dockerfile.gui-tor-manager",
+        "onion_lucid_service_id": "lucid-c9e2492a20e2b5c1-gui-tor-manager-dockerfi",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.c9e2492a20e2b5c1:gui_tor_manager/Dockerfile.gui-tor-manager"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "infrastructure/containers/.devcontainer/Dockerfile.network-friendly": {
+      "basename": "Dockerfile.network-friendly",
+      "infrastructure_containers_rel": ".devcontainer/Dockerfile.network-friendly",
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.9f7a5da952526f74.infrastructure.containers.devcontainer.Dockerfile.network-friendly",
+        "onion_lucid_service_id": "lucid-9f7a5da952526f74-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.9f7a5da952526f74:infrastructure/containers/.devcontainer/Dockerfile.network-friendly"
+      },
+      "ports_service_key": "network_friendly",
+      "ports": null,
+      "_requires_x_files_scan": true
+    },
+    "infrastructure/containers/.devcontainer/Dockerfile.simple": {
+      "basename": "Dockerfile.simple",
+      "infrastructure_containers_rel": ".devcontainer/Dockerfile.simple",
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.c23191b3362f6287.infrastructure.containers.devcontainer.Dockerfile.simple",
+        "onion_lucid_service_id": "lucid-c23191b3362f6287-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.c23191b3362f6287:infrastructure/containers/.devcontainer/Dockerfile.simple"
+      },
+      "ports_service_key": "simple",
+      "ports": null,
+      "_requires_x_files_scan": true
+    },
+    "infrastructure/containers/admin/dockerfile.admin-overlord": {
+      "basename": "dockerfile.admin-overlord",
+      "infrastructure_containers_rel": "admin/dockerfile.admin-overlord",
+      "canonical_path": "admin-overlord",
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.c65a84c6523f4640.infrastructure.containers.admin.dockerfile.admin-overlord",
+        "onion_lucid_service_id": "lucid-c65a84c6523f4640-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.c65a84c6523f4640:infrastructure/containers/admin/dockerfile.admin-overlord"
+      },
+      "ports_service_key": "admin_overlord",
+      "ports": {
+        "port": 8140,
+        "service_name": "admin-overlord",
+        "http_path": "http://admin-overlord:8140/app"
+      },
+      "_requires_x_files_scan": true
+    },
+    "infrastructure/containers/admin/Dockerfile.admin-system-gateway": {
+      "basename": "Dockerfile.admin-system-gateway",
+      "infrastructure_containers_rel": "admin/Dockerfile.admin-system-gateway",
+      "canonical_path": "admin-system-gateway",
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.fc3684a4624a54de.infrastructure.containers.admin.Dockerfile.admin-system-gateway",
+        "onion_lucid_service_id": "lucid-fc3684a4624a54de-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.fc3684a4624a54de:infrastructure/containers/admin/Dockerfile.admin-system-gateway"
+      },
+      "ports_service_key": "admin_system_gateway",
+      "ports": {
+        "port": 8155,
+        "service_name": "admin-system-gateway",
+        "http_path": "http://admin-system-gateway:8155/health"
+      },
+      "_requires_x_files_scan": true
+    },
+    "infrastructure/containers/admin/Dockerfile.admin-ui-backend": {
+      "basename": "Dockerfile.admin-ui-backend",
+      "infrastructure_containers_rel": "admin/Dockerfile.admin-ui-backend",
+      "canonical_path": "admin-ui-backend",
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.0b6971fcfb5b84c4.infrastructure.containers.admin.Dockerfile.admin-ui-backend",
+        "onion_lucid_service_id": "lucid-0b6971fcfb5b84c4-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.0b6971fcfb5b84c4:infrastructure/containers/admin/Dockerfile.admin-ui-backend"
+      },
+      "ports_service_key": "admin_ui_backend",
+      "ports": {
+        "port": 8120,
+        "service_name": "admin-ui-backend",
+        "http_path": "http://admin-ui-backend:8120/app"
+      },
+      "_requires_x_files_scan": true
+    },
+    "infrastructure/containers/admin/Dockerfile.gov-client": {
+      "basename": "Dockerfile.gov-client",
+      "infrastructure_containers_rel": "admin/Dockerfile.gov-client",
+      "canonical_path": "admin-governance-client",
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.69d01008a4c37ab6.infrastructure.containers.admin.Dockerfile.gov-client",
+        "onion_lucid_service_id": "lucid-69d01008a4c37ab6-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.69d01008a4c37ab6:infrastructure/containers/admin/Dockerfile.gov-client"
+      },
+      "ports_service_key": "admin_governance_client",
+      "ports": {
+        "port": 8070,
+        "service_name": "admin-governance-client",
+        "http_path": "http://admin-governance-client:8070/app"
+      },
+      "_requires_x_files_scan": true
+    },
+    "infrastructure/containers/admin/Dockerfile.governance-client": {
+      "basename": "Dockerfile.governance-client",
+      "infrastructure_containers_rel": "admin/Dockerfile.governance-client",
+      "canonical_path": "admin-governance-client",
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.1abb6da3235bf6af.infrastructure.containers.admin.Dockerfile.governance-client",
+        "onion_lucid_service_id": "lucid-1abb6da3235bf6af-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.1abb6da3235bf6af:infrastructure/containers/admin/Dockerfile.governance-client"
+      },
+      "ports_service_key": "admin_governance_client",
+      "ports": {
+        "port": 8072,
+        "service_name": "admin-governance-client",
+        "http_path": "http://admin-governance-client:8072/app"
+      },
+      "_requires_x_files_scan": true
+    },
+    "infrastructure/containers/admin/Dockerfile.key-rotation": {
+      "basename": "Dockerfile.key-rotation",
+      "infrastructure_containers_rel": "admin/Dockerfile.key-rotation",
+      "canonical_path": "admin-key-rotation",
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.1b8b18f128107333.infrastructure.containers.admin.Dockerfile.key-rotation",
+        "onion_lucid_service_id": "lucid-1b8b18f128107333-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.1b8b18f128107333:infrastructure/containers/admin/Dockerfile.key-rotation"
+      },
+      "ports_service_key": "admin_key_rotation",
+      "ports": {
+        "port": 8060,
+        "service_name": "admin-key-rotation",
+        "http_path": "http://admin-key-rotation:8060/app"
+      },
+      "_requires_x_files_scan": true
+    },
+    "infrastructure/containers/admin/Dockerfile.params-registry": {
+      "basename": "Dockerfile.params-registry",
+      "infrastructure_containers_rel": "admin/Dockerfile.params-registry",
+      "canonical_path": "admin-params-registry",
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.7158b0580c4433ea.infrastructure.containers.admin.Dockerfile.params-registry",
+        "onion_lucid_service_id": "lucid-7158b0580c4433ea-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.7158b0580c4433ea:infrastructure/containers/admin/Dockerfile.params-registry"
+      },
+      "ports_service_key": "admin_params_registry",
+      "ports": {
+        "port": 8050,
+        "service_name": "admin-params-registry",
+        "http_path": "http://admin-params-registry:8050/app"
+      },
+      "_requires_x_files_scan": true
+    },
+    "infrastructure/containers/auth/Dockerfile.auth-service": {
+      "basename": "Dockerfile.auth-service",
+      "infrastructure_containers_rel": "auth/Dockerfile.auth-service",
+      "canonical_path": "lucid-auth-service",
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.230145073e49c489.infrastructure.containers.auth.Dockerfile.auth-service",
+        "onion_lucid_service_id": "lucid-230145073e49c489-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.230145073e49c489:infrastructure/containers/auth/Dockerfile.auth-service"
+      },
+      "ports_service_key": "lucid_auth_service",
+      "ports": {
+        "port": 8089,
+        "service_name": "lucid-auth-service",
+        "http_path": "http://lucid-auth-service:8089/app"
+      },
+      "_requires_x_files_scan": true
+    },
+    "infrastructure/containers/auth/Dockerfile.lucid-gov": {
+      "basename": "Dockerfile.lucid-gov",
+      "infrastructure_containers_rel": "auth/Dockerfile.lucid-gov",
+      "canonical_path": "lucid-gov",
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.584438e85a616f1d.infrastructure.containers.auth.Dockerfile.lucid-gov",
+        "onion_lucid_service_id": "lucid-584438e85a616f1d-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.584438e85a616f1d:infrastructure/containers/auth/Dockerfile.lucid-gov"
+      },
+      "ports_service_key": "lucid_gov",
+      "ports": {
+        "port": 8108,
+        "service_name": "lucid-gov",
+        "http_path": "http://lucid-gov:8108/app"
+      },
+      "_requires_x_files_scan": true
+    },
+    "infrastructure/containers/base/Dockerfile.base": {
+      "basename": "Dockerfile.base",
+      "infrastructure_containers_rel": "base/Dockerfile.base",
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.228a3bd8d608325d.infrastructure.containers.base.Dockerfile.base",
+        "onion_lucid_service_id": "lucid-228a3bd8d608325d-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.228a3bd8d608325d:infrastructure/containers/base/Dockerfile.base"
+      },
+      "ports_service_key": "base",
+      "ports": null,
+      "_requires_x_files_scan": true
+    },
+    "infrastructure/containers/base/Dockerfile.java-base": {
+      "basename": "Dockerfile.java-base",
+      "infrastructure_containers_rel": "base/Dockerfile.java-base",
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.b273c2a30dccc3ac.infrastructure.containers.base.Dockerfile.java-base",
+        "onion_lucid_service_id": "lucid-b273c2a30dccc3ac-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.b273c2a30dccc3ac:infrastructure/containers/base/Dockerfile.java-base"
+      },
+      "ports_service_key": "java_base",
+      "ports": null,
+      "_requires_x_files_scan": true
+    },
+    "infrastructure/containers/base/Dockerfile.python-base": {
+      "basename": "Dockerfile.python-base",
+      "infrastructure_containers_rel": "base/Dockerfile.python-base",
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.2191cab30db73ef1.infrastructure.containers.base.Dockerfile.python-base",
+        "onion_lucid_service_id": "lucid-2191cab30db73ef1-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.2191cab30db73ef1:infrastructure/containers/base/Dockerfile.python-base"
+      },
+      "ports_service_key": "python_base",
+      "ports": null,
+      "_requires_x_files_scan": true
+    },
+    "infrastructure/containers/blockchain/Dockerfile.block-manager": {
+      "basename": "Dockerfile.block-manager",
+      "infrastructure_containers_rel": "blockchain/Dockerfile.block-manager",
+      "canonical_path": "block-manager",
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.3885187a8dcebe77.infrastructure.containers.blockchain.Dockerfile.block-manager",
+        "onion_lucid_service_id": "lucid-3885187a8dcebe77-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.3885187a8dcebe77:infrastructure/containers/blockchain/Dockerfile.block-manager"
+      },
+      "ports_service_key": "block_manager",
+      "ports": {
+        "port": 8086,
+        "service_name": "block-manager",
+        "http_path": "http://block-manager:8086/app"
+      },
+      "_requires_x_files_scan": true
+    },
+    "infrastructure/containers/blockchain/Dockerfile.chain-to-pay": {
+      "basename": "Dockerfile.chain-to-pay",
+      "infrastructure_containers_rel": "blockchain/Dockerfile.chain-to-pay",
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.c1ec1c20cc20c960.infrastructure.containers.blockchain.Dockerfile.chain-to-pay",
+        "onion_lucid_service_id": "lucid-c1ec1c20cc20c960-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.c1ec1c20cc20c960:infrastructure/containers/blockchain/Dockerfile.chain-to-pay"
+      },
+      "ports_service_key": "chain_to_pay",
+      "ports": {
+        "port": 8114,
+        "service_name": "chain-to-pay",
+        "http_path": "http://chain-to-pay:8114/app"
+      },
+      "_requires_x_files_scan": true
+    },
+    "infrastructure/containers/blockchain/Dockerfile.consensus-engine": {
+      "basename": "Dockerfile.consensus-engine",
+      "infrastructure_containers_rel": "blockchain/Dockerfile.consensus-engine",
+      "canonical_path": "blockchain-consensus-engine",
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.a681fced58bc57eb.infrastructure.containers.blockchain.Dockerfile.consensus-engine",
+        "onion_lucid_service_id": "lucid-a681fced58bc57eb-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.a681fced58bc57eb:infrastructure/containers/blockchain/Dockerfile.consensus-engine"
+      },
+      "ports_service_key": "blockchain_consensus_engine",
+      "ports": {
+        "port": 8085,
+        "service_name": "blockchain-consensus-engine",
+        "http_path": "http://blockchain-consensus-engine:8085/app"
+      },
+      "_requires_x_files_scan": true
+    },
+    "infrastructure/containers/blockchain/Dockerfile.data": {
+      "basename": "Dockerfile.data",
+      "infrastructure_containers_rel": "blockchain/Dockerfile.data",
+      "canonical_path": "data-chain",
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.a47b92cca69ac5cf.infrastructure.containers.blockchain.Dockerfile.data",
+        "onion_lucid_service_id": "lucid-a47b92cca69ac5cf-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.a47b92cca69ac5cf:infrastructure/containers/blockchain/Dockerfile.data"
+      },
+      "ports_service_key": "data_chain",
+      "ports": {
+        "port": 8087,
+        "service_name": "data-chain",
+        "http_path": "http://data-chain:8087/app"
+      },
+      "_requires_x_files_scan": true
+    },
+    "infrastructure/containers/blockchain/Dockerfile.engine": {
+      "basename": "Dockerfile.engine",
+      "infrastructure_containers_rel": "blockchain/Dockerfile.engine",
+      "canonical_path": "blockchain-engine",
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.432fa3cdc353e5a9.infrastructure.containers.blockchain.Dockerfile.engine",
+        "onion_lucid_service_id": "lucid-432fa3cdc353e5a9-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.432fa3cdc353e5a9:infrastructure/containers/blockchain/Dockerfile.engine"
+      },
+      "ports_service_key": "blockchain_engine",
+      "ports": {
+        "port": 8084,
+        "service_name": "blockchain-engine",
+        "http_path": "http://blockchain-engine:8084/app"
+      },
+      "_requires_x_files_scan": true
+    },
+    "infrastructure/containers/database/Dockerfile.database": {
+      "basename": "Dockerfile.database",
+      "infrastructure_containers_rel": "database/Dockerfile.database",
+      "canonical_path": "mongodb-monitoring",
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.d33eb21629817b7b.infrastructure.containers.database.Dockerfile.database",
+        "onion_lucid_service_id": "lucid-d33eb21629817b7b-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.d33eb21629817b7b:infrastructure/containers/database/Dockerfile.database"
+      },
+      "ports_service_key": "mongodb_monitoring",
+      "ports": {
+        "port": 27018,
+        "service_name": "mongodb-monitoring",
+        "http_path": "http://mongodb-monitoring:27018/app"
+      },
+      "_requires_x_files_scan": true
+    },
+    "infrastructure/containers/database/Dockerfile.database-overlord": {
+      "basename": "Dockerfile.database-overlord",
+      "infrastructure_containers_rel": "database/Dockerfile.database-overlord",
+      "canonical_path": "database-overlord",
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.c59e13efce333887.infrastructure.containers.database.Dockerfile.database-overlord",
+        "onion_lucid_service_id": "lucid-c59e13efce333887-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.c59e13efce333887:infrastructure/containers/database/Dockerfile.database-overlord"
+      },
+      "ports_service_key": "database_overlord",
+      "ports": {
+        "port": 8122,
+        "service_name": "database-overlord",
+        "http_path": "http://database-overlord:8122/app"
+      },
+      "_requires_x_files_scan": true
+    },
+    "infrastructure/containers/database/Dockerfile.elasticsearch": {
+      "basename": "Dockerfile.elasticsearch",
+      "infrastructure_containers_rel": "database/Dockerfile.elasticsearch",
+      "canonical_path": "lucid-elasticsearch-http",
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.bd0d6dd088846725.infrastructure.containers.database.Dockerfile.elasticsearch",
+        "onion_lucid_service_id": "lucid-bd0d6dd088846725-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.bd0d6dd088846725:infrastructure/containers/database/Dockerfile.elasticsearch"
+      },
+      "ports_service_key": "lucid_elasticsearch_http",
+      "ports": {
+        "port": 9200,
+        "service_name": "lucid-elasticsearch-http",
+        "http_path": "http://lucid-elasticsearch-http:9200/app"
+      },
+      "_requires_x_files_scan": true
+    },
+    "infrastructure/containers/database/Dockerfile.mongodb": {
+      "basename": "Dockerfile.mongodb",
+      "infrastructure_containers_rel": "database/Dockerfile.mongodb",
+      "canonical_path": "lucid-mongodb",
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.cac56eba7308180f.infrastructure.containers.database.Dockerfile.mongodb",
+        "onion_lucid_service_id": "lucid-cac56eba7308180f-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.cac56eba7308180f:infrastructure/containers/database/Dockerfile.mongodb"
+      },
+      "ports_service_key": "lucid_mongodb",
+      "ports": {
+        "port": 27017,
+        "service_name": "lucid-mongodb",
+        "http_path": "http://lucid-mongodb:27017/app"
+      },
+      "_requires_x_files_scan": true
+    },
+    "infrastructure/containers/database/Dockerfile.redis": {
+      "basename": "Dockerfile.redis",
+      "infrastructure_containers_rel": "database/Dockerfile.redis",
+      "canonical_path": "lucid-redis",
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.20e2827f5f14f6a2.infrastructure.containers.database.Dockerfile.redis",
+        "onion_lucid_service_id": "lucid-20e2827f5f14f6a2-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.20e2827f5f14f6a2:infrastructure/containers/database/Dockerfile.redis"
+      },
+      "ports_service_key": "lucid_redis",
+      "ports": {
+        "port": 6379,
+        "service_name": "lucid-redis",
+        "http_path": "http://lucid-redis:6379/app"
+      },
+      "_requires_x_files_scan": true
+    },
+    "infrastructure/containers/electron_gui/Dockerfile.admin": {
+      "basename": "Dockerfile.admin",
+      "infrastructure_containers_rel": "electron_gui/Dockerfile.admin",
+      "canonical_path": "admin-ui-backend",
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.bae1f4189041fc14.infrastructure.containers.electron_gui.Dockerfile.admin",
+        "onion_lucid_service_id": "lucid-bae1f4189041fc14-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.bae1f4189041fc14:infrastructure/containers/electron_gui/Dockerfile.admin"
+      },
+      "ports_service_key": "admin_ui_backend",
+      "ports": {
+        "port": 8123,
+        "service_name": "admin-ui-backend",
+        "http_path": "http://admin-ui-backend:8123/app"
+      },
+      "_requires_x_files_scan": true
+    },
+    "infrastructure/containers/electron_gui/Dockerfile.node": {
+      "basename": "Dockerfile.node",
+      "infrastructure_containers_rel": "electron_gui/Dockerfile.node",
+      "canonical_path": "electron-gui-node",
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.1566acb8cc6665d1.infrastructure.containers.electron_gui.Dockerfile.node",
+        "onion_lucid_service_id": "lucid-1566acb8cc6665d1-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.1566acb8cc6665d1:infrastructure/containers/electron_gui/Dockerfile.node"
+      },
+      "ports_service_key": "electron_gui_node",
+      "ports": {
+        "port": 3002,
+        "service_name": "electron-gui-node",
+        "http_path": "http://electron-gui-node:3002/app"
+      },
+      "_requires_x_files_scan": true
+    },
+    "infrastructure/containers/electron_gui/Dockerfile.user": {
+      "basename": "Dockerfile.user",
+      "infrastructure_containers_rel": "electron_gui/Dockerfile.user",
+      "canonical_path": "electron-gui-user",
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.a98923af26167049.infrastructure.containers.electron_gui.Dockerfile.user",
+        "onion_lucid_service_id": "lucid-a98923af26167049-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.a98923af26167049:infrastructure/containers/electron_gui/Dockerfile.user"
+      },
+      "ports_service_key": "electron_gui_user",
+      "ports": {
+        "port": 3001,
+        "service_name": "electron-gui-user",
+        "http_path": "http://electron-gui-user:3001/app"
+      },
+      "_requires_x_files_scan": true
+    },
+    "infrastructure/containers/gui/Dockerfile.gui": {
+      "basename": "Dockerfile.gui",
+      "infrastructure_containers_rel": "gui/Dockerfile.gui",
+      "canonical_path": "gui-docker-manager",
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.372035a9a8d68da4.infrastructure.containers.gui.Dockerfile.gui",
+        "onion_lucid_service_id": "lucid-372035a9a8d68da4-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.372035a9a8d68da4:infrastructure/containers/gui/Dockerfile.gui"
+      },
+      "ports_service_key": "gui_docker_manager",
+      "ports": {
+        "port": 8098,
+        "service_name": "gui-docker-manager",
+        "http_path": "http://gui-docker-manager:8098/app"
+      },
+      "_requires_x_files_scan": true
+    },
+    "infrastructure/containers/gui/Dockerfile.gui-api-bridge": {
+      "basename": "Dockerfile.gui-api-bridge",
+      "infrastructure_containers_rel": "gui/Dockerfile.gui-api-bridge",
+      "canonical_path": "gui-api-bridge",
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.ae1e151ee8579eac.infrastructure.containers.gui.Dockerfile.gui-api-bridge",
+        "onion_lucid_service_id": "lucid-ae1e151ee8579eac-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.ae1e151ee8579eac:infrastructure/containers/gui/Dockerfile.gui-api-bridge"
+      },
+      "ports_service_key": "gui_api_bridge",
+      "ports": {
+        "port": 8102,
+        "service_name": "gui-api-bridge",
+        "http_path": "http://gui-api-bridge:8102/app"
+      },
+      "_requires_x_files_scan": true
+    },
+    "infrastructure/containers/gui/Dockerfile.gui-hardware-manager": {
+      "basename": "Dockerfile.gui-hardware-manager",
+      "infrastructure_containers_rel": "gui/Dockerfile.gui-hardware-manager",
+      "canonical_path": "gui-hardware-manager",
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.b531e524082b39cd.infrastructure.containers.gui.Dockerfile.gui-hardware-manager",
+        "onion_lucid_service_id": "lucid-b531e524082b39cd-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.b531e524082b39cd:infrastructure/containers/gui/Dockerfile.gui-hardware-manager"
+      },
+      "ports_service_key": "gui_hardware_manager",
+      "ports": {
+        "port": 8099,
+        "service_name": "gui-hardware-manager",
+        "http_path": "http://gui-hardware-manager:8099/app"
+      },
+      "_requires_x_files_scan": true
+    },
+    "infrastructure/containers/gui/Dockerfile.gui-tor-manager": {
+      "basename": "Dockerfile.gui-tor-manager",
+      "infrastructure_containers_rel": "gui/Dockerfile.gui-tor-manager",
+      "canonical_path": "gui-tor-manager",
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.49b98c1d2c183ab7.infrastructure.containers.gui.Dockerfile.gui-tor-manager",
+        "onion_lucid_service_id": "lucid-49b98c1d2c183ab7-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.49b98c1d2c183ab7:infrastructure/containers/gui/Dockerfile.gui-tor-manager"
+      },
+      "ports_service_key": "gui_tor_manager_http",
+      "ports": {
+        "port": 8097,
+        "service_name": "gui-tor-manager",
+        "http_path": "http://gui-tor-manager:8097/app"
+      },
+      "_requires_x_files_scan": true
+    },
+    "infrastructure/containers/node/Dockerfile.node-gov": {
+      "basename": "Dockerfile.node-gov",
+      "infrastructure_containers_rel": "node/Dockerfile.node-gov",
+      "canonical_path": "node-gov",
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.d56efdab537567f2.infrastructure.containers.node.Dockerfile.node-gov",
+        "onion_lucid_service_id": "lucid-d56efdab537567f2-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.d56efdab537567f2:infrastructure/containers/node/Dockerfile.node-gov"
+      },
+      "ports_service_key": "node_gov",
+      "ports": {
+        "port": 8620,
+        "service_name": "node-gov",
+        "http_path": "http://node-gov:8620/app"
+      },
+      "_requires_x_files_scan": true
+    },
+    "infrastructure/containers/node/Dockerfile.node-management": {
+      "basename": "Dockerfile.node-management",
+      "infrastructure_containers_rel": "node/Dockerfile.node-management",
+      "canonical_path": "node-management",
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.a6e21e69f127616e.infrastructure.containers.node.Dockerfile.node-management",
+        "onion_lucid_service_id": "lucid-a6e21e69f127616e-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.a6e21e69f127616e:infrastructure/containers/node/Dockerfile.node-management"
+      },
+      "ports_service_key": "node_management",
+      "ports": {
+        "port": 8095,
+        "service_name": "node-management",
+        "http_path": "http://node-management:8095/app"
+      },
+      "_requires_x_files_scan": true
+    },
+    "infrastructure/containers/node/Dockerfile.node-overlord": {
+      "basename": "Dockerfile.node-overlord",
+      "infrastructure_containers_rel": "node/Dockerfile.node-overlord",
+      "canonical_path": "node-overlord",
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.11c76e7e7b7b3429.infrastructure.containers.node.Dockerfile.node-overlord",
+        "onion_lucid_service_id": "lucid-11c76e7e7b7b3429-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.11c76e7e7b7b3429:infrastructure/containers/node/Dockerfile.node-overlord"
+      },
+      "ports_service_key": "node_overlord",
+      "ports": {
+        "port": 8130,
+        "service_name": "node-overlord",
+        "http_path": "http://node-overlord:8130/app"
+      },
+      "_requires_x_files_scan": true
+    },
+    "infrastructure/containers/node/Dockerfile.node-registry": {
+      "basename": "Dockerfile.node-registry",
+      "infrastructure_containers_rel": "node/Dockerfile.node-registry",
+      "canonical_path": "node-registry",
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.193af8946ff8b328.infrastructure.containers.node.Dockerfile.node-registry",
+        "onion_lucid_service_id": "lucid-193af8946ff8b328-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.193af8946ff8b328:infrastructure/containers/node/Dockerfile.node-registry"
+      },
+      "ports_service_key": "node_registry",
+      "ports": {
+        "port": 8610,
+        "service_name": "node-registry",
+        "http_path": "http://node-registry:8610/app"
+      },
+      "_requires_x_files_scan": true
+    },
+    "infrastructure/containers/node/Dockerfile.node-system-gateway": {
+      "basename": "Dockerfile.node-system-gateway",
+      "infrastructure_containers_rel": "node/Dockerfile.node-system-gateway",
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.5c60d7db4997343e.infrastructure.containers.node.Dockerfile.node-system-gateway",
+        "onion_lucid_service_id": "lucid-5c60d7db4997343e-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.5c60d7db4997343e:infrastructure/containers/node/Dockerfile.node-system-gateway"
+      },
+      "ports_service_key": "node_system_gateway",
+      "ports": {
+        "port": 8640,
+        "service_name": "node-system-gateway",
+        "http_path": "http://node-system-gateway:8640/app"
+      },
+      "_requires_x_files_scan": true
+    },
+    "infrastructure/containers/node/Dockerfile.node-utils": {
+      "basename": "Dockerfile.node-utils",
+      "infrastructure_containers_rel": "node/Dockerfile.node-utils",
+      "canonical_path": "node-utils",
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.844e38b5044a049f.infrastructure.containers.node.Dockerfile.node-utils",
+        "onion_lucid_service_id": "lucid-844e38b5044a049f-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.844e38b5044a049f:infrastructure/containers/node/Dockerfile.node-utils"
+      },
+      "ports_service_key": "node_utils",
+      "ports": {
+        "port": 8630,
+        "service_name": "node-utils",
+        "http_path": "http://node-utils:8630/app"
+      },
+      "_requires_x_files_scan": true
+    },
+    "infrastructure/containers/node/Dockerfile.node-worker": {
+      "basename": "Dockerfile.node-worker",
+      "infrastructure_containers_rel": "node/Dockerfile.node-worker",
+      "canonical_path": "node-worker",
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.0a4af1e17fed523a.infrastructure.containers.node.Dockerfile.node-worker",
+        "onion_lucid_service_id": "lucid-0a4af1e17fed523a-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.0a4af1e17fed523a:infrastructure/containers/node/Dockerfile.node-worker"
+      },
+      "ports_service_key": "node_worker",
+      "ports": {
+        "port": 8600,
+        "service_name": "node-worker",
+        "http_path": "http://node-worker:8600/app"
+      },
+      "_requires_x_files_scan": true
+    },
+    "infrastructure/containers/payment_systems/Dockerfile.on-system-chain-client": {
+      "basename": "Dockerfile.on-system-chain-client",
+      "infrastructure_containers_rel": "payment_systems/Dockerfile.on-system-chain-client",
+      "canonical_path": "on-system-chain-client",
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.7cda0b5641f32450.infrastructure.containers.payment_systems.Dockerfile.on-system-chain-client",
+        "onion_lucid_service_id": "lucid-7cda0b5641f32450-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.7cda0b5641f32450:infrastructure/containers/payment_systems/Dockerfile.on-system-chain-client"
+      },
+      "ports_service_key": "on_system_chain_client",
+      "ports": {
+        "port": 8040,
+        "service_name": "on-system-chain-client",
+        "http_path": "http://on-system-chain-client:8040/app"
+      },
+      "_requires_x_files_scan": true
+    },
+    "infrastructure/containers/payment_systems/Dockerfile.payment-gateway": {
+      "basename": "Dockerfile.payment-gateway",
+      "infrastructure_containers_rel": "payment_systems/Dockerfile.payment-gateway",
+      "canonical_path": "gui-tor-manager",
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.ecb7d04499051884.infrastructure.containers.payment_systems.Dockerfile.payment-gateway",
+        "onion_lucid_service_id": "lucid-ecb7d04499051884-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.ecb7d04499051884:infrastructure/containers/payment_systems/Dockerfile.payment-gateway"
+      },
+      "ports_service_key": "gui_tor_manager_http",
+      "ports": {
+        "port": 8099,
+        "service_name": "gui-tor-manager",
+        "http_path": "http://gui-tor-manager:8099/app"
+      },
+      "_requires_x_files_scan": true
+    },
+    "infrastructure/containers/payment_systems/Dockerfile.tron-node-client": {
+      "basename": "Dockerfile.tron-node-client",
+      "infrastructure_containers_rel": "payment_systems/Dockerfile.tron-node-client",
+      "canonical_path": "tron-node-client",
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.0968fe4e5f1ddcbd.infrastructure.containers.payment_systems.Dockerfile.tron-node-client",
+        "onion_lucid_service_id": "lucid-0968fe4e5f1ddcbd-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.0968fe4e5f1ddcbd:infrastructure/containers/payment_systems/Dockerfile.tron-node-client"
+      },
+      "ports_service_key": "tron_node_client",
+      "ports": {
+        "port": 8030,
+        "service_name": "tron-node-client",
+        "http_path": "http://tron-node-client:8030/app"
+      },
+      "_requires_x_files_scan": true
+    },
+    "infrastructure/containers/payment_systems/Dockerfile.tron-payment-service": {
+      "basename": "Dockerfile.tron-payment-service",
+      "infrastructure_containers_rel": "payment_systems/Dockerfile.tron-payment-service",
+      "canonical_path": "tron-payment-service",
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.f4941299577e6e8c.infrastructure.containers.payment_systems.Dockerfile.tron-payment-service",
+        "onion_lucid_service_id": "lucid-f4941299577e6e8c-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.f4941299577e6e8c:infrastructure/containers/payment_systems/Dockerfile.tron-payment-service"
+      },
+      "ports_service_key": "tron_payment_service",
+      "ports": {
+        "port": 8080,
+        "service_name": "tron-payment-service",
+        "http_path": "http://tron-payment-service:8080/app"
+      },
+      "_requires_x_files_scan": true
+    },
+    "infrastructure/containers/payment_systems/Dockerfile.wallet": {
+      "basename": "Dockerfile.wallet",
+      "infrastructure_containers_rel": "payment_systems/Dockerfile.wallet",
+      "canonical_path": "wallet-manager",
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.4c33f23318b42f7b.infrastructure.containers.payment_systems.Dockerfile.wallet",
+        "onion_lucid_service_id": "lucid-4c33f23318b42f7b-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.4c33f23318b42f7b:infrastructure/containers/payment_systems/Dockerfile.wallet"
+      },
+      "ports_service_key": "wallet_manager",
+      "ports": {
+        "port": 8093,
+        "service_name": "wallet-manager",
+        "http_path": "http://wallet-manager:8093/app"
+      },
+      "_requires_x_files_scan": true
+    },
+    "infrastructure/containers/rdp/Dockerfile.rdp-controller": {
+      "basename": "Dockerfile.rdp-controller",
+      "infrastructure_containers_rel": "rdp/Dockerfile.rdp-controller",
+      "canonical_path": "session-merkle-tree-builder",
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.29bb403f472c06f8.infrastructure.containers.rdp.Dockerfile.rdp-controller",
+        "onion_lucid_service_id": "lucid-29bb403f472c06f8-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.29bb403f472c06f8:infrastructure/containers/rdp/Dockerfile.rdp-controller"
+      },
+      "ports_service_key": "session_merkle_tree_builder",
+      "ports": {
+        "port": 8092,
+        "service_name": "session-merkle-tree-builder",
+        "http_path": "http://session-merkle-tree-builder:8092/app"
+      },
+      "_requires_x_files_scan": true
+    },
+    "infrastructure/containers/server/Dockerfile": {
+      "basename": "Dockerfile",
+      "infrastructure_containers_rel": "server/Dockerfile",
+      "canonical_path": "lucid-server-core",
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.81e12d75c5d335ef.infrastructure.containers.server.Dockerfile",
+        "onion_lucid_service_id": "lucid-81e12d75c5d335ef-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.81e12d75c5d335ef:infrastructure/containers/server/Dockerfile"
+      },
+      "ports_service_key": "lucid_server_core",
+      "ports": {
+        "port": 8100,
+        "service_name": "lucid-server-core",
+        "http_path": "http://lucid-server-core:8100/app"
+      },
+      "_requires_x_files_scan": true
+    },
+    "infrastructure/containers/server/Dockerfile.rdp-server-manager": {
+      "basename": "Dockerfile.rdp-server-manager",
+      "infrastructure_containers_rel": "server/Dockerfile.rdp-server-manager",
+      "canonical_path": "rdp-server-manager-http",
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.03f85ade52648b36.infrastructure.containers.server.Dockerfile.rdp-server-manager",
+        "onion_lucid_service_id": "lucid-03f85ade52648b36-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.03f85ade52648b36:infrastructure/containers/server/Dockerfile.rdp-server-manager"
+      },
+      "ports_service_key": "rdp_server_manager",
+      "ports": {
+        "port": 8090,
+        "service_name": "rdp-server-manager-http",
+        "http_path": "http://rdp-server-manager-http:8090/app"
+      },
+      "_requires_x_files_scan": true
+    },
+    "infrastructure/containers/server/Dockerfile.server-gateway": {
+      "basename": "Dockerfile.server-gateway",
+      "infrastructure_containers_rel": "server/Dockerfile.server-gateway",
+      "canonical_path": "server-gateway",
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.43cd9ae831546923.infrastructure.containers.server.Dockerfile.server-gateway",
+        "onion_lucid_service_id": "lucid-43cd9ae831546923-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.43cd9ae831546923:infrastructure/containers/server/Dockerfile.server-gateway"
+      },
+      "ports_service_key": "lucid_server_gateway",
+      "ports": {
+        "port": 8082,
+        "service_name": "server-gateway",
+        "http_path": "http://server-gateway:8082/app"
+      },
+      "_requires_x_files_scan": true
+    },
+    "infrastructure/containers/server/Dockerfile.server-manager": {
+      "basename": "Dockerfile.server-manager",
+      "infrastructure_containers_rel": "server/Dockerfile.server-manager",
+      "canonical_path": "lucid-server-manager",
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.fec05bf9884b5d04.infrastructure.containers.server.Dockerfile.server-manager",
+        "onion_lucid_service_id": "lucid-fec05bf9884b5d04-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.fec05bf9884b5d04:infrastructure/containers/server/Dockerfile.server-manager"
+      },
+      "ports_service_key": "lucid_server_manager",
+      "ports": {
+        "port": 8081,
+        "service_name": "lucid-server-manager",
+        "http_path": "http://lucid-server-manager:8081/app"
+      },
+      "_requires_x_files_scan": true
+    },
+    "infrastructure/containers/server/Dockerfile.service-mesh-controller": {
+      "basename": "Dockerfile.service-mesh-controller",
+      "infrastructure_containers_rel": "server/Dockerfile.service-mesh-controller",
+      "canonical_path": "lucid-service-mesh-controller",
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.8ad49f39ee138448.infrastructure.containers.server.Dockerfile.service-mesh-controller",
+        "onion_lucid_service_id": "lucid-8ad49f39ee138448-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.8ad49f39ee138448:infrastructure/containers/server/Dockerfile.service-mesh-controller"
+      },
+      "ports_service_key": "lucid_service_mesh_controller",
+      "ports": {
+        "port": 8500,
+        "service_name": "lucid-service-mesh-controller",
+        "http_path": "http://lucid-service-mesh-controller:8500/app"
+      },
+      "_requires_x_files_scan": true
+    },
+    "infrastructure/containers/services/node/Dockerfile": {
+      "basename": "Dockerfile",
+      "infrastructure_containers_rel": "services/node/Dockerfile",
+      "canonical_path": "node-management",
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.1a1a275e499a8734.infrastructure.containers.services.node.Dockerfile",
+        "onion_lucid_service_id": "lucid-1a1a275e499a8734-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.1a1a275e499a8734:infrastructure/containers/services/node/Dockerfile"
+      },
+      "ports_service_key": "node_management",
+      "ports": {
+        "port": 8097,
+        "service_name": "node-management",
+        "http_path": "http://node-management:8097/app"
+      },
+      "_requires_x_files_scan": true
+    },
+    "infrastructure/containers/services/node/Dockerfile.node-management": {
+      "basename": "Dockerfile.node-management",
+      "infrastructure_containers_rel": "services/node/Dockerfile.node-management",
+      "canonical_path": "node-management",
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.8f0c01a962e345cf.infrastructure.containers.services.node.Dockerfile.node-management",
+        "onion_lucid_service_id": "lucid-8f0c01a962e345cf-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.8f0c01a962e345cf:infrastructure/containers/services/node/Dockerfile.node-management"
+      },
+      "ports_service_key": "node_management",
+      "ports": {
+        "port": 8098,
+        "service_name": "node-management",
+        "http_path": "http://node-management:8098/app"
+      },
+      "_requires_x_files_scan": true
+    },
+    "infrastructure/containers/sessions/Dockerfile.anchoring": {
+      "basename": "Dockerfile.anchoring",
+      "infrastructure_containers_rel": "sessions/Dockerfile.anchoring",
+      "canonical_path": "session-anchoring",
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.11933b3531e16165.infrastructure.containers.sessions.Dockerfile.anchoring",
+        "onion_lucid_service_id": "lucid-11933b3531e16165-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.11933b3531e16165:infrastructure/containers/sessions/Dockerfile.anchoring"
+      },
+      "ports_service_key": "session_anchoring",
+      "ports": {
+        "port": 8087,
+        "service_name": "session-anchoring",
+        "http_path": "http://session-anchoring:8087/app"
+      },
+      "_requires_x_files_scan": true
+    },
+    "infrastructure/containers/sessions/Dockerfile.api": {
+      "basename": "Dockerfile.api",
+      "infrastructure_containers_rel": "sessions/Dockerfile.api",
+      "canonical_path": "session-api",
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.6748fe5e53be162b.infrastructure.containers.sessions.Dockerfile.api",
+        "onion_lucid_service_id": "lucid-6748fe5e53be162b-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.6748fe5e53be162b:infrastructure/containers/sessions/Dockerfile.api"
+      },
+      "ports_service_key": "session_api",
+      "ports": {
+        "port": 8113,
+        "service_name": "session-api",
+        "http_path": "http://session-api:8113/app"
+      },
+      "_requires_x_files_scan": true
+    },
+    "infrastructure/containers/sessions/Dockerfile.chunk-processor": {
+      "basename": "Dockerfile.chunk-processor",
+      "infrastructure_containers_rel": "sessions/Dockerfile.chunk-processor",
+      "canonical_path": "session-chunk-processor",
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.c02ea0943f466134.infrastructure.containers.sessions.Dockerfile.chunk-processor",
+        "onion_lucid_service_id": "lucid-c02ea0943f466134-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.c02ea0943f466134:infrastructure/containers/sessions/Dockerfile.chunk-processor"
+      },
+      "ports_service_key": "session_chunk_processor",
+      "ports": {
+        "port": 8010,
+        "service_name": "session-chunk-processor",
+        "http_path": "http://session-chunk-processor:8010/app"
+      },
+      "_requires_x_files_scan": true
+    },
+    "infrastructure/containers/sessions/Dockerfile.merkle-tree-builder": {
+      "basename": "Dockerfile.merkle-tree-builder",
+      "infrastructure_containers_rel": "sessions/Dockerfile.merkle-tree-builder",
+      "canonical_path": "session-merkle-tree-builder",
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.88309208fd5b8f80.infrastructure.containers.sessions.Dockerfile.merkle-tree-builder",
+        "onion_lucid_service_id": "lucid-88309208fd5b8f80-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.88309208fd5b8f80:infrastructure/containers/sessions/Dockerfile.merkle-tree-builder"
+      },
+      "ports_service_key": "session_merkle_tree_builder",
+      "ports": {
+        "port": 8094,
+        "service_name": "session-merkle-tree-builder",
+        "http_path": "http://session-merkle-tree-builder:8094/app"
+      },
+      "_requires_x_files_scan": true
+    },
+    "infrastructure/containers/sessions/Dockerfile.session-overlord": {
+      "basename": "Dockerfile.session-overlord",
+      "infrastructure_containers_rel": "sessions/Dockerfile.session-overlord",
+      "canonical_path": "session-overlord",
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.194515037502d9c5.infrastructure.containers.sessions.Dockerfile.session-overlord",
+        "onion_lucid_service_id": "lucid-194515037502d9c5-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.194515037502d9c5:infrastructure/containers/sessions/Dockerfile.session-overlord"
+      },
+      "ports_service_key": "session_overlord",
+      "ports": {
+        "port": 8110,
+        "service_name": "session-overlord",
+        "http_path": "http://session-overlord:8110/app"
+      },
+      "_requires_x_files_scan": true
+    },
+    "infrastructure/containers/sessions/Dockerfile.session-pipeline": {
+      "basename": "Dockerfile.session-pipeline",
+      "infrastructure_containers_rel": "sessions/Dockerfile.session-pipeline",
+      "canonical_path": "session-pipeline",
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.30ffa9b22f2792fb.infrastructure.containers.sessions.Dockerfile.session-pipeline",
+        "onion_lucid_service_id": "lucid-30ffa9b22f2792fb-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.30ffa9b22f2792fb:infrastructure/containers/sessions/Dockerfile.session-pipeline"
+      },
+      "ports_service_key": "session_pipeline",
+      "ports": {
+        "port": 8083,
+        "service_name": "session-pipeline",
+        "http_path": "http://session-pipeline:8083/app"
+      },
+      "_requires_x_files_scan": true
+    },
+    "infrastructure/containers/sessions/Dockerfile.session-pipeline-manager": {
+      "basename": "Dockerfile.session-pipeline-manager",
+      "infrastructure_containers_rel": "sessions/Dockerfile.session-pipeline-manager",
+      "canonical_path": "session-pipeline-manager",
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.70fe865ea6b688fd.infrastructure.containers.sessions.Dockerfile.session-pipeline-manager",
+        "onion_lucid_service_id": "lucid-70fe865ea6b688fd-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.70fe865ea6b688fd:infrastructure/containers/sessions/Dockerfile.session-pipeline-manager"
+      },
+      "ports_service_key": "session_pipeline_manager",
+      "ports": {
+        "port": 7990,
+        "service_name": "session-pipeline-manager",
+        "http_path": "http://session-pipeline-manager:7990/app"
+      },
+      "_requires_x_files_scan": true
+    },
+    "infrastructure/containers/sessions/Dockerfile.session-storage-service": {
+      "basename": "Dockerfile.session-storage-service",
+      "infrastructure_containers_rel": "sessions/Dockerfile.session-storage-service",
+      "canonical_path": "session-storage-service",
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.0491f551b52254df.infrastructure.containers.sessions.Dockerfile.session-storage-service",
+        "onion_lucid_service_id": "lucid-0491f551b52254df-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.0491f551b52254df:infrastructure/containers/sessions/Dockerfile.session-storage-service"
+      },
+      "ports_service_key": "session_storage_service",
+      "ports": {
+        "port": 8020,
+        "service_name": "session-storage-service",
+        "http_path": "http://session-storage-service:8020/app"
+      },
+      "_requires_x_files_scan": true
+    },
+    "infrastructure/containers/sessions/Dockerfile.session-systems-control": {
+      "basename": "Dockerfile.session-systems-control",
+      "infrastructure_containers_rel": "sessions/Dockerfile.session-systems-control",
+      "canonical_path": "session-system-control",
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.9587e97e6a96ca34.infrastructure.containers.sessions.Dockerfile.session-systems-control",
+        "onion_lucid_service_id": "lucid-9587e97e6a96ca34-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.9587e97e6a96ca34:infrastructure/containers/sessions/Dockerfile.session-systems-control"
+      },
+      "ports_service_key": "session_system_control",
+      "ports": {
+        "port": 7988,
+        "service_name": "session-system-control",
+        "http_path": "http://session-system-control:7988/app"
+      },
+      "_requires_x_files_scan": true
+    },
+    "infrastructure/containers/storage/Dockerfile.elasticsearch": {
+      "basename": "Dockerfile.elasticsearch",
+      "infrastructure_containers_rel": "storage/Dockerfile.elasticsearch",
+      "canonical_path": "lucid-elasticsearch-http",
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.48701e1a21b14772.infrastructure.containers.storage.Dockerfile.elasticsearch",
+        "onion_lucid_service_id": "lucid-48701e1a21b14772-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.48701e1a21b14772:infrastructure/containers/storage/Dockerfile.elasticsearch"
+      },
+      "ports_service_key": "lucid_elasticsearch_http",
+      "ports": {
+        "port": 9202,
+        "service_name": "lucid-elasticsearch-http",
+        "http_path": "http://lucid-elasticsearch-http:9202/app"
+      },
+      "_requires_x_files_scan": true
+    },
+    "infrastructure/containers/storage/Dockerfile.mongodb": {
+      "basename": "Dockerfile.mongodb",
+      "infrastructure_containers_rel": "storage/Dockerfile.mongodb",
+      "canonical_path": "lucid-mongodb",
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.1a87ea332346d719.infrastructure.containers.storage.Dockerfile.mongodb",
+        "onion_lucid_service_id": "lucid-1a87ea332346d719-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.1a87ea332346d719:infrastructure/containers/storage/Dockerfile.mongodb"
+      },
+      "ports_service_key": "lucid_mongodb",
+      "ports": {
+        "port": 27019,
+        "service_name": "lucid-mongodb",
+        "http_path": "http://lucid-mongodb:27019/app"
+      },
+      "_requires_x_files_scan": true
+    },
+    "infrastructure/containers/storage/Dockerfile.redis": {
+      "basename": "Dockerfile.redis",
+      "infrastructure_containers_rel": "storage/Dockerfile.redis",
+      "canonical_path": "lucid-redis",
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.61fd3450f8ba8a48.infrastructure.containers.storage.Dockerfile.redis",
+        "onion_lucid_service_id": "lucid-61fd3450f8ba8a48-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.61fd3450f8ba8a48:infrastructure/containers/storage/Dockerfile.redis"
+      },
+      "ports_service_key": "lucid_redis",
+      "ports": {
+        "port": 6381,
+        "service_name": "lucid-redis",
+        "http_path": "http://lucid-redis:6381/app"
+      },
+      "_requires_x_files_scan": true
+    },
+    "infrastructure/containers/storage/Dockerfile.storage": {
+      "basename": "Dockerfile.storage",
+      "infrastructure_containers_rel": "storage/Dockerfile.storage",
+      "canonical_path": "lucid-system-storage",
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.86b998f8d949cf9d.infrastructure.containers.storage.Dockerfile.storage",
+        "onion_lucid_service_id": "lucid-86b998f8d949cf9d-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.86b998f8d949cf9d:infrastructure/containers/storage/Dockerfile.storage"
+      },
+      "ports_service_key": "lucid_system_storage",
+      "ports": {
+        "port": 9900,
+        "service_name": "lucid-system-storage",
+        "http_path": "http://lucid-system-storage:9900/app"
+      },
+      "_requires_x_files_scan": true
+    },
+    "infrastructure/containers/tor/Dockerfile": {
+      "basename": "Dockerfile",
+      "infrastructure_containers_rel": "tor/Dockerfile",
+      "canonical_path": "tunnel-tools",
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.ef31cd690d8f3a2c.infrastructure.containers.tor.Dockerfile",
+        "onion_lucid_service_id": "lucid-ef31cd690d8f3a2c-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.ef31cd690d8f3a2c:infrastructure/containers/tor/Dockerfile"
+      },
+      "ports_service_key": "tunnel_tools",
+      "ports": {
+        "port": 7000,
+        "service_name": "tunnel-tools",
+        "http_path": "http://tunnel-tools:7000/app"
+      },
+      "_requires_x_files_scan": true
+    },
+    "infrastructure/containers/tor/Dockerfile.tor-proxy-02": {
+      "basename": "Dockerfile.tor-proxy-02",
+      "infrastructure_containers_rel": "tor/Dockerfile.tor-proxy-02",
+      "canonical_path": "tor-socks",
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.2143ae84c81ed42f.infrastructure.containers.tor.Dockerfile.tor-proxy-02",
+        "onion_lucid_service_id": "lucid-2143ae84c81ed42f-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.2143ae84c81ed42f:infrastructure/containers/tor/Dockerfile.tor-proxy-02"
+      },
+      "ports_service_key": "tor_socks",
+      "ports": {
+        "port": 9050,
+        "service_name": "tor-socks",
+        "http_path": "http://tor-socks:9050/app"
+      },
+      "_requires_x_files_scan": true
+    },
+    "infrastructure/containers/tor/Dockerfile.tunnels": {
+      "basename": "Dockerfile.tunnels",
+      "infrastructure_containers_rel": "tor/Dockerfile.tunnels",
+      "canonical_path": "tunnel-tools",
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.1e0ab614e1003171.infrastructure.containers.tor.Dockerfile.tunnels",
+        "onion_lucid_service_id": "lucid-1e0ab614e1003171-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.1e0ab614e1003171:infrastructure/containers/tor/Dockerfile.tunnels"
+      },
+      "ports_service_key": "tunnel_tools",
+      "ports": {
+        "port": 7002,
+        "service_name": "tunnel-tools",
+        "http_path": "http://tunnel-tools:7002/app"
+      },
+      "_requires_x_files_scan": true
+    },
+    "infrastructure/containers/user/Dockerfile": {
+      "basename": "Dockerfile",
+      "infrastructure_containers_rel": "user/Dockerfile",
+      "canonical_path": "api-gateway",
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.ccb15d3adc538585.infrastructure.containers.user.Dockerfile",
+        "onion_lucid_service_id": "lucid-ccb15d3adc538585-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.ccb15d3adc538585:infrastructure/containers/user/Dockerfile"
+      },
+      "ports_service_key": "main_lucid_gateway",
+      "ports": {
+        "port": 8083,
+        "service_name": "api-gateway",
+        "http_path": "http://api-gateway:8083/app"
+      },
+      "_requires_x_files_scan": true
+    },
+    "infrastructure/containers/vm/Dockerfile.vm": {
+      "basename": "Dockerfile.vm",
+      "infrastructure_containers_rel": "vm/Dockerfile.vm",
+      "canonical_path": "vm-service",
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.be69280a098dd938.infrastructure.containers.vm.Dockerfile.vm",
+        "onion_lucid_service_id": "lucid-be69280a098dd938-infrastructure-container",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.be69280a098dd938:infrastructure/containers/vm/Dockerfile.vm"
+      },
+      "ports_service_key": "vm_service",
+      "ports": {
+        "port": 8107,
+        "service_name": "vm-service",
+        "http_path": "http://vm-service:8107/app"
+      },
+      "_requires_x_files_scan": true
+    },
+    "infrastructure/docker/common/Dockerfile": {
+      "basename": "Dockerfile",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.654a10d9d4a57844.infrastructure.docker.common.Dockerfile",
+        "onion_lucid_service_id": "lucid-654a10d9d4a57844-infrastructure-docker-co",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.654a10d9d4a57844:infrastructure/docker/common/Dockerfile"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "infrastructure/docker/common/Dockerfile.beta": {
+      "basename": "Dockerfile.beta",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.a48845b7550ef350.infrastructure.docker.common.Dockerfile.beta",
+        "onion_lucid_service_id": "lucid-a48845b7550ef350-infrastructure-docker-co",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.a48845b7550ef350:infrastructure/docker/common/Dockerfile.beta"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "infrastructure/docker/common/Dockerfile.common": {
+      "basename": "Dockerfile.common",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.68302a346e11898a.infrastructure.docker.common.Dockerfile.common",
+        "onion_lucid_service_id": "lucid-68302a346e11898a-infrastructure-docker-co",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.68302a346e11898a:infrastructure/docker/common/Dockerfile.common"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "infrastructure/docker/common/Dockerfile.lucid-governor": {
+      "basename": "Dockerfile.lucid-governor",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.e1deffbd9540f182.infrastructure.docker.common.Dockerfile.lucid-governor",
+        "onion_lucid_service_id": "lucid-e1deffbd9540f182-infrastructure-docker-co",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.e1deffbd9540f182:infrastructure/docker/common/Dockerfile.lucid-governor"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "infrastructure/docker/common/Dockerfile.timelock": {
+      "basename": "Dockerfile.timelock",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.855f1b999f3bc26a.infrastructure.docker.common.Dockerfile.timelock",
+        "onion_lucid_service_id": "lucid-855f1b999f3bc26a-infrastructure-docker-co",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.855f1b999f3bc26a:infrastructure/docker/common/Dockerfile.timelock"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "infrastructure/docker/databases/Dockerfile.database-backup": {
+      "basename": "Dockerfile.database-backup",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.8d80ca9529f74202.infrastructure.docker.databases.Dockerfile.database-backup",
+        "onion_lucid_service_id": "lucid-8d80ca9529f74202-infrastructure-docker-da",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.8d80ca9529f74202:infrastructure/docker/databases/Dockerfile.database-backup"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "infrastructure/docker/databases/Dockerfile.database-monitoring": {
+      "basename": "Dockerfile.database-monitoring",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.c1584c59510bc35b.infrastructure.docker.databases.Dockerfile.database-monitoring",
+        "onion_lucid_service_id": "lucid-c1584c59510bc35b-infrastructure-docker-da",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.c1584c59510bc35b:infrastructure/docker/databases/Dockerfile.database-monitoring"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "infrastructure/docker/distroless/base/Dockerfile.base": {
+      "basename": "Dockerfile.base",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.54a61bd53646289d.infrastructure.docker.distroless.base.Dockerfile.base",
+        "onion_lucid_service_id": "lucid-54a61bd53646289d-infrastructure-docker-di",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.54a61bd53646289d:infrastructure/docker/distroless/base/Dockerfile.base"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "infrastructure/docker/distroless/gui/Dockerfile.gui": {
+      "basename": "Dockerfile.gui",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.2e1c30f6172c9ba7.infrastructure.docker.distroless.gui.Dockerfile.gui",
+        "onion_lucid_service_id": "lucid-2e1c30f6172c9ba7-infrastructure-docker-di",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.2e1c30f6172c9ba7:infrastructure/docker/distroless/gui/Dockerfile.gui"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "infrastructure/docker/distroless/rdp/Dockerfile.rdp": {
+      "basename": "Dockerfile.rdp",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.b3fd7496b0afd757.infrastructure.docker.distroless.rdp.Dockerfile.rdp",
+        "onion_lucid_service_id": "lucid-b3fd7496b0afd757-infrastructure-docker-di",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.b3fd7496b0afd757:infrastructure/docker/distroless/rdp/Dockerfile.rdp"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "infrastructure/docker/multi-stage/Dockerfile.database": {
+      "basename": "Dockerfile.database",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.ed27a3e5e742fd7d.infrastructure.docker.multi-stage.Dockerfile.database",
+        "onion_lucid_service_id": "lucid-ed27a3e5e742fd7d-infrastructure-docker-mu",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.ed27a3e5e742fd7d:infrastructure/docker/multi-stage/Dockerfile.database"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "infrastructure/docker/multi-stage/Dockerfile.storage": {
+      "basename": "Dockerfile.storage",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.5747d5b0a895f105.infrastructure.docker.multi-stage.Dockerfile.storage",
+        "onion_lucid_service_id": "lucid-5747d5b0a895f105-infrastructure-docker-mu",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.5747d5b0a895f105:infrastructure/docker/multi-stage/Dockerfile.storage"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "infrastructure/docker/multi-stage/Dockerfile.vm": {
+      "basename": "Dockerfile.vm",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.648840462daaed14.infrastructure.docker.multi-stage.Dockerfile.vm",
+        "onion_lucid_service_id": "lucid-648840462daaed14-infrastructure-docker-mu",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.648840462daaed14:infrastructure/docker/multi-stage/Dockerfile.vm"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "infrastructure/docker/payment-systems/Dockerfile.tron-client": {
+      "basename": "Dockerfile.tron-client",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.98961b03b8e04389.infrastructure.docker.payment-systems.Dockerfile.tron-client",
+        "onion_lucid_service_id": "lucid-98961b03b8e04389-infrastructure-docker-pa",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.98961b03b8e04389:infrastructure/docker/payment-systems/Dockerfile.tron-client"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "infrastructure/docker/vm/Dockerfile.vm-manager": {
+      "basename": "Dockerfile.vm-manager",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.4c55d8feaf895eae.infrastructure.docker.vm.Dockerfile.vm-manager",
+        "onion_lucid_service_id": "lucid-4c55d8feaf895eae-infrastructure-docker-vm",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.4c55d8feaf895eae:infrastructure/docker/vm/Dockerfile.vm-manager"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "infrastructure/docker/vm/Dockerfile.vm-orchestrator": {
+      "basename": "Dockerfile.vm-orchestrator",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.89b0b6926aa7f6d0.infrastructure.docker.vm.Dockerfile.vm-orchestrator",
+        "onion_lucid_service_id": "lucid-89b0b6926aa7f6d0-infrastructure-docker-vm",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.89b0b6926aa7f6d0:infrastructure/docker/vm/Dockerfile.vm-orchestrator"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "infrastructure/docker/vm/Dockerfile.vm-resource-monitor": {
+      "basename": "Dockerfile.vm-resource-monitor",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.3d45c0194733900b.infrastructure.docker.vm.Dockerfile.vm-resource-monitor",
+        "onion_lucid_service_id": "lucid-3d45c0194733900b-infrastructure-docker-vm",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.3d45c0194733900b:infrastructure/docker/vm/Dockerfile.vm-resource-monitor"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "infrastructure/docker/wallet/Dockerfile.key-rotation": {
+      "basename": "Dockerfile.key-rotation",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.5ce36efc4ec7184a.infrastructure.docker.wallet.Dockerfile.key-rotation",
+        "onion_lucid_service_id": "lucid-5ce36efc4ec7184a-infrastructure-docker-wa",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.5ce36efc4ec7184a:infrastructure/docker/wallet/Dockerfile.key-rotation"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "infrastructure/docker/wallet/Dockerfile.role-manager": {
+      "basename": "Dockerfile.role-manager",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.b093417fba8bf777.infrastructure.docker.wallet.Dockerfile.role-manager",
+        "onion_lucid_service_id": "lucid-b093417fba8bf777-infrastructure-docker-wa",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.b093417fba8bf777:infrastructure/docker/wallet/Dockerfile.role-manager"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "infrastructure/docker/wallet/Dockerfile.software-vault": {
+      "basename": "Dockerfile.software-vault",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.d0795488fdbd0fd6.infrastructure.docker.wallet.Dockerfile.software-vault",
+        "onion_lucid_service_id": "lucid-d0795488fdbd0fd6-infrastructure-docker-wa",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.d0795488fdbd0fd6:infrastructure/docker/wallet/Dockerfile.software-vault"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "infrastructure/service_mesh/Dockerfile.controller": {
+      "basename": "Dockerfile.controller",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.8f3872562ed09477.infrastructure.service_mesh.Dockerfile.controller",
+        "onion_lucid_service_id": "lucid-8f3872562ed09477-infrastructure-service-m",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.8f3872562ed09477:infrastructure/service_mesh/Dockerfile.controller"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/blockchain/governance/Dockerfile.timelock": {
+      "basename": "Dockerfile.timelock",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.6351dbd93b1e521b.legacy_files.blockchain.governance.Dockerfile.timelock",
+        "onion_lucid_service_id": "lucid-6351dbd93b1e521b-legacy-files-blockchain",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.6351dbd93b1e521b:legacy_files/blockchain/governance/Dockerfile.timelock"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfile.lucid-direct": {
+      "basename": "Dockerfile.lucid-direct",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.e3c6859157aedb81.legacy_files.Dockerfile.lucid-direct",
+        "onion_lucid_service_id": "lucid-e3c6859157aedb81-legacy-files-dockerfile",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.e3c6859157aedb81:legacy_files/Dockerfile.lucid-direct"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/blockchain/Dockerfile.blockchain": {
+      "basename": "Dockerfile.blockchain",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.f557a1e0ad1e4d0f.legacy_files.Dockerfiles.blockchain.Dockerfile.blockchain",
+        "onion_lucid_service_id": "lucid-f557a1e0ad1e4d0f-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.f557a1e0ad1e4d0f:legacy_files/Dockerfiles/blockchain/Dockerfile.blockchain"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/common/Dockerfile": {
+      "basename": "Dockerfile",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.85e1634e1579e02d.legacy_files.Dockerfiles.common.Dockerfile",
+        "onion_lucid_service_id": "lucid-85e1634e1579e02d-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.85e1634e1579e02d:legacy_files/Dockerfiles/common/Dockerfile"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/core/Dockerfile": {
+      "basename": "Dockerfile",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.3d5fcbe8a39b4bef.legacy_files.Dockerfiles.core.Dockerfile",
+        "onion_lucid_service_id": "lucid-3d5fcbe8a39b4bef-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.3d5fcbe8a39b4bef:legacy_files/Dockerfiles/core/Dockerfile"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/database/Dockerfile": {
+      "basename": "Dockerfile",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.1ca04adf34c3aa70.legacy_files.Dockerfiles.database.Dockerfile",
+        "onion_lucid_service_id": "lucid-1ca04adf34c3aa70-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.1ca04adf34c3aa70:legacy_files/Dockerfiles/database/Dockerfile"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/Dockerfile": {
+      "basename": "Dockerfile",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.7f0695fc5253a534.legacy_files.Dockerfiles.Dockerfile",
+        "onion_lucid_service_id": "lucid-7f0695fc5253a534-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.7f0695fc5253a534:legacy_files/Dockerfiles/Dockerfile"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/Dockerfile.api-gateway": {
+      "basename": "Dockerfile.api-gateway",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.ac4843130964dded.legacy_files.Dockerfiles.Dockerfile.api-gateway",
+        "onion_lucid_service_id": "lucid-ac4843130964dded-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.ac4843130964dded:legacy_files/Dockerfiles/Dockerfile.api-gateway"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/Dockerfile.arm64-base": {
+      "basename": "Dockerfile.arm64-base",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.862af486e364176b.legacy_files.Dockerfiles.Dockerfile.arm64-base",
+        "onion_lucid_service_id": "lucid-862af486e364176b-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.862af486e364176b:legacy_files/Dockerfiles/Dockerfile.arm64-base"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/Dockerfile.auth-service": {
+      "basename": "Dockerfile.auth-service",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.a8b585b6d8cfa1cb.legacy_files.Dockerfiles.Dockerfile.auth-service",
+        "onion_lucid_service_id": "lucid-a8b585b6d8cfa1cb-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.a8b585b6d8cfa1cb:legacy_files/Dockerfiles/Dockerfile.auth-service"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/Dockerfile.authentication": {
+      "basename": "Dockerfile.authentication",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.663d3215346387e6.legacy_files.Dockerfiles.Dockerfile.authentication",
+        "onion_lucid_service_id": "lucid-663d3215346387e6-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.663d3215346387e6:legacy_files/Dockerfiles/Dockerfile.authentication"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/Dockerfile.b1": {
+      "basename": "Dockerfile.b1",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.169dbcd9af8b0a46.legacy_files.Dockerfiles.Dockerfile.b1",
+        "onion_lucid_service_id": "lucid-169dbcd9af8b0a46-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.169dbcd9af8b0a46:legacy_files/Dockerfiles/Dockerfile.b1"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/Dockerfile.base-old": {
+      "basename": "Dockerfile.base-old",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.b832ec5c9c43cacf.legacy_files.Dockerfiles.Dockerfile.base-old",
+        "onion_lucid_service_id": "lucid-b832ec5c9c43cacf-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.b832ec5c9c43cacf:legacy_files/Dockerfiles/Dockerfile.base-old"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/Dockerfile.blockchain": {
+      "basename": "Dockerfile.blockchain",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.fe6d3a789c3c617c.legacy_files.Dockerfiles.Dockerfile.blockchain",
+        "onion_lucid_service_id": "lucid-fe6d3a789c3c617c-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.fe6d3a789c3c617c:legacy_files/Dockerfiles/Dockerfile.blockchain"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/Dockerfile.blockchain-api": {
+      "basename": "Dockerfile.blockchain-api",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.5a79694bb9f33a32.legacy_files.Dockerfiles.Dockerfile.blockchain-api",
+        "onion_lucid_service_id": "lucid-5a79694bb9f33a32-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.5a79694bb9f33a32:legacy_files/Dockerfiles/Dockerfile.blockchain-api"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/Dockerfile.blockchain-core": {
+      "basename": "Dockerfile.blockchain-core",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.ec3a2cf76d329c3b.legacy_files.Dockerfiles.Dockerfile.blockchain-core",
+        "onion_lucid_service_id": "lucid-ec3a2cf76d329c3b-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.ec3a2cf76d329c3b:legacy_files/Dockerfiles/Dockerfile.blockchain-core"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/Dockerfile.blockchain-governance": {
+      "basename": "Dockerfile.blockchain-governance",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.7bd349902e17264c.legacy_files.Dockerfiles.Dockerfile.blockchain-governance",
+        "onion_lucid_service_id": "lucid-7bd349902e17264c-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.7bd349902e17264c:legacy_files/Dockerfiles/Dockerfile.blockchain-governance"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/Dockerfile.blockchain-ledger": {
+      "basename": "Dockerfile.blockchain-ledger",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.928d2e8dcb0333e7.legacy_files.Dockerfiles.Dockerfile.blockchain-ledger",
+        "onion_lucid_service_id": "lucid-928d2e8dcb0333e7-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.928d2e8dcb0333e7:legacy_files/Dockerfiles/Dockerfile.blockchain-ledger"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/Dockerfile.blockchain-sessions-data": {
+      "basename": "Dockerfile.blockchain-sessions-data",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.aae55b6618837483.legacy_files.Dockerfiles.Dockerfile.blockchain-sessions-data",
+        "onion_lucid_service_id": "lucid-aae55b6618837483-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.aae55b6618837483:legacy_files/Dockerfiles/Dockerfile.blockchain-sessions-data"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/Dockerfile.blockchain-vm": {
+      "basename": "Dockerfile.blockchain-vm",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.9428d9db08d93c69.legacy_files.Dockerfiles.Dockerfile.blockchain-vm",
+        "onion_lucid_service_id": "lucid-9428d9db08d93c69-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.9428d9db08d93c69:legacy_files/Dockerfiles/Dockerfile.blockchain-vm"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/Dockerfile.chain-client": {
+      "basename": "Dockerfile.chain-client",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.2a8ca0b7c02ca3e4.legacy_files.Dockerfiles.Dockerfile.chain-client",
+        "onion_lucid_service_id": "lucid-2a8ca0b7c02ca3e4-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.2a8ca0b7c02ca3e4:legacy_files/Dockerfiles/Dockerfile.chain-client"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/Dockerfile.contract-compiler": {
+      "basename": "Dockerfile.contract-compiler",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.e07d1e451f33ec1f.legacy_files.Dockerfiles.Dockerfile.contract-compiler",
+        "onion_lucid_service_id": "lucid-e07d1e451f33ec1f-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.e07d1e451f33ec1f:legacy_files/Dockerfiles/Dockerfile.contract-compiler"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/Dockerfile.contract-deployment": {
+      "basename": "Dockerfile.contract-deployment",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.87da70514bcb7058.legacy_files.Dockerfiles.Dockerfile.contract-deployment",
+        "onion_lucid_service_id": "lucid-87da70514bcb7058-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.87da70514bcb7058:legacy_files/Dockerfiles/Dockerfile.contract-deployment"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/Dockerfile.contract-deployment.simple": {
+      "basename": "Dockerfile.contract-deployment.simple",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.be32f18fbb806501.legacy_files.Dockerfiles.Dockerfile.contract-deployment.simple",
+        "onion_lucid_service_id": "lucid-be32f18fbb806501-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.be32f18fbb806501:legacy_files/Dockerfiles/Dockerfile.contract-deployment.simple"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/Dockerfile.database": {
+      "basename": "Dockerfile.database",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.db1f1cbb171eb18a.legacy_files.Dockerfiles.Dockerfile.database",
+        "onion_lucid_service_id": "lucid-db1f1cbb171eb18a-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.db1f1cbb171eb18a:legacy_files/Dockerfiles/Dockerfile.database"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/Dockerfile.deployment-orchestrator": {
+      "basename": "Dockerfile.deployment-orchestrator",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.074c01dc81f5c185.legacy_files.Dockerfiles.Dockerfile.deployment-orchestrator",
+        "onion_lucid_service_id": "lucid-074c01dc81f5c185-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.074c01dc81f5c185:legacy_files/Dockerfiles/Dockerfile.deployment-orchestrator"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/Dockerfile.dht-node": {
+      "basename": "Dockerfile.dht-node",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.826f8905988797d0.legacy_files.Dockerfiles.Dockerfile.dht-node",
+        "onion_lucid_service_id": "lucid-826f8905988797d0-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.826f8905988797d0:legacy_files/Dockerfiles/Dockerfile.dht-node"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/Dockerfile.gui": {
+      "basename": "Dockerfile.gui",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.db27677de61a42ad.legacy_files.Dockerfiles.Dockerfile.gui",
+        "onion_lucid_service_id": "lucid-db27677de61a42ad-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.db27677de61a42ad:legacy_files/Dockerfiles/Dockerfile.gui"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/Dockerfile.leader-selection": {
+      "basename": "Dockerfile.leader-selection",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.90cfc194ea991a65.legacy_files.Dockerfiles.Dockerfile.leader-selection",
+        "onion_lucid_service_id": "lucid-90cfc194ea991a65-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.90cfc194ea991a65:legacy_files/Dockerfiles/Dockerfile.leader-selection"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/Dockerfile.lucid-anchors-client": {
+      "basename": "Dockerfile.lucid-anchors-client",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.123eaa9a86c74c16.legacy_files.Dockerfiles.Dockerfile.lucid-anchors-client",
+        "onion_lucid_service_id": "lucid-123eaa9a86c74c16-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.123eaa9a86c74c16:legacy_files/Dockerfiles/Dockerfile.lucid-anchors-client"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/Dockerfile.minimal-base": {
+      "basename": "Dockerfile.minimal-base",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.384dc975a9b51793.legacy_files.Dockerfiles.Dockerfile.minimal-base",
+        "onion_lucid_service_id": "lucid-384dc975a9b51793-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.384dc975a9b51793:legacy_files/Dockerfiles/Dockerfile.minimal-base"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/Dockerfile.mongodb": {
+      "basename": "Dockerfile.mongodb",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.2d46d3f6c0e6bd08.legacy_files.Dockerfiles.Dockerfile.mongodb",
+        "onion_lucid_service_id": "lucid-2d46d3f6c0e6bd08-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.2d46d3f6c0e6bd08:legacy_files/Dockerfiles/Dockerfile.mongodb"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/Dockerfile.node": {
+      "basename": "Dockerfile.node",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.be2e256adab01fdb.legacy_files.Dockerfiles.Dockerfile.node",
+        "onion_lucid_service_id": "lucid-be2e256adab01fdb-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.be2e256adab01fdb:legacy_files/Dockerfiles/Dockerfile.node"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/Dockerfile.on-system-chain": {
+      "basename": "Dockerfile.on-system-chain",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.5c4b05c5f6a432f1.legacy_files.Dockerfiles.Dockerfile.on-system-chain",
+        "onion_lucid_service_id": "lucid-5c4b05c5f6a432f1-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.5c4b05c5f6a432f1:legacy_files/Dockerfiles/Dockerfile.on-system-chain"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/Dockerfile.on-system-chain-client": {
+      "basename": "Dockerfile.on-system-chain-client",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.135faaa22eb40a40.legacy_files.Dockerfiles.Dockerfile.on-system-chain-client",
+        "onion_lucid_service_id": "lucid-135faaa22eb40a40-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.135faaa22eb40a40:legacy_files/Dockerfiles/Dockerfile.on-system-chain-client"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/Dockerfile.payout-router-v0": {
+      "basename": "Dockerfile.payout-router-v0",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.04505576eb79e2ce.legacy_files.Dockerfiles.Dockerfile.payout-router-v0",
+        "onion_lucid_service_id": "lucid-04505576eb79e2ce-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.04505576eb79e2ce:legacy_files/Dockerfiles/Dockerfile.payout-router-v0"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/Dockerfile.rdp": {
+      "basename": "Dockerfile.rdp",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.6fdca59af7961ccd.legacy_files.Dockerfiles.Dockerfile.rdp",
+        "onion_lucid_service_id": "lucid-6fdca59af7961ccd-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.6fdca59af7961ccd:legacy_files/Dockerfiles/Dockerfile.rdp"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/Dockerfile.rdp.txt": {
+      "basename": "Dockerfile.rdp.txt",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.b4f1344730a472dc.legacy_files.Dockerfiles.Dockerfile.rdp.txt",
+        "onion_lucid_service_id": "lucid-b4f1344730a472dc-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.b4f1344730a472dc:legacy_files/Dockerfiles/Dockerfile.rdp.txt"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/Dockerfile.storage": {
+      "basename": "Dockerfile.storage",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.1b131e6d3d0d8711.legacy_files.Dockerfiles.Dockerfile.storage",
+        "onion_lucid_service_id": "lucid-1b131e6d3d0d8711-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.1b131e6d3d0d8711:legacy_files/Dockerfiles/Dockerfile.storage"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/Dockerfile.tron-node-client": {
+      "basename": "Dockerfile.tron-node-client",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.d35a6d523b25d87c.legacy_files.Dockerfiles.Dockerfile.tron-node-client",
+        "onion_lucid_service_id": "lucid-d35a6d523b25d87c-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.d35a6d523b25d87c:legacy_files/Dockerfiles/Dockerfile.tron-node-client"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/Dockerfile.user-content": {
+      "basename": "Dockerfile.user-content",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.5a8c25dfd9c87895.legacy_files.Dockerfiles.Dockerfile.user-content",
+        "onion_lucid_service_id": "lucid-5a8c25dfd9c87895-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.5a8c25dfd9c87895:legacy_files/Dockerfiles/Dockerfile.user-content"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/electron-gui/Dockerfile.admin-ui": {
+      "basename": "Dockerfile.admin-ui",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.d2cec7661c806dd1.legacy_files.Dockerfiles.electron-gui.Dockerfile.admin-ui",
+        "onion_lucid_service_id": "lucid-d2cec7661c806dd1-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.d2cec7661c806dd1:legacy_files/Dockerfiles/electron-gui/Dockerfile.admin-ui"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/electron-gui/Dockerfile.desktop-environment": {
+      "basename": "Dockerfile.desktop-environment",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.2f7e09cb3982910b.legacy_files.Dockerfiles.electron-gui.Dockerfile.desktop-environment",
+        "onion_lucid_service_id": "lucid-2f7e09cb3982910b-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.2f7e09cb3982910b:legacy_files/Dockerfiles/electron-gui/Dockerfile.desktop-environment"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/electron-gui/Dockerfile.desktop-environment-distroless": {
+      "basename": "Dockerfile.desktop-environment-distroless",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.23fd8f3e96c49cc2.legacy_files.Dockerfiles.electron-gui.Dockerfile.desktop-environment-distroless",
+        "onion_lucid_service_id": "lucid-23fd8f3e96c49cc2-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.23fd8f3e96c49cc2:legacy_files/Dockerfiles/electron-gui/Dockerfile.desktop-environment-distroless"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/electron-gui/Dockerfile.electron-gui": {
+      "basename": "Dockerfile.electron-gui",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.ddc8bad14987ce74.legacy_files.Dockerfiles.electron-gui.Dockerfile.electron-gui",
+        "onion_lucid_service_id": "lucid-ddc8bad14987ce74-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.ddc8bad14987ce74:legacy_files/Dockerfiles/electron-gui/Dockerfile.electron-gui"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/electron-gui/Dockerfile.gui-builder": {
+      "basename": "Dockerfile.gui-builder",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.73fe746dfb2b9c42.legacy_files.Dockerfiles.electron-gui.Dockerfile.gui-builder",
+        "onion_lucid_service_id": "lucid-73fe746dfb2b9c42-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.73fe746dfb2b9c42:legacy_files/Dockerfiles/electron-gui/Dockerfile.gui-builder"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/electron-gui/Dockerfile.gui-hooks": {
+      "basename": "Dockerfile.gui-hooks",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.271150082adde9ba.legacy_files.Dockerfiles.electron-gui.Dockerfile.gui-hooks",
+        "onion_lucid_service_id": "lucid-271150082adde9ba-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.271150082adde9ba:legacy_files/Dockerfiles/electron-gui/Dockerfile.gui-hooks"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/node/Dockerfile.node": {
+      "basename": "Dockerfile.node",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.82642cee57bab9c6.legacy_files.Dockerfiles.node.Dockerfile.node",
+        "onion_lucid_service_id": "lucid-82642cee57bab9c6-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.82642cee57bab9c6:legacy_files/Dockerfiles/node/Dockerfile.node"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/node/Dockerfile.node-management": {
+      "basename": "Dockerfile.node-management",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.de43131219faa860.legacy_files.Dockerfiles.node.Dockerfile.node-management",
+        "onion_lucid_service_id": "lucid-de43131219faa860-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.de43131219faa860:legacy_files/Dockerfiles/node/Dockerfile.node-management"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/payments/Dockerfile": {
+      "basename": "Dockerfile",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.9b15ee07cb9cd0f0.legacy_files.Dockerfiles.payments.Dockerfile",
+        "onion_lucid_service_id": "lucid-9b15ee07cb9cd0f0-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.9b15ee07cb9cd0f0:legacy_files/Dockerfiles/payments/Dockerfile"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/rdp-services/Dockerfile": {
+      "basename": "Dockerfile",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.30d4e5aeaccc1bd3.legacy_files.Dockerfiles.rdp-services.Dockerfile",
+        "onion_lucid_service_id": "lucid-30d4e5aeaccc1bd3-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.30d4e5aeaccc1bd3:legacy_files/Dockerfiles/rdp-services/Dockerfile"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/rdp-services/Dockerfile.clipboard-handler": {
+      "basename": "Dockerfile.clipboard-handler",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.667266a09f41dffb.legacy_files.Dockerfiles.rdp-services.Dockerfile.clipboard-handler",
+        "onion_lucid_service_id": "lucid-667266a09f41dffb-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.667266a09f41dffb:legacy_files/Dockerfiles/rdp-services/Dockerfile.clipboard-handler"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/rdp-services/Dockerfile.file-transfer-handler": {
+      "basename": "Dockerfile.file-transfer-handler",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.f26f6a78e1290936.legacy_files.Dockerfiles.rdp-services.Dockerfile.file-transfer-handler",
+        "onion_lucid_service_id": "lucid-f26f6a78e1290936-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.f26f6a78e1290936:legacy_files/Dockerfiles/rdp-services/Dockerfile.file-transfer-handler"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/rdp-services/Dockerfile.keystroke-monitor": {
+      "basename": "Dockerfile.keystroke-monitor",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.ec2ad1a9e19241ed.legacy_files.Dockerfiles.rdp-services.Dockerfile.keystroke-monitor",
+        "onion_lucid_service_id": "lucid-ec2ad1a9e19241ed-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.ec2ad1a9e19241ed:legacy_files/Dockerfiles/rdp-services/Dockerfile.keystroke-monitor"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/rdp-services/Dockerfile.rdp-host": {
+      "basename": "Dockerfile.rdp-host",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.0bf941298aeeb11a.legacy_files.Dockerfiles.rdp-services.Dockerfile.rdp-host",
+        "onion_lucid_service_id": "lucid-0bf941298aeeb11a-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.0bf941298aeeb11a:legacy_files/Dockerfiles/rdp-services/Dockerfile.rdp-host"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/rdp-services/Dockerfile.rdp-server": {
+      "basename": "Dockerfile.rdp-server",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.cb6c4a0f747265ac.legacy_files.Dockerfiles.rdp-services.Dockerfile.rdp-server",
+        "onion_lucid_service_id": "lucid-cb6c4a0f747265ac-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.cb6c4a0f747265ac:legacy_files/Dockerfiles/rdp-services/Dockerfile.rdp-server"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/rdp-services/Dockerfile.rdp-server-manager": {
+      "basename": "Dockerfile.rdp-server-manager",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.94d751e7d4767a40.legacy_files.Dockerfiles.rdp-services.Dockerfile.rdp-server-manager",
+        "onion_lucid_service_id": "lucid-94d751e7d4767a40-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.94d751e7d4767a40:legacy_files/Dockerfiles/rdp-services/Dockerfile.rdp-server-manager"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/rdp-services/Dockerfile.resource-monitor": {
+      "basename": "Dockerfile.resource-monitor",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.815a8193d33fe2ba.legacy_files.Dockerfiles.rdp-services.Dockerfile.resource-monitor",
+        "onion_lucid_service_id": "lucid-815a8193d33fe2ba-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.815a8193d33fe2ba:legacy_files/Dockerfiles/rdp-services/Dockerfile.resource-monitor"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/rdp-services/Dockerfile.server-manager": {
+      "basename": "Dockerfile.server-manager",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.0cb50e356e0ef499.legacy_files.Dockerfiles.rdp-services.Dockerfile.server-manager",
+        "onion_lucid_service_id": "lucid-0cb50e356e0ef499-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.0cb50e356e0ef499:legacy_files/Dockerfiles/rdp-services/Dockerfile.server-manager"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/rdp-services/Dockerfile.server-manager.simple": {
+      "basename": "Dockerfile.server-manager.simple",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.ee14bdc5f2328010.legacy_files.Dockerfiles.rdp-services.Dockerfile.server-manager.simple",
+        "onion_lucid_service_id": "lucid-ee14bdc5f2328010-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.ee14bdc5f2328010:legacy_files/Dockerfiles/rdp-services/Dockerfile.server-manager.simple"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/rdp-services/Dockerfile.session-host-manager": {
+      "basename": "Dockerfile.session-host-manager",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.d2e1508690a5b27b.legacy_files.Dockerfiles.rdp-services.Dockerfile.session-host-manager",
+        "onion_lucid_service_id": "lucid-d2e1508690a5b27b-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.d2e1508690a5b27b:legacy_files/Dockerfiles/rdp-services/Dockerfile.session-host-manager"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/rdp-services/Dockerfile.wayland-integration": {
+      "basename": "Dockerfile.wayland-integration",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.4bc72e916b267620.legacy_files.Dockerfiles.rdp-services.Dockerfile.wayland-integration",
+        "onion_lucid_service_id": "lucid-4bc72e916b267620-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.4bc72e916b267620:legacy_files/Dockerfiles/rdp-services/Dockerfile.wayland-integration"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/rdp-services/Dockerfile.window-focus-monitor": {
+      "basename": "Dockerfile.window-focus-monitor",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.ce3e11e37e4aaa12.legacy_files.Dockerfiles.rdp-services.Dockerfile.window-focus-monitor",
+        "onion_lucid_service_id": "lucid-ce3e11e37e4aaa12-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.ce3e11e37e4aaa12:legacy_files/Dockerfiles/rdp-services/Dockerfile.window-focus-monitor"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/rdp-services/Dockerfile.xrdp-integration": {
+      "basename": "Dockerfile.xrdp-integration",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.560e9e47dcec58f4.legacy_files.Dockerfiles.rdp-services.Dockerfile.xrdp-integration",
+        "onion_lucid_service_id": "lucid-560e9e47dcec58f4-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.560e9e47dcec58f4:legacy_files/Dockerfiles/rdp-services/Dockerfile.xrdp-integration"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/server-managements/Dockerfile": {
+      "basename": "Dockerfile",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.e503494918a41c72.legacy_files.Dockerfiles.server-managements.Dockerfile",
+        "onion_lucid_service_id": "lucid-e503494918a41c72-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.e503494918a41c72:legacy_files/Dockerfiles/server-managements/Dockerfile"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/sessions/Dockerfile": {
+      "basename": "Dockerfile",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.f7e74ef6789faa9d.legacy_files.Dockerfiles.sessions.Dockerfile",
+        "onion_lucid_service_id": "lucid-f7e74ef6789faa9d-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.f7e74ef6789faa9d:legacy_files/Dockerfiles/sessions/Dockerfile"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/sessions/Dockerfile.chunker": {
+      "basename": "Dockerfile.chunker",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.67575282d679b7c4.legacy_files.Dockerfiles.sessions.Dockerfile.chunker",
+        "onion_lucid_service_id": "lucid-67575282d679b7c4-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.67575282d679b7c4:legacy_files/Dockerfiles/sessions/Dockerfile.chunker"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/sessions/Dockerfile.clipboard-handler": {
+      "basename": "Dockerfile.clipboard-handler",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.5e494034bbd46c0e.legacy_files.Dockerfiles.sessions.Dockerfile.clipboard-handler",
+        "onion_lucid_service_id": "lucid-5e494034bbd46c0e-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.5e494034bbd46c0e:legacy_files/Dockerfiles/sessions/Dockerfile.clipboard-handler"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/sessions/Dockerfile.encryptor": {
+      "basename": "Dockerfile.encryptor",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.f10a928c6b787afd.legacy_files.Dockerfiles.sessions.Dockerfile.encryptor",
+        "onion_lucid_service_id": "lucid-f10a928c6b787afd-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.f10a928c6b787afd:legacy_files/Dockerfiles/sessions/Dockerfile.encryptor"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/sessions/Dockerfile.merkle_builder": {
+      "basename": "Dockerfile.merkle_builder",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.d8bd2d21148c7fbf.legacy_files.Dockerfiles.sessions.Dockerfile.merkle_builder",
+        "onion_lucid_service_id": "lucid-d8bd2d21148c7fbf-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.d8bd2d21148c7fbf:legacy_files/Dockerfiles/sessions/Dockerfile.merkle_builder"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/sessions/Dockerfile.orchestrator": {
+      "basename": "Dockerfile.orchestrator",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.e1a65a7491f17642.legacy_files.Dockerfiles.sessions.Dockerfile.orchestrator",
+        "onion_lucid_service_id": "lucid-e1a65a7491f17642-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.e1a65a7491f17642:legacy_files/Dockerfiles/sessions/Dockerfile.orchestrator"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/sessions/Dockerfile.processor": {
+      "basename": "Dockerfile.processor",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.c1ac5e4384951245.legacy_files.Dockerfiles.sessions.Dockerfile.processor",
+        "onion_lucid_service_id": "lucid-c1ac5e4384951245-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.c1ac5e4384951245:legacy_files/Dockerfiles/sessions/Dockerfile.processor"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/sessions/Dockerfile.recoreder": {
+      "basename": "Dockerfile.recoreder",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.346586f39065c45b.legacy_files.Dockerfiles.sessions.Dockerfile.recoreder",
+        "onion_lucid_service_id": "lucid-346586f39065c45b-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.346586f39065c45b:legacy_files/Dockerfiles/sessions/Dockerfile.recoreder"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/sessions/Dockerfile.sesh-storage": {
+      "basename": "Dockerfile.sesh-storage",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.88dd7496212c9059.legacy_files.Dockerfiles.sessions.Dockerfile.sesh-storage",
+        "onion_lucid_service_id": "lucid-88dd7496212c9059-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.88dd7496212c9059:legacy_files/Dockerfiles/sessions/Dockerfile.sesh-storage"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/sessions/Dockerfile.session-orchestrator": {
+      "basename": "Dockerfile.session-orchestrator",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.c91212b051f865e4.legacy_files.Dockerfiles.sessions.Dockerfile.session-orchestrator",
+        "onion_lucid_service_id": "lucid-c91212b051f865e4-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.c91212b051f865e4:legacy_files/Dockerfiles/sessions/Dockerfile.session-orchestrator"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/sessions/Dockerfile.session-recorder": {
+      "basename": "Dockerfile.session-recorder",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.27cfcd5575c5bbb8.legacy_files.Dockerfiles.sessions.Dockerfile.session-recorder",
+        "onion_lucid_service_id": "lucid-27cfcd5575c5bbb8-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.27cfcd5575c5bbb8:legacy_files/Dockerfiles/sessions/Dockerfile.session-recorder"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/sessions/pipeline/Dockerfile": {
+      "basename": "Dockerfile",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.69e259a667bac261.legacy_files.Dockerfiles.sessions.pipeline.Dockerfile",
+        "onion_lucid_service_id": "lucid-69e259a667bac261-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.69e259a667bac261:legacy_files/Dockerfiles/sessions/pipeline/Dockerfile"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/tools/Dockerfile.api-gateway": {
+      "basename": "Dockerfile.api-gateway",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.c038f9e6b6ca8b97.legacy_files.Dockerfiles.tools.Dockerfile.api-gateway",
+        "onion_lucid_service_id": "lucid-c038f9e6b6ca8b97-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.c038f9e6b6ca8b97:legacy_files/Dockerfiles/tools/Dockerfile.api-gateway"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/tools/Dockerfile.api-server": {
+      "basename": "Dockerfile.api-server",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.52647925b3f5dcce.legacy_files.Dockerfiles.tools.Dockerfile.api-server",
+        "onion_lucid_service_id": "lucid-52647925b3f5dcce-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.52647925b3f5dcce:legacy_files/Dockerfiles/tools/Dockerfile.api-server"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/tools/Dockerfile.debug-utilities": {
+      "basename": "Dockerfile.debug-utilities",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.a74af4c71dea1c5c.legacy_files.Dockerfiles.tools.Dockerfile.debug-utilities",
+        "onion_lucid_service_id": "lucid-a74af4c71dea1c5c-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.a74af4c71dea1c5c:legacy_files/Dockerfiles/tools/Dockerfile.debug-utilities"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/tools/Dockerfile.network-diagnostics": {
+      "basename": "Dockerfile.network-diagnostics",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.3ded1612d1ba74e3.legacy_files.Dockerfiles.tools.Dockerfile.network-diagnostics",
+        "onion_lucid_service_id": "lucid-3ded1612d1ba74e3-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.3ded1612d1ba74e3:legacy_files/Dockerfiles/tools/Dockerfile.network-diagnostics"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/tools/Dockerfile.openapi-gateway": {
+      "basename": "Dockerfile.openapi-gateway",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.63838df8441755db.legacy_files.Dockerfiles.tools.Dockerfile.openapi-gateway",
+        "onion_lucid_service_id": "lucid-63838df8441755db-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.63838df8441755db:legacy_files/Dockerfiles/tools/Dockerfile.openapi-gateway"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/tools/Dockerfile.openapi-server": {
+      "basename": "Dockerfile.openapi-server",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.f3249a1837937841.legacy_files.Dockerfiles.tools.Dockerfile.openapi-server",
+        "onion_lucid_service_id": "lucid-f3249a1837937841-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.f3249a1837937841:legacy_files/Dockerfiles/tools/Dockerfile.openapi-server"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/tools/Dockerfile.server-tools": {
+      "basename": "Dockerfile.server-tools",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.52984c3392d2e130.legacy_files.Dockerfiles.tools.Dockerfile.server-tools",
+        "onion_lucid_service_id": "lucid-52984c3392d2e130-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.52984c3392d2e130:legacy_files/Dockerfiles/tools/Dockerfile.server-tools"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/tools/Dockerfile.tor-proxy": {
+      "basename": "Dockerfile.tor-proxy",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.62619fd4e8bf4ae5.legacy_files.Dockerfiles.tools.Dockerfile.tor-proxy",
+        "onion_lucid_service_id": "lucid-62619fd4e8bf4ae5-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.62619fd4e8bf4ae5:legacy_files/Dockerfiles/tools/Dockerfile.tor-proxy"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/tools/Dockerfile.tunnel-tools": {
+      "basename": "Dockerfile.tunnel-tools",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.bd0c011abe2ed4a9.legacy_files.Dockerfiles.tools.Dockerfile.tunnel-tools",
+        "onion_lucid_service_id": "lucid-bd0c011abe2ed4a9-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.bd0c011abe2ed4a9:legacy_files/Dockerfiles/tools/Dockerfile.tunnel-tools"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/users/Dockerfile": {
+      "basename": "Dockerfile",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.f35af27a64b87a6e.legacy_files.Dockerfiles.users.Dockerfile",
+        "onion_lucid_service_id": "lucid-f35af27a64b87a6e-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.f35af27a64b87a6e:legacy_files/Dockerfiles/users/Dockerfile"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/users/Dockerfile.authentication": {
+      "basename": "Dockerfile.authentication",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.8f72d081874ef009.legacy_files.Dockerfiles.users.Dockerfile.authentication",
+        "onion_lucid_service_id": "lucid-8f72d081874ef009-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.8f72d081874ef009:legacy_files/Dockerfiles/users/Dockerfile.authentication"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/users/Dockerfile.authentication-service": {
+      "basename": "Dockerfile.authentication-service",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.801f680c3b493620.legacy_files.Dockerfiles.users.Dockerfile.authentication-service",
+        "onion_lucid_service_id": "lucid-801f680c3b493620-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.801f680c3b493620:legacy_files/Dockerfiles/users/Dockerfile.authentication-service"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/Dockerfiles/users/Dockerfile.user-manager": {
+      "basename": "Dockerfile.user-manager",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.9c18ea58aef8310e.legacy_files.Dockerfiles.users.Dockerfile.user-manager",
+        "onion_lucid_service_id": "lucid-9c18ea58aef8310e-legacy-files-dockerfiles",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.9c18ea58aef8310e:legacy_files/Dockerfiles/users/Dockerfile.user-manager"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/infrastructure/containers/.devcontainer/Dockerfile": {
+      "basename": "Dockerfile",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.2293bf5a74c8f886.legacy_files.infrastructure.containers.devcontainer.Dockerfile",
+        "onion_lucid_service_id": "lucid-2293bf5a74c8f886-legacy-files-infrastruct",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.2293bf5a74c8f886:legacy_files/infrastructure/containers/.devcontainer/Dockerfile"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "legacy_files/infrastructure/docker/on-system-chain/Dockerfile": {
+      "basename": "Dockerfile",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.0cbda7a1adb81b0a.legacy_files.infrastructure.docker.on-system-chain.Dockerfile",
+        "onion_lucid_service_id": "lucid-0cbda7a1adb81b0a-legacy-files-infrastruct",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.0cbda7a1adb81b0a:legacy_files/infrastructure/docker/on-system-chain/Dockerfile"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "node/Dockerfile.node-management": {
+      "basename": "Dockerfile.node-management",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.d9062610783d2b08.node.Dockerfile.node-management",
+        "onion_lucid_service_id": "lucid-d9062610783d2b08-node-dockerfile-node-man",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.d9062610783d2b08:node/Dockerfile.node-management"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "payment_systems/Dockerfile": {
+      "basename": "Dockerfile",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.8d9328559c9dcd71.payment_systems.Dockerfile",
+        "onion_lucid_service_id": "lucid-8d9328559c9dcd71-payment-systems-dockerfi",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.8d9328559c9dcd71:payment_systems/Dockerfile"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "payment_systems/tron/Dockerfile": {
+      "basename": "Dockerfile",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.9e2f4bdfdb15c7d9.payment_systems.tron.Dockerfile",
+        "onion_lucid_service_id": "lucid-9e2f4bdfdb15c7d9-payment-systems-tron-doc",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.9e2f4bdfdb15c7d9:payment_systems/tron/Dockerfile"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "payment_systems/tron/Dockerfile.payment-gateway": {
+      "basename": "Dockerfile.payment-gateway",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.b82f25e7ae35933d.payment_systems.tron.Dockerfile.payment-gateway",
+        "onion_lucid_service_id": "lucid-b82f25e7ae35933d-payment-systems-tron-doc",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.b82f25e7ae35933d:payment_systems/tron/Dockerfile.payment-gateway"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "payment_systems/tron/Dockerfile.payout-router": {
+      "basename": "Dockerfile.payout-router",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.d7cebec596345adf.payment_systems.tron.Dockerfile.payout-router",
+        "onion_lucid_service_id": "lucid-d7cebec596345adf-payment-systems-tron-doc",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.d7cebec596345adf:payment_systems/tron/Dockerfile.payout-router"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "payment_systems/tron/Dockerfile.tron-client": {
+      "basename": "Dockerfile.tron-client",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.5d1b3d637be58626.payment_systems.tron.Dockerfile.tron-client",
+        "onion_lucid_service_id": "lucid-5d1b3d637be58626-payment-systems-tron-doc",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.5d1b3d637be58626:payment_systems/tron/Dockerfile.tron-client"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "payment_systems/tron/Dockerfile.tron-relay": {
+      "basename": "Dockerfile.tron-relay",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.31fa7fea8c10a5c4.payment_systems.tron.Dockerfile.tron-relay",
+        "onion_lucid_service_id": "lucid-31fa7fea8c10a5c4-payment-systems-tron-doc",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.31fa7fea8c10a5c4:payment_systems/tron/Dockerfile.tron-relay"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "payment_systems/tron/Dockerfile.trx-staking": {
+      "basename": "Dockerfile.trx-staking",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.fea83e497359e4e9.payment_systems.tron.Dockerfile.trx-staking",
+        "onion_lucid_service_id": "lucid-fea83e497359e4e9-payment-systems-tron-doc",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.fea83e497359e4e9:payment_systems/tron/Dockerfile.trx-staking"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "payment_systems/tron/Dockerfile.usdt-manager": {
+      "basename": "Dockerfile.usdt-manager",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.7fdfbc1b5e2372c3.payment_systems.tron.Dockerfile.usdt-manager",
+        "onion_lucid_service_id": "lucid-7fdfbc1b5e2372c3-payment-systems-tron-doc",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.7fdfbc1b5e2372c3:payment_systems/tron/Dockerfile.usdt-manager"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "payment_systems/tron/Dockerfile.wallet-manager": {
+      "basename": "Dockerfile.wallet-manager",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.4f99c51d092129c3.payment_systems.tron.Dockerfile.wallet-manager",
+        "onion_lucid_service_id": "lucid-4f99c51d092129c3-payment-systems-tron-doc",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.4f99c51d092129c3:payment_systems/tron/Dockerfile.wallet-manager"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "payment_systems/tron_relay/Dockerfile.tron-relay": {
+      "basename": "Dockerfile.tron-relay",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.b3ceec3a8af2557e.payment_systems.tron_relay.Dockerfile.tron-relay",
+        "onion_lucid_service_id": "lucid-b3ceec3a8af2557e-payment-systems-tron-rel",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.b3ceec3a8af2557e:payment_systems/tron_relay/Dockerfile.tron-relay"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "RDP/Dockerfile.controller": {
+      "basename": "Dockerfile.controller",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.7897a0f87bab5be5.RDP.Dockerfile.controller",
+        "onion_lucid_service_id": "lucid-7897a0f87bab5be5-rdp-dockerfile-controlle",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.7897a0f87bab5be5:RDP/Dockerfile.controller"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "RDP/Dockerfile.monitor": {
+      "basename": "Dockerfile.monitor",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.80773f556c9c67bb.RDP.Dockerfile.monitor",
+        "onion_lucid_service_id": "lucid-80773f556c9c67bb-rdp-dockerfile-monitor",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.80773f556c9c67bb:RDP/Dockerfile.monitor"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "RDP/Dockerfile.rdp": {
+      "basename": "Dockerfile.rdp",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.0c4a24c7c8f2d8b8.RDP.Dockerfile.rdp",
+        "onion_lucid_service_id": "lucid-0c4a24c7c8f2d8b8-rdp-dockerfile-rdp",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.0c4a24c7c8f2d8b8:RDP/Dockerfile.rdp"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "RDP/Dockerfile.rdp-controller": {
+      "basename": "Dockerfile.rdp-controller",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.e33e41a2ce96f31f.RDP.Dockerfile.rdp-controller",
+        "onion_lucid_service_id": "lucid-e33e41a2ce96f31f-rdp-dockerfile-rdp-contr",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.e33e41a2ce96f31f:RDP/Dockerfile.rdp-controller"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "RDP/Dockerfile.server-manager": {
+      "basename": "Dockerfile.server-manager",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.1ef61e2ba43917b2.RDP.Dockerfile.server-manager",
+        "onion_lucid_service_id": "lucid-1ef61e2ba43917b2-rdp-dockerfile-server-ma",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.1ef61e2ba43917b2:RDP/Dockerfile.server-manager"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "RDP/Dockerfile.xrdp": {
+      "basename": "Dockerfile.xrdp",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.be2cfbae38f55228.RDP.Dockerfile.xrdp",
+        "onion_lucid_service_id": "lucid-be2cfbae38f55228-rdp-dockerfile-xrdp",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.be2cfbae38f55228:RDP/Dockerfile.xrdp"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "service_mesh/Dockerfile": {
+      "basename": "Dockerfile",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.7deae1de39ab2114.service_mesh.Dockerfile",
+        "onion_lucid_service_id": "lucid-7deae1de39ab2114-service-mesh-dockerfile",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.7deae1de39ab2114:service_mesh/Dockerfile"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "sessions/api/Dockerfile": {
+      "basename": "Dockerfile",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.9fbb8df424b650ca.sessions.api.Dockerfile",
+        "onion_lucid_service_id": "lucid-9fbb8df424b650ca-sessions-api-dockerfile",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.9fbb8df424b650ca:sessions/api/Dockerfile"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "sessions/Dockerfile": {
+      "basename": "Dockerfile",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.216ed181bbdb5579.sessions.Dockerfile",
+        "onion_lucid_service_id": "lucid-216ed181bbdb5579-sessions-dockerfile",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.216ed181bbdb5579:sessions/Dockerfile"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "sessions/Dockerfile.api": {
+      "basename": "Dockerfile.api",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.428ca794d000ff38.sessions.Dockerfile.api",
+        "onion_lucid_service_id": "lucid-428ca794d000ff38-sessions-dockerfile-api",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.428ca794d000ff38:sessions/Dockerfile.api"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "sessions/Dockerfile.pipeline": {
+      "basename": "Dockerfile.pipeline",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.11099430269df1d7.sessions.Dockerfile.pipeline",
+        "onion_lucid_service_id": "lucid-11099430269df1d7-sessions-dockerfile-pipe",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.11099430269df1d7:sessions/Dockerfile.pipeline"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "sessions/Dockerfile.processor": {
+      "basename": "Dockerfile.processor",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.e3f7eb4cc07144ed.sessions.Dockerfile.processor",
+        "onion_lucid_service_id": "lucid-e3f7eb4cc07144ed-sessions-dockerfile-proc",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.e3f7eb4cc07144ed:sessions/Dockerfile.processor"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "sessions/Dockerfile.recorder": {
+      "basename": "Dockerfile.recorder",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.89be0a2385f29b7e.sessions.Dockerfile.recorder",
+        "onion_lucid_service_id": "lucid-89be0a2385f29b7e-sessions-dockerfile-reco",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.89be0a2385f29b7e:sessions/Dockerfile.recorder"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "sessions/Dockerfile.storage": {
+      "basename": "Dockerfile.storage",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.eb466a64e15bdf74.sessions.Dockerfile.storage",
+        "onion_lucid_service_id": "lucid-eb466a64e15bdf74-sessions-dockerfile-stor",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.eb466a64e15bdf74:sessions/Dockerfile.storage"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "src/api/Dockerfile": {
+      "basename": "Dockerfile",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.2f73a7d92895e596.src.api.Dockerfile",
+        "onion_lucid_service_id": "lucid-2f73a7d92895e596-src-api-dockerfile",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.2f73a7d92895e596:src/api/Dockerfile"
+      },
+      "ports_service_key": null,
+      "ports": null
+    },
+    "wallet/Dockerfile.wallet": {
+      "basename": "Dockerfile.wallet",
+      "infrastructure_containers_rel": null,
+      "canonical_path": null,
+      "in_x_files": false,
+      "lucid_service_ids": {
+        "com_lucid_service_id": "com.lucid.dockerfile.v1.a13e0ba6efa354a9.wallet.Dockerfile.wallet",
+        "onion_lucid_service_id": "lucid-a13e0ba6efa354a9-wallet-dockerfile-wallet",
+        "org_lucid_service_id": "org.lucid.dockerfile.v1.a13e0ba6efa354a9:wallet/Dockerfile.wallet"
+      },
+      "ports_service_key": null,
+      "ports": null
+    }
+  }
+}

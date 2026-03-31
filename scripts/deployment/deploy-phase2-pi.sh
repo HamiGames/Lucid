@@ -1,10 +1,20 @@
 #!/bin/bash
 # Phase 2 Core Services Deployment to Raspberry Pi
+# File: /app/scripts/deployment/deploy-phase2-pi.sh
+# x-lucid-file-path: /app/scripts/deployment/deploy-phase2-pi.sh
+# x-lucid-file-directory: /app/scripts/deployment
+# x-lucid-file-type: shell
 # Based on docker-build-process-plan.md Step 14
 # Deploys API Gateway, Service Mesh, Blockchain Core to Pi
 
 set -euo pipefail
 
+
+# x-files-listing.txt → LUCID_HOST_COMPOSE_* (scripts/lib/lucid-repo-paths.sh)
+_LUCID_W="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+while [[ "$_LUCID_W" != "/" && "$(basename "$_LUCID_W")" != "scripts" ]]; do _LUCID_W="$(dirname "$_LUCID_W")"; done
+# shellcheck source=lib/lucid-repo-paths.sh
+source "${_LUCID_W}/lib/lucid-repo-paths.sh"
 # Color codes for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -18,7 +28,7 @@ PI_USER="pickme"
 PI_SSH_PORT="22"
 PI_SSH_KEY_PATH="$HOME/.ssh/id_rsa"
 PI_DEPLOY_DIR="/mnt/myssd/Lucid/Lucid"
-PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+PROJECT_ROOT="$LUCID_REPO_ROOT"
 
 # Service configuration
 SERVICES=("lucid-service-mesh-controller" "lucid-api-gateway" "lucid-blockchain-engine" "lucid-session-anchoring" "lucid-block-manager" "lucid-data-chain")
@@ -76,7 +86,7 @@ test_ssh_connection() {
 verify_compose_file() {
     echo -e "${BLUE}=== Verifying Docker Compose File ===${NC}"
     
-    local pi_compose_file="$PI_DEPLOY_DIR/configs/docker/docker-compose.core.yml"
+    local pi_compose_file="$PI_DEPLOY_DIR/$LUCID_HOST_REL_COMPOSE_CORE"
     
     ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no -i "$PI_SSH_KEY_PATH" "$PI_USER@$PI_HOST" "test -f $pi_compose_file" >/dev/null 2>&1
     
@@ -113,7 +123,7 @@ pull_arm64_images() {
     
     ssh -o ConnectTimeout=300 -o ServerAliveInterval=60 -o ServerAliveCountMax=5 -o StrictHostKeyChecking=no -i "$PI_SSH_KEY_PATH" "$PI_USER@$PI_HOST" "
         cd $PI_DEPLOY_DIR
-        docker-compose --env-file configs/environment/.env.foundation --env-file configs/environment/.env.core -f configs/docker/docker-compose.foundation.yml -f configs/docker/docker-compose.core.yml pull
+        docker-compose --env-file configs/environment/.env.foundation --env-file configs/environment/.env.core -f "${LUCID_HOST_COMPOSE_FOUNDATION}" -f "${LUCID_HOST_COMPOSE_CORE}" pull
     " >/dev/null 2>&1
     
     if [ $? -eq 0 ]; then
@@ -130,7 +140,7 @@ deploy_phase2_services() {
     
     ssh -o ConnectTimeout=300 -o ServerAliveInterval=60 -o ServerAliveCountMax=5 -o StrictHostKeyChecking=no -i "$PI_SSH_KEY_PATH" "$PI_USER@$PI_HOST" "
         cd $PI_DEPLOY_DIR
-        docker-compose --env-file configs/environment/.env.foundation --env-file configs/environment/.env.core -f configs/docker/docker-compose.foundation.yml -f configs/docker/docker-compose.core.yml up -d
+        docker-compose --env-file configs/environment/.env.foundation --env-file configs/environment/.env.core -f "${LUCID_HOST_COMPOSE_FOUNDATION}" -f "${LUCID_HOST_COMPOSE_CORE}" up -d
     " >/dev/null 2>&1
     
     if [ $? -eq 0 ]; then

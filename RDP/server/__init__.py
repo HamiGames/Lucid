@@ -6,6 +6,7 @@
 """
 File: /app/RDP/server/__init__.py
 x-lucid-file-path: /app/RDP/server/__init__.py
+x-lucid-file-directory: /app/RDP/server
 x-lucid-file-type: python
 
 RDP Server Module

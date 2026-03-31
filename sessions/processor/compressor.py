@@ -6,6 +6,7 @@
 """
 File: /app/sessions/processor/compressor.py
 x-lucid-file-path: /app/sessions/processor/compressor.py
+x-lucid-file-directory: /app/sessions/processor
 x-lucid-file-type: python
 """
 

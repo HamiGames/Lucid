@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# File: /app/scripts/verify-hybrid-approach.sh
+# x-lucid-file-path: /app/scripts/verify-hybrid-approach.sh
+# x-lucid-file-directory: /app/scripts
+# x-lucid-file-type: shell
 # Lucid Hybrid Base Image Approach - Build Verification Script
 # This script verifies that the hybrid approach is correctly implemented
 

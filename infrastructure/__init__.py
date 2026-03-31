@@ -2,6 +2,11 @@
 # Infrastructure as Code components for the Lucid RDP platform
 
 """
+File: /app/infrastructure/__init__.py
+x-lucid-file-path: /app/infrastructure/__init__.py
+x-lucid-file-directory: /app/infrastructure
+x-lucid-file-type: python
+
 Infrastructure package for Lucid RDP.
 Contains Docker, Kubernetes, Terraform, and service mesh configurations.
 """

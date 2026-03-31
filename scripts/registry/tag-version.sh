@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# File: /app/scripts/registry/tag-version.sh
+# x-lucid-file-path: /app/scripts/registry/tag-version.sh
+# x-lucid-file-directory: /app/scripts/registry
+# x-lucid-file-type: shell
 # Lucid Container Version Tagging Script
 # Manages version tags for Lucid containers in GitHub Container Registry
 # Usage: ./tag-version.sh [action] [service] [version]

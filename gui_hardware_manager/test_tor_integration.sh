@@ -1,5 +1,9 @@
 #!/bin/bash
 # Test Script for GUI Hardware Manager Tor Integration
+# File: /app/gui_hardware_manager/test_tor_integration.sh
+# x-lucid-file-path: /app/gui_hardware_manager/test_tor_integration.sh
+# x-lucid-file-directory: /app/gui_hardware_manager
+# x-lucid-file-type: shell
 # Path: gui-hardware-manager/test_tor_integration.sh
 # Purpose: Verify Tor integration endpoints and functionality
 

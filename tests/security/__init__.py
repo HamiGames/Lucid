@@ -1,4 +1,9 @@
 """
+File: /app/tests/security/__init__.py
+x-lucid-file-path: /app/tests/security/__init__.py
+x-lucid-file-directory: /app/tests/security
+x-lucid-file-type: python
+
 Security Testing Module
 
 This module contains comprehensive security tests for the Lucid API system.

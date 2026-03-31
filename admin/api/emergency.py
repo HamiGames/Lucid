@@ -4,6 +4,7 @@
 """
 File: /app/admin/api/emergency.py
 x-lucid-file-path: /app/admin/api/emergency.py
+x-lucid-file-directory: /app/admin/api
 x-lucid-file-type: python
 
 Lucid Admin Interface - Emergency API Endpoints

@@ -5,6 +5,7 @@
 """
 File: /app/wallet/security/policy_validator.py
 x-lucid-file-path: /app/wallet/security/policy_validator.py
+x-lucid-file-directory: /app/wallet/security
 x-lucid-file-type: python
 """
 

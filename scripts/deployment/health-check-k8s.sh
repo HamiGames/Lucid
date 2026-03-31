@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# File: /app/scripts/deployment/health-check-k8s.sh
+# x-lucid-file-path: /app/scripts/deployment/health-check-k8s.sh
+# x-lucid-file-directory: /app/scripts/deployment
+# x-lucid-file-type: shell
 # Lucid Kubernetes Health Check Script
 # Step 52: Production Kubernetes Deployment
 # Version: 1.0.0

@@ -1,6 +1,7 @@
 """
 File: /app/node/__init__.py
 x-lucid-file-path: /app/node/__init__.py
+x-lucid-file-directory: /app/node
 x-lucid-file-type: python
 
 LUCID Node Components

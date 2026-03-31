@@ -5,6 +5,7 @@
 """
 File: /app/blockchain/deployment/contract_deployment.py
 x-lucid-file-path: /app/blockchain/deployment/contract_deployment.py
+x-lucid-file-directory: /app/blockchain/deployment
 x-lucid-file-type: python
 """
 

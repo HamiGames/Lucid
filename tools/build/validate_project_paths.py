@@ -2,6 +2,7 @@
 """
 File: /app/tools/build/validate_project_paths.py
 x-lucid-file-path: /app/tools/build/validate_project_paths.py
+x-lucid-file-directory: /app/tools
 x-lucid-file-type: python
 
 Lucid Project Path Validation Tool - Genius Level

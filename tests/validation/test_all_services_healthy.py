@@ -1,4 +1,9 @@
 """
+File: /app/tests/validation/test_all_services_healthy.py
+x-lucid-file-path: /app/tests/validation/test_all_services_healthy.py
+x-lucid-file-directory: /app/tests/validation
+x-lucid-file-type: python
+
 Test All Services Healthy
 
 Validates that all 10 Lucid clusters are healthy and operational.

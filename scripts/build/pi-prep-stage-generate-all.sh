@@ -6,6 +6,14 @@
 
 set -e
 
+_lucid_here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+_lucid_scripts="$_lucid_here"
+while [[ "$_lucid_scripts" != "/" && "$(basename "$_lucid_scripts")" != "scripts" ]]; do
+    _lucid_scripts="$(dirname "$_lucid_scripts")"
+done
+# shellcheck source=../lib/lucid-repo-paths.sh
+source "$_lucid_scripts/lib/lucid-repo-paths.sh"
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -14,8 +22,8 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Configuration
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="/mnt/myssd/Lucid/Lucid"
+SCRIPT_DIR="$_lucid_here"
+PROJECT_ROOT="$LUCID_REPO_ROOT"
 CONFIGS_DIR="$PROJECT_ROOT/configs"
 ENV_DIR="$CONFIGS_DIR/environment"
 DOCKER_CONFIGS_DIR="$CONFIGS_DIR/docker"
@@ -73,7 +81,7 @@ create_directory_structure() {
     mkdir -p "$PROJECT_ROOT/logs"
     
     # Create directories for all .env file locations
-    mkdir -p "$PROJECT_ROOT/03-api-gateway/api"
+    mkdir -p "$PROJECT_ROOT/03_api_gateway/api"
     mkdir -p "$PROJECT_ROOT/infrastructure/docker/blockchain/env"
     mkdir -p "$PROJECT_ROOT/infrastructure/docker/databases/env"
     mkdir -p "$PROJECT_ROOT/sessions/core"
@@ -146,7 +154,7 @@ generate_secure_values() {
     # Network configuration
     export PI_HOST="192.168.0.75"
     export PI_USER="pickme"
-    export PI_DEPLOY_DIR="/mnt/myssd/Lucid"
+    export PI_DEPLOY_DIR="${PI_DEPLOY_DIR:-$PROJECT_ROOT}"
     
     # Build configuration
     export BUILD_PLATFORM="linux/arm64"
@@ -174,7 +182,7 @@ generate_env_foundation() {
 MONGODB_PASSWORD=$MONGODB_PASSWORD
 MONGODB_ROOT_PASSWORD=$MONGODB_PASSWORD
 MONGODB_URI=mongodb://lucid:$MONGODB_PASSWORD@lucid-mongodb:27017/lucid?authSource=admin
-MONGODB_DATABASE=lucid_production
+MONGODB_DATABASE=lucid
 MONGODB_PORT=27017
 
 REDIS_PASSWORD=$REDIS_PASSWORD
@@ -547,13 +555,13 @@ EOF
 # STEP 5: GENERATE SERVICE-SPECIFIC .ENV FILES
 # ============================================================================
 
-# Generate ./03-api-gateway/api/.env.api
+# Generate ./03_api_gateway/api/.env.api
 generate_env_api_gateway() {
-    log_info "Generating 03-api-gateway/api/.env.api..."
+    log_info "Generating 03_api_gateway/api/.env.api..."
     
-    cat > "$PROJECT_ROOT/03-api-gateway/api/.env.api" << EOF
+    cat > "$PROJECT_ROOT/03_api_gateway/api/.env.api" << EOF
 # API Gateway Service Configuration
-# File: 03-api-gateway/api/.env.api
+# File: 03_api_gateway/api/.env.api
 # Generated: $(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
 # Service Configuration
@@ -597,7 +605,7 @@ TOR_CONTROL_PORT=9051
 TOR_CONTROL_PASSWORD=$TOR_PASSWORD
 EOF
     
-    log_success "03-api-gateway/api/.env.api generated"
+    log_success "03_api_gateway/api/.env.api generated"
 }
 
 # Generate blockchain service .env files
@@ -844,7 +852,7 @@ MONGO_INITDB_DATABASE=lucid
 MONGODB_URI=mongodb://lucid:$MONGODB_PASSWORD@lucid-mongodb:27017/lucid?authSource=admin
 MONGODB_PASSWORD=$MONGODB_PASSWORD
 MONGODB_PORT=27017
-MONGODB_DATABASE=lucid_production
+MONGODB_DATABASE=lucid
 EOF
 
     # database-restore.env
@@ -946,7 +954,7 @@ validate_generated_files() {
         "$ENV_DIR/.env.application"
         "$ENV_DIR/.env.support"
         "$ENV_DIR/.env.pi-build"
-        "$PROJECT_ROOT/03-api-gateway/api/.env.api"
+        "$PROJECT_ROOT/03_api_gateway/api/.env.api"
         "$PROJECT_ROOT/infrastructure/docker/blockchain/env/deployment-orchestrator.env"
         "$PROJECT_ROOT/infrastructure/docker/blockchain/env/contract-compiler.env"
         "$PROJECT_ROOT/infrastructure/docker/blockchain/env/blockchain-ledger.env"
@@ -1009,7 +1017,7 @@ display_summary() {
     echo "  ✓ configs/environment/.env.core"
     echo "  ✓ configs/environment/.env.application"
     echo "  ✓ configs/environment/.env.support"
-    echo "  ✓ 03-api-gateway/api/.env.api"
+    echo "  ✓ 03_api_gateway/api/.env.api"
     echo "  ✓ infrastructure/docker/blockchain/env/* (10 files)"
     echo "  ✓ infrastructure/docker/databases/env/* (6 files)"
     echo "  ✓ sessions/core/* (3 files)"

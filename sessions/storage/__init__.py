@@ -1,6 +1,7 @@
 """
 File: /app/sessions/storage/__init__.py
 x-lucid-file-path: /app/sessions/storage/__init__.py
+x-lucid-file-directory: /app/sessions/storage
 x-lucid-file-type: python
 
 Lucid Session Storage Service

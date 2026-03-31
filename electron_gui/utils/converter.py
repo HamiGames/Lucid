@@ -1,6 +1,7 @@
 """
 File: /app/electron_gui/utils/converter.py
 x-lucid-file-path: /app/electron_gui/utils/converter.py
+x-lucid-file-directory: /app/electron_gui/utils
 x-lucid-file-type: python
 
 Converts Lucid *.ts / *.tsx into *.py for the Electron GUI.

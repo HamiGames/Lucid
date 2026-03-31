@@ -1,9 +1,10 @@
 """
-Logging Middleware for GUI API Bridge
 File: /app/gui_api_bridge/gui_api_bridge/middleware/logging.py
 x-lucid-file-path: /app/gui_api_bridge/gui_api_bridge/middleware/logging.py
+x-lucid-file-directory: /app/gui_api_bridge/gui_api_bridge/middleware
 x-lucid-file-type: python
 
+Logging Middleware for GUI API Bridge
 """
 
 import logging

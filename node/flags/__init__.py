@@ -5,6 +5,7 @@
 """
 File: /app/node/flags/__init__.py
 x-lucid-file-path: /app/node/flags/__init__.py
+x-lucid-file-directory: /app/node/flags
 x-lucid-file-type: python
 
 Flags module for Lucid node operations.

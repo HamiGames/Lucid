@@ -1,3 +1,10 @@
+"""
+File: /app/tests/test_compose_scripts.py
+x-lucid-file-path: /app/tests/test_compose_scripts.py
+x-lucid-file-directory: /app/tests
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 from pathlib import Path

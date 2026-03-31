@@ -1,5 +1,9 @@
 #!/bin/bash
 # Blockchain Anchoring Service Startup Script
+# File: /app/scripts/services/start-blockchain-service.sh
+# x-lucid-file-path: /app/scripts/services/start-blockchain-service.sh
+# x-lucid-file-directory: /app/scripts/services
+# x-lucid-file-type: shell
 # LUCID-STRICT Layer 2 Service Management
 # Purpose: Start blockchain anchoring service for blockchain integration
 # Compatibility: Distroless, API compliant

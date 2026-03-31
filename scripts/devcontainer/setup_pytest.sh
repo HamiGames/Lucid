@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 # Path: setup_pytest.sh
+# File: /app/scripts/devcontainer/setup_pytest.sh
+# x-lucid-file-path: /app/scripts/devcontainer/setup_pytest.sh
+# x-lucid-file-directory: /app/scripts/devcontainer
+# x-lucid-file-type: shell
 # Fix pytest integration for Lucid RDP project
 
 set -euo pipefail

@@ -1,3 +1,8 @@
+# File: /app/configs/services/gui-docker-manager.yml
+# x-lucid-file-path: /app/configs/services/gui-docker-manager.yml
+# x-lucid-file-directory: /app/configs/services
+# x-lucid-file-type: YAML
+
 # GUI Docker Manager Service Configuration
 # Manages Docker containers from Electron GUI
 # Implements access control based on user roles

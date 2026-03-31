@@ -1,6 +1,7 @@
 """
 File: /app/common/tor/tor_manager.py
 x-lucid-file-path: /app/common/tor/tor_manager.py
+x-lucid-file-directory: /app/common/tor
 x-lucid-file-type: python
 
 Tor service management for Lucid RDP.

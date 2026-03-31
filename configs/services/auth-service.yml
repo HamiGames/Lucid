@@ -1,3 +1,8 @@
+# File: /app/configs/services/auth-service.yml
+# x-lucid-file-path: /app/configs/services/auth-service.yml
+# x-lucid-file-directory: /app/configs/services
+# x-lucid-file-type: YAML
+
 # Authentication Service Configuration
 # This file contains configuration for the Lucid authentication service
 

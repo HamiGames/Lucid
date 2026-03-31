@@ -2,6 +2,7 @@
 """
 File: /app/tools/ops/ota/rollback_manager.py
 x-lucid-file-path: /app/tools/ops/ota/rollback_manager.py
+x-lucid-file-directory: /app/tools/ops/ota
 x-lucid-file-type: python
 
 LUCID ROLLBACK MANAGER - SPEC-4 Rollback Functionality

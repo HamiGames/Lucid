@@ -5,6 +5,7 @@
 """
 File: /app/common/security/trust_nothing_engine.py
 x-lucid-file-path: /app/common/security/trust_nothing_engine.py
+x-lucid-file-directory: /app/common/security
 x-lucid-file-type: python
 """
 

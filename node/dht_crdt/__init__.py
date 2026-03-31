@@ -1,6 +1,7 @@
 """
 File: /app/node/dht_crdt/__init__.py
 x-lucid-file-path: /app/node/dht_crdt/__init__.py
+x-lucid-file-directory: /app/node/dht_crdt
 x-lucid-file-type: python
 
 LUCID DHT/CRDT Components

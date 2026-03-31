@@ -1,5 +1,5 @@
 #!/bin/bash
-# Path: infrastructure/docker/users/build-env.sh
+# Path: configs/docker/users/build-env.sh
 # Build Environment Script for Lucid User Services
 # Generates .env files for user management containers
 

@@ -6,6 +6,7 @@
 """
 File: /app/blockchain/utils/crypto.py
 x-lucid-file-path: /app/blockchain/utils/crypto.py
+x-lucid-file-directory: /app/blockchain/utils
 x-lucid-file-type: python
 """
 

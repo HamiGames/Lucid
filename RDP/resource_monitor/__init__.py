@@ -1,6 +1,7 @@
 """
 File: /app/RDP/resource_monitor/__init__.py
 x-lucid-file-path: /app/RDP/resource_monitor/__init__.py
+x-lucid-file-directory: /app/RDP/resource_monitor
 x-lucid-file-type: python
 
 Lucid RDP Resource Monitor Service

@@ -1,16 +1,30 @@
-# LUCID PROXY SYSTEMS — Tor SOCKS/control + tunnel-tools
-# Path: infrastructure/containers/tor/docker-compose.proxy-systems.yml
+# File: /app/configs/container/tor/docker-compose.proxy-systems.yml
+# x-lucid-file-path: /app/configs/container/tor/docker-compose.proxy-systems.yml
+# x-lucid-file-directory: /app/configs/container/tor
+# x-lucid-file-type: YAML
 #
+# Mirror: infrastructure/containers/tor/docker-compose.proxy-systems.yml (Lucid repo root paths).
+
+# LUCID PROXY SYSTEMS — Tor SOCKS/control + tunnel-tools
 # Aligned with: ports.txt (tor_socks 9050, tor_control 9051, tunnel_tools 7000), host-config.yml,
 #   master-env-config.txt + configs/environment/.env.secrets → /app/configs/.env.master + .env.secrets (bind mounts on tor-proxy + tunnel-tools).
-# Baked reference layouts (pickme images): container-runtime-layout.yml + this compose file under /app/configs/services/.
+# Baked reference layouts (pickme images): container-runtime-layout.yml + this compose file under /app/service_configs/.
 # tor-proxy: image pickme/lucid-tor-proxy:latest-arm64 (SOCKS + control).
 # tunnel-tools: build infrastructure/containers/tor/Dockerfile (same stack as Dockerfile.tunnels notes).
 #
 # From repository root (Lucid):
-#   docker compose -f infrastructure/containers/tor/docker-compose.proxy-systems.yml up -d --build
+#   docker compose -f configs/container/tor/docker-compose.proxy-systems.yml up -d --build
 
 name: lucid-proxy-systems
+
+x-lucid-host-config:
+  file: ../../../infrastructure/containers/host-config.yml
+  repo_path: infrastructure/containers/host-config.yml
+  version: "1.0"
+  description: Lucid container host registry for Docker DNS hostnames, ports, discovery URLs, and static host IPs.
+  http_path_template: "http://{service_name}:{port}/app"
+  host_ip_range: "172.20.10.1–172.20.10.76"
+  in_container_path: /app/configs/host-config.yml
 
 x-repo-context: &repo-context
   context: ../../../
@@ -45,6 +59,8 @@ services:
         aliases:
           - tor-socks
           - tor-control
+      lucid-tor-egress-network:
+        ipv4_address: ${LUCID_TOR_EGRESS_TOR_PROXY_IPV4:-172.31.0.2}
     labels:
       com.lucid.service: tor-proxy
       com.lucid.expose: "9050,9051"
@@ -70,7 +86,9 @@ services:
     ports:
       - "${TUNNEL_TOOLS_PUBLISH_PORT:-7000}:7000"
     networks:
-      - lucid-pi-network
+      lucid-pi-network: {}
+      lucid-tor-egress-network:
+        ipv4_address: ${LUCID_TOR_EGRESS_TUNNEL_TOOLS_IPV4:-172.31.0.3}
     depends_on:
       tor-proxy:
         condition: service_started
@@ -92,3 +110,6 @@ networks:
   lucid-pi-network:
     external: true
     name: lucid-pi-network
+  lucid-tor-egress-network:
+    external: true
+    name: lucid-tor-egress-network

@@ -2,6 +2,7 @@
 """
 File: /app/auth/authentication_service.py
 x-lucid-file-path: /app/auth/authentication_service.py
+x-lucid-file-directory: /app/auth
 x-lucid-file-type: python
 
 Lucid Authentication Service

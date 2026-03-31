@@ -1,3 +1,8 @@
+# File: /app/ops/cloud-init/cloud-init.yml
+# x-lucid-file-path: /app/ops/cloud-init/cloud-init.yml
+# x-lucid-file-directory: /app/ops/cloud-init
+# x-lucid-file-type: YAML
+
 #cloud-config
 # Lucid Distroless Cloud Init Configuration for Raspberry Pi 5
 # Initial system setup and Lucid Distroless deployment

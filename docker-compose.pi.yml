@@ -1,3 +1,8 @@
+# File: /app/docker-compose.pi.yml
+# x-lucid-file-path: /app/docker-compose.pi.yml
+# x-lucid-file-directory: /app
+# x-lucid-file-type: YAML
+
 # Path: docker-compose.pi.yml
 # Raspberry Pi Docker Compose file for Lucid project
 # Optimized for ARM64 architecture and limited resources

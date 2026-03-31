@@ -2,6 +2,7 @@
 """
 File: /app/sessions/pipeline/__init__.py
 x-lucid-file-path: /app/sessions/pipeline/__init__.py
+x-lucid-file-directory: /app/sessions/pipeline
 x-lucid-file-type: python
 
 Lucid Session Pipeline Package

@@ -1,3 +1,8 @@
+# File: /app/configs/payment_systems/docker-compose.payment-externals.yml
+# x-lucid-file-path: /app/configs/payment_systems/docker-compose.payment-externals.yml
+# x-lucid-file-directory: /app/configs/payment_systems
+# x-lucid-file-type: YAML
+
 # LUCID PAYMENT EXTERNALS — edge/orchestration on lucid-pi-network (+ optional local bridge)
 # Path: infrastructure/containers/payment_systems/docker-compose.payment-externals.yml
 #

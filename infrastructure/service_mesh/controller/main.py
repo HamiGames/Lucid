@@ -1,7 +1,7 @@
 """
 File: /app/service_mesh/controller/main.py
 x-lucid-file-path: /app/service_mesh/controller/main.py
-x-lucid-file-directory: /app/service_mesh
+x-lucid-file-directory: /app/service_mesh/controller
 x-lucid-file-type: python
 
 Lucid Service Mesh Controller - Main Entry Point

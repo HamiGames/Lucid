@@ -2,6 +2,7 @@
 """
 File: /app/blockchain/chain_client/manifest_manager.py
 x-lucid-file-path: /app/blockchain/chain_client/manifest_manager.py
+x-lucid-file-directory: /app/blockchain/chain_client
 x-lucid-file-type: python
 
 Manifest Manager for Lucid Blockchain System

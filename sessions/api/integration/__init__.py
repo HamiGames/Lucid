@@ -1,6 +1,7 @@
 """
 File: /app/sessions/api/integration/__init__.py
 x-lucid-file-path: /app/sessions/api/integration/__init__.py
+x-lucid-file-directory: /app/sessions/api/integration
 x-lucid-file-type: python
 
 Session API Integration Clients

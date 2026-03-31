@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 """
+File: /app/scripts/validation/validate-electron-gui-alignment.py
+x-lucid-file-path: /app/scripts/validation/validate-electron-gui-alignment.py
+x-lucid-file-directory: /app/scripts/validation
+x-lucid-file-type: python
+
 LUCID Electron GUI Alignment Validator
 
 This script validates the electron_gui directory structure and files against

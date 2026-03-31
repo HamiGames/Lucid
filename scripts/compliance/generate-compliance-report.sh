@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# File: /app/scripts/compliance/generate-compliance-report.sh
+# x-lucid-file-path: /app/scripts/compliance/generate-compliance-report.sh
+# x-lucid-file-directory: /app/scripts/compliance
+# x-lucid-file-type: shell
 # Lucid API System - Compliance Report Generator
 # Step 56: Production Readiness Checklist
 # 

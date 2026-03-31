@@ -1,6 +1,7 @@
 """
 File: /app/03_api_gateway/services/gui_hardware_manager_service.py
 x-lucid-file-path: /app/03_api_gateway/services/gui_hardware_manager_service.py
+x-lucid-file-directory: /app/03_api_gateway/services
 x-lucid-file-type: python
 
 GUI Hardware Manager Service

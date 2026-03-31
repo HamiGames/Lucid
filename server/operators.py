@@ -1,6 +1,7 @@
 """
 File: /app/server/operators.py
 x-lucid-file-path: /app/server/operators.py
+x-lucid-file-directory: /app/server
 x-lucid-file-type: python
 
 FastAPI operator surface + request handling for Lucid server-plane discovery.

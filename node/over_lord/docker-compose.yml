@@ -1,3 +1,8 @@
+# File: /app/node/over_lord/docker-compose.yml
+# x-lucid-file-path: /app/node/over_lord/docker-compose.yml
+# x-lucid-file-directory: /app/node/over_lord
+# x-lucid-file-type: YAML
+
 # node/docker-compose.yml
 # Lucid Node Management stack – aligned with foundation/core constants
 

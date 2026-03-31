@@ -2,6 +2,7 @@
 """
 File: /app/apps/merkle/merkle.py
 x-lucid-file-path: /app/apps/merkle/merkle.py
+x-lucid-file-directory: /app/apps/merkle
 x-lucid-file-type: python
 
 Lucid RDP Merkle Tree Builder with BLAKE3

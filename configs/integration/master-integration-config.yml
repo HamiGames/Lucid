@@ -1,3 +1,8 @@
+# File: /app/configs/integration/master-integration-config.yml
+# x-lucid-file-path: /app/configs/integration/master-integration-config.yml
+# x-lucid-file-directory: /app/configs/integration
+# x-lucid-file-type: YAML
+
 # Master Integration Configuration
 # Coordinates integration between GUI, API, and Docker systems
 # Central configuration for cross-system communication and deployment

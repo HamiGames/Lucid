@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 """
+File: /app/scripts/validation/run-complete-validation.py
+x-lucid-file-path: /app/scripts/validation/run-complete-validation.py
+x-lucid-file-directory: /app/scripts/validation
+x-lucid-file-type: python
+
 LUCID Complete Project Validation Runner
 
 This script runs both Python build alignment validation and Electron GUI alignment validation

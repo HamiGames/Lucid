@@ -1,5 +1,9 @@
 #!/bin/bash
 # Lucid API - SBOM Verification Script
+# File: /app/scripts/security/verify-sbom.sh
+# x-lucid-file-path: /app/scripts/security/verify-sbom.sh
+# x-lucid-file-directory: /app/scripts/security
+# x-lucid-file-type: shell
 # Verifies generated SBOM files for compliance and completeness
 
 set -euo pipefail

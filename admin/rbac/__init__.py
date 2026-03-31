@@ -7,6 +7,7 @@
 """
 File: /app/admin/rbac/__init__.py
 x-lucid-file-path: /app/admin/rbac/__init__.py
+x-lucid-file-directory: /app/admin/rbac
 x-lucid-file-type: python
 """
 

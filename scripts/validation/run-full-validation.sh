@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# File: /app/scripts/validation/run-full-validation.sh
+# x-lucid-file-path: /app/scripts/validation/run-full-validation.sh
+# x-lucid-file-directory: /app/scripts/validation
+# x-lucid-file-type: shell
 # Lucid System Full Validation Script
 # 
 # This script runs comprehensive validation of the complete Lucid system

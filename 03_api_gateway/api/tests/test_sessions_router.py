@@ -4,6 +4,7 @@
 """
 File: /app/03_api_gateway/api/tests/test_sessions_router.py
 x-lucid-file-path: /app/03_api_gateway/api/tests/test_sessions_router.py
+x-lucid-file-directory: /app/03_api_gateway/api/tests
 x-lucid-file-type: python
 """
 

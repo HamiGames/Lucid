@@ -1,6 +1,7 @@
 """
 File: /app/gui_docker_manager/gui_docker_manager/docker_manager_service.py
 x-lucid-file-path: /app/gui_docker_manager/gui_docker_manager/docker_manager_service.py
+x-lucid-file-directory: /app/gui_docker_manager/gui_docker_manager
 x-lucid-file-type: python
 
 Core Docker Manager Service
