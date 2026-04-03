@@ -100,6 +100,231 @@ meta:
   - path: infrastructure/containers/services/tron-payment.yml
     container_path: /app/service_configs/tron-payment.yml
     scope: TRON payment service bundle
+  - path: infrastructure/containers/services/admin-governance-client.yml
+    container_path: /app/service_configs/admin-governance-client.yml
+    scope: admin governance client bundle
+  - path: infrastructure/containers/services/admin-key-rotation.yml
+    container_path: /app/service_configs/admin-key-rotation.yml
+    scope: admin key rotation bundle
+  - path: infrastructure/containers/services/admin-overlord.yml
+    container_path: /app/service_configs/admin-overlord.yml
+    scope: admin overlord bundle
+  - path: infrastructure/containers/services/admin-params-registry.yml
+    container_path: /app/service_configs/admin-params-registry.yml
+    scope: admin params registry bundle
+  - path: infrastructure/containers/services/admin-system-gateway.yml
+    container_path: /app/service_configs/admin-system-gateway.yml
+    scope: admin system gateway bundle
+  - path: infrastructure/containers/services/admin-ui-backend.yml
+    container_path: /app/service_configs/admin-ui-backend.yml
+    scope: admin ui backend bundle
+  - path: infrastructure/containers/services/base-runtime.yml
+    container_path: /app/service_configs/base-runtime.yml
+    scope: base runtime bundle
+  - path: infrastructure/containers/services/base.yml
+    container_path: /app/service_configs/base.yml
+    scope: base bundle
+  - path: infrastructure/containers/services/block-manager.yml
+    container_path: /app/service_configs/block-manager.yml
+    scope: block manager bundle
+  - path: infrastructure/containers/services/blockchain-engine.yml
+    container_path: /app/service_configs/blockchain-engine.yml
+    scope: blockchain engine bundle
+  - path: infrastructure/containers/services/chain-to-pay.yml
+    container_path: /app/service_configs/chain-to-pay.yml
+    scope: chain to pay bundle
+  - path: infrastructure/containers/services/common.yml
+    container_path: /app/service_configs/common.yml
+    scope: common bundle
+  - path: infrastructure/containers/services/consensus-engine.yml
+    container_path: /app/service_configs/consensus-engine.yml
+    scope: consensus engine bundle
+  - path: infrastructure/containers/services/data-chain.yml
+    container_path: /app/service_configs/data-chain.yml
+    scope: data chain bundle
+  - path: infrastructure/containers/services/database-backup.yml
+    container_path: /app/service_configs/database-backup.yml
+    scope: database backup bundle
+  - path: infrastructure/containers/services/database-monitoring.yml
+    container_path: /app/service_configs/database-monitoring.yml
+    scope: database monitoring bundle
+  - path: infrastructure/containers/services/database-overlord.yml
+    container_path: /app/service_configs/database-overlord.yml
+    scope: database overlord bundle
+  - path: infrastructure/containers/services/elasticsearch-storage.yml
+    container_path: /app/service_configs/elasticsearch-storage.yml
+    scope: elasticsearch storage bundle
+  - path: infrastructure/containers/services/electron-gui-node.yml
+    container_path: /app/service_configs/electron-gui-node.yml
+    scope: electron gui node bundle
+  - path: infrastructure/containers/services/electron-gui-user.yml
+    container_path: /app/service_configs/electron-gui-user.yml
+    scope: electron gui user bundle
+  - path: infrastructure/containers/services/gui-api-bridge.yml
+    container_path: /app/service_configs/gui-api-bridge.yml
+    scope: gui api bridge bundle
+  - path: infrastructure/containers/services/gui-docker-manager.yml
+    container_path: /app/service_configs/gui-docker-manager.yml
+    scope: gui docker manager bundle
+  - path: infrastructure/containers/services/gui-strap.yml
+    container_path: /app/service_configs/gui-strap.yml
+    scope: gui strap bundle
+  - path: infrastructure/containers/services/gui-tor-manager.yml
+    container_path: /app/service_configs/gui-tor-manager.yml
+    scope: gui tor manager bundle
+  - path: infrastructure/containers/services/java-base.yml
+    container_path: /app/service_configs/java-base.yml
+    scope: java base bundle
+  - path: infrastructure/containers/services/lucid-auth-service.yml
+    container_path: /app/service_configs/lucid-auth-service.yml
+    scope: lucid auth service bundle
+  - path: infrastructure/containers/services/lucid-elasticsearch.yml
+    container_path: /app/service_configs/lucid-elasticsearch.yml
+    scope: lucid elasticsearch bundle
+  - path: infrastructure/containers/services/lucid-gov.yml
+    container_path: /app/service_configs/lucid-gov.yml
+    scope: lucid gov bundle
+  - path: infrastructure/containers/services/lucid-mongodb.yml
+    container_path: /app/service_configs/lucid-mongodb.yml
+    scope: lucid mongodb bundle
+  - path: infrastructure/containers/services/lucid-rdp-server-manager.yml
+    container_path: /app/service_configs/lucid-rdp-server-manager.yml
+    scope: lucid rdp server manager bundle
+  - path: infrastructure/containers/services/lucid-redis-storage.yml
+    container_path: /app/service_configs/lucid-redis-storage.yml
+    scope: lucid redis storage bundle
+  - path: infrastructure/containers/services/lucid-redis.yml
+    container_path: /app/service_configs/lucid-redis.yml
+    scope: lucid redis bundle
+  - path: infrastructure/containers/services/lucid-server-core.yml
+    container_path: /app/service_configs/lucid-server-core.yml
+    scope: lucid server core bundle
+  - path: infrastructure/containers/services/lucid-server-manager.yml
+    container_path: /app/service_configs/lucid-server-manager.yml
+    scope: lucid server manager bundle
+  - path: infrastructure/containers/services/lucid-service-mesh-controller.yml
+    container_path: /app/service_configs/lucid-service-mesh-controller.yml
+    scope: lucid service mesh controller bundle
+  - path: infrastructure/containers/services/lucid-system-storage.yml
+    container_path: /app/service_configs/lucid-system-storage.yml
+    scope: lucid system storage bundle
+  - path: infrastructure/containers/services/merkle-tree-builder.yml
+    container_path: /app/service_configs/merkle-tree-builder.yml
+    scope: merkle tree builder bundle
+  - path: infrastructure/containers/services/mongodb-monitoring.yml
+    container_path: /app/service_configs/mongodb-monitoring.yml
+    scope: mongodb monitoring bundle
+  - path: infrastructure/containers/services/node-gov.yml
+    container_path: /app/service_configs/node-gov.yml
+    scope: node gov bundle
+  - path: infrastructure/containers/services/node-interface.yml
+    container_path: /app/service_configs/node-interface.yml
+    scope: node interface bundle
+  - path: infrastructure/containers/services/node-overlord.yml
+    container_path: /app/service_configs/node-overlord.yml
+    scope: node overlord bundle
+  - path: infrastructure/containers/services/node-registry.yml
+    container_path: /app/service_configs/node-registry.yml
+    scope: node registry bundle
+  - path: infrastructure/containers/services/node-system-gateway.yml
+    container_path: /app/service_configs/node-system-gateway.yml
+    scope: node system gateway bundle
+  - path: infrastructure/containers/services/node-utils.yml
+    container_path: /app/service_configs/node-utils.yml
+    scope: node utils bundle
+  - path: infrastructure/containers/services/node-worker.yml
+    container_path: /app/service_configs/node-worker.yml
+    scope: node worker bundle
+  - path: infrastructure/containers/services/on-system-chain-client.yml
+    container_path: /app/service_configs/on-system-chain-client.yml
+    scope: on system chain client bundle
+  - path: infrastructure/containers/services/payment-system-gateway.yml
+    container_path: /app/service_configs/payment-system-gateway.yml
+    scope: payment system gateway bundle
+  - path: infrastructure/containers/services/python-base.yml
+    container_path: /app/service_configs/python-base.yml
+    scope: python base bundle
+  - path: infrastructure/containers/services/rdp-controller.yml
+    container_path: /app/service_configs/rdp-controller.yml
+    scope: rdp controller bundle
+  - path: infrastructure/containers/services/rdp.yml
+    container_path: /app/service_configs/rdp.yml
+    scope: rdp bundle
+  - path: infrastructure/containers/services/role-manager.yml
+    container_path: /app/service_configs/role-manager.yml
+    scope: role manager bundle
+  - path: infrastructure/containers/services/server-common.yml
+    container_path: /app/service_configs/server-common.yml
+    scope: server common bundle
+  - path: infrastructure/containers/services/server-gateway.yml
+    container_path: /app/service_configs/server-gateway.yml
+    scope: server gateway bundle
+  - path: infrastructure/containers/services/session-anchoring.yml
+    container_path: /app/service_configs/session-anchoring.yml
+    scope: session anchoring bundle
+  - path: infrastructure/containers/services/session-api.yml
+    container_path: /app/service_configs/session-api.yml
+    scope: session api bundle
+  - path: infrastructure/containers/services/session-chunk-processor.yml
+    container_path: /app/service_configs/session-chunk-processor.yml
+    scope: session chunk processor bundle
+  - path: infrastructure/containers/services/session-overlord.yml
+    container_path: /app/service_configs/session-overlord.yml
+    scope: session overlord bundle
+  - path: infrastructure/containers/services/session-pipeline-manager.yml
+    container_path: /app/service_configs/session-pipeline-manager.yml
+    scope: session pipeline manager bundle
+  - path: infrastructure/containers/services/session-pipeline.yml
+    container_path: /app/service_configs/session-pipeline.yml
+    scope: session pipeline bundle
+  - path: infrastructure/containers/services/session-storage-service.yml
+    container_path: /app/service_configs/session-storage-service.yml
+    scope: session storage service bundle
+  - path: infrastructure/containers/services/session-system-control.yml
+    container_path: /app/service_configs/session-system-control.yml
+    scope: session system control bundle
+  - path: infrastructure/containers/services/software-vault.yml
+    container_path: /app/service_configs/software-vault.yml
+    scope: software vault bundle
+  - path: infrastructure/containers/services/timelock.yml
+    container_path: /app/service_configs/timelock.yml
+    scope: timelock bundle
+  - path: infrastructure/containers/services/tor-socks.yml
+    container_path: /app/service_configs/tor-socks.yml
+    scope: tor socks bundle
+  - path: infrastructure/containers/services/tron-node-client.yml
+    container_path: /app/service_configs/tron-node-client.yml
+    scope: tron node client bundle
+  - path: infrastructure/containers/services/tron-payment-service.yml
+    container_path: /app/service_configs/tron-payment-service.yml
+    scope: tron payment service bundle
+  - path: infrastructure/containers/services/tunnel-tools.yml
+    container_path: /app/service_configs/tunnel-tools.yml
+    scope: tunnel tools bundle
+  - path: infrastructure/containers/services/user-interface.yml
+    container_path: /app/service_configs/user-interface.yml
+    scope: user interface bundle
+  - path: infrastructure/containers/services/vault.yml
+    container_path: /app/service_configs/vault.yml
+    scope: vault bundle
+  - path: infrastructure/containers/services/vm-manager.yml
+    container_path: /app/service_configs/vm-manager.yml
+    scope: vm manager bundle
+  - path: infrastructure/containers/services/vm-orchestrator.yml
+    container_path: /app/service_configs/vm-orchestrator.yml
+    scope: vm orchestrator bundle
+  - path: infrastructure/containers/services/vm-resource-monitor.yml
+    container_path: /app/service_configs/vm-resource-monitor.yml
+    scope: vm resource monitor bundle
+  - path: infrastructure/containers/services/vm-service.yml
+    container_path: /app/service_configs/vm-service.yml
+    scope: vm service bundle
+  - path: infrastructure/containers/services/wallet-key-rotation.yml
+    container_path: /app/service_configs/wallet-key-rotation.yml
+    scope: wallet key rotation bundle
+  - path: infrastructure/containers/services/wallet-manager.yml
+    container_path: /app/service_configs/wallet-manager.yml
+    scope: wallet manager bundle
 common_http:
   app_mount: /app
   health_relative: /health

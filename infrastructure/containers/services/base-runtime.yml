@@ -1,0 +1,32 @@
+# File: /app/service_configs/base-runtime.yml
+# x-lucid-file-path: /app/service_configs/base-runtime.yml
+# x-lucid-file-directory: /app/service_configs
+# x-lucid-file-type: YAML
+# Lucid alignment: host_registry=infrastructure/containers/host-config.yml (container /app/configs/host-config.yml); path_index=x-files.json section_to_canonical
+#
+# compose_service=base-runtime; YAML/JSON/Python lists from alignment manifest (list_service_files_by_name.py).
+
+version: '1.0'
+description: >
+  Conventional service bundle index for base-runtime. Refs below mirror the alignment
+  manifest for this compose service. Cross-check infrastructure/containers/host-config.yml and x-files.json.
+
+x-lucid-calibration:
+  source_host_config: infrastructure/containers/host-config.yml
+  source_x_files: x-files.json
+  bundle_repo_path: infrastructure/containers/services/base-runtime.yml
+  bundle_container_path: /app/service_configs/base-runtime.yml
+  alignment_manifest_tool: scripts/gui_auth_realignment/list_service_files_by_name.py
+
+compose_service: "base-runtime"
+associated_needles:
+  - "base-runtime"
+  - "base_runtime"
+
+manifest_alignment:
+  yml_refs:
+    - "infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.yml"
+  json_refs:
+    - "infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.json"
+  py_refs:
+    - "common/load_host_config.py"

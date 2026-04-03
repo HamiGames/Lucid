@@ -1,0 +1,40 @@
+# File: /app/service_configs/node-overlord.yml
+# x-lucid-file-path: /app/service_configs/node-overlord.yml
+# x-lucid-file-directory: /app/service_configs
+# x-lucid-file-type: YAML
+# Lucid alignment: host_registry=infrastructure/containers/host-config.yml (container /app/configs/host-config.yml); path_index=x-files.json section_to_canonical
+#
+# compose_service=node-overlord; YAML/JSON/Python lists from alignment manifest (list_service_files_by_name.py).
+
+version: '1.0'
+description: >
+  Conventional service bundle index for node-overlord. Refs below mirror the alignment
+  manifest for this compose service. Cross-check infrastructure/containers/host-config.yml and x-files.json.
+
+x-lucid-calibration:
+  source_host_config: infrastructure/containers/host-config.yml
+  source_x_files: x-files.json
+  bundle_repo_path: infrastructure/containers/services/node-overlord.yml
+  bundle_container_path: /app/service_configs/node-overlord.yml
+  alignment_manifest_tool: scripts/gui_auth_realignment/list_service_files_by_name.py
+
+compose_service: "node-overlord"
+associated_needles:
+  - "node-overlord"
+  - "node_overlord"
+
+manifest_alignment:
+  yml_refs:
+    - "infrastructure/containers/host-config.yml"
+    - "infrastructure/containers/services/master-endpoint.yml"
+    - "infrastructure/containers/services/node-management.yml"
+    - "infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.yml"
+    - "infrastructure/containers/services/x_lucid_cluster_calibration/application-cluster-host-alignment.yml"
+  json_refs:
+    - "infrastructure/containers/config-listings.json"
+    - "infrastructure/containers/dockerfile_layout_run_report.json"
+    - "infrastructure/containers/dockerfile_recalibration_map.json"
+    - "infrastructure/containers/dockerfile_recalibration_map_REPAIRED.json"
+    - "infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.json"
+  py_refs:
+    - "common/load_host_config.py"

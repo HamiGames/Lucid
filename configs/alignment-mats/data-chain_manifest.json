@@ -23,6 +23,7 @@
     "infrastructure/containers/node/docker-compose.node-gui.yml",
     "infrastructure/containers/server/docker-compose.server-external.yml",
     "infrastructure/containers/services/blockchain-core.yml",
+    "infrastructure/containers/services/data-chain.yml",
     "infrastructure/containers/services/gui-docker-manager-service-groups.yml",
     "infrastructure/containers/services/gui-docker-manager.yml",
     "infrastructure/containers/services/master-endpoint.yml",
@@ -45,18 +46,15 @@
     "infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.json"
   ],
   "associated_needles": [
-    "data_chain",
-    "data-chain"
+    "data-chain",
+    "data_chain"
   ],
   "missing_yml": [],
   "missing_python_dirs": [],
   "missing_global_py": [],
-  "missing_expected": [
-    "infrastructure/containers/services/data-chain.yml"
-  ],
+  "missing_expected": [],
   "missing_tier_a_json": [],
   "source_map_path": "scripts/gui_auth_realignment/gui_service_source_map.json",
   "mat_path": "configs/services/gui-services.json",
-  "mat_row_matched": false,
-  "alignment_json": []
+  "mat_row_matched": false
 }

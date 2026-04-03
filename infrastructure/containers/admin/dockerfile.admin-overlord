@@ -2233,10 +2233,6 @@ COPY --from=builder --chown=65532:65532 /build/sessions/ /app/sessions/
 COPY --from=builder --chown=65532:65532 /build/src/ /app/src/
 COPY --from=builder --chown=65532:65532 /build/utils/ /app/utils/
 COPY --from=builder --chown=65532:65532 /build/wallet/ /app/wallet/
-# LUCID_RUNTIME_COPY_FROM_BUILD_END
-
-# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
-# Generated: apt + RUN scaffold (mkdir/printf/touch/chown) -> FHS (not ./ or /build/; lib_search_and_inject.py).
 COPY --from=builder --chown=65532:65532 /usr/lib/*/libffi.so* /app/usr/lib/
 COPY --from=builder --chown=65532:65532 /usr/lib/*/libssl.so* /app/usr/lib/
 COPY --from=builder --chown=65532:65532 /usr/lib/*/ossl-modules/ /app/usr/lib/
@@ -2249,10 +2245,6 @@ COPY --from=builder --chown=65532:65532 /usr/local/bin/ /app/usr/local/bin/
 COPY --from=builder --chown=65532:65532 /usr/local/lib/python3.11/ /app/usr/local/lib/python3.11/
 COPY --from=builder --chown=65532:65532 /var/lib/ /app/var/lib/
 COPY --from=builder --chown=65532:65532 /var/run/ /app/var/run/
-# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_END
-# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
-# Generated: apt -> FHS paths only (not ./ or /build/ skeleton; lib_search_and_inject.py).
-
 
 
 RUN ["/app/usr/bin/python3.11", "-c", \

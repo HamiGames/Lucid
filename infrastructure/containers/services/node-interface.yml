@@ -1,0 +1,64 @@
+# File: /app/service_configs/node-interface.yml
+# x-lucid-file-path: /app/service_configs/node-interface.yml
+# x-lucid-file-directory: /app/service_configs
+# x-lucid-file-type: YAML
+# Lucid alignment: host_registry=infrastructure/containers/host-config.yml (container /app/configs/host-config.yml); path_index=x-files.json section_to_canonical
+#
+# compose_service=node-interface; YAML/JSON/Python lists from alignment manifest (list_service_files_by_name.py).
+
+version: '1.0'
+description: >
+  Conventional service bundle index for node-interface. Refs below mirror the alignment
+  manifest for this compose service. Cross-check infrastructure/containers/host-config.yml and x-files.json.
+
+x-lucid-calibration:
+  source_host_config: infrastructure/containers/host-config.yml
+  source_x_files: x-files.json
+  bundle_repo_path: infrastructure/containers/services/node-interface.yml
+  bundle_container_path: /app/service_configs/node-interface.yml
+  alignment_manifest_tool: scripts/gui_auth_realignment/list_service_files_by_name.py
+
+compose_service: "node-interface"
+associated_needles:
+  - "lucid-node-interface"
+  - "node-interface"
+  - "node_interface"
+
+manifest_alignment:
+  yml_refs:
+    - "configs/container/blockchain/docker-compose.chain.yml"
+    - "configs/container/electron_gui/docker-compose.electron-gui.yml"
+    - "configs/container/gui/docker-compose.node-gui.yml"
+    - "configs/container/node/docker-compose.node-gui.yml"
+    - "configs/docker/docker-compose.gui-integration.yml"
+    - "configs/services/gui-docker-manager-service-groups.yml"
+    - "configs/services/gui-docker-manager.yml"
+    - "electron_gui/configs/electron-endpoints.yml"
+    - "electron_gui/distroless/docker-compose.electron-gui.yml"
+    - "infrastructure/containers/blockchain/docker-compose.chain.yml"
+    - "infrastructure/containers/gui/docker-compose.node-gui.yml"
+    - "infrastructure/containers/node/docker-compose.node-gui.yml"
+    - "infrastructure/containers/services/gui-docker-manager-service-groups.yml"
+    - "infrastructure/containers/services/gui-docker-manager.yml"
+  json_refs:
+    - "configs/gui-alignment/gui-services.json"
+    - "configs/gui-alignment/node-interface.json"
+    - "configs/services/gui-services.json"
+  py_refs:
+    - "common/load_host_config.py"
+    - "electron_gui/__init__.py"
+    - "electron_gui/utils/__init__.py"
+    - "electron_gui/utils/converter.py"
+    - "electron_gui/utils/load_host_config.py"
+    - "gui/config/__init__.py"
+    - "gui/config/config.py"
+    - "gui/config/load_host_config.py"
+    - "gui/core/__init__.py"
+    - "gui/core/config_manager.py"
+    - "gui/core/networking.py"
+    - "gui/core/security.py"
+    - "gui/core/telemetry.py"
+    - "gui/core/tor_client.py"
+    - "gui/core/widgets.py"
+    - "gui/node/__init__.py"
+    - "gui/shared/__init__.py"
