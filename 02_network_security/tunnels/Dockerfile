@@ -238,6 +238,6 @@ CMD ["/app/usr/bin/python3.11", "/app/tunnels/entrypoint.py"]
 # NOTES:
 #   Configuration files are expected at:
 #     - /app/configs/.env.tunnel-tools
-#     - /app/configs/.env.secrets
+#     - ../../configs/environment/.env.secrets
 #     - /app/configs/.env.foundation
 #   Loaded via docker-compose env_file directive; no hardcoded secrets here.

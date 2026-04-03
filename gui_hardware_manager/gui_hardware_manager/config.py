@@ -47,7 +47,7 @@ class GuiHardwareManagerSettings(BaseSettings):
 
     # Integration Service URLs (Required)
     API_GATEWAY_URL: str = Field(default="http://api-gateway:8080", description="API Gateway URL")
-    AUTH_SERVICE_URL: str = Field(default="http://lucid-auth-service:8089", description="Auth Service URL")
+    AUTH_SERVICE_URL: str = Field(default="", description="Unset in Tier A; use API_GATEWAY_URL for auth routes")
     GUI_API_BRIDGE_URL: str = Field(default="http://gui_api_bridge:8102", description="GUI API Bridge URL")
     TOR_PROXY_URL: str = Field(default="http://tor-proxy:9051", description="Tor proxy control port")
 

@@ -253,9 +253,17 @@ audiences:
 authentication_routes:
   config: auth/config/endpoints.yaml
   mount: /app
+  gui_call_chain: "*-interface → gui-api-bridge → api-gateway → lucid-auth-service (Tier A must not bypass gateway)"
+  lucid_server_manager_examples:
+  - POST http://lucid-server-manager:8081/app/auth/preauth-token
+  - POST http://lucid-server-manager:8081/app/auth/verify-preauth
+  - POST http://lucid-server-manager:8081/app/registry/users
+  - POST http://lucid-server-manager:8081/app/auth/verify-login
   examples:
   - /app/health
   - /app/auth/login
+  - /app/auth/register
+  - /app/auth/token/introspect
   - /app/users/me
   - /app/sessions
 services:

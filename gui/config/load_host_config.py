@@ -29,7 +29,7 @@ from common.load_host_config import (
 
 ENV_GUI_SERVICE_DIR = "LUCID_GUI_SERVICE_CONFIG_DIR"
 ENV_GUI_ENDPOINTS_FILE = "LUCID_GUI_ENDPOINTS_FILE"
-DEFAULT_SERVICE_DIR = Path("/app/configs/services")
+DEFAULT_SERVICE_DIR = Path("/app/service_configs")
 DEFAULT_ENDPOINTS_FILE = "gui-endpoints.yml"
 
 
@@ -44,7 +44,7 @@ def resolve_gui_service_config_dir() -> Path:
     for cand in (
         DEFAULT_SERVICE_DIR,
         Path("/app/service-configs"),
-        Path("/app/service_configs"),
+        Path("/app/configs"),
     ):
         if cand.is_dir():
             return cand

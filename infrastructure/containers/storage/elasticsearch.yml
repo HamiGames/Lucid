@@ -18,7 +18,7 @@
 # - builds the elasticsearch service
 # - uses the ports.txt (elasticsearch 9200, elasticsearch 9300) to build the service
 # - uses the host-config.yml to build the service
-# - uses the master-env-config.txt and configs/environment/.env.secrets to build the service
+# - uses the configs/environment/.env.master and configs/environment/.env.secrets to build the service
 # - uses the x-lucid-file-path and x-lucid-file-type to identify the file path and file type
 
 # ======================== Elasticsearch Configuration =========================

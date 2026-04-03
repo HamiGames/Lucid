@@ -39,7 +39,10 @@ async def list_wallets():
   #  except Exception as e:
    #     logger.error(f"Failed to create wallet: {e}")
        # raise HTTPException(status_code=500, detail=f"Failed to create wallet: {str(e)}")
-    raise HTTPException(status_code=501, detail="Not implemented yet")
+    raise HTTPException(
+        status_code=501,
+        detail="Not implemented: wallet proxy must run lucid-auth-service preflight before server-manager/payment (no SM-first shortcut).",
+    )
 
 
 @router.post("")
@@ -54,7 +57,10 @@ async def create_wallet():
   #  except Exception as e:
    #     logger.error(f"Failed to create wallet: {e}")
        # raise HTTPException(status_code=500, detail=f"Failed to create wallet: {str(e)}")
-    raise HTTPException(status_code=501, detail="Not implemented yet")
+    raise HTTPException(
+        status_code=501,
+        detail="Not implemented: wallet proxy must run lucid-auth-service preflight before server-manager/payment (no SM-first shortcut).",
+    )
 
 @router.get("/{wallet_id}")
 async def get_wallet(wallet_id: str):
@@ -68,7 +74,10 @@ async def get_wallet(wallet_id: str):
   #  except Exception as e:
    #     logger.error(f"Failed to create wallet: {e}")
        # raise HTTPException(status_code=500, detail=f"Failed to create wallet: {str(e)}")
-    raise HTTPException(status_code=501, detail="Not implemented yet")
+    raise HTTPException(
+        status_code=501,
+        detail="Not implemented: wallet proxy must run lucid-auth-service preflight before server-manager/payment (no SM-first shortcut).",
+    )
 
 
 @router.post("/{wallet_id}/transactions")
@@ -83,5 +92,8 @@ async def create_wallet_transaction(wallet_id: str):
   #  except Exception as e:
    #     logger.error(f"Failed to create wallet: {e}")
        # raise HTTPException(status_code=500, detail=f"Failed to create wallet: {str(e)}")
-    raise HTTPException(status_code=501, detail="Not implemented yet")
+    raise HTTPException(
+        status_code=501,
+        detail="Not implemented: wallet proxy must run lucid-auth-service preflight before server-manager/payment (no SM-first shortcut).",
+    )
 

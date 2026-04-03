@@ -8,8 +8,8 @@
 # Lucid API - SBOM Configuration
 # Configuration for Software Bill of Materials generation
 #
-# Build/runtime env alignment: configs/environment/.env.secrets → /app/configs/.env.secrets;
-# master-env-config.txt → /app/configs/.env.master. Image refs / service DNS: /app/configs/host-config.yml.
+# Build/runtime env alignment: configs/environment/.env.secrets → ../../configs/environment/.env.secrets;
+# configs/environment/.env.master → /app/configs/.env.master. Image refs / service DNS: /app/configs/host-config.yml.
 
 # SBOM Generation Settings
 sbom:

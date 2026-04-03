@@ -13,8 +13,8 @@
 #   PYTHONPATH=/app, volumes session_data -> /app/data/sessions, session_api_logs -> /app/logs
 # Network: lucid-session-network (bridge, name: lucid-session-network)
 #
-# Secrets/master: configs/environment/.env.secrets → /app/configs/.env.secrets;
-# master-env-config.txt → /app/configs/.env.master (see docker-compose.session-images.yml).
+# Secrets/master: configs/environment/.env.secrets → ../../configs/environment/.env.secrets;
+# configs/environment/.env.master → /app/configs/.env.master (see docker-compose.session-images.yml).
 # Runtime: PORT/HOST/LOG_LEVEL/DEBUG are injected by compose; MONGODB_URL, REDIS_URL, etc. from env.
 # The session API loader (sessions/api/config.py) expects flat SessionAPISettings keys when using
 # config.yaml beside config.py; this file documents the full stack shape for operators.

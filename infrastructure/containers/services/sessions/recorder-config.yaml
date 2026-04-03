@@ -16,7 +16,7 @@
 #   LUCID_BITRATE=2000k, LUCID_FPS=30
 # Volumes: recording_data -> /data/recordings, chunk_data -> /data/chunks, recorder_logs -> /app/logs
 # Network: lucid-session-network
-# Secrets: /app/configs/.env.secrets + /app/configs/.env.master per compose env mounts.
+# Secrets: ../../configs/environment/.env.secrets + /app/configs/.env.master per compose env mounts.
 #
 # RecorderSettings / _flatten_yaml_config (sessions/recorder/config.py) override paths from
 # LUCID_RECORDING_PATH and LUCID_CHUNK_OUTPUT_PATH when set in the container.

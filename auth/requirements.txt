@@ -25,6 +25,9 @@ pycryptodome>=3.19.0
 web3>=6.0.0  # ADDED: For TRON signature verification
 eth-account>=0.10.0  # ADDED: For message encoding
 
+# Password hashing (credential login/register)
+bcrypt>=4.1.0
+
 # Utilities
 python-dateutil>=2.8.2
 pydantic>=2.4.0

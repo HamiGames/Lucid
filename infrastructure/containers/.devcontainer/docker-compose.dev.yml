@@ -1,14 +1,4 @@
-# File: /app/configs/.devcontainer/docker-compose.dev.yml
-# x-lucid-file-path: /app/configs/.devcontainer/docker-compose.dev.yml
-# x-lucid-file-directory: /app/configs/.devcontainer
-# x-lucid-file-type: YAML
-
-# Lucid Development Container - Complete Build Factory
-# Docker-in-Docker environment for building entire Lucid project stack
-# Follows SPEC-4 clustered build stages and LUCID-STRICT mode
-
 name: lucid-devcontainer
-
 networks:
   lucid-dev_lucid_net:
     name: lucid-dev_lucid_net
@@ -16,13 +6,11 @@ networks:
     attachable: true
     ipam:
       config:
-        - subnet: 172.20.0.0/16
-          gateway: 172.20.0.1
-
-x-lucid-env-files: &lucid-env-files
-  - ../../../master-env-config.txt
-  - ../../../configs/environment/.env.secrets
-
+      - subnet: 172.20.0.0/16
+        gateway: 172.20.0.1
+x-lucid-env-files: &id001
+- ../../../configs/environment/.env.master
+- ../../../configs/environment/.env.secrets
 volumes:
   docker-data:
     name: lucid-devcontainer_docker_data
@@ -30,7 +18,6 @@ volumes:
   buildx-data:
     name: lucid-devcontainer_buildx_data
     driver: local
-
 services:
   devcontainer:
     build:
@@ -38,115 +25,81 @@ services:
       dockerfile: infrastructure/containers/.devcontainer/Dockerfile
       target: final
       platforms:
-        - linux/amd64
+      - linux/amd64
       args:
         BUILDKIT_INLINE_CACHE: 1
         BUILDKIT_PROGRESS: plain
-    
     image: pickme/lucid:devcontainer-dind
     container_name: lucid-devcontainer
     hostname: lucid-dev
-
-    env_file: *lucid-env-files
-    
-    # Full privileges for Docker-in-Docker build factory
+    env_file: *id001
     privileged: true
-    
     security_opt:
-      - seccomp:unconfined
-      - apparmor:unconfined
-    
+    - seccomp:unconfined
+    - apparmor:unconfined
     environment:
-      # Docker-in-Docker configuration
-      - DOCKER_BUILDKIT=1
-      - DOCKER_DEFAULT_PLATFORM=linux/amd64
-      - COMPOSE_DOCKER_CLI_BUILD=1
-      - DOCKER_HOST=unix:///var/run/docker.sock
-      - DOCKER_TLS_CERTDIR=
-      
-      # Development environment
-      - LUCID_ENV=dev
-      - PYTHONUNBUFFERED=1
-      - PYTHONDONTWRITEBYTECODE=1
-      - PYTHONPATH=/mnt/myssd/Lucid
-      
-      # Build tools environment
-      - JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
-      - MAVEN_HOME=/usr/share/maven
-      - GRADLE_HOME=/usr/share/gradle
-      - NODE_ENV=development
-      
-      # SSH configuration for Pi connection
-      - SSH_HOST=pickme@192.168.0.75
-      - SSH_PORT=22
-    
+    - DOCKER_BUILDKIT=1
+    - DOCKER_DEFAULT_PLATFORM=linux/amd64
+    - COMPOSE_DOCKER_CLI_BUILD=1
+    - DOCKER_HOST=unix:///var/run/docker.sock
+    - DOCKER_TLS_CERTDIR=
+    - LUCID_ENV=dev
+    - PYTHONUNBUFFERED=1
+    - PYTHONDONTWRITEBYTECODE=1
+    - PYTHONPATH=/mnt/myssd/Lucid
+    - JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+    - MAVEN_HOME=/usr/share/maven
+    - GRADLE_HOME=/usr/share/gradle
+    - NODE_ENV=development
+    - SSH_HOST=pickme@192.168.0.75
+    - SSH_PORT=22
     volumes:
-      # Project source code (development workspace)
-      - type: bind
-        source: ../../..
-        target: /mnt/myssd/Lucid
-        consistency: cached
-
-      # Align with service Dockerfiles: master-env-config + secrets → /app/configs/
-      - type: bind
-        source: ../../../master-env-config.txt
-        target: /app/configs/.env.master
-        read_only: true
-      - type: bind
-        source: ../../../configs/environment/.env.secrets
-        target: /app/configs/.env.secrets
-        read_only: true
-      
-      # Docker socket for container building
-      - type: bind
-        source: /var/run/docker.sock
-        target: /var/run/docker.sock
-      
-      # Docker daemon data directory
-      - docker-data:/var/lib/docker
-      
-      # Buildx builder data
-      - buildx-data:/root/.docker/buildx
-      
-      # SSH keys (Windows compatibility)
-      - type: bind
-        source: ${USERPROFILE:-~}/.ssh
-        target: /root/.ssh
-        read_only: true
-      
-      # Git configuration (Windows compatibility)
-      - type: bind
-        source: ${USERPROFILE:-~}/.gitconfig
-        target: /root/.gitconfig
-        read_only: true
-      
-      # Temporary build space
-      - type: tmpfs
-        target: /tmp/build
-        tmpfs:
-          size: 2G
-    
+    - type: bind
+      source: ../../..
+      target: /mnt/myssd/Lucid
+      consistency: cached
+    - type: bind
+      source: ../../../configs/environment/.env.master
+      target: /app/configs/.env.master
+      read_only: true
+    - type: bind
+      source: /var/run/docker.sock
+      target: /var/run/docker.sock
+    - docker-data:/var/lib/docker
+    - buildx-data:/root/.docker/buildx
+    - type: bind
+      source: ${USERPROFILE:-~}/.ssh
+      target: /root/.ssh
+      read_only: true
+    - type: bind
+      source: ${USERPROFILE:-~}/.gitconfig
+      target: /root/.gitconfig
+      read_only: true
+    - type: tmpfs
+      target: /tmp/build
+      tmpfs:
+        size: 2G
+    - type: bind
+      source: ../../../configs/environment/.env.secrets
+      target: /app/configs/.env.secrets
+      read_only: true
     ports:
-      # SSH access for remote development
-      - "2222:2222"
-      # Development server ports
-      - "8080:8080"  # API Gateway
-      - "8081:8081"  # API Server
-      - "8082:8082"  # Blockchain Core
-      - "9050:9050"  # Tor SOCKS
-      - "9051:9051"  # Tor Control
-      - "27017:27017"  # MongoDB (for testing)
-    
+    - 2222:2222
+    - 8080:8080
+    - 8081:8081
+    - 8082:8082
+    - 9050:9050
+    - 9051:9051
+    - 27017:27017
     networks:
       lucid-dev_lucid_net:
         ipv4_address: 172.20.0.10
-    
-    # Custom startup for complete build environment
-    command: ["/usr/local/bin/start-dev", "tail", "-f", "/dev/null"]
-    
+    command:
+    - /usr/local/bin/start-dev
+    - tail
+    - -f
+    - /dev/null
     working_dir: /mnt/myssd/Lucid
-    
-    # Resource allocation for build factory
     deploy:
       resources:
         limits:
@@ -155,11 +108,36 @@ services:
         reservations:
           memory: 4G
           cpus: '2.0'
-    
-    # Health check for Docker-in-Docker functionality
     healthcheck:
-      test: ["CMD-SHELL", "docker info >/dev/null 2>&1 && docker buildx ls | grep -q lucid-pi"]
+      test:
+      - CMD-SHELL
+      - docker info >/dev/null 2>&1 && docker buildx ls | grep -q lucid-pi
       interval: 30s
       timeout: 10s
       start_period: 30s
       retries: 3
+secrets:
+  MONGODB_PASSWORD:
+    file: C:/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/configs/secrets/runtime/compose/MONGODB_PASSWORD.secret
+  REDIS_PASSWORD:
+    file: C:/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/configs/secrets/runtime/compose/REDIS_PASSWORD.secret
+  JWT_SECRET_KEY:
+    file: C:/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/configs/secrets/runtime/compose/JWT_SECRET_KEY.secret
+  ENCRYPTION_KEY:
+    file: C:/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/configs/secrets/runtime/compose/ENCRYPTION_KEY.secret
+  SESSION_SECRET:
+    file: C:/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/configs/secrets/runtime/compose/SESSION_SECRET.secret
+  TRON_PRIVATE_KEY:
+    file: C:/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/configs/secrets/runtime/compose/TRON_PRIVATE_KEY.secret
+  TRON_API_KEY:
+    file: C:/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/configs/secrets/runtime/compose/TRON_API_KEY.secret
+  API_GATEWAY_SECRET:
+    file: C:/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/configs/secrets/runtime/compose/API_GATEWAY_SECRET.secret
+  ELASTICSEARCH_PASSWORD:
+    file: C:/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/configs/secrets/runtime/compose/ELASTICSEARCH_PASSWORD.secret
+  TOR_PASSWORD:
+    file: C:/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/configs/secrets/runtime/compose/TOR_PASSWORD.secret
+  TOR_CONTROL_PASSWORD:
+    file: C:/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/configs/secrets/runtime/compose/TOR_CONTROL_PASSWORD.secret
+  WALLET_ENCRYPTION_KEY:
+    file: C:/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/configs/secrets/runtime/compose/WALLET_ENCRYPTION_KEY.secret

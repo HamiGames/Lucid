@@ -32,7 +32,7 @@ from common.load_host_config import (
 
 ENV_BRIDGE_SERVICE_DIR = "LUCID_GUI_API_BRIDGE_SERVICE_CONFIG_DIR"
 ENV_BRIDGE_ENTRYPOINTS_FILE = "LUCID_GUI_API_BRIDGE_ENTRYPOINTS_FILE"
-DEFAULT_SERVICE_DIR = Path("/app/configs/services")
+DEFAULT_SERVICE_DIR = Path("/app/service_configs")
 DEFAULT_ENTRYPOINTS_FILE = "gui-bridge-entrypoints.yml"
 
 
@@ -47,7 +47,7 @@ def resolve_bridge_service_config_dir() -> Path:
     for cand in (
         DEFAULT_SERVICE_DIR,
         Path("/app/service-configs"),
-        Path("/app/service_configs"),
+        Path("/app/configs"),
     ):
         if cand.is_dir():
             return cand

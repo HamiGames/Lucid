@@ -1,0 +1,136 @@
+# Simple Lucid Development Environment
+# Start with a working base and build up gradually
+
+FROM python:3.12-slim
+
+# Basic environment
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    bash \
+    curl \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install basic Python tools
+# LUCID_X_FILES_SKELETON_BEGIN
+# Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
+RUN set -eux; \
+    mkdir -p '.' './configs' './scripts' './service_configs' './configs/.ssh' './configs/container' './configs/database' './configs/docker' './configs/env' './configs/environment' './configs/integration' './configs/kubernetes' './configs/logging' './configs/pi' './configs/secrets' './configs/security' './configs/tor' './scripts/__pycache__' './scripts/build' './scripts/compliance' './scripts/config' './scripts/contracts' './scripts/database' './scripts/deployment' './scripts/devcontainer' './scripts/docs' './scripts/foundation' './scripts/gui' './scripts/hardware' './scripts/integration' './scripts/lib' './scripts/load' './scripts/logging' './scripts/maintenance' './scripts/migration' './scripts/monitoring' './scripts/network' './scripts/registry' './scripts/secrets' './scripts/security' './scripts/services' './scripts/testing' './scripts/validation' './scripts/verification' './configs/container/admin' './configs/container/auth' './configs/container/base' './configs/container/blockchain' './configs/container/database' './configs/container/electron_gui' './configs/container/gui' './configs/container/node' './configs/container/payment_systems' './configs/container/rdp' './configs/container/server' './configs/container/sessions' './configs/container/storage' './configs/container/tor' './configs/database/elasticsearch' './configs/database/redis' './configs/docker/distroless' './configs/docker/docs' './configs/docker/multi-stage' './configs/environment/development' './configs/environment/pi' './configs/environment/production' './configs/environment/staging' './configs/pi/ssh' './scripts/build/__pycache__' './scripts/build/components' './scripts/build/core' './scripts/build/distroless' './scripts/build/utils' './scripts/compliance/distroless' './scripts/compliance/general' './scripts/deployment/devcontainer' './scripts/deployment/distroless' './scripts/deployment/pi' './scripts/deployment/utils' './scripts/maintenance/cleanup' './scripts/maintenance/optimization' './scripts/maintenance/recovery' './scripts/network/diagnostics' './scripts/network/security' './scripts/network/setup' './scripts/testing/integration' './scripts/testing/unit' './scripts/testing/utils' './scripts/validation/__pycache__' './scripts/verification/__pycache__'; \
+    for d in \
+      '.' \
+      './configs' \
+      './scripts' \
+      './service_configs' \
+      './configs/.ssh' \
+      './configs/container' \
+      './configs/database' \
+      './configs/docker' \
+      './configs/env' \
+      './configs/environment' \
+      './configs/integration' \
+      './configs/kubernetes' \
+      './configs/logging' \
+      './configs/pi' \
+      './configs/secrets' \
+      './configs/security' \
+      './configs/tor' \
+      './scripts/__pycache__' \
+      './scripts/build' \
+      './scripts/compliance' \
+      './scripts/config' \
+      './scripts/contracts' \
+      './scripts/database' \
+      './scripts/deployment' \
+      './scripts/devcontainer' \
+      './scripts/docs' \
+      './scripts/foundation' \
+      './scripts/gui' \
+      './scripts/hardware' \
+      './scripts/integration' \
+      './scripts/lib' \
+      './scripts/load' \
+      './scripts/logging' \
+      './scripts/maintenance' \
+      './scripts/migration' \
+      './scripts/monitoring' \
+      './scripts/network' \
+      './scripts/registry' \
+      './scripts/secrets' \
+      './scripts/security' \
+      './scripts/services' \
+      './scripts/testing' \
+      './scripts/validation' \
+      './scripts/verification' \
+      './configs/container/admin' \
+      './configs/container/auth' \
+      './configs/container/base' \
+      './configs/container/blockchain' \
+      './configs/container/database' \
+      './configs/container/electron_gui' \
+      './configs/container/gui' \
+      './configs/container/node' \
+      './configs/container/payment_systems' \
+      './configs/container/rdp' \
+      './configs/container/server' \
+      './configs/container/sessions' \
+      './configs/container/storage' \
+      './configs/container/tor' \
+      './configs/database/elasticsearch' \
+      './configs/database/redis' \
+      './configs/docker/distroless' \
+      './configs/docker/docs' \
+      './configs/docker/multi-stage' \
+      './configs/environment/development' \
+      './configs/environment/pi' \
+      './configs/environment/production' \
+      './configs/environment/staging' \
+      './configs/pi/ssh' \
+      './scripts/build/__pycache__' \
+      './scripts/build/components' \
+      './scripts/build/core' \
+      './scripts/build/distroless' \
+      './scripts/build/utils' \
+      './scripts/compliance/distroless' \
+      './scripts/compliance/general' \
+      './scripts/deployment/devcontainer' \
+      './scripts/deployment/distroless' \
+      './scripts/deployment/pi' \
+      './scripts/deployment/utils' \
+      './scripts/maintenance/cleanup' \
+      './scripts/maintenance/optimization' \
+      './scripts/maintenance/recovery' \
+      './scripts/network/diagnostics' \
+      './scripts/network/security' \
+      './scripts/network/setup' \
+      './scripts/testing/integration' \
+      './scripts/testing/unit' \
+      './scripts/testing/utils' \
+      './scripts/validation/__pycache__' \
+      './scripts/verification/__pycache__' \
+    ; do \
+      printf 'LUCID_X_FILES_SKELETON_%s' "$(date +%s)" > "$d/.keep"; \
+      touch "$d/.keep"; \
+    done
+# LUCID_X_FILES_SKELETON_END
+COPY scripts/ ./scripts/
+
+# LUCID_IMAGE_CONFIG: .env.secrets + .env.master (builder)
+COPY configs/ ./configs/
+COPY configs/environment/.env.secrets ./configs/.env.secrets
+
+
+# Install only essential packages
+RUN rm -rf ./configs/environment && \
+    echo ".env.* files removed"
+RUN mkdir -p configs
+ENV DEBIAN_FRONTEND=noninteractive \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1
+
+# Set workspace
+WORKDIR /workspaces/Lucid
+# LUCID_X_FILES_SKELETON_BEGIN
+# Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
+RUN pip install --upgrade pip setuptools wheel
+
+# Keep container running
+CMD ["bash"]

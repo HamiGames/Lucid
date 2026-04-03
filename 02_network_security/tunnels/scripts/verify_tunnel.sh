@@ -13,19 +13,19 @@ ONION_URL=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --onion)
+    (--onion)
       ONION_URL="$2"
       shift 2
       ;;
-    --url)
+    (--url)
       ONION_URL="$2"
       shift 2
       ;;
-    --help|-h)
+    (--help|-h)
       echo "Usage: verify_tunnel.sh [--onion URL] [URL]"
       exit 0
       ;;
-    *)
+    (*)
       ONION_URL="${ONION_URL:-$1}"
       shift
       ;;

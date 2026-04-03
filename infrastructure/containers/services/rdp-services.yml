@@ -13,7 +13,7 @@
 #   rdp_session_controller, rdp_resource_monitor, lucid_xrdp, xrdp_desktop, xrdp_sesman).
 
 config_files:
-  secrets: /app/configs/.env.secrets
+  secrets: ../../configs/environment/.env.secrets
   master: /app/configs/.env.master
 
 # Static host IPs for Docker DNS names (diagnostics / docs); source of truth: host-config.yml
@@ -87,6 +87,10 @@ dependencies:
     - name: "api-gateway"
       url: "http://api-gateway:8080/app"
       required: true
+    - name: "lucid-server-manager"
+      url: "http://lucid-server-manager:8081/app"
+      required: false
+      note: "Auth pre-auth + registry (lucid_server_manager @ host-config); distinct from rdp-server-manager containers."
     - name: "session-api"
       url: "http://session-api:8113/app"
       required: true

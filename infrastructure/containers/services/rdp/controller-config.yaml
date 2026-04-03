@@ -92,8 +92,8 @@ x-lucid-host-config-alignment:
       host_ip: 172.20.10.74
       http_path: http://prometheus-metrics:9090/app
 
-# Host secrets: mount repo configs/environment/.env.secrets at /app/configs/.env.secrets
-# and master-env-config.txt at /app/configs/.env.master (rdp_session_controller → 8101 @ 172.20.10.50 — host-config.yml).
+# Host secrets: mount repo configs/environment/.env.secrets at ../../configs/environment/.env.secrets
+# and configs/environment/.env.master at /app/configs/.env.master (rdp_session_controller → 8101 @ 172.20.10.50 — host-config.yml).
 # =============================================================================
 # SERVICE CONFIGURATION
 # =============================================================================
@@ -116,7 +116,7 @@ RDP_CONTROLLER_URL: ""
 # =============================================================================
 # DATABASE CONFIGURATION
 # =============================================================================
-# MUST come from /app/configs/.env.secrets (bind: configs/environment/.env.secrets)
+# MUST come from ../../configs/environment/.env.secrets (bind: configs/environment/.env.secrets)
 MONGODB_URL: ""
 REDIS_URL: ""
 

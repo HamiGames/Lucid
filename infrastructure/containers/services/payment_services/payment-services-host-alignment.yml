@@ -109,7 +109,7 @@ x-lucid-host-config-alignment:
       port: 8097
       host_ip: 172.20.10.46
       http_path: http://payment-system-gateway:8097/app
-    # Not yet in host-config.yml / service-ip.txt — ports from master-env-config.txt / docker-compose.payment-internal patterns
+    # Not yet in host-config.yml / service-ip.txt — ports from configs/environment/.env.master / docker-compose.payment-internal patterns
     tron_staking:
       host_config_key: tron_staking
       service_name: tron-staking

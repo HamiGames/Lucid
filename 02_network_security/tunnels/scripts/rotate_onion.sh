@@ -31,18 +31,18 @@ ctl_send() {
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --control-host) CONTROL_HOST="$2"; shift 2;;
-    --control-port) CONTROL_PORT="$2"; shift 2;;
-    --cookie-file)  COOKIE_FILE="$2";  shift 2;;
-    --write-env)    WRITE_ENV="$2";    shift 2;;
-    --ports)        PORT_SPECS="$2";   shift 2;;
-    --help|-h)
-      cat <<'USAGE'
+   (--control-host) CONTROL_HOST="$2"; shift 2;;
+   (--control-port) CONTROL_PORT="$2"; shift 2;;
+   (--cookie-file)  COOKIE_FILE="$2";  shift 2;;
+   (--write-env)    WRITE_ENV="$2";    shift 2;;
+   (--ports)        PORT_SPECS="$2";   shift 2;;
+   (--help|-h)
+     cat <<'USAGE'
 Usage:
   rotate_onion.sh [--control-host tor-proxy|127.0.0.1] [--control-port 9051]
                   [--cookie-file /app/var/lib/tor/control_auth_cookie]
                   [--write-env /app/run/lucid/onion/.onion.env]
-                  --ports "80 api-gateway:8080[, 443 api-gateway:8443]"
+                  [--ports "80 api-gateway:8080[, 443 api-gateway:8443]"
 USAGE
       exit 0;;
     *)

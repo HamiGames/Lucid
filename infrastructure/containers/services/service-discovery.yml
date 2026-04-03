@@ -12,7 +12,7 @@
 # Bridge subnets here (172.20.0.0/16, etc.) are logical overlays; per-service host_ip values come from the registry above.
 
 config_files:
-  secrets: /app/configs/.env.secrets
+  secrets: ../../configs/environment/.env.secrets
   master: /app/configs/.env.master
 
 service_discovery:
@@ -360,6 +360,13 @@ health_checks:
     lucid-auth-service:
       type: "http"
       path: "/app/health"
+      expected_status: 200
+      interval: 30
+      timeout: 10
+
+    lucid-server-manager:
+      type: "http"
+      path: "/health"
       expected_status: 200
       interval: 30
       timeout: 10

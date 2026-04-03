@@ -354,7 +354,7 @@ services:
     - gui_docker_manager
     - gui
     http_path: http://gui-docker-manager:0/app
-    source_dockerfile: infrastructure/containers/gui/Dockerfile.gui
+    source_dockerfile: infrastructure/containers/gui/Dockerfile.gui-docker-manager
     host_ip: 172.20.10.60
     labels:
       com.lucid.service: gui-docker-manager

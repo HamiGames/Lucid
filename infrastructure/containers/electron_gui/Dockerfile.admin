@@ -17,8 +17,6 @@ ARG NODE_VERSION=18
 ############################
 # Stage 1 – Builder
 ############################
-FROM --platform=$TARGETPLATFORM node:${NODE_VERSION}-bookworm-slim AS builder
-
 ARG BUILDPLATFORM
 ARG TARGETPLATFORM
 ARG NODE_VERSION
@@ -26,13 +24,11 @@ ARG BUILD_DATE
 ARG VCS_REF
 ARG VERSION
 
-ENV DEBIAN_FRONTEND=noninteractive \
-    NODE_ENV=production \
-    NODE_OPTIONS="--max-old-space-size=1024" \
-    npm_config_cache=/root/.npm
+ARG TARGETPLATFORM=linux/arm64
+FROM --platform=$TARGETPLATFORM node:${NODE_VERSION}-bookworm-slim AS builder
 
 WORKDIR /build
-# LUCID_IMAGE_CONFIG: .env.secrets + .env.master + host-config + container services (builder)
+# LUCID_IMAGE_CONFIG: host-config + container services (builder)
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
@@ -52,78 +48,90 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
         cargo \
         rustc \
         tini \
-        pyhton3.11-wheel \
-        pyhton3.11-dev \
+        python3.11-wheel \
+        python3.11-dev \
         python3-pip \
-        pyhton3.11-setuptools \
+        python3.11-setuptools \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 # LUCID_X_FILES_SKELETON_BEGIN
 # Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
 RUN set -eux; \
-    mkdir -p '.' './assets' './common' './configs' './electron_gui' './gui_api' './gui_hardware_manager' './gui_tor_manager' './main' './scripts' './service_configs' './shared' './assets/icons' './assets/images' './assets/tor' './common/governance' './common/security' './common/server-tools' './common/templates' './common/tor' './configs/.devcontainer' './configs/.ssh' './configs/admin' './configs/auth' './configs/base' './configs/blockchain' './configs/compose' './configs/container' './configs/database' './configs/docker' './configs/electron_gui' './configs/environment' './configs/gui' './configs/integration' './configs/logging' './configs/network' './configs/node' './configs/overlord' './configs/payment_systems' './configs/pi' './configs/rdp' './configs/secrets' './configs/security' './configs/server' './configs/tor' './configs/user' './electron_gui/assets' './electron_gui/configs' './electron_gui/dist' './electron_gui/distroless' './electron_gui/main' './electron_gui/renderer' './electron_gui/scripts' './electron_gui/shared' './electron_gui/tests' './electron_gui/utils' './gui_hardware_manager/gui_hardware_manager' './gui_tor_manager/gui_tor_manager' './main/ipc' './renderer/admin' './renderer/common' './scripts/compliance' './scripts/config' './scripts/contracts' './scripts/database' './scripts/deployment' './scripts/devcontainer' './scripts/docs' './scripts/foundation' './scripts/gui' './scripts/hardware' './scripts/integration' './scripts/lib' './scripts/load' './scripts/logging' './scripts/maintenance' './scripts/monitoring' './scripts/network' './scripts/registry' './scripts/secrets' './scripts/security' './scripts/services' './scripts/testing' './scripts/validation' './scripts/verification' './service_configs/blockchain' './service_configs/distroless' './service_configs/kubernetes' './service_configs/logging' './service_configs/multi-stage' './service_configs/node' './service_configs/payment_services' './service_configs/rdp' './service_configs/security' './service_configs/service_mesh' './service_configs/sessions' './service_configs/storage' './service_configs/tor' './service_configs/x_lucid_cluster_calibration' './configs/admin/admin-system-gateway' './configs/admin/config' './configs/blockchain/chain-to-pay' './configs/blockchain/config' './configs/container/admin' './configs/container/auth' './configs/container/base' './configs/container/blockchain' './configs/container/database' './configs/container/electron_gui' './configs/container/gui' './configs/container/node' './configs/container/payment_systems' './configs/container/rdp' './configs/container/server' './configs/container/sessions' './configs/container/storage' './configs/container/tor' './configs/database/elasticsearch' './configs/database/redis' './configs/docker/compose' './configs/docker/distroless' './configs/docker/docs' './configs/docker/multi-stage' './configs/docker/on-system-chain' './configs/environment/development' './configs/environment/pi' './configs/environment/production' './configs/environment/staging' './configs/node/config' './configs/node/node-system-gateway' './configs/overlord/runtime' './configs/pi/ssh' './electron_gui/assets/icons' './electron_gui/assets/images' './electron_gui/assets/tor' './electron_gui/dist/main' './electron_gui/dist/shared' './electron_gui/main/ipc' './electron_gui/renderer/admin' './electron_gui/renderer/common' './electron_gui/renderer/developer' './electron_gui/renderer/node' './electron_gui/renderer/user' './electron_gui/tests/e2e' './gui_hardware_manager/gui_hardware_manager/integration' './gui_hardware_manager/gui_hardware_manager/middleware' './gui_hardware_manager/gui_hardware_manager/models' './gui_hardware_manager/gui_hardware_manager/routers' './gui_hardware_manager/gui_hardware_manager/services' './gui_hardware_manager/gui_hardware_manager/utils' './gui_tor_manager/gui_tor_manager/config' './gui_tor_manager/gui_tor_manager/integration' './gui_tor_manager/gui_tor_manager/middleware' './gui_tor_manager/gui_tor_manager/models' './gui_tor_manager/gui_tor_manager/routers' './gui_tor_manager/gui_tor_manager/services' './gui_tor_manager/gui_tor_manager/utils' './renderer/admin/components' './renderer/admin/pages' './renderer/admin/services' './renderer/admin/store' './renderer/admin/styles' './renderer/common/components' './renderer/common/hooks' './renderer/common/store' './renderer/common/styles' './scripts/deployment/devcontainer' './scripts/deployment/pi' './scripts/deployment/utils' './scripts/maintenance/cleanup' './scripts/maintenance/optimization' './scripts/network/setup' './scripts/testing/utils' './service_configs/kubernetes/01_configmaps' './service_configs/kubernetes/02-secrets' './service_configs/kubernetes/03-databases' './service_configs/kubernetes/04-auth' './service_configs/kubernetes/04-network' './service_configs/kubernetes/05-core' './service_configs/kubernetes/06-application' './service_configs/kubernetes/07-support' './service_configs/kubernetes/08-ingress' './service_configs/kubernetes/patches' './configs/docker/compose/mongodb' './configs/docker/compose/nats' './configs/docker/compose/nginx' './configs/docker/compose/redis' './configs/docker/compose/vault' './configs/docker/distroless/base' './electron_gui/dist/main/ipc' './electron_gui/renderer/admin/components' './electron_gui/renderer/admin/pages' './electron_gui/renderer/admin/services' './electron_gui/renderer/admin/store' './electron_gui/renderer/admin/styles' './electron_gui/renderer/common/components' './electron_gui/renderer/common/hooks' './electron_gui/renderer/common/store' './electron_gui/renderer/common/styles' './electron_gui/renderer/developer/components' './electron_gui/renderer/developer/pages' './electron_gui/renderer/developer/services' './electron_gui/renderer/developer/styles' './electron_gui/renderer/node/components' './electron_gui/renderer/node/pages' './electron_gui/renderer/node/services' './electron_gui/renderer/node/styles' './electron_gui/renderer/user/components' './electron_gui/renderer/user/pages' './electron_gui/renderer/user/services' './electron_gui/renderer/user/styles' './renderer/admin/components/modals' './electron_gui/renderer/admin/components/modals'; \
+    mkdir -p '.' './assets' './common' './configs' './dist' './electron_gui' './gui' './gui_api' './gui_hardware_manager' './gui_tor_manager' './main' './node_modules' './renderer' './scripts' './service_configs' './shared' './assets/icons' './assets/images' './assets/tor' './common/__pycache__' './common/governance' './common/security' './common/server-tools' './common/templates' './common/tor' './configs/.ssh' './configs/alignment-mats' './configs/container' './configs/database' './configs/docker' './configs/env' './configs/environment' './configs/gui-alignment' './configs/integration' './configs/kubernetes' './configs/logging' './configs/pi' './configs/secrets' './configs/security' './configs/tor' './electron_gui/__pycache__' './electron_gui/assets' './electron_gui/configs' './electron_gui/dist' './electron_gui/distroless' './electron_gui/main' './electron_gui/node_modules' './electron_gui/renderer' './electron_gui/scripts' './electron_gui/shared' './electron_gui/tests' './electron_gui/utils' './gui/__pycache__' './gui/admin' './gui/build' './gui/config' './gui/core' './gui/node' './gui/requirements' './gui/shared' './gui/tests' './gui/user' './gui/wallet' './gui_hardware_manager/__pycache__' './gui_hardware_manager/gui_hardware_manager' './gui_tor_manager/gui_tor_manager' './main/ipc' './renderer/admin' './renderer/common' './renderer/node' './renderer/user' './scripts/__pycache__' './scripts/build' './scripts/compliance' './scripts/config' './scripts/contracts' './scripts/database' './scripts/deployment' './scripts/devcontainer' './scripts/docs' './scripts/foundation' './scripts/gui' './scripts/hardware' './scripts/integration' './scripts/lib' './scripts/load' './scripts/logging' './scripts/maintenance' './scripts/migration' './scripts/monitoring' './scripts/network' './scripts/registry' './scripts/secrets' './scripts/security' './scripts/services' './scripts/testing' './scripts/validation' './scripts/verification' './common/governance/__pycache__' './common/security/__pycache__' './common/server-tools/__pycache__' './common/tor/__pycache__' './configs/container/admin' './configs/container/auth' './configs/container/base' './configs/container/blockchain' './configs/container/database' './configs/container/electron_gui' './configs/container/gui' './configs/container/node' './configs/container/payment_systems' './configs/container/rdp' './configs/container/server' './configs/container/sessions' './configs/container/storage' './configs/container/tor' './configs/database/elasticsearch' './configs/database/redis' './configs/docker/distroless' './configs/docker/docs' './configs/docker/multi-stage' './configs/environment/development' './configs/environment/pi' './configs/environment/production' './configs/environment/staging' './configs/pi/ssh' './configs/secrets/runtime' './electron_gui/assets/icons' './electron_gui/assets/images' './electron_gui/assets/tor' './electron_gui/dist/main' './electron_gui/dist/shared' './electron_gui/main/ipc' './electron_gui/node_modules/cpu-features' './electron_gui/node_modules/ssh2' './electron_gui/node_modules/tiny-secp256k1' './electron_gui/renderer/admin' './electron_gui/renderer/common' './electron_gui/renderer/developer' './electron_gui/renderer/node' './electron_gui/renderer/user' './electron_gui/tests/e2e' './electron_gui/utils/__pycache__' './gui/admin/__pycache__' './gui/build/__pycache__' './gui/config/__pycache__' './gui/core/__pycache__' './gui/node/__pycache__' './gui/requirements/__pycache__' './gui/shared/__pycache__' './gui/tests/__pycache__' './gui/user/__pycache__' './gui/wallet/wallet_gui' './gui_hardware_manager/gui_hardware_manager/__pycache__' './gui_hardware_manager/gui_hardware_manager/integration' './gui_hardware_manager/gui_hardware_manager/middleware' './gui_hardware_manager/gui_hardware_manager/models' './gui_hardware_manager/gui_hardware_manager/routers' './gui_hardware_manager/gui_hardware_manager/services' './gui_hardware_manager/gui_hardware_manager/utils' './gui_tor_manager/gui_tor_manager/__pycache__' './gui_tor_manager/gui_tor_manager/config' './gui_tor_manager/gui_tor_manager/integration' './gui_tor_manager/gui_tor_manager/middleware' './gui_tor_manager/gui_tor_manager/models' './gui_tor_manager/gui_tor_manager/routers' './gui_tor_manager/gui_tor_manager/services' './gui_tor_manager/gui_tor_manager/utils' './renderer/admin/components' './renderer/admin/pages' './renderer/admin/services' './renderer/admin/store' './renderer/admin/styles' './renderer/common/components' './renderer/common/hooks' './renderer/common/store' './renderer/common/styles' './renderer/node/components' './renderer/node/pages' './renderer/node/services' './renderer/node/styles' './renderer/user/components' './renderer/user/pages' './renderer/user/services' './renderer/user/styles' './scripts/build/__pycache__' './scripts/build/components' './scripts/build/distroless' './scripts/compliance/distroless' './scripts/deployment/devcontainer' './scripts/deployment/distroless' './scripts/deployment/pi' './scripts/deployment/utils' './scripts/maintenance/cleanup' './scripts/maintenance/optimization' './scripts/network/setup' './scripts/testing/utils' './scripts/validation/__pycache__' './scripts/verification/__pycache__' './configs/secrets/runtime/compose' './electron_gui/dist/main/ipc' './electron_gui/node_modules/cpu-features/.github' './electron_gui/node_modules/cpu-features/deps' './electron_gui/node_modules/cpu-features/lib' './electron_gui/node_modules/cpu-features/src' './electron_gui/node_modules/cpu-features/test' './electron_gui/node_modules/ssh2/.github' './electron_gui/node_modules/ssh2/examples' './electron_gui/node_modules/ssh2/lib' './electron_gui/node_modules/ssh2/test' './electron_gui/node_modules/ssh2/util' './electron_gui/node_modules/tiny-secp256k1/native' './electron_gui/node_modules/tiny-secp256k1/node_modules' './electron_gui/node_modules/tiny-secp256k1/scripts' './electron_gui/renderer/admin/components' './electron_gui/renderer/admin/pages' './electron_gui/renderer/admin/services' './electron_gui/renderer/admin/store' './electron_gui/renderer/admin/styles' './electron_gui/renderer/common/components' './electron_gui/renderer/common/hooks' './electron_gui/renderer/common/store' './electron_gui/renderer/common/styles' './electron_gui/renderer/developer/components' './electron_gui/renderer/developer/pages' './electron_gui/renderer/developer/services' './electron_gui/renderer/developer/styles' './electron_gui/renderer/node/components' './electron_gui/renderer/node/pages' './electron_gui/renderer/node/services' './electron_gui/renderer/node/styles' './electron_gui/renderer/user/components' './electron_gui/renderer/user/pages' './electron_gui/renderer/user/services' './electron_gui/renderer/user/styles' './gui_hardware_manager/gui_hardware_manager/integration/__pycache__' './gui_hardware_manager/gui_hardware_manager/middleware/__pycache__' './gui_hardware_manager/gui_hardware_manager/models/__pycache__' './gui_hardware_manager/gui_hardware_manager/routers/__pycache__' './gui_hardware_manager/gui_hardware_manager/services/__pycache__' './gui_hardware_manager/gui_hardware_manager/utils/__pycache__' './gui_tor_manager/gui_tor_manager/config/__pycache__' './gui_tor_manager/gui_tor_manager/integration/__pycache__' './gui_tor_manager/gui_tor_manager/middleware/__pycache__' './gui_tor_manager/gui_tor_manager/models/__pycache__' './gui_tor_manager/gui_tor_manager/routers/__pycache__' './gui_tor_manager/gui_tor_manager/services/__pycache__' './gui_tor_manager/gui_tor_manager/utils/__pycache__' './renderer/admin/components/modals' './electron_gui/node_modules/cpu-features/.github/workflows' './electron_gui/node_modules/cpu-features/deps/cpu_features' './electron_gui/node_modules/ssh2/.github/workflows' './electron_gui/node_modules/ssh2/lib/protocol' './electron_gui/node_modules/ssh2/test/fixtures' './electron_gui/node_modules/tiny-secp256k1/native/secp256k1' './electron_gui/node_modules/tiny-secp256k1/node_modules/bn.js' './electron_gui/renderer/admin/components/modals'; \
     for d in \
       '.' \
       './assets' \
       './common' \
       './configs' \
+      './dist' \
       './electron_gui' \
+      './gui' \
       './gui_api' \
       './gui_hardware_manager' \
       './gui_tor_manager' \
       './main' \
+      './node_modules' \
+      './renderer' \
       './scripts' \
       './service_configs' \
       './shared' \
       './assets/icons' \
       './assets/images' \
       './assets/tor' \
+      './common/__pycache__' \
       './common/governance' \
       './common/security' \
       './common/server-tools' \
       './common/templates' \
       './common/tor' \
-      './configs/.devcontainer' \
       './configs/.ssh' \
-      './configs/admin' \
-      './configs/auth' \
-      './configs/base' \
-      './configs/blockchain' \
-      './configs/compose' \
+      './configs/alignment-mats' \
       './configs/container' \
       './configs/database' \
       './configs/docker' \
-      './configs/electron_gui' \
+      './configs/env' \
       './configs/environment' \
-      './configs/gui' \
+      './configs/gui-alignment' \
       './configs/integration' \
+      './configs/kubernetes' \
       './configs/logging' \
-      './configs/network' \
-      './configs/node' \
-      './configs/overlord' \
-      './configs/payment_systems' \
       './configs/pi' \
-      './configs/rdp' \
       './configs/secrets' \
       './configs/security' \
-      './configs/server' \
       './configs/tor' \
-      './configs/user' \
+      './electron_gui/__pycache__' \
       './electron_gui/assets' \
       './electron_gui/configs' \
       './electron_gui/dist' \
       './electron_gui/distroless' \
       './electron_gui/main' \
+      './electron_gui/node_modules' \
       './electron_gui/renderer' \
       './electron_gui/scripts' \
       './electron_gui/shared' \
       './electron_gui/tests' \
       './electron_gui/utils' \
+      './gui/__pycache__' \
+      './gui/admin' \
+      './gui/build' \
+      './gui/config' \
+      './gui/core' \
+      './gui/node' \
+      './gui/requirements' \
+      './gui/shared' \
+      './gui/tests' \
+      './gui/user' \
+      './gui/wallet' \
+      './gui_hardware_manager/__pycache__' \
       './gui_hardware_manager/gui_hardware_manager' \
       './gui_tor_manager/gui_tor_manager' \
       './main/ipc' \
       './renderer/admin' \
       './renderer/common' \
+      './renderer/node' \
+      './renderer/user' \
+      './scripts/__pycache__' \
+      './scripts/build' \
       './scripts/compliance' \
       './scripts/config' \
       './scripts/contracts' \
@@ -139,6 +147,7 @@ RUN set -eux; \
       './scripts/load' \
       './scripts/logging' \
       './scripts/maintenance' \
+      './scripts/migration' \
       './scripts/monitoring' \
       './scripts/network' \
       './scripts/registry' \
@@ -148,24 +157,10 @@ RUN set -eux; \
       './scripts/testing' \
       './scripts/validation' \
       './scripts/verification' \
-      './service_configs/blockchain' \
-      './service_configs/distroless' \
-      './service_configs/kubernetes' \
-      './service_configs/logging' \
-      './service_configs/multi-stage' \
-      './service_configs/node' \
-      './service_configs/payment_services' \
-      './service_configs/rdp' \
-      './service_configs/security' \
-      './service_configs/service_mesh' \
-      './service_configs/sessions' \
-      './service_configs/storage' \
-      './service_configs/tor' \
-      './service_configs/x_lucid_cluster_calibration' \
-      './configs/admin/admin-system-gateway' \
-      './configs/admin/config' \
-      './configs/blockchain/chain-to-pay' \
-      './configs/blockchain/config' \
+      './common/governance/__pycache__' \
+      './common/security/__pycache__' \
+      './common/server-tools/__pycache__' \
+      './common/tor/__pycache__' \
       './configs/container/admin' \
       './configs/container/auth' \
       './configs/container/base' \
@@ -182,37 +177,49 @@ RUN set -eux; \
       './configs/container/tor' \
       './configs/database/elasticsearch' \
       './configs/database/redis' \
-      './configs/docker/compose' \
       './configs/docker/distroless' \
       './configs/docker/docs' \
       './configs/docker/multi-stage' \
-      './configs/docker/on-system-chain' \
       './configs/environment/development' \
       './configs/environment/pi' \
       './configs/environment/production' \
       './configs/environment/staging' \
-      './configs/node/config' \
-      './configs/node/node-system-gateway' \
-      './configs/overlord/runtime' \
       './configs/pi/ssh' \
+      './configs/secrets/runtime' \
       './electron_gui/assets/icons' \
       './electron_gui/assets/images' \
       './electron_gui/assets/tor' \
       './electron_gui/dist/main' \
       './electron_gui/dist/shared' \
       './electron_gui/main/ipc' \
+      './electron_gui/node_modules/cpu-features' \
+      './electron_gui/node_modules/ssh2' \
+      './electron_gui/node_modules/tiny-secp256k1' \
       './electron_gui/renderer/admin' \
       './electron_gui/renderer/common' \
       './electron_gui/renderer/developer' \
       './electron_gui/renderer/node' \
       './electron_gui/renderer/user' \
       './electron_gui/tests/e2e' \
+      './electron_gui/utils/__pycache__' \
+      './gui/admin/__pycache__' \
+      './gui/build/__pycache__' \
+      './gui/config/__pycache__' \
+      './gui/core/__pycache__' \
+      './gui/node/__pycache__' \
+      './gui/requirements/__pycache__' \
+      './gui/shared/__pycache__' \
+      './gui/tests/__pycache__' \
+      './gui/user/__pycache__' \
+      './gui/wallet/wallet_gui' \
+      './gui_hardware_manager/gui_hardware_manager/__pycache__' \
       './gui_hardware_manager/gui_hardware_manager/integration' \
       './gui_hardware_manager/gui_hardware_manager/middleware' \
       './gui_hardware_manager/gui_hardware_manager/models' \
       './gui_hardware_manager/gui_hardware_manager/routers' \
       './gui_hardware_manager/gui_hardware_manager/services' \
       './gui_hardware_manager/gui_hardware_manager/utils' \
+      './gui_tor_manager/gui_tor_manager/__pycache__' \
       './gui_tor_manager/gui_tor_manager/config' \
       './gui_tor_manager/gui_tor_manager/integration' \
       './gui_tor_manager/gui_tor_manager/middleware' \
@@ -229,30 +236,43 @@ RUN set -eux; \
       './renderer/common/hooks' \
       './renderer/common/store' \
       './renderer/common/styles' \
+      './renderer/node/components' \
+      './renderer/node/pages' \
+      './renderer/node/services' \
+      './renderer/node/styles' \
+      './renderer/user/components' \
+      './renderer/user/pages' \
+      './renderer/user/services' \
+      './renderer/user/styles' \
+      './scripts/build/__pycache__' \
+      './scripts/build/components' \
+      './scripts/build/distroless' \
+      './scripts/compliance/distroless' \
       './scripts/deployment/devcontainer' \
+      './scripts/deployment/distroless' \
       './scripts/deployment/pi' \
       './scripts/deployment/utils' \
       './scripts/maintenance/cleanup' \
       './scripts/maintenance/optimization' \
       './scripts/network/setup' \
       './scripts/testing/utils' \
-      './service_configs/kubernetes/01_configmaps' \
-      './service_configs/kubernetes/02-secrets' \
-      './service_configs/kubernetes/03-databases' \
-      './service_configs/kubernetes/04-auth' \
-      './service_configs/kubernetes/04-network' \
-      './service_configs/kubernetes/05-core' \
-      './service_configs/kubernetes/06-application' \
-      './service_configs/kubernetes/07-support' \
-      './service_configs/kubernetes/08-ingress' \
-      './service_configs/kubernetes/patches' \
-      './configs/docker/compose/mongodb' \
-      './configs/docker/compose/nats' \
-      './configs/docker/compose/nginx' \
-      './configs/docker/compose/redis' \
-      './configs/docker/compose/vault' \
-      './configs/docker/distroless/base' \
+      './scripts/validation/__pycache__' \
+      './scripts/verification/__pycache__' \
+      './configs/secrets/runtime/compose' \
       './electron_gui/dist/main/ipc' \
+      './electron_gui/node_modules/cpu-features/.github' \
+      './electron_gui/node_modules/cpu-features/deps' \
+      './electron_gui/node_modules/cpu-features/lib' \
+      './electron_gui/node_modules/cpu-features/src' \
+      './electron_gui/node_modules/cpu-features/test' \
+      './electron_gui/node_modules/ssh2/.github' \
+      './electron_gui/node_modules/ssh2/examples' \
+      './electron_gui/node_modules/ssh2/lib' \
+      './electron_gui/node_modules/ssh2/test' \
+      './electron_gui/node_modules/ssh2/util' \
+      './electron_gui/node_modules/tiny-secp256k1/native' \
+      './electron_gui/node_modules/tiny-secp256k1/node_modules' \
+      './electron_gui/node_modules/tiny-secp256k1/scripts' \
       './electron_gui/renderer/admin/components' \
       './electron_gui/renderer/admin/pages' \
       './electron_gui/renderer/admin/services' \
@@ -274,28 +294,78 @@ RUN set -eux; \
       './electron_gui/renderer/user/pages' \
       './electron_gui/renderer/user/services' \
       './electron_gui/renderer/user/styles' \
+      './gui_hardware_manager/gui_hardware_manager/integration/__pycache__' \
+      './gui_hardware_manager/gui_hardware_manager/middleware/__pycache__' \
+      './gui_hardware_manager/gui_hardware_manager/models/__pycache__' \
+      './gui_hardware_manager/gui_hardware_manager/routers/__pycache__' \
+      './gui_hardware_manager/gui_hardware_manager/services/__pycache__' \
+      './gui_hardware_manager/gui_hardware_manager/utils/__pycache__' \
+      './gui_tor_manager/gui_tor_manager/config/__pycache__' \
+      './gui_tor_manager/gui_tor_manager/integration/__pycache__' \
+      './gui_tor_manager/gui_tor_manager/middleware/__pycache__' \
+      './gui_tor_manager/gui_tor_manager/models/__pycache__' \
+      './gui_tor_manager/gui_tor_manager/routers/__pycache__' \
+      './gui_tor_manager/gui_tor_manager/services/__pycache__' \
+      './gui_tor_manager/gui_tor_manager/utils/__pycache__' \
       './renderer/admin/components/modals' \
+      './electron_gui/node_modules/cpu-features/.github/workflows' \
+      './electron_gui/node_modules/cpu-features/deps/cpu_features' \
+      './electron_gui/node_modules/ssh2/.github/workflows' \
+      './electron_gui/node_modules/ssh2/lib/protocol' \
+      './electron_gui/node_modules/ssh2/test/fixtures' \
+      './electron_gui/node_modules/tiny-secp256k1/native/secp256k1' \
+      './electron_gui/node_modules/tiny-secp256k1/node_modules/bn.js' \
       './electron_gui/renderer/admin/components/modals' \
     ; do \
       printf 'LUCID_X_FILES_SKELETON_%s' "$(date +%s)" > "$d/.keep"; \
       touch "$d/.keep"; \
     done
 # LUCID_X_FILES_SKELETON_END
+# LUCID_LIB_SKELETON_BEGIN
+# Generated: FHS dirs for builder (from final-stage COPY --from, excluding /build/ sources;
+# ancestor dirs collapsed; see collect_skeleton_paths_from_dockerfile).
+RUN set -eux; \
+  mkdir -p \
+    '/bin' \
+    '/etc/ssl' \
+    '/usr/bin' \
+    '/usr/lib' \
+    '/var/lib' \
+    '/var/run' \
+    '/usr/local/bin' \
+    '/usr/local/lib' \
+    '/usr/lib/python3/dist-packages'; \
+  for d in \
+    '/bin' \
+    '/etc/ssl' \
+    '/usr/bin' \
+    '/usr/lib' \
+    '/var/lib' \
+    '/var/run' \
+    '/usr/local/bin' \
+    '/usr/local/lib' \
+    '/usr/lib/python3/dist-packages'; \
+  do \
+    printf 'LUCID_LIB_SKELETON_%s' "$(date +%s)" > "$d/.keep"; \
+    touch "$d/.keep"; \
+  done
+# LUCID_LIB_SKELETON_END
 
-# System markers (per Dockerfile-copy-pattern.md)
-RUN printf "LUCID_ELECTRON_GUI_ADMIN_VAR_RUN" > /var/run/.keep && \
-    printf "LUCID_ELECTRON_GUI_ADMIN_VAR_LIB" > /var/lib/.keep && \
-    chown -R 65532:65532 /var/run /var/lib && \
-    chmod 644 /var/run/.keep /var/lib/.keep
+RUN rm -rf configs/environment 2>/dev/null || true
 
+# LUCID_ALIGNMENT_MAT_COPY_DIRECTORIES_BEGIN
+# admin-interface_manifest.json — yml/py/json path roots (must match runtime LUCID_ALIGNMENT_MAT_RUNTIME_COPY).
+# yml: configs/**, electron_gui/**, gui/config/gui-endpoints.yml, infrastructure/containers/**, infrastructure/service_mesh/**
+# py:  common/**, electron_gui/**, gui/**
+# json: configs/** (incl. x-files, gui-alignment, services), electron_gui/configs/**, infrastructure/containers/services/**
+COPY common/ ./common/
 COPY configs/ ./configs/
-RUN rm -rf ./configs/environment && \
-        echo ".env.* files removed"
-COPY configs/environment/.env.secrets ./configs/.env.secrets
-COPY master-env-config.txt ./configs/.env.master
-COPY infrastructure/containers/host-config.yml ./configs/host-config.yml
-COPY infrastructure/containers/services/ ./service_configs/
-COPY infrastructure/containers/services/x_lucid_cluster_calibration/core-cluster-host-alignment.yml ./service_configs/x_lucid_cluster_calibration/core-cluster-host-alignment.yml
+COPY electron_gui/ ./electron_gui/
+COPY gui/ ./gui/
+COPY infrastructure/containers/ ./infrastructure/containers/
+COPY infrastructure/service_mesh/ ./infrastructure/service_mesh/
+# LUCID_ALIGNMENT_MAT_COPY_DIRECTORIES_END
+
 COPY common/__init__.py ./common/__init__.py
 COPY common/tor/ ./common/tor/
 COPY electron_gui/ ./electron_gui/
@@ -308,6 +378,19 @@ COPY electron_gui/tsconfig*.json ./
 COPY electron_gui/webpack*.js ./
 COPY electron_gui/jest.config.js ./
 COPY electron_gui/jest.e2e.config.js ./
+
+COPY electron_gui/main/ ./main/
+COPY electron_gui/renderer/admin/ ./renderer/admin/
+COPY electron_gui/renderer/common/ ./renderer/common/
+COPY electron_gui/shared/ ./shared/
+COPY electron_gui/assets/ ./assets/
+COPY electron_gui/configs/ ./configs/
+COPY electron_gui/scripts/ ./scripts/
+
+RUN printf "LUCID_ELECTRON_GUI_ADMIN_VAR_RUN" > /var/run/.keep && \
+    printf "LUCID_ELECTRON_GUI_ADMIN_VAR_LIB" > /var/lib/.keep && \
+    chown -R 65532:65532 /var/run /var/lib && \
+    chmod 644 /var/run/.keep /var/lib/.keep
 
 RUN echo "=== electron_gui admin: package manifests ===" && \
     ls -la ./package*.json ./tsconfig*.json ./webpack*.js ./jest*.js 2>/dev/null || true && \
@@ -323,17 +406,9 @@ RUN echo "LUCID_ELECTRON_GUI_ADMIN_BUILT_$(date +%s)" > /build/.build-marker && 
     echo "LUCID_ELECTRON_GUI_ADMIN_PACKAGES_INSTALLED_$(date +%s)" > /build/.packages-marker && \
     chown 65532:65532 /build/.build-marker /build/.packages-marker
 
-COPY electron_gui/main/ ./main/
 RUN echo "=== Checking electron_gui/main/ ===" && \
     ls -la ./main/ && \
     echo "main/ copied"
-
-COPY electron_gui/renderer/admin/ ./renderer/admin/
-COPY electron_gui/renderer/common/ ./renderer/common/
-COPY electron_gui/shared/ ./shared/
-COPY electron_gui/assets/ ./assets/
-COPY electron_gui/configs/ ./configs/
-COPY electron_gui/scripts/ ./scripts/
 
 RUN echo "=== Verifying admin source tree ===" && \
     test -d ./main && \
@@ -359,18 +434,17 @@ RUN npm run build:admin
 ############################
 # Stage 2 – Runtime (Distroless)
 ############################
-ARG TARGETPLATFORM=linux/arm64
 FROM --platform=$TARGETPLATFORM gcr.io/distroless/nodejs18-debian11
-
-WORKDIR /app
 
 ARG BUILD_DATE
 ARG VCS_REF
 ARG VERSION=1.0.0
-# Lucid Tor egress / network isolation (PUBLIC_TOR_IP: master-env-config.txt; compose: lucid-tor-egress-network)
+# Lucid Tor egress / network isolation (PUBLIC_TOR_IP: ../../configs/environment/ ; compose: lucid-tor-egress-network)
 ARG PUBLIC_TOR_IP=109.70.100.1
 ARG LUCID_INTERNAL_NETWORK_NAME=lucid-pi-network
 ARG LUCID_TOR_EGRESS_NETWORK_NAME=lucid-tor-egress-network
+
+WORKDIR /app
 
 LABEL maintainer="Lucid Development Team" \
       com.lucid.network.internal="${LUCID_INTERNAL_NETWORK_NAME}" \
@@ -416,6 +490,25 @@ ENV     PUBLIC_TOR_IP="${PUBLIC_TOR_IP}" \
     LUCID_SERVICE_HTTP_PATH=http://admin-interface:8125/app \
     LUCID_API_GATEWAY_HOST=api-gateway \
     LUCID_API_GATEWAY_PORT=8080
+# LUCID_RUNTIME_COPY_FROM_BUILD_BEGIN
+# Generated: same directory set as LUCID_X_FILES_SKELETON (./ under WORKDIR /build).
+COPY --from=builder --chown=65532:65532 /build/assets/ /app/assets/
+COPY --from=builder --chown=65532:65532 /build/common/ /app/common/
+COPY --from=builder --chown=65532:65532 /build/configs/ /app/configs/
+COPY --from=builder --chown=65532:65532 /build/dist/ /app/dist/
+COPY --from=builder --chown=65532:65532 /build/electron_gui/ /app/electron_gui/
+COPY --from=builder --chown=65532:65532 /build/gui/ /app/gui/
+COPY --from=builder --chown=65532:65532 /build/gui_api/ /app/gui_api/
+COPY --from=builder --chown=65532:65532 /build/gui_hardware_manager/ /app/gui_hardware_manager/
+COPY --from=builder --chown=65532:65532 /build/gui_tor_manager/ /app/gui_tor_manager/
+COPY --from=builder --chown=65532:65532 /build/main/ /app/main/
+COPY --from=builder --chown=65532:65532 /build/node_modules/ /app/node_modules/
+COPY --from=builder --chown=65532:65532 /build/renderer/ /app/renderer/
+COPY --from=builder --chown=65532:65532 /build/scripts/ /app/scripts/
+COPY --from=builder --chown=65532:65532 /build/service_configs/ /app/service_configs/
+COPY --from=builder --chown=65532:65532 /build/shared/ /app/shared/
+# LUCID_RUNTIME_COPY_FROM_BUILD_END
+
 # LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
 # Generated: apt + RUN scaffold (mkdir/printf/touch/chown) -> FHS (not ./ or /build/; lib_search_and_inject.py).
 COPY --from=builder --chown=65532:65532 /usr/lib/*/libffi.so* /app/usr/lib/
@@ -427,49 +520,28 @@ COPY --from=builder --chown=65532:65532 /dev/null/ /app/dev/null/
 COPY --from=builder --chown=65532:65532 /etc/ssl/ /app/etc/ssl/
 COPY --from=builder --chown=65532:65532 /usr/bin/ /app/usr/bin/
 COPY --from=builder --chown=65532:65532 /usr/lib/python3/dist-packages/ /app/usr/lib/python3/dist-packages/
+COPY --from=builder --chown=65532:65532 /usr/local/bin/ /app/usr/local/bin/
+COPY --from=builder --chown=65532:65532 /usr/local/lib/ /app/usr/local/lib/
 COPY --from=builder --chown=65532:65532 /var/lib/ /app/var/lib/
 COPY --from=builder --chown=65532:65532 /var/run/ /app/var/run/
 # LUCID_RUNTIME_COPY_FROM_BUILDER_APT_END
-
-# LUCID_RUNTIME_COPY_FROM_BUILD_BEGIN
-# Generated: same directory set as LUCID_X_FILES_SKELETON (./ under WORKDIR /build).
-COPY --from=builder --chown=65532:65532 /build/assets/ /app/assets/
-COPY --from=builder --chown=65532:65532 /build/common/ /app/common/
-COPY --from=builder --chown=65532:65532 /build/configs/ /app/configs/
-COPY --from=builder --chown=65532:65532 /build/electron_gui/ /app/electron_gui/
-COPY --from=builder --chown=65532:65532 /build/gui_api/ /app/gui_api/
-COPY --from=builder --chown=65532:65532 /build/gui_hardware_manager/ /app/gui_hardware_manager/
-COPY --from=builder --chown=65532:65532 /build/gui_tor_manager/ /app/gui_tor_manager/
-COPY --from=builder --chown=65532:65532 /build/main/ /app/main/
-COPY --from=builder --chown=65532:65532 /build/scripts/ /app/scripts/
-COPY --from=builder --chown=65532:65532 /build/service_configs/ /app/service_configs/
-COPY --from=builder --chown=65532:65532 /build/shared/ /app/shared/
-COPY --from=builder --chown=65532:65532 /build/renderer/admin/ /app/renderer/admin/
-COPY --from=builder --chown=65532:65532 /build/renderer/common/ /app/renderer/common/
-# LUCID_RUNTIME_COPY_FROM_BUILD_END
-
-
-
-
-COPY --from=builder --chown=65532:65532 /usr/bin/tini /app/usr/bin/tini
-
+# LUCID_ALIGNMENT_MAT_RUNTIME_COPY_BEGIN — admin-interface_manifest.json (same dirs as builder mat)
+COPY --from=builder --chown=65532:65532 /build/infrastructure/containers/ /app/infrastructure/containers/
+COPY --from=builder --chown=65532:65532 /build/infrastructure/service_mesh/ /app/infrastructure/service_mesh/
+# LUCID_ALIGNMENT_MAT_RUNTIME_COPY_END
+# Non-mat Electron build artifacts and helper repos
 COPY --from=builder --chown=65532:65532 /build/.build-marker /app/.build-marker
 COPY --from=builder --chown=65532:65532 /build/.packages-marker /app/.packages-marker
-COPY --from=builder --chown=65532:65532 /build/dist/ /app/dist/
-# LUCID_IMAGE_CONFIG: .env.secrets + .env.master (runtime)
-COPY --from=builder --chown=65532:65532 /build/configs/.env.secrets /app/configs/.env.secrets
-COPY --from=builder --chown=65532:65532 /build/configs/.env.master /app/configs/.env.master
+# LUCID_IMAGE_CONFIG: (runtime)
 
-COPY --from=builder --chown=65532:65532 /build/infrastructure/ /app/infrastructure/
-
-RUN ["/nodejs/bin/node", "-e", "const fs = require('fs'); const checks = { buildMarker: fs.existsSync('/app/.build-marker'), packMarker: fs.existsSync('/app/.packages-marker'), dist: fs.existsSync('/app/dist'), configs: fs.existsSync('/app/configs'), hostConfig: fs.existsSync('/app/configs/host-config.yml'), dockerConfig: fs.existsSync('/app/configs/docker.config.json'), prodConfig: fs.existsSync('/app/configs/env.production.json'), torConfig: fs.existsSync('/app/configs/tor.config.json'), apiServices: fs.existsSync('/app/configs/api-services.conf'), common: fs.existsSync('/app/common/__init__.py'), apiGwCm: fs.existsSync('/build/configs/api-gateway-config.yaml') }; if (!Object.values(checks).every(v => v)) { console.error('Verification failed:', checks); process.exit(1); } console.log('Runtime artifacts verified');"]
+RUN ["/app/usr/bin/node", "-e", "const fs = require('fs'); const p=(x)=>fs.existsSync(x); const checks = { buildMarker: p('/app/.build-marker'), packMarker: p('/app/.packages-marker'), dist: p('/app/dist'), matAdminJson: p('/app/configs/gui-alignment/admin-interface.json'), xFiles: p('/app/configs/x-files.json'), svcRegistry: p('/app/configs/services/service-registry.json'), meshYaml: p('/app/infrastructure/service_mesh/config/service-mesh.yaml'), guiEndpoints: p('/app/gui/config/gui-endpoints.yml'), hostConfig: p('/app/configs/host-config.yml'), dockerConfig: p('/app/configs/docker.config.json'), prodConfig: p('/app/configs/env.production.json'), torConfig: p('/app/configs/tor.config.json'), apiServices: p('/app/configs/api-services.conf'), common: p('/app/common/__init__.py'), apiGwCm: p('/app/configs/api-gateway-config.yaml'), infraSvcReg: p('/app/infrastructure/containers/services/service-registry.json') }; if (!Object.values(checks).every(v => v)) { console.error('Verification failed:', checks); process.exit(1); } console.log('Runtime artifacts verified');"]
 
 EXPOSE 8125 8101
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-  CMD ["/nodejs/bin/node", "-e", "require('http').get('http://127.0.0.1:8125/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1); }).on('error', () => { process.exit(1); })"]
+  CMD ["/app/usr/bin/node", "-e", "require('http').get('http://127.0.0.1:8125/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1); }).on('error', () => { process.exit(1); })"]
 
 USER 65532:65532
 
 ENTRYPOINT ["/app/usr/bin/tini", "--"]
-CMD ["/nodejs/bin/node", "/app/dist/main/index.js"]
+CMD ["/app/usr/bin/node", "/app/dist/main/index.js"]

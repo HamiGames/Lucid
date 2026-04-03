@@ -10,9 +10,8 @@
 
 
 x-lucid-env-files: &lucid-env-files
-  - /app/configs/.env.secrets
-  - /app/configs/.env.master
-
+  - ../../configs/environment/.env.secrets
+  - ../../../../configs/environment/.env.master
 services:
   base:
     image: pickme/lucid-base:latest-arm64
@@ -24,7 +23,7 @@ services:
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
-      - LUCID_ENV_SECRETS_FILE=/app/configs/.env.secrets
+      - LUCID_ENV_SECRETS_FILE=../../configs/environment/.env.secrets
       - LUCID_ENV_MASTER_FILE=/app/configs/.env.master
     user: "65532:65532"
     security_opt:
@@ -38,8 +37,8 @@ services:
     tmpfs:
       - /tmp:noexec,nosuid,size=100m
     volumes:
-      - /app/configs/.env.master:/app/configs/.env.master:ro
-      - /app/configs/.env.secrets:/app/configs/.env.secrets:ro
+      - ../../../../configs/environment/.env.master:/app/configs/.env.master:ro
+      - ../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
       - /mnt/myssd/Lucid/Lucid/logs/base:/app/logs:rw
       - base-cache:/tmp/cache
     healthcheck:
@@ -65,7 +64,7 @@ services:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
       - LUCID_MODE=minimal
-      - LUCID_ENV_SECRETS_FILE=/app/configs/.env.secrets
+      - LUCID_ENV_SECRETS_FILE=../../configs/environment/.env.secrets
       - LUCID_ENV_MASTER_FILE=/app/configs/.env.master
     user: "65532:65532"
     security_opt:
@@ -77,8 +76,10 @@ services:
     tmpfs:
       - /tmp:noexec,nosuid,size=50m
     volumes:
-      - /app/configs/.env.master:/app/configs/.env.master:ro
-      - /app/configs/.env.secrets:/app/configs/.env.secrets:ro
+      - ..:/app/service_configs:ro
+      - ../../host-config.yml:/app/configs/host-config.yml:ro
+      - ../../../../configs/environment/.env.master:/app/configs/.env.master:ro
+      - ../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
       - /mnt/myssd/Lucid/Lucid/logs/minimal-base:/app/logs:rw
       - minimal-base-cache:/tmp/cache
     healthcheck:
@@ -104,7 +105,7 @@ services:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
       - LUCID_ARCHITECTURE=linux/arm64
-      - LUCID_ENV_SECRETS_FILE=/app/configs/.env.secrets
+      - LUCID_ENV_SECRETS_FILE=../../configs/environment/.env.secrets
       - LUCID_ENV_MASTER_FILE=/app/configs/.env.master
     user: "65532:65532"
     security_opt:
@@ -118,8 +119,10 @@ services:
     tmpfs:
       - /tmp:noexec,nosuid,size=100m
     volumes:
-      - /app/configs/.env.master:/app/configs/.env.master:ro
-      - /app/configs/.env.secrets:/app/configs/.env.secrets:ro
+      - ..:/app/service_configs:ro
+      - ../../host-config.yml:/app/configs/host-config.yml:ro
+      - ../../../../configs/environment/.env.master:/app/configs/.env.master:ro
+      - ../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
       - /mnt/myssd/Lucid/Lucid/logs/arm64-base:/app/logs:rw
       - arm64-base-cache:/tmp/cache
     healthcheck:

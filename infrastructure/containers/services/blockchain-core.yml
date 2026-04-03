@@ -12,7 +12,7 @@
 # CRITICAL: TRON ISOLATION - NO TRON dependencies
 
 config_files:
-  secrets: /app/configs/.env.secrets
+  secrets: ../../configs/environment/.env.secrets
   master: /app/configs/.env.master
 
 service:

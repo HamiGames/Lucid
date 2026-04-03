@@ -11,7 +11,7 @@
 # Port: 8095 (node_management @ infrastructure/containers/host-config.yml — distinct from tron-staking:8096)
 
 config_files:
-  secrets: /app/configs/.env.secrets
+  secrets: ../../configs/environment/.env.secrets
   master: /app/configs/.env.master
 
 service:

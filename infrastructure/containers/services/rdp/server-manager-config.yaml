@@ -31,6 +31,13 @@ x-lucid-host-config-alignment:
       port: 8089
       host_ip: 172.20.10.5
       http_path: http://lucid-auth-service:8089/app
+    # Python FastAPI lucid-server-manager (auth pre-auth + registry); host-config key lucid_server_manager — not rdp-server-manager.
+    lucid_server_manager:
+      host_config_key: lucid_server_manager
+      service_name: lucid-server-manager
+      port: 8081
+      host_ip: 172.20.10.3
+      http_path: http://lucid-server-manager:8081/app
     rdp_server_manager_yml:
       host_config_key: rdp_server_manager_yml
       service_name: rdp-server-manager
@@ -116,7 +123,7 @@ RDP_SERVER_MANAGER_URL: ""
 # =============================================================================
 # DATABASE CONFIGURATION
 # =============================================================================
-# MUST come from /app/configs/.env.secrets (bind: configs/environment/.env.secrets)
+# MUST come from ../../configs/environment/.env.secrets (bind: configs/environment/.env.secrets)
 MONGODB_URL: ""
 REDIS_URL: ""
 
@@ -162,6 +169,19 @@ CONNECTION_POOL_TIMEOUT_SECONDS: 30
 RDP_XRDP_URL: ""
 API_GATEWAY_URL: ""
 AUTH_SERVICE_URL: ""
+
+# =============================================================================
+# LUCID-SERVER-MANAGER HTTP API (auth ↔ SM alignment)
+# =============================================================================
+# Exposed by RDP/server_manager/main.py when running as lucid-server-manager:8081
+LUCID_PREAUTH_SECRET: ""
+LUCID_PREAUTH_TTL_SECONDS: "600"
+SM_HTTP_ROUTES:
+  preauth_issue: "POST /app/auth/preauth-token"
+  preauth_verify: "POST /app/auth/verify-preauth"
+  registry_users: "POST /app/registry/users"
+  verify_login: "POST /app/auth/verify-login"
+  access_register: "POST /app/access/register-check"
 
 # =============================================================================
 # XRDP CONFIGURATION

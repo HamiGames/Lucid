@@ -16,16 +16,17 @@ ARG BUILDPLATFORM=linux/amd64
 # =============================================================================
 # STAGE 1: Tor System Builder (Debian 12 with full Tor installation)
 # =============================================================================
-FROM --platform=$TARGETPLATFORM debian:12-slim AS tor-builder
-
 ARG BUILDPLATFORM
 ARG TARGETPLATFORM
 
-ENV DEBIAN_FRONTEND=noninteractive
+FROM --platform=$TARGETPLATFORM debian:12-slim AS tor-builder
 
 WORKDIR /build
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    rm -rf /var/lib/apt/lists/* && \
+    apt-get update && apt-get install -y --no-install-recommends \
       consul \
       build-essential \
       tor \
@@ -49,11 +50,434 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
       jq \
       adduser \
     && apt-get clean \
-    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
-    && adduser --disabled-password --shell /bin/bash --gecos "" lucid \
-    && adduser --system --no-create-home --uid 65532 --gid 65532 --group tor-nonroot || true
-
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* 
 # Dynamic linker + libc triplet + healthcheck helpers for distroless runtime (multi-arch; builder matches TARGETPLATFORM).
+RUN python3.11 -c "import os; assert os.path.exists('/usr/local/lib/python3.11/site-packages'), 'CRITICAL: /usr/local/lib/python3.11/site-packages not found in distroless image'; assert os.path.exists('/usr/local/bin'), 'CRITICAL: /usr/local/bin not found in distroless image'; print('✅ Python executable verified: /usr/local/bin/python3.11')"
+
+# LUCID_LIB_SKELETON_BEGIN
+# Generated: FHS dirs for builder (from final-stage COPY --from, excluding /build/ sources;
+# ancestor dirs collapsed; overlaps with builder mkdir/.keep removed — see collect_skeleton_paths_from_dockerfile).
+RUN set -eux; \
+  mkdir -p \
+    '/bin' \
+    '/etc/ssl' \
+    '/etc/tor' \
+    '/usr/bin' \
+    '/usr/lib/python3.11' \
+    '/usr/local/bin' \
+    '/var/lib/tor' \
+    '/usr/local/lib/python3.11/site-packages'; \
+  for d in \
+    '/bin' \
+    '/etc/ssl' \
+    '/etc/tor' \
+    '/usr/bin' \
+    '/usr/lib/python3.11' \
+    '/usr/local/bin' \
+    '/var/lib/tor' \
+    '/usr/local/lib/python3.11/site-packages'; \
+  do \
+    printf 'LUCID_LIB_SKELETON_%s' "$(date +%s)" > "$d/.keep"; \
+    touch "$d/.keep"; \
+  done
+# LUCID_LIB_SKELETON_END
+# LUCID_X_FILES_SKELETON_BEGIN
+# Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
+RUN set -eux; \
+    mkdir -p '.' './02_network_security' './03_api_gateway' './admin' './common' './configs' './database' './node' './scripts' './server' './service_configs' './service_mesh' './sessions' './storage' './02_network_security/__pycache__' './02_network_security/docs' './02_network_security/tor' './02_network_security/tunnels' './03_api_gateway/__pycache__' './03_api_gateway/api' './03_api_gateway/certs' './03_api_gateway/config' './03_api_gateway/database' './03_api_gateway/docs' './03_api_gateway/endpoints' './03_api_gateway/gateway' './03_api_gateway/legacy' './03_api_gateway/logs' './03_api_gateway/middleware' './03_api_gateway/models' './03_api_gateway/repositories' './03_api_gateway/scripts' './03_api_gateway/services' './03_api_gateway/utils' './admin/__pycache__' './admin/admin_ui' './admin/api' './admin/audit' './admin/config' './admin/emergency' './admin/governance' './admin/key_rotation' './admin/over_lord' './admin/rbac' './admin/services' './admin/system' './admin/ui' './admin/utils' './common/__pycache__' './common/governance' './common/security' './common/server-tools' './common/templates' './common/tor' './configs/.ssh' './configs/compose' './configs/container' './configs/database' './configs/docker' './configs/env' './configs/integration' './configs/kubernetes' './configs/logging' './configs/pi' './configs/secrets' './configs/security' './configs/tor' './database/__pycache__' './database/admin' './database/api' './database/config' './database/elasticsearch' './database/models' './database/mongodb' './database/redis' './database/repositories' './database/schema' './database/schemas' './database/services' './node/__pycache__' './node/api' './node/config' './node/consensus' './node/dht_crdt' './node/economy' './node/flags' './node/governance' './node/models' './node/over_lord' './node/payouts' './node/pools' './node/poot' './node/registration' './node/repositories' './node/resources' './node/service_configs' './node/shards' './node/sync' './node/tor' './node/validation' './node/worker' './scripts/__pycache__' './scripts/build' './scripts/compliance' './scripts/config' './scripts/contracts' './scripts/database' './scripts/deployment' './scripts/devcontainer' './scripts/docs' './scripts/foundation' './scripts/gui' './scripts/hardware' './scripts/integration' './scripts/lib' './scripts/load' './scripts/logging' './scripts/maintenance' './scripts/migration' './scripts/monitoring' './scripts/network' './scripts/registry' './scripts/secrets' './scripts/security' './scripts/services' './scripts/testing' './scripts/validation' './scripts/verification' './server/__pycache__' './service_configs/blockchain' './service_configs/distroless' './service_configs/docker' './service_configs/logging' './service_configs/multi-stage' './service_configs/node' './service_configs/payment_services' './service_configs/rdp' './service_configs/security' './service_configs/service_mesh' './service_configs/services' './service_configs/sessions' './service_configs/tor' './service_configs/x_lucid_cluster_calibration' './service_mesh/__pycache__' './service_mesh/communication' './service_mesh/config' './service_mesh/controller' './service_mesh/discovery' './service_mesh/docs' './service_mesh/security' './service_mesh/sidecar' './sessions/__pycache__' './sessions/api' './sessions/config' './sessions/core' './sessions/encryption' './sessions/integration' './sessions/pipeline' './sessions/processor' './sessions/recorder' './sessions/security' './sessions/session_systems_control' './sessions/storage' './storage/__pycache__' './storage/backups' './storage/cache' './storage/data' './02_network_security/tor/scripts' './02_network_security/tunnels/__pycache__' './02_network_security/tunnels/config' './02_network_security/tunnels/scripts' './03_api_gateway/api/__pycache__' './03_api_gateway/api/app' './03_api_gateway/api/lucid_api.egg-info' './03_api_gateway/api/tests' './03_api_gateway/config/__pycache__' './03_api_gateway/database/__pycache__' './03_api_gateway/docs/swagger' './03_api_gateway/endpoints/__pycache__' './03_api_gateway/legacy/api' './03_api_gateway/legacy/gateway' './03_api_gateway/middleware/__pycache__' './03_api_gateway/models/__pycache__' './03_api_gateway/repositories/__pycache__' './03_api_gateway/services/__pycache__' './03_api_gateway/utils/__pycache__' './admin/admin_ui/__pycache__' './admin/api/__pycache__' './admin/audit/__pycache__' './admin/config/__pycache__' './admin/emergency/__pycache__' './admin/governance/__pycache__' './admin/key_rotation/__pycache__' './admin/rbac/__pycache__' './admin/services/__pycache__' './admin/system/__pycache__' './admin/ui/__pycache__' './admin/ui/static' './admin/ui/templates' './admin/utils/__pycache__' './common/governance/__pycache__' './common/security/__pycache__' './common/server-tools/__pycache__' './common/tor/__pycache__' './configs/container/admin' './configs/container/auth' './configs/container/base' './configs/container/blockchain' './configs/container/database' './configs/container/electron_gui' './configs/container/gui' './configs/container/node' './configs/container/payment_systems' './configs/container/rdp' './configs/container/server' './configs/container/sessions' './configs/container/storage' './configs/container/tor' './configs/database/elasticsearch' './configs/database/redis' './configs/docker/distroless' './configs/docker/docs' './configs/docker/multi-stage' './configs/pi/ssh' './database/admin/__pycache__' './database/api/__pycache__' './database/config/__pycache__' './database/elasticsearch/__pycache__' './database/models/__pycache__' './database/mongodb/__pycache__' './database/redis/__pycache__' './database/repositories/__pycache__' './database/schema/__pycache__' './database/services/__pycache__' './database/services/backup' './database/services/migration' './database/services/monitoring' './node/api/__pycache__' './node/consensus/__pycache__' './node/dht_crdt/__pycache__' './node/economy/__pycache__' './node/flags/__pycache__' './node/governance/__pycache__' './node/models/__pycache__' './node/payouts/__pycache__' './node/pools/__pycache__' './node/poot/__pycache__' './node/registration/__pycache__' './node/repositories/__pycache__' './node/resources/__pycache__' './node/service_configs/x_lucid_cluster_calibration' './node/shards/__pycache__' './node/sync/__pycache__' './node/tor/__pycache__' './node/validation/__pycache__' './node/worker/__pycache__' './scripts/build/__pycache__' './scripts/build/components' './scripts/build/core' './scripts/build/distroless' './scripts/build/utils' './scripts/compliance/distroless' './scripts/compliance/general' './scripts/deployment/devcontainer' './scripts/deployment/distroless' './scripts/deployment/pi' './scripts/deployment/utils' './scripts/maintenance/cleanup' './scripts/maintenance/optimization' './scripts/maintenance/recovery' './scripts/network/diagnostics' './scripts/network/security' './scripts/network/setup' './scripts/testing/integration' './scripts/testing/unit' './scripts/testing/utils' './scripts/validation/__pycache__' './scripts/verification/__pycache__' './service_configs/docker/distroless' './service_configs/docker/docs' './service_configs/docker/multi-stage' './service_configs/x_lucid_cluster_calibration/__pycache__' './service_mesh/communication/__pycache__' './service_mesh/config/policies' './service_mesh/config/services' './service_mesh/controller/__pycache__' './service_mesh/discovery/__pycache__' './service_mesh/security/__pycache__' './service_mesh/sidecar/envoy' './service_mesh/sidecar/proxy' './sessions/api/__pycache__' './sessions/api/config' './sessions/api/integration' './sessions/core/__pycache__' './sessions/encryption/__pycache__' './sessions/integration/__pycache__' './sessions/pipeline/__pycache__' './sessions/pipeline/integration' './sessions/processor/__pycache__' './sessions/processor/config' './sessions/processor/integration' './sessions/recorder/__pycache__' './sessions/recorder/config' './sessions/recorder/integration' './sessions/security/__pycache__' './sessions/session_systems_control/__pycache__' './sessions/storage/__pycache__' './sessions/storage/config' './storage/backups/configs' './storage/backups/database' './storage/backups/user-data' './storage/cache/build' './storage/cache/docker' './storage/cache/temp' './storage/data/blockchain' './storage/data/logs' './storage/data/sessions' './03_api_gateway/api/app/__pycache__' './03_api_gateway/api/app/database' './03_api_gateway/api/app/db' './03_api_gateway/api/app/middleware' './03_api_gateway/api/app/models' './03_api_gateway/api/app/routers' './03_api_gateway/api/app/routes' './03_api_gateway/api/app/schemas' './03_api_gateway/api/app/scripts' './03_api_gateway/api/app/security' './03_api_gateway/api/app/services' './03_api_gateway/api/app/utils' './03_api_gateway/api/tests/__pycache__' './03_api_gateway/api/tests/integration' './03_api_gateway/docs/swagger/dist' './admin/ui/static/css' './admin/ui/static/js' './database/services/backup/__pycache__' './database/services/migration/__pycache__' './database/services/monitoring/__pycache__' './service_mesh/sidecar/envoy/__pycache__' './service_mesh/sidecar/envoy/config' './service_mesh/sidecar/proxy/__pycache__' './sessions/api/integration/__pycache__' './sessions/pipeline/integration/__pycache__' './sessions/processor/integration/__pycache__' './sessions/recorder/integration/__pycache__' './03_api_gateway/api/app/database/__pycache__' './03_api_gateway/api/app/db/__pycache__' './03_api_gateway/api/app/db/models' './03_api_gateway/api/app/middleware/__pycache__' './03_api_gateway/api/app/models/__pycache__' './03_api_gateway/api/app/routers/__pycache__' './03_api_gateway/api/app/routes/__pycache__' './03_api_gateway/api/app/schemas/__pycache__' './03_api_gateway/api/app/scripts/__pycache__' './03_api_gateway/api/app/security/__pycache__' './03_api_gateway/api/app/services/__pycache__' './03_api_gateway/api/app/utils/__pycache__' './03_api_gateway/api/tests/integration/__pycache__'; \
+    for d in \
+      '.' \
+      './02_network_security' \
+      './03_api_gateway' \
+      './admin' \
+      './common' \
+      './configs' \
+      './database' \
+      './node' \
+      './scripts' \
+      './server' \
+      './service_configs' \
+      './service_mesh' \
+      './sessions' \
+      './storage' \
+      './02_network_security/__pycache__' \
+      './02_network_security/docs' \
+      './02_network_security/tor' \
+      './02_network_security/tunnels' \
+      './03_api_gateway/__pycache__' \
+      './03_api_gateway/api' \
+      './03_api_gateway/certs' \
+      './03_api_gateway/config' \
+      './03_api_gateway/database' \
+      './03_api_gateway/docs' \
+      './03_api_gateway/endpoints' \
+      './03_api_gateway/gateway' \
+      './03_api_gateway/legacy' \
+      './03_api_gateway/logs' \
+      './03_api_gateway/middleware' \
+      './03_api_gateway/models' \
+      './03_api_gateway/repositories' \
+      './03_api_gateway/scripts' \
+      './03_api_gateway/services' \
+      './03_api_gateway/utils' \
+      './admin/__pycache__' \
+      './admin/admin_ui' \
+      './admin/api' \
+      './admin/audit' \
+      './admin/config' \
+      './admin/emergency' \
+      './admin/governance' \
+      './admin/key_rotation' \
+      './admin/over_lord' \
+      './admin/rbac' \
+      './admin/services' \
+      './admin/system' \
+      './admin/ui' \
+      './admin/utils' \
+      './common/__pycache__' \
+      './common/governance' \
+      './common/security' \
+      './common/server-tools' \
+      './common/templates' \
+      './common/tor' \
+      './configs/.ssh' \
+      './configs/compose' \
+      './configs/container' \
+      './configs/database' \
+      './configs/docker' \
+      './configs/env' \
+      './configs/integration' \
+      './configs/kubernetes' \
+      './configs/logging' \
+      './configs/pi' \
+      './configs/secrets' \
+      './configs/security' \
+      './configs/tor' \
+      './database/__pycache__' \
+      './database/admin' \
+      './database/api' \
+      './database/config' \
+      './database/elasticsearch' \
+      './database/models' \
+      './database/mongodb' \
+      './database/redis' \
+      './database/repositories' \
+      './database/schema' \
+      './database/schemas' \
+      './database/services' \
+      './node/__pycache__' \
+      './node/api' \
+      './node/config' \
+      './node/consensus' \
+      './node/dht_crdt' \
+      './node/economy' \
+      './node/flags' \
+      './node/governance' \
+      './node/models' \
+      './node/over_lord' \
+      './node/payouts' \
+      './node/pools' \
+      './node/poot' \
+      './node/registration' \
+      './node/repositories' \
+      './node/resources' \
+      './node/service_configs' \
+      './node/shards' \
+      './node/sync' \
+      './node/tor' \
+      './node/validation' \
+      './node/worker' \
+      './scripts/__pycache__' \
+      './scripts/build' \
+      './scripts/compliance' \
+      './scripts/config' \
+      './scripts/contracts' \
+      './scripts/database' \
+      './scripts/deployment' \
+      './scripts/devcontainer' \
+      './scripts/docs' \
+      './scripts/foundation' \
+      './scripts/gui' \
+      './scripts/hardware' \
+      './scripts/integration' \
+      './scripts/lib' \
+      './scripts/load' \
+      './scripts/logging' \
+      './scripts/maintenance' \
+      './scripts/migration' \
+      './scripts/monitoring' \
+      './scripts/network' \
+      './scripts/registry' \
+      './scripts/secrets' \
+      './scripts/security' \
+      './scripts/services' \
+      './scripts/testing' \
+      './scripts/validation' \
+      './scripts/verification' \
+      './server/__pycache__' \
+      './service_configs/blockchain' \
+      './service_configs/distroless' \
+      './service_configs/docker' \
+      './service_configs/logging' \
+      './service_configs/multi-stage' \
+      './service_configs/node' \
+      './service_configs/payment_services' \
+      './service_configs/rdp' \
+      './service_configs/security' \
+      './service_configs/service_mesh' \
+      './service_configs/services' \
+      './service_configs/sessions' \
+      './service_configs/tor' \
+      './service_configs/x_lucid_cluster_calibration' \
+      './service_mesh/__pycache__' \
+      './service_mesh/communication' \
+      './service_mesh/config' \
+      './service_mesh/controller' \
+      './service_mesh/discovery' \
+      './service_mesh/docs' \
+      './service_mesh/security' \
+      './service_mesh/sidecar' \
+      './sessions/__pycache__' \
+      './sessions/api' \
+      './sessions/config' \
+      './sessions/core' \
+      './sessions/encryption' \
+      './sessions/integration' \
+      './sessions/pipeline' \
+      './sessions/processor' \
+      './sessions/recorder' \
+      './sessions/security' \
+      './sessions/session_systems_control' \
+      './sessions/storage' \
+      './storage/__pycache__' \
+      './storage/backups' \
+      './storage/cache' \
+      './storage/data' \
+      './02_network_security/tor/scripts' \
+      './02_network_security/tunnels/__pycache__' \
+      './02_network_security/tunnels/config' \
+      './02_network_security/tunnels/scripts' \
+      './03_api_gateway/api/__pycache__' \
+      './03_api_gateway/api/app' \
+      './03_api_gateway/api/lucid_api.egg-info' \
+      './03_api_gateway/api/tests' \
+      './03_api_gateway/config/__pycache__' \
+      './03_api_gateway/database/__pycache__' \
+      './03_api_gateway/docs/swagger' \
+      './03_api_gateway/endpoints/__pycache__' \
+      './03_api_gateway/legacy/api' \
+      './03_api_gateway/legacy/gateway' \
+      './03_api_gateway/middleware/__pycache__' \
+      './03_api_gateway/models/__pycache__' \
+      './03_api_gateway/repositories/__pycache__' \
+      './03_api_gateway/services/__pycache__' \
+      './03_api_gateway/utils/__pycache__' \
+      './admin/admin_ui/__pycache__' \
+      './admin/api/__pycache__' \
+      './admin/audit/__pycache__' \
+      './admin/config/__pycache__' \
+      './admin/emergency/__pycache__' \
+      './admin/governance/__pycache__' \
+      './admin/key_rotation/__pycache__' \
+      './admin/rbac/__pycache__' \
+      './admin/services/__pycache__' \
+      './admin/system/__pycache__' \
+      './admin/ui/__pycache__' \
+      './admin/ui/static' \
+      './admin/ui/templates' \
+      './admin/utils/__pycache__' \
+      './common/governance/__pycache__' \
+      './common/security/__pycache__' \
+      './common/server-tools/__pycache__' \
+      './common/tor/__pycache__' \
+      './configs/container/admin' \
+      './configs/container/auth' \
+      './configs/container/base' \
+      './configs/container/blockchain' \
+      './configs/container/database' \
+      './configs/container/electron_gui' \
+      './configs/container/gui' \
+      './configs/container/node' \
+      './configs/container/payment_systems' \
+      './configs/container/rdp' \
+      './configs/container/server' \
+      './configs/container/sessions' \
+      './configs/container/storage' \
+      './configs/container/tor' \
+      './configs/database/elasticsearch' \
+      './configs/database/redis' \
+      './configs/docker/distroless' \
+      './configs/docker/docs' \
+      './configs/docker/multi-stage' \
+      './configs/pi/ssh' \
+      './database/admin/__pycache__' \
+      './database/api/__pycache__' \
+      './database/config/__pycache__' \
+      './database/elasticsearch/__pycache__' \
+      './database/models/__pycache__' \
+      './database/mongodb/__pycache__' \
+      './database/redis/__pycache__' \
+      './database/repositories/__pycache__' \
+      './database/schema/__pycache__' \
+      './database/services/__pycache__' \
+      './database/services/backup' \
+      './database/services/migration' \
+      './database/services/monitoring' \
+      './node/api/__pycache__' \
+      './node/consensus/__pycache__' \
+      './node/dht_crdt/__pycache__' \
+      './node/economy/__pycache__' \
+      './node/flags/__pycache__' \
+      './node/governance/__pycache__' \
+      './node/models/__pycache__' \
+      './node/payouts/__pycache__' \
+      './node/pools/__pycache__' \
+      './node/poot/__pycache__' \
+      './node/registration/__pycache__' \
+      './node/repositories/__pycache__' \
+      './node/resources/__pycache__' \
+      './node/service_configs/x_lucid_cluster_calibration' \
+      './node/shards/__pycache__' \
+      './node/sync/__pycache__' \
+      './node/tor/__pycache__' \
+      './node/validation/__pycache__' \
+      './node/worker/__pycache__' \
+      './scripts/build/__pycache__' \
+      './scripts/build/components' \
+      './scripts/build/core' \
+      './scripts/build/distroless' \
+      './scripts/build/utils' \
+      './scripts/compliance/distroless' \
+      './scripts/compliance/general' \
+      './scripts/deployment/devcontainer' \
+      './scripts/deployment/distroless' \
+      './scripts/deployment/pi' \
+      './scripts/deployment/utils' \
+      './scripts/maintenance/cleanup' \
+      './scripts/maintenance/optimization' \
+      './scripts/maintenance/recovery' \
+      './scripts/network/diagnostics' \
+      './scripts/network/security' \
+      './scripts/network/setup' \
+      './scripts/testing/integration' \
+      './scripts/testing/unit' \
+      './scripts/testing/utils' \
+      './scripts/validation/__pycache__' \
+      './scripts/verification/__pycache__' \
+      './service_configs/docker/distroless' \
+      './service_configs/docker/docs' \
+      './service_configs/docker/multi-stage' \
+      './service_configs/x_lucid_cluster_calibration/__pycache__' \
+      './service_mesh/communication/__pycache__' \
+      './service_mesh/config/policies' \
+      './service_mesh/config/services' \
+      './service_mesh/controller/__pycache__' \
+      './service_mesh/discovery/__pycache__' \
+      './service_mesh/security/__pycache__' \
+      './service_mesh/sidecar/envoy' \
+      './service_mesh/sidecar/proxy' \
+      './sessions/api/__pycache__' \
+      './sessions/api/config' \
+      './sessions/api/integration' \
+      './sessions/core/__pycache__' \
+      './sessions/encryption/__pycache__' \
+      './sessions/integration/__pycache__' \
+      './sessions/pipeline/__pycache__' \
+      './sessions/pipeline/integration' \
+      './sessions/processor/__pycache__' \
+      './sessions/processor/config' \
+      './sessions/processor/integration' \
+      './sessions/recorder/__pycache__' \
+      './sessions/recorder/config' \
+      './sessions/recorder/integration' \
+      './sessions/security/__pycache__' \
+      './sessions/session_systems_control/__pycache__' \
+      './sessions/storage/__pycache__' \
+      './sessions/storage/config' \
+      './storage/backups/configs' \
+      './storage/backups/database' \
+      './storage/backups/user-data' \
+      './storage/cache/build' \
+      './storage/cache/docker' \
+      './storage/cache/temp' \
+      './storage/data/blockchain' \
+      './storage/data/logs' \
+      './storage/data/sessions' \
+      './03_api_gateway/api/app/__pycache__' \
+      './03_api_gateway/api/app/database' \
+      './03_api_gateway/api/app/db' \
+      './03_api_gateway/api/app/middleware' \
+      './03_api_gateway/api/app/models' \
+      './03_api_gateway/api/app/routers' \
+      './03_api_gateway/api/app/routes' \
+      './03_api_gateway/api/app/schemas' \
+      './03_api_gateway/api/app/scripts' \
+      './03_api_gateway/api/app/security' \
+      './03_api_gateway/api/app/services' \
+      './03_api_gateway/api/app/utils' \
+      './03_api_gateway/api/tests/__pycache__' \
+      './03_api_gateway/api/tests/integration' \
+      './03_api_gateway/docs/swagger/dist' \
+      './admin/ui/static/css' \
+      './admin/ui/static/js' \
+      './database/services/backup/__pycache__' \
+      './database/services/migration/__pycache__' \
+      './database/services/monitoring/__pycache__' \
+      './service_mesh/sidecar/envoy/__pycache__' \
+      './service_mesh/sidecar/envoy/config' \
+      './service_mesh/sidecar/proxy/__pycache__' \
+      './sessions/api/integration/__pycache__' \
+      './sessions/pipeline/integration/__pycache__' \
+      './sessions/processor/integration/__pycache__' \
+      './sessions/recorder/integration/__pycache__' \
+      './03_api_gateway/api/app/database/__pycache__' \
+      './03_api_gateway/api/app/db/__pycache__' \
+      './03_api_gateway/api/app/db/models' \
+      './03_api_gateway/api/app/middleware/__pycache__' \
+      './03_api_gateway/api/app/models/__pycache__' \
+      './03_api_gateway/api/app/routers/__pycache__' \
+      './03_api_gateway/api/app/routes/__pycache__' \
+      './03_api_gateway/api/app/schemas/__pycache__' \
+      './03_api_gateway/api/app/scripts/__pycache__' \
+      './03_api_gateway/api/app/security/__pycache__' \
+      './03_api_gateway/api/app/services/__pycache__' \
+      './03_api_gateway/api/app/utils/__pycache__' \
+      './03_api_gateway/api/tests/integration/__pycache__' \
+    ; do \
+      printf 'LUCID_X_FILES_SKELETON_%s' "$(date +%s)" > "$d/.keep"; \
+      touch "$d/.keep"; \
+    done
+# LUCID_X_FILES_SKELETON_END
+
+RUN rm -rf configs/environment 2>/dev/null || true
+
+COPY infrastructure/containers/tor/docker-compose.proxy-systems.yml ./service_configs/tor/docker-compose.proxy-systems.yml
+COPY x-files-listing.txt ./x-files-listing.txt
+
+
+
+COPY server/ ./server/
+COPY 02_network_security/ ./02_network_security/
+COPY 03_api_gateway/ ./03_api_gateway/
+COPY admin/ ./admin/
+COPY sessions/ ./sessions/
+COPY storage/ ./storage/
+COPY database/ ./database/
+COPY common/ ./common/
+COPY node/ ./node/
+COPY scripts/ ./scripts/
+COPY infrastructure/compose/ ./configs/compose/
+
+COPY configs/docker/ ./service_configs/docker/
+COPY infrastructure/service_mesh/ ./service_mesh/
+
+
+# Builder stage: WORKDIR is /build (line above in this stage). Do not RUN scripts/lib/lucid-repo-paths.sh
+# as an executable — it is host-side (source with . only); layout here is COPY + this WORKDIR.
+
+# =============================================================================
+# STAGE 2: Distroless Runtime with Inherent Tor System
+# =============================================================================
 RUN mkdir -p /tor-export/dynamic /tor-export/bin && \
     set -eux; \
     for f in /lib/ld-linux-*.so.*; do [ -f "$f" ] && cp -a "$f" /tor-export/dynamic/ || true; done; \
@@ -67,7 +491,6 @@ RUN mkdir -p /tor-export/dynamic /tor-export/bin && \
     elif nc_path="$(command -v nc 2>/dev/null)" && [ -n "$nc_path" ] && [ -x "$nc_path" ]; then cp -a "$nc_path" /tor-export/bin/nc; \
     else echo "tor-export: nc not found (install netcat-openbsd)" >&2; exit 1; fi
 
-RUN 
 # =============================================================================
 # Directory scaffold — /run/lucid (scripts, torrc, logs) + /var/lib/tor (Tor DataDirectory & HS dirs)
 # Tor authoritative state lives under /var/lib/tor (image: /app/var/lib/tor) per torrc DataDirectory.
@@ -167,357 +590,17 @@ RUN mkdir -p /usr/local/bin && \
     touch /usr/local/bin/.keep && \
     chown -R 65532:65532 /usr/local/bin
 
-RUN python3.11 -c "import os; assert os.path.exists('/usr/local/lib/python3.11/site-packages'), 'CRITICAL: /usr/local/lib/python3.11/site-packages not found in distroless image'; assert os.path.exists('/usr/local/bin'), 'CRITICAL: /usr/local/bin not found in distroless image'; print('✅ Python executable verified: /usr/local/bin/python3.11')"
-
-# LUCID_X_FILES_SKELETON_BEGIN
-# Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
-RUN set -eux; \
-    mkdir -p '.' './02_network_security' './03_api_gateway' './admin' './common' './configs' './database' './node' './scripts' './server' './service_configs' './service_mesh' './sessions' './storage' './02_network_security/docs' './02_network_security/tor' './02_network_security/tunnels' './03_api_gateway/api' './03_api_gateway/certs' './03_api_gateway/config' './03_api_gateway/database' './03_api_gateway/docs' './03_api_gateway/endpoints' './03_api_gateway/gateway' './03_api_gateway/legacy' './03_api_gateway/logs' './03_api_gateway/middleware' './03_api_gateway/models' './03_api_gateway/repositories' './03_api_gateway/scripts' './03_api_gateway/services' './03_api_gateway/utils' './admin/admin_ui' './admin/api' './admin/audit' './admin/config' './admin/emergency' './admin/governance' './admin/key_rotation' './admin/over_lord' './admin/rbac' './admin/services' './admin/system' './admin/ui' './admin/utils' './common/governance' './common/security' './common/server-tools' './common/templates' './common/tor' './configs/.devcontainer' './configs/.ssh' './configs/admin' './configs/auth' './configs/base' './configs/blockchain' './configs/compose' './configs/container' './configs/database' './configs/docker' './configs/electron_gui' './configs/environment' './configs/gui' './configs/integration' './configs/logging' './configs/network' './configs/node' './configs/overlord' './configs/payment_systems' './configs/pi' './configs/rdp' './configs/secrets' './configs/security' './configs/server' './configs/tor' './configs/user' './database/admin' './database/api' './database/config' './database/elasticsearch' './database/models' './database/mongodb' './database/redis' './database/repositories' './database/schema' './database/schemas' './database/services' './node/api' './node/config' './node/consensus' './node/dht_crdt' './node/economy' './node/flags' './node/governance' './node/models' './node/over_lord' './node/payouts' './node/pools' './node/poot' './node/registration' './node/repositories' './node/resources' './node/shards' './node/sync' './node/tor' './node/validation' './node/worker' './scripts/build' './scripts/compliance' './scripts/config' './scripts/contracts' './scripts/database' './scripts/deployment' './scripts/devcontainer' './scripts/docs' './scripts/foundation' './scripts/gui' './scripts/hardware' './scripts/integration' './scripts/lib' './scripts/load' './scripts/logging' './scripts/maintenance' './scripts/migration' './scripts/monitoring' './scripts/network' './scripts/registry' './scripts/secrets' './scripts/security' './scripts/services' './scripts/testing' './scripts/validation' './scripts/verification' './service_configs/blockchain' './service_configs/distroless' './service_configs/docker' './service_configs/kubernetes' './service_configs/logging' './service_configs/multi-stage' './service_configs/node' './service_configs/payment_services' './service_configs/rdp' './service_configs/security' './service_configs/service_mesh' './service_configs/sessions' './service_configs/storage' './service_configs/tor' './service_configs/x_lucid_cluster_calibration' './service_mesh/communication' './service_mesh/config' './service_mesh/controller' './service_mesh/discovery' './service_mesh/docs' './service_mesh/security' './service_mesh/sidecar' './sessions/api' './sessions/config' './sessions/core' './sessions/encryption' './sessions/integration' './sessions/pipeline' './sessions/processor' './sessions/recorder' './sessions/security' './sessions/session_systems_control' './sessions/storage' './storage/backups' './storage/cache' './storage/data' './02_network_security/tor/scripts' './02_network_security/tunnels/config' './02_network_security/tunnels/scripts' './03_api_gateway/api/app' './03_api_gateway/api/lucid_api.egg-info' './03_api_gateway/api/tests' './03_api_gateway/docs/swagger' './03_api_gateway/legacy/api' './03_api_gateway/legacy/gateway' './admin/ui/static' './admin/ui/templates' './configs/admin/admin-system-gateway' './configs/admin/config' './configs/blockchain/chain-to-pay' './configs/blockchain/config' './configs/container/admin' './configs/container/auth' './configs/container/base' './configs/container/blockchain' './configs/container/database' './configs/container/electron_gui' './configs/container/gui' './configs/container/node' './configs/container/payment_systems' './configs/container/rdp' './configs/container/server' './configs/container/sessions' './configs/container/storage' './configs/container/tor' './configs/database/elasticsearch' './configs/database/redis' './configs/docker/compose' './configs/docker/distroless' './configs/docker/docs' './configs/docker/multi-stage' './configs/docker/on-system-chain' './configs/environment/development' './configs/environment/pi' './configs/environment/production' './configs/environment/staging' './configs/node/config' './configs/node/node-system-gateway' './configs/overlord/runtime' './configs/pi/ssh' './database/services/backup' './database/services/migration' './database/services/monitoring' './scripts/build/components' './scripts/build/core' './scripts/build/distroless' './scripts/build/utils' './scripts/compliance/distroless' './scripts/compliance/general' './scripts/deployment/devcontainer' './scripts/deployment/distroless' './scripts/deployment/pi' './scripts/deployment/utils' './scripts/maintenance/cleanup' './scripts/maintenance/optimization' './scripts/maintenance/recovery' './scripts/network/diagnostics' './scripts/network/security' './scripts/network/setup' './scripts/testing/integration' './scripts/testing/unit' './scripts/testing/utils' './service_configs/docker/distroless' './service_configs/docker/docs' './service_configs/docker/multi-stage' './service_configs/kubernetes/01_configmaps' './service_configs/kubernetes/02-secrets' './service_configs/kubernetes/03-databases' './service_configs/kubernetes/04-auth' './service_configs/kubernetes/04-network' './service_configs/kubernetes/05-core' './service_configs/kubernetes/06-application' './service_configs/kubernetes/07-support' './service_configs/kubernetes/08-ingress' './service_configs/kubernetes/patches' './service_mesh/config/policies' './service_mesh/config/services' './service_mesh/sidecar/envoy' './service_mesh/sidecar/proxy' './sessions/api/config' './sessions/api/integration' './sessions/pipeline/integration' './sessions/processor/config' './sessions/processor/integration' './sessions/recorder/config' './sessions/recorder/integration' './sessions/storage/config' './storage/backups/configs' './storage/backups/database' './storage/backups/user-data' './storage/cache/build' './storage/cache/docker' './storage/cache/temp' './storage/data/blockchain' './storage/data/logs' './storage/data/sessions' './03_api_gateway/api/app/database' './03_api_gateway/api/app/db' './03_api_gateway/api/app/middleware' './03_api_gateway/api/app/models' './03_api_gateway/api/app/routers' './03_api_gateway/api/app/routes' './03_api_gateway/api/app/schemas' './03_api_gateway/api/app/scripts' './03_api_gateway/api/app/security' './03_api_gateway/api/app/services' './03_api_gateway/api/app/utils' './03_api_gateway/api/tests/integration' './03_api_gateway/docs/swagger/dist' './admin/ui/static/css' './admin/ui/static/js' './configs/docker/compose/mongodb' './configs/docker/compose/nats' './configs/docker/compose/nginx' './configs/docker/compose/redis' './configs/docker/compose/vault' './configs/docker/distroless/base' './service_mesh/sidecar/envoy/config' './03_api_gateway/api/app/db/models'; \
-    for d in \
-      '.' \
-      './02_network_security' \
-      './03_api_gateway' \
-      './admin' \
-      './common' \
-      './configs' \
-      './database' \
-      './node' \
-      './scripts' \
-      './server' \
-      './service_configs' \
-      './service_mesh' \
-      './sessions' \
-      './storage' \
-      './02_network_security/docs' \
-      './02_network_security/tor' \
-      './02_network_security/tunnels' \
-      './03_api_gateway/api' \
-      './03_api_gateway/certs' \
-      './03_api_gateway/config' \
-      './03_api_gateway/database' \
-      './03_api_gateway/docs' \
-      './03_api_gateway/endpoints' \
-      './03_api_gateway/gateway' \
-      './03_api_gateway/legacy' \
-      './03_api_gateway/logs' \
-      './03_api_gateway/middleware' \
-      './03_api_gateway/models' \
-      './03_api_gateway/repositories' \
-      './03_api_gateway/scripts' \
-      './03_api_gateway/services' \
-      './03_api_gateway/utils' \
-      './admin/admin_ui' \
-      './admin/api' \
-      './admin/audit' \
-      './admin/config' \
-      './admin/emergency' \
-      './admin/governance' \
-      './admin/key_rotation' \
-      './admin/over_lord' \
-      './admin/rbac' \
-      './admin/services' \
-      './admin/system' \
-      './admin/ui' \
-      './admin/utils' \
-      './common/governance' \
-      './common/security' \
-      './common/server-tools' \
-      './common/templates' \
-      './common/tor' \
-      './configs/.devcontainer' \
-      './configs/.ssh' \
-      './configs/admin' \
-      './configs/auth' \
-      './configs/base' \
-      './configs/blockchain' \
-      './configs/compose' \
-      './configs/container' \
-      './configs/database' \
-      './configs/docker' \
-      './configs/electron_gui' \
-      './configs/environment' \
-      './configs/gui' \
-      './configs/integration' \
-      './configs/logging' \
-      './configs/network' \
-      './configs/node' \
-      './configs/overlord' \
-      './configs/payment_systems' \
-      './configs/pi' \
-      './configs/rdp' \
-      './configs/secrets' \
-      './configs/security' \
-      './configs/server' \
-      './configs/tor' \
-      './configs/user' \
-      './database/admin' \
-      './database/api' \
-      './database/config' \
-      './database/elasticsearch' \
-      './database/models' \
-      './database/mongodb' \
-      './database/redis' \
-      './database/repositories' \
-      './database/schema' \
-      './database/schemas' \
-      './database/services' \
-      './node/api' \
-      './node/config' \
-      './node/consensus' \
-      './node/dht_crdt' \
-      './node/economy' \
-      './node/flags' \
-      './node/governance' \
-      './node/models' \
-      './node/over_lord' \
-      './node/payouts' \
-      './node/pools' \
-      './node/poot' \
-      './node/registration' \
-      './node/repositories' \
-      './node/resources' \
-      './node/shards' \
-      './node/sync' \
-      './node/tor' \
-      './node/validation' \
-      './node/worker' \
-      './scripts/build' \
-      './scripts/compliance' \
-      './scripts/config' \
-      './scripts/contracts' \
-      './scripts/database' \
-      './scripts/deployment' \
-      './scripts/devcontainer' \
-      './scripts/docs' \
-      './scripts/foundation' \
-      './scripts/gui' \
-      './scripts/hardware' \
-      './scripts/integration' \
-      './scripts/lib' \
-      './scripts/load' \
-      './scripts/logging' \
-      './scripts/maintenance' \
-      './scripts/migration' \
-      './scripts/monitoring' \
-      './scripts/network' \
-      './scripts/registry' \
-      './scripts/secrets' \
-      './scripts/security' \
-      './scripts/services' \
-      './scripts/testing' \
-      './scripts/validation' \
-      './scripts/verification' \
-      './service_configs/blockchain' \
-      './service_configs/distroless' \
-      './service_configs/docker' \
-      './service_configs/kubernetes' \
-      './service_configs/logging' \
-      './service_configs/multi-stage' \
-      './service_configs/node' \
-      './service_configs/payment_services' \
-      './service_configs/rdp' \
-      './service_configs/security' \
-      './service_configs/service_mesh' \
-      './service_configs/sessions' \
-      './service_configs/storage' \
-      './service_configs/tor' \
-      './service_configs/x_lucid_cluster_calibration' \
-      './service_mesh/communication' \
-      './service_mesh/config' \
-      './service_mesh/controller' \
-      './service_mesh/discovery' \
-      './service_mesh/docs' \
-      './service_mesh/security' \
-      './service_mesh/sidecar' \
-      './sessions/api' \
-      './sessions/config' \
-      './sessions/core' \
-      './sessions/encryption' \
-      './sessions/integration' \
-      './sessions/pipeline' \
-      './sessions/processor' \
-      './sessions/recorder' \
-      './sessions/security' \
-      './sessions/session_systems_control' \
-      './sessions/storage' \
-      './storage/backups' \
-      './storage/cache' \
-      './storage/data' \
-      './02_network_security/tor/scripts' \
-      './02_network_security/tunnels/config' \
-      './02_network_security/tunnels/scripts' \
-      './03_api_gateway/api/app' \
-      './03_api_gateway/api/lucid_api.egg-info' \
-      './03_api_gateway/api/tests' \
-      './03_api_gateway/docs/swagger' \
-      './03_api_gateway/legacy/api' \
-      './03_api_gateway/legacy/gateway' \
-      './admin/ui/static' \
-      './admin/ui/templates' \
-      './configs/admin/admin-system-gateway' \
-      './configs/admin/config' \
-      './configs/blockchain/chain-to-pay' \
-      './configs/blockchain/config' \
-      './configs/container/admin' \
-      './configs/container/auth' \
-      './configs/container/base' \
-      './configs/container/blockchain' \
-      './configs/container/database' \
-      './configs/container/electron_gui' \
-      './configs/container/gui' \
-      './configs/container/node' \
-      './configs/container/payment_systems' \
-      './configs/container/rdp' \
-      './configs/container/server' \
-      './configs/container/sessions' \
-      './configs/container/storage' \
-      './configs/container/tor' \
-      './configs/database/elasticsearch' \
-      './configs/database/redis' \
-      './configs/docker/compose' \
-      './configs/docker/distroless' \
-      './configs/docker/docs' \
-      './configs/docker/multi-stage' \
-      './configs/docker/on-system-chain' \
-      './configs/environment/development' \
-      './configs/environment/pi' \
-      './configs/environment/production' \
-      './configs/environment/staging' \
-      './configs/node/config' \
-      './configs/node/node-system-gateway' \
-      './configs/overlord/runtime' \
-      './configs/pi/ssh' \
-      './database/services/backup' \
-      './database/services/migration' \
-      './database/services/monitoring' \
-      './scripts/build/components' \
-      './scripts/build/core' \
-      './scripts/build/distroless' \
-      './scripts/build/utils' \
-      './scripts/compliance/distroless' \
-      './scripts/compliance/general' \
-      './scripts/deployment/devcontainer' \
-      './scripts/deployment/distroless' \
-      './scripts/deployment/pi' \
-      './scripts/deployment/utils' \
-      './scripts/maintenance/cleanup' \
-      './scripts/maintenance/optimization' \
-      './scripts/maintenance/recovery' \
-      './scripts/network/diagnostics' \
-      './scripts/network/security' \
-      './scripts/network/setup' \
-      './scripts/testing/integration' \
-      './scripts/testing/unit' \
-      './scripts/testing/utils' \
-      './service_configs/docker/distroless' \
-      './service_configs/docker/docs' \
-      './service_configs/docker/multi-stage' \
-      './service_configs/kubernetes/01_configmaps' \
-      './service_configs/kubernetes/02-secrets' \
-      './service_configs/kubernetes/03-databases' \
-      './service_configs/kubernetes/04-auth' \
-      './service_configs/kubernetes/04-network' \
-      './service_configs/kubernetes/05-core' \
-      './service_configs/kubernetes/06-application' \
-      './service_configs/kubernetes/07-support' \
-      './service_configs/kubernetes/08-ingress' \
-      './service_configs/kubernetes/patches' \
-      './service_mesh/config/policies' \
-      './service_mesh/config/services' \
-      './service_mesh/sidecar/envoy' \
-      './service_mesh/sidecar/proxy' \
-      './sessions/api/config' \
-      './sessions/api/integration' \
-      './sessions/pipeline/integration' \
-      './sessions/processor/config' \
-      './sessions/processor/integration' \
-      './sessions/recorder/config' \
-      './sessions/recorder/integration' \
-      './sessions/storage/config' \
-      './storage/backups/configs' \
-      './storage/backups/database' \
-      './storage/backups/user-data' \
-      './storage/cache/build' \
-      './storage/cache/docker' \
-      './storage/cache/temp' \
-      './storage/data/blockchain' \
-      './storage/data/logs' \
-      './storage/data/sessions' \
-      './03_api_gateway/api/app/database' \
-      './03_api_gateway/api/app/db' \
-      './03_api_gateway/api/app/middleware' \
-      './03_api_gateway/api/app/models' \
-      './03_api_gateway/api/app/routers' \
-      './03_api_gateway/api/app/routes' \
-      './03_api_gateway/api/app/schemas' \
-      './03_api_gateway/api/app/scripts' \
-      './03_api_gateway/api/app/security' \
-      './03_api_gateway/api/app/services' \
-      './03_api_gateway/api/app/utils' \
-      './03_api_gateway/api/tests/integration' \
-      './03_api_gateway/docs/swagger/dist' \
-      './admin/ui/static/css' \
-      './admin/ui/static/js' \
-      './configs/docker/compose/mongodb' \
-      './configs/docker/compose/nats' \
-      './configs/docker/compose/nginx' \
-      './configs/docker/compose/redis' \
-      './configs/docker/compose/vault' \
-      './configs/docker/distroless/base' \
-      './service_mesh/sidecar/envoy/config' \
-      './03_api_gateway/api/app/db/models' \
-    ; do \
-      printf 'LUCID_X_FILES_SKELETON_%s' "$(date +%s)" > "$d/.keep"; \
-      touch "$d/.keep"; \
-    done
-# LUCID_X_FILES_SKELETON_END
-COPY configs/ ./configs/
-RUN rm -rf ./configs/environment && \
-    echo ".env.* files removed"
-COPY configs/environment/.env.secrets ./configs/.env.secrets
-COPY master-env-config.txt ./configs/.env.master
-COPY infrastructure/containers/tor/docker-compose.proxy-systems.yml ./service_configs/tor/docker-compose.proxy-systems.yml
-COPY x-files-listing.txt ./x-files-listing.txt
-
-COPY configs/environment/.env.tunnel-tools ./configs/.env.tunnel-tools
-COPY infrastructure/containers/services/ ./service_configs/
-COPY configs/environment/.env.secrets ./configs/.env.secrets
-COPY master-env-config.txt ./configs/.env.master
-
-COPY server/ ./server/
-COPY 02_network_security/ ./02_network_security/
-COPY 03_api_gateway/ ./03_api_gateway/
-COPY admin/ ./admin/
-COPY sessions/ ./sessions/
-COPY storage/ ./storage/
-COPY database/ ./database/
-COPY common/ ./common/
-COPY node/ ./node/
-COPY scripts/ ./scripts/
-COPY infrastructure/compose/ ./configs/compose/
-
-COPY configs/docker/ ./service_configs/docker/
-COPY infrastructure/service_mesh/ ./service_mesh/
-
-COPY infrastructure/containers/host-config.yml ./service_configs/host-config.yml
-
-# Builder stage: WORKDIR is /build (line above in this stage). Do not RUN scripts/lib/lucid-repo-paths.sh
-# as an executable — it is host-side (source with . only); layout here is COPY + this WORKDIR.
-
-# =============================================================================
-# STAGE 2: Distroless Runtime with Inherent Tor System
-# =============================================================================
 FROM --platform=$TARGETPLATFORM gcr.io/distroless/base-debian12:latest
-
-WORKDIR /app
 
 ARG BUILD_DATE
 ARG VCS_REF
 ARG VERSION=2.0.0
-# Lucid Tor egress / network isolation (PUBLIC_TOR_IP: master-env-config.txt; compose: lucid-tor-egress-network)
+# Lucid Tor egress / network isolation (PUBLIC_TOR_IP: ../../configs/environment/ ; compose: lucid-tor-egress-network)
 ARG PUBLIC_TOR_IP=109.70.100.1
 ARG LUCID_INTERNAL_NETWORK_NAME=lucid-pi-network
 ARG LUCID_TOR_EGRESS_NETWORK_NAME=lucid-tor-egress-network
+
+WORKDIR /app
 
 LABEL maintainer="Lucid Development Team" \
       com.lucid.network.internal="${LUCID_INTERNAL_NETWORK_NAME}" \
@@ -541,16 +624,13 @@ LABEL maintainer="Lucid Development Team" \
       com.lucid.expose="9050" \
       com.lucid.cluster="foundation" \
       com.lucid.tor.compatible="true" \
-      com.lucid.env.config=".env.tunnel-tools,.env.secrets,.env.foundation" \
+      com.lucid.env.config=".env.tunnel-tools,.env.foundation" \
       com.lucid.tor.inherent="true" \
-      com.lucid.tor.system="built-in"
-
-# tor_socks in host-config.yml; lucid_services_config_root in container-runtime-layout.yml (/app/service_configs).
-# LUCID_HOST_CONFIG_STABLE_ID matches host-config key tor_socks (avoids *KEY* in ENV — Docker SecretsUsedInArgOrEnv). \
+      com.lucid.tor.system="built-in" \
       com.lucid.service_id="com.lucid.dockerfile.v1.2143ae84c81ed42f.infrastructure.containers.tor.Dockerfile.tor-proxy-02" \
       onion.lucid.service_id="lucid-2143ae84c81ed42f-infrastructure-container" \
       org.lucid.service_id="org.lucid.dockerfile.v1.2143ae84c81ed42f:infrastructure/containers/tor/Dockerfile.tor-proxy-02" \
-ENV     PUBLIC_TOR_IP="${PUBLIC_TOR_IP}" \
+ENV PUBLIC_TOR_IP="${PUBLIC_TOR_IP}" \
     LUCID_INTERNAL_NETWORK_NAME="${LUCID_INTERNAL_NETWORK_NAME}" \
     LUCID_TOR_EGRESS_NETWORK_NAME="${LUCID_TOR_EGRESS_NETWORK_NAME}" \
     PATH="/app/run/lucid/tor/bin:/app/usr/bin:/usr/local/bin:/usr/bin:/bin" \
@@ -570,6 +650,7 @@ ENV     PUBLIC_TOR_IP="${PUBLIC_TOR_IP}" \
     PUBLIC_TOR_IP="109.70.100.1" \
     TOR_CONTROL_HOST="127.0.0.1" \
     TOR_CONTROL_PORT="9051" \
+    TOR_COOKIE_DISTRIBUTE_STRICT="1" \
     TOR_COOKIE_TARGETS="/app/run/lucid/onion/control_auth_cookie" \
     TOR_DATA_DIR="/app/var/lib/tor" \
     TOR_ONION_SERVICE_DIR="/app/run/lucid/onion" \
@@ -578,81 +659,17 @@ ENV     PUBLIC_TOR_IP="${PUBLIC_TOR_IP}" \
 # Generated: apt + RUN scaffold (mkdir/printf/touch/chown) -> FHS (not ./ or /build/; lib_search_and_inject.py).
 COPY --from=tor-builder --chown=debian-tor:debian-tor /usr/lib/*/libcurl.so* /app/usr/lib/
 COPY --from=tor-builder --chown=debian-tor:debian-tor /bin/ /app/bin/
-COPY --from=tor-builder --chown=debian-tor:debian-tor /dev/null)"/ /app/dev/null)"/
 COPY --from=tor-builder --chown=debian-tor:debian-tor /etc/ssl/ /app/etc/ssl/
 COPY --from=tor-builder --chown=debian-tor:debian-tor /etc/tor/ /app/etc/tor/
 COPY --from=tor-builder --chown=debian-tor:debian-tor /run/lucid/ /app/run/lucid/
-COPY --from=tor-builder --chown=debian-tor:debian-tor /tor-export/bin/ /app/tor-export/bin/
-COPY --from=tor-builder --chown=debian-tor:debian-tor /tor-export/dynamic/ /app/tor-export/dynamic/
+COPY --from=tor-builder --chown=debian-tor:debian-tor /t/bin/ /app/bin/
+COPY --from=tor-builder --chown=debian-tor:debian-tor /dynamic/ /app/dynamic/
 COPY --from=tor-builder --chown=debian-tor:debian-tor /usr/bin/ /app/usr/bin/
 COPY --from=tor-builder --chown=debian-tor:debian-tor /usr/lib/python3.11/ /app/usr/lib/python3.11/
 COPY --from=tor-builder --chown=debian-tor:debian-tor /usr/local/bin/ /app/usr/local/bin/
 COPY --from=tor-builder --chown=debian-tor:debian-tor /usr/local/lib/python3.11/site-packages/ /app/usr/local/lib/python3.11/site-packages/
 COPY --from=tor-builder --chown=debian-tor:debian-tor /var/lib/tor/ /app/var/lib/tor/
 # LUCID_RUNTIME_COPY_FROM_BUILDER_APT_END
-
-# LUCID_RUNTIME_COPY_FROM_BUILD_BEGIN
-# Generated: same directory set as LUCID_X_FILES_SKELETON (./ under WORKDIR /build).
-COPY --from=tor-builder --chown=65532:65532 /build/02_network_security/ /app/02_network_security/
-COPY --from=tor-builder --chown=65532:65532 /build/03_api_gateway/ /app/03_api_gateway/
-COPY --from=tor-builder --chown=65532:65532 /build/admin/ /app/admin/
-COPY --from=tor-builder --chown=65532:65532 /build/common/ /app/common/
-COPY --from=tor-builder --chown=65532:65532 /build/configs/ /app/configs/
-COPY --from=tor-builder --chown=65532:65532 /build/database/ /app/database/
-COPY --from=tor-builder --chown=65532:65532 /build/node/ /app/node/
-COPY --from=tor-builder --chown=65532:65532 /build/scripts/ /app/scripts/
-COPY --from=tor-builder --chown=65532:65532 /build/server/ /app/server/
-COPY --from=tor-builder --chown=65532:65532 /build/service_configs/ /app/service_configs/
-COPY --from=tor-builder --chown=65532:65532 /build/service_mesh/ /app/service_mesh/
-COPY --from=tor-builder --chown=65532:65532 /build/sessions/ /app/sessions/
-COPY --from=tor-builder --chown=65532:65532 /build/storage/ /app/storage/
-# LUCID_RUNTIME_COPY_FROM_BUILD_END
-# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
-# Generated: apt + RUN scaffold (mkdir/printf/touch/chown) -> FHS (not ./ or /build/; lib_search_and_inject.py).
-COPY --from=tor-builder --chown=65532:65532 /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages/
-COPY --from=tor-builder --chown=65532:65532 /usr/local/bin /usr/local/bin/
-
-COPY --from=tor-builder --chown=debian-tor:debian-tor /dev/null/ /app/dev/null/
-
-
-COPY --from=tor-builder --chown=debian-tor /usr/lib/*/libcurl.so* /app/usr/lib/
-COPY --from=tor-builder --chown=debian-tor /dev/null/ /app/dev/null/
-COPY --from=tor-builder --chown=debian-tor /etc/ssl/ /app/etc/ssl/
-COPY --from=tor-builder --chown=debian-tor /etc/tor/ /app/etc/tor/
-COPY --from=tor-builder --chown=debian-tor /run/lucid/ /app/run/lucid/
-COPY --from=tor-builder --chown=debian-tor /usr/bin/ /app/usr/bin/
-COPY --from=tor-builder --chown=debian-tor /var/lib/tor/ /app/var/lib/tor/
-
-COPY --from=tor-builder /lib/*/libc.so.6         /app/lib/
-COPY --from=tor-builder /lib/*/libcrypto.so.3    /app/lib/
-COPY --from=tor-builder /lib/*/libssl.so.3       /app/lib/
-COPY --from=tor-builder /lib/*/libevent-2.1.so.7 /app/lib/
-COPY --from=tor-builder /lib/*/libzstd.so.1      /app/lib/
-COPY --from=tor-builder /lib/*/liblzma.so.5      /app/lib/
-COPY --from=tor-builder /lib/*/libz.so.1         /app/lib/
-COPY --from=tor-builder /lib/*/libtinfo.so.6     /app/lib/
-COPY --from=tor-builder /lib/*/libsystemd.so.0   /app/lib/
-COPY --from=tor-builder /lib/*/libselinux.so.1   /app/lib/
-COPY --from=tor-builder /lib/*/libcap.so.2       /app/lib/
-COPY --from=tor-builder /lib/*/libnsl.so.1       /app/lib/
-COPY --from=tor-builder /lib/*/libcrypt.so.1     /app/lib/
-COPY --from=tor-builder /tor-export/dynamic/ /app/lib/
-
-COPY --from=tor-builder /build/configs/.env.secrets /app/configs/.env.secrets
-COPY --from=tor-builder /build/configs/.env.master /app/configs/.env.master
-COPY --from=tor-builder /build/configs/.env.tunnel-tools /app/configs/.env.tunnel-tools
-
-COPY --from=tor-builder --chown=debian-tor:debian-tor /usr/lib /app/usr/lib/
-
-COPY --from=tor-builder --chown=debian-tor:debian-tor /usr/share/tor/ /app/usr/share/tor/
-COPY --from=tor-builder --chown=debian-tor:debian-tor /app/etc/ssl/certs/ca-certificates.crt /app/etc/ssl/certs/ca-certificates.crt
-COPY --from=tor-builder --chown=debian-tor:debian-tor /run/ /app/run/
-COPY --from=tor-builder --chown=debian-tor:debian-tor /app/etc/passwd /app/etc/passwd
-COPY --from=tor-builder --chown=debian-tor:debian-tor /app/etc/group /app/etc/group
-
-COPY --from=tor-builder /tor-export/bin/busybox /app/bin/busybox
-COPY --from=tor-builder /tor-export/bin/nc /app/bin/nc
-
 COPY --chmod=644 02_network_security/tor/torrc /app/run/lucid/tor/torrc
 COPY --chmod=755 02_network_security/tor/entrypoint.sh /app/run/lucid/tor/bin/entrypoint.sh
 COPY --chmod=755 02_network_security/tor/bootstrap-helper.sh /app/run/lucid/tor/bin/bootstrap-helper.sh
@@ -665,16 +682,19 @@ COPY --chmod=755 02_network_security/tor/scripts/create_ephemeral_onion.sh /app/
 COPY --chmod=755 02_network_security/tor/bootstrap-helper.sh /app/run/lucid/tunnels/scripts/bootstrap-helper.sh
 COPY --chmod=755 02_network_security/tor/scripts/create_ephemeral_onion.sh /app/run/lucid/tunnels/scripts/create_ephemeral_onion.sh
 
-USER debian-tor:debian-tor
+# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
+# Generated: apt + RUN scaffold (mkdir/printf/touch/chown) -> FHS (not ./ or /build/; lib_search_and_inject.py).
+COPY --from=tor-builder /build/configs/.env.tunnel-tools /app/configs/.env.tunnel-tools
 
-# Expose ports (SOCKS, control, optional HTTP) — ports match host-config.yml tor_socks / tor_control
+# Tor layout: COPY above (tor/bin + tunnels/scripts); not /app/02_network_security/tor (builder-only tree).
 EXPOSE 9050 9051 8888
 
-RUN ["/app/bin/bash" "-lc" "/app/scripts/lib/lucid-repo-paths.sh"]
-# Paths match COPY above (tor/bin + tunnels/scripts mirror); do not use /app/02_network_security/tor/* here — that tree is a separate builder copy.
 HEALTHCHECK --interval=30s --timeout=10s --start-period=45s --retries=5 \
   CMD ["/app/usr/bin/bash", "/app/run/lucid/tor/bin/tor-health.sh"]
 
 # tini + bash paths match Debian (/usr/bin); same ENTRYPOINT pattern as user/Dockerfile + tor/Dockerfile (tunnel-tools)
+USER debian-tor:debian-tor
+
+# Expose ports (SOCKS, control, optional HTTP) — ports match host-config.yml tor_socks / tor_control
 ENTRYPOINT ["/app/usr/bin/tini", "--"]
 CMD ["/app/usr/bin/bash", "/app/run/lucid/tor/bin/tor_entrypoint.sh"]

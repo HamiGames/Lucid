@@ -1,0 +1,63 @@
+{
+  "schema_version": 1,
+  "tool": "scripts/gui_auth_realignment/list_service_files_by_name.py",
+  "compose_service": "node-interface",
+  "yml": [
+    "configs/container/blockchain/docker-compose.chain.yml",
+    "configs/container/electron_gui/docker-compose.electron-gui.yml",
+    "configs/container/gui/docker-compose.node-gui.yml",
+    "configs/container/node/docker-compose.node-gui.yml",
+    "configs/docker/docker-compose.gui-integration.yml",
+    "configs/services/gui-docker-manager-service-groups.yml",
+    "configs/services/gui-docker-manager.yml",
+    "electron_gui/configs/electron-endpoints.yml",
+    "electron_gui/distroless/docker-compose.electron-gui.yml",
+    "infrastructure/containers/blockchain/docker-compose.chain.yml",
+    "infrastructure/containers/gui/docker-compose.node-gui.yml",
+    "infrastructure/containers/node/docker-compose.node-gui.yml",
+    "infrastructure/containers/services/gui-docker-manager-service-groups.yml",
+    "infrastructure/containers/services/gui-docker-manager.yml"
+  ],
+  "py": [
+    "common/load_host_config.py",
+    "electron_gui/__init__.py",
+    "electron_gui/utils/__init__.py",
+    "electron_gui/utils/converter.py",
+    "electron_gui/utils/load_host_config.py",
+    "gui/config/__init__.py",
+    "gui/config/config.py",
+    "gui/config/load_host_config.py",
+    "gui/core/__init__.py",
+    "gui/core/config_manager.py",
+    "gui/core/networking.py",
+    "gui/core/security.py",
+    "gui/core/telemetry.py",
+    "gui/core/tor_client.py",
+    "gui/core/widgets.py",
+    "gui/node/__init__.py",
+    "gui/shared/__init__.py"
+  ],
+  "json": [
+    "configs/gui-alignment/gui-services.json",
+    "configs/gui-alignment/node-interface.json",
+    "configs/services/gui-services.json"
+  ],
+  "associated_needles": [
+    "lucid-node-interface",
+    "node-interface",
+    "node_interface"
+  ],
+  "missing_yml": [],
+  "missing_python_dirs": [],
+  "missing_global_py": [],
+  "missing_expected": [
+    "infrastructure/containers/services/node-interface.yml"
+  ],
+  "missing_tier_a_json": [],
+  "source_map_path": "scripts/gui_auth_realignment/gui_service_source_map.json",
+  "mat_path": "configs/services/gui-services.json",
+  "mat_row_matched": true,
+  "alignment_json": [
+    "configs/gui-alignment/node-interface.json"
+  ]
+}

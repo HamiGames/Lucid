@@ -8,9 +8,10 @@
 # TRON Payment Service Configuration
 # This file contains configuration for the TRON payment system services
 # Upstream HTTP entry: tron-payment-service:8080 (tron_payment_service @ host-config.yml); payment-system-gateway:8097
+# Wallet/data plane (gui_token_auth_realignment): GUI traffic must reach payment only after lucid-auth-service + lucid-server-manager handshake; api-gateway orchestrates — this service is not a Tier-A entrypoint.
 
 config_files:
-  secrets: /app/configs/.env.secrets
+  secrets: ../../configs/environment/.env.secrets
   master: /app/configs/.env.master
 
 # Service Information

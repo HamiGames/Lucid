@@ -9,8 +9,15 @@
 
 set -Eeuo pipefail
 
-# Configuration
-TOR_CONTROL_HOST="${TOR_CONTROL_HOST:-tor-proxy}"
+_LUCID_TOR_SCRIPTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [[ -f "${_LUCID_TOR_SCRIPTS_DIR}/set_host_config.sh" ]]; then
+  # shellcheck source=/dev/null
+  . "${_LUCID_TOR_SCRIPTS_DIR}/set_host_config.sh"
+  lucid_load_host_config
+fi
+
+# Configuration — defaults from host-config.yml via lucid_load_host_config (tor_socks, main_lucid_gateway).
+TOR_CONTROL_HOST="${TOR_CONTROL_HOST:-${LUCID_TOR_DOCKER_SERVICE:-tor-socks}}"
 TOR_CONTROL_PORT="${TOR_CONTROL_PORT:-9051}"
 TOR_COOKIE_PATH="${TOR_COOKIE_PATH:-/app/run/lucid/tor/control_auth_cookie}"
 UPSTREAM_SERVICE="${UPSTREAM_SERVICE:-api-gateway}"

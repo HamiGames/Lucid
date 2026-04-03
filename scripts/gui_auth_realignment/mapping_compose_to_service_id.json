@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "description": "Maps docker compose_service names (gui-services mat) to host-config.yml service id keys",
+  "mappings": {
+    "admin-interface": "admin_ui_backend",
+    "user-interface": "electron_gui_user",
+    "node-interface": "electron_gui_node",
+    "gui-api-bridge": "gui_api_bridge",
+    "gui-docker-manager": "gui_docker_manager",
+    "gui-hardware-manager": "gui_hardware_manager",
+    "gui-tor-manager": "gui_tor_manager_http"
+  }
+}

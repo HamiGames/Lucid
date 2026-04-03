@@ -85,7 +85,9 @@ class UserProfile:
     # Metadata
     device_fingerprints: List[str] = field(default_factory=list)
     ip_addresses: List[str] = field(default_factory=list)
-    
+    registration_key: Optional[str] = None
+    password_hash: Optional[str] = None
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for database storage"""
         return {
@@ -107,7 +109,9 @@ class UserProfile:
             "locked_until": self.locked_until,
             "password_changed_at": self.password_changed_at,
             "device_fingerprints": self.device_fingerprints,
-            "ip_addresses": self.ip_addresses
+            "ip_addresses": self.ip_addresses,
+            "registration_key": self.registration_key,
+            "password_hash": self.password_hash,
         }
     
     @classmethod
@@ -132,7 +136,9 @@ class UserProfile:
             locked_until=data.get("locked_until"),
             password_changed_at=data.get("password_changed_at"),
             device_fingerprints=data.get("device_fingerprints", []),
-            ip_addresses=data.get("ip_addresses", [])
+            ip_addresses=data.get("ip_addresses", []),
+            registration_key=data.get("registration_key"),
+            password_hash=data.get("password_hash"),
         )
 
 @dataclass
@@ -205,12 +211,27 @@ class UserManager:
             }
         }
     
+    async def create_user_from_profile(self, user: UserProfile) -> bool:
+        """Persist a fully-built UserProfile (e.g. from HTTP register)."""
+        try:
+            await self.db["users"].replace_one(
+                {"_id": user.user_id},
+                user.to_dict(),
+                upsert=True,
+            )
+            logger.info("Created user from profile: %s", user.user_id)
+            return True
+        except Exception as e:
+            logger.error("create_user_from_profile failed: %s", e)
+            return False
+
     async def create_user(
         self, 
         tron_address: str, 
         public_key: Optional[str] = None,
         role: UserRole = UserRole.USER,
-        hardware_wallet_info: Optional[Dict[str, Any]] = None
+        hardware_wallet_info: Optional[Dict[str, Any]] = None,
+        registration_key: Optional[str] = None,
     ) -> UserProfile:
         """Create new user profile"""
         try:
@@ -227,7 +248,8 @@ class UserManager:
                 permissions=default_permissions.copy(),
                 public_key=public_key,
                 hardware_wallet_verified=bool(hardware_wallet_info),
-                hardware_wallet_info=hardware_wallet_info
+                hardware_wallet_info=hardware_wallet_info,
+                registration_key=registration_key,
             )
             
             # Store in database

@@ -5,10 +5,22 @@
 # x-lucid-file-directory: /app/02_network_security/tor/scripts
 # x-lucid-file-type: shell
 # This script demonstrates the full onion creation workflow
+# Service hostnames/ports align with /app/service_configs/host-config.yml (set_host_config.sh).
 
 set -Eeuo pipefail
 
-SCRIPT_DIR="/usr/local/bin"
+_LUCID_TOR_SCRIPTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [[ -f "${_LUCID_TOR_SCRIPTS_DIR}/set_host_config.sh" ]]; then
+  # shellcheck source=/dev/null
+  . "${_LUCID_TOR_SCRIPTS_DIR}/set_host_config.sh"
+  lucid_load_host_config
+fi
+
+if [[ -x "${_LUCID_TOR_SCRIPTS_DIR}/create_ephemeral_onion.sh" ]]; then
+  SCRIPT_DIR="${_LUCID_TOR_SCRIPTS_DIR}"
+else
+  SCRIPT_DIR="/usr/local/bin"
+fi
 OUTDIR="${ONION_DIR:-/app/run/lucid/onion}"
 
 log() { printf '[demo] %s\n' "$*"; }
@@ -18,11 +30,12 @@ error() { printf '[demo][ERROR] %s\n' "$*" >&2; }
 echo "============================================"
 echo "Lucid Multi-Onion System Demonstration"
 echo "============================================"
+[[ -n "${LUCID_HOST_CONFIG_PATH:-}" ]] && echo "Host registry: ${LUCID_HOST_CONFIG_PATH}"
 echo
 
 # Step 1: Create 5 static onions for core services
 log "Step 1: Creating 5 static onion services..."
-if "$SCRIPT_DIR/create-ephemeral-onion"; then
+if "${SCRIPT_DIR}/create_ephemeral_onion.sh"; then
     success "Static multi-onion setup complete"
     echo
     
@@ -39,7 +52,7 @@ log "Step 2: Creating dynamic onions for various services..."
 
 # Create a wallet onion with secure defaults
 log "Creating wallet onion (secure random port)..."
-if "$SCRIPT_DIR/create-dynamic-onion" --wallet --target-host wallet --persistent wallet-primary; then
+if "${SCRIPT_DIR}/create_dynamic_onion.sh" --wallet --target-host wallet --persistent wallet-primary; then
     success "Wallet onion created"
 else
     error "Failed to create wallet onion"
@@ -47,7 +60,7 @@ fi
 
 # Create a payment API onion
 log "Creating payment API onion..."
-if "$SCRIPT_DIR/create-dynamic-onion" --target-host payment-api --target-port 3000 --onion-port 443 payment-gateway; then
+if "${SCRIPT_DIR}/create_dynamic_onion.sh" --target-host payment-api --target-port 3000 --onion-port 443 payment-gateway; then
     success "Payment API onion created"
 else
     error "Failed to create payment API onion"
@@ -55,7 +68,7 @@ fi
 
 # Create a monitoring onion
 log "Creating monitoring dashboard onion..."
-if "$SCRIPT_DIR/create-dynamic-onion" --target-host monitor --target-port 3001 --onion-port 80 monitoring; then
+if "${SCRIPT_DIR}/create_dynamic_onion.sh" --target-host monitor --target-port 3001 --onion-port 80 monitoring; then
     success "Monitoring onion created"
 else
     error "Failed to create monitoring onion"
@@ -65,7 +78,7 @@ echo
 
 # Step 3: List all onions
 log "Step 3: Listing all onion services..."
-"$SCRIPT_DIR/create-dynamic-onion" --list
+"${SCRIPT_DIR}/create_dynamic_onion.sh" --list
 echo
 
 # Step 4: Show environment files
@@ -77,7 +90,7 @@ echo
 
 # Step 5: Demonstrate rotation
 log "Step 5: Demonstrating onion rotation (security practice)..."
-if "$SCRIPT_DIR/create-dynamic-onion" --rotate monitoring; then
+if "${SCRIPT_DIR}/create_dynamic_onion.sh" --rotate monitoring; then
     success "Monitoring onion rotated with new address"
 else
     error "Failed to rotate monitoring onion"

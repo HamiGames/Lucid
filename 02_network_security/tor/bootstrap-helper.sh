@@ -136,7 +136,7 @@ CONTAINER_ID=$(docker run -d --rm \
   --name tor-bootstrap-temp \
   --env-file /app/configs/.env.tor-proxy \
   --env-file /app/configs/.env.foundation \
-  --env-file /app/configs/.env.secrets \
+  --env-file ../../configs/environment/.env.secrets \
   --network lucid-pi-network \
   --cap-drop=ALL --security-opt no-new-privileges:true \
   --tmpfs /tmp:noexec,nosuid,size=64m \

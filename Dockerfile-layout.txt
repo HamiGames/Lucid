@@ -1,0 +1,122 @@
+1. **HEADER**
+#################################################################
+#
+# syntax=docker/dockerfile:1.5
+# LUCID WALLET MANAGER (TRON) — Distroless Python (aligned with 03_api_gateway/Dockerfile + blockchain/Dockerfile.data)
+# Image: pickme/lucid-wallet-manager:latest-arm64
+# Build context: repository root (.)
+# Application source: payment_systems/tron/ mounted as Python package `tron` at /app/tron
+# Entry: payment_systems/tron/wallet_manager_entrypoint.py
+# host-config.yml: wallet_manager → wallet-manager:8093
+# Compose: infrastructure/containers/payment_systems/docker-compose.payment-internal.yml
+####################################################################
+###################################################################
+**START OF STAGE 1**
+###################################################################
+2. **ARG**
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION=1.0.0
+ARG TARGETPLATFORM=linux/arm64
+ARG BUILDPLATFORM=linux/amd64
+ARG PYTHON_VERSION=3.11
+###################################################################
+3.**FIRST COMPILER**
+FROM <compiler> AS <name> 
+
+ARG <statement>
+ARG <statement>
+ARG <statement>
+
+WORKDIR <dir> (WORKDIR /build)
+###################################################################
+4. **APT-GET INSTALLER**
+"""" RUN <mount>
+    <mount>
+    <set>
+    <apt-get update>
+    <apt-get install>
+    <packages listing> (seperated by \ and new line ) """
+###################################################################
+5. **LIB_SKELETON**
+""" where the python infrastructure/containers/generate_lib_skeleton_from_runtime_copy.py builds skeleton"""
+###################################################################
+6. **RUSTC AND CARGO SUPPORT** 
+"""where the 3rd RUN command lives"""
+###################################################################
+7. ** COPY requirements**
+"""only copy the */*-requirements or requirements.txt >> ./*-requirements or requirements.txt"""
+###################################################################
+8. **PIP WHEEL UPDATE & INSTALL***
+""" run the pip wheel install sequence """
+###################################################################
+9. **DIRECTORY SKELETON**
+"""where python infrastructure/containers/inject_dockerfile_x_files_skeleton.py creates the 
+required skeleton based on the information found in the **COPY DIRECTORIES** """"
+###################################################################
+10. **COPY DIRECTORIES**
+""" copies the local directories to the ./<dir> using the x-files-list.txt to validate the file pathway """
+# infrastructure/containers/services/ --> ./service_configs/
+# configs/ --> ./configs 
+###################################################################
+11. ** RUN rm -rf ./configs/environment **
+# COPY master-env-config.txt --> ./configs/.env.master 
+# COPY configs/environment/.env.secrets ./configs/.env.secrets
+# add all other <dir> that are required 
+###################################################################
+12. **COPY CHECK**
+"""run a verification to confirm that the directories files copied to the ./ directory (WORKDIR /build)"""
+###################################################################
+##################################################################
+# ---------- STAGE 2 ------------
+###################################################################
+###################################################################
+13. **DISTROLESS COMPILER**
+# gcr.io/<dir>/<dir>:<version> 
+###################################################################
+15. **DIRSTROLESS ARG**
+""" The disrtorless compilers ARG statements"""
+###################################################################
+16. **SECOND WORKDIR**
+"""the containers directory always WORKDIR /app """
+###################################################################
+17. **LABEL**
+""" Outline the org.lucid, com.lucid and onion.lucid configurable values for the containers needs """
+###################################################################
+18. **DISTROLESS ENV**
+"""set out the required ENV values needed to operate """
+###################################################################
+19. ** COPY LIB DIRECTORIES** 
+""" copy <dir> --from=builder --> /app/<dir>/ (full directory paths only).
+eg: COPY --from=builder --chown=<USER> /var/run/ /app/run/ 
+COPY --from=builder --chown=<USER> /usr/bin/ /app/usr/bin/
+ect ....
+only the **LIB_SKELETON** pathways
+"""
+###################################################################
+20. **COPY CONTENT**
+""" runs the COPY --from=<FIRST COMPILER> --chown=<USER> /build/<dir> /app/<dir>
+uses **DIRECTORY SKELETON** + **COPY CONTENT** to ensure the content from the <FIRST COMPILER>
+is included in the Stage 2 of the build"""
+###################################################################
+21. **COMPILER CHECKS**
+""" runs checks on content required for the container [looks for <FIRST COMPILER> content in <DISTROLESS COMPILER>'s created content]"""
+###################################################################
+22. **EXPOSE PORT** 
+"""EXPOSE <port int>"""
+###################################################################
+23. **HEALTHCHECK + CMD**
+""" run the healthcheck command 
+CMD ["<compiler>", "-c", "<healthcheck>"]"""
+###################################################################
+24. **USER**
+"USER <user_name> (usually 65532:65532)[exception is @Dockerfile.tor-proxy-02]"""
+###################################################################
+# 25. **ENTRYPOINT**
+#
+# """run the ENTRYPOINT command [<COPY CONTENT> <dir> , <CMD>]"""
+###################################################################
+# 26. **CMD**
+# """CMD ["<interpreter dir>", "<script path>"] """
+###################################################################
+

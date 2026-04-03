@@ -29,7 +29,7 @@ SERVICE_GROUPS = {
     "foundation": {
         "name": "Foundation Services",
         "description": "Database, authentication, and core infrastructure",
-        "services": ["lucid-mongodb", "lucid-redis", "lucid-elasticsearch", "lucid-auth-service"]
+        "services": ["lucid-mongodb", "lucid-redis", "lucid-elasticsearch", "api-gateway"]
     },
     "core": {
         "name": "Core Services",

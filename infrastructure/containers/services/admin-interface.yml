@@ -11,7 +11,7 @@
 # Port: 8120 (admin_ui_backend — infrastructure/containers/host-config.yml; master-env ADMIN_INTERFACE_PORT)
 
 config_files:
-  secrets: /app/configs/.env.secrets
+  secrets: ../../configs/environment/.env.secrets
   master: /app/configs/.env.master
 
 service:
@@ -33,11 +33,15 @@ containers:
     multi_stage_build: true
 
 # Service Dependencies
+# GUI/admin auth alignment: prefer api-gateway for token introspection path; lucid-auth-service remains an infrastructure peer.
 dependencies:
   internal:
     - name: "api-gateway"
       url: "http://api-gateway:8080/app"
       required: true
+    - name: "lucid-server-manager"
+      url: "http://lucid-server-manager:8081/app"
+      required: false
     - name: "blockchain-engine"
       url: "http://blockchain-engine:8084/app"
       required: true
@@ -50,15 +54,12 @@ dependencies:
     - name: "node-management"
       url: "http://node-management:8095/app"
       required: true
-    - name: "lucid-auth-service"
-      url: "http://lucid-auth-service:8089/app"
-      required: true
     - name: "admin-system-gateway"
       url: "http://admin-system-gateway:8155/app"
       required: false
     - name: "gui-api-bridge"
-      url: "http://gui-api-bridge:8102/app"
-      required: false
+      url: "http://gui-api-bridge:8203/app"
+      required: true
   external:
     - name: "lucid-mongodb"
       url: "mongodb://lucid-mongodb:27017/lucid_admin"

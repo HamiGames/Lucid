@@ -11,7 +11,7 @@
 #
 # /app/configs/host-config.yml: lucid_elasticsearch_http → lucid-elasticsearch-http:9200 @ 172.20.10.68;
 #   lucid_elasticsearch_transport → lucid-elasticsearch-transport:9300 @ 172.20.10.69 (generated from ports.txt + service-ip.txt).
-# Runtime env: mount configs/environment/.env.secrets → /app/configs/.env.secrets,
+# Runtime env: mount configs/environment/.env.secrets → ../../configs/environment/.env.secrets,
 #              
 # ======================== Elasticsearch Logging Configuration =============
 

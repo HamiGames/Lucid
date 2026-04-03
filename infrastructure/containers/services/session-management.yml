@@ -12,7 +12,7 @@
 # Canonical registry: infrastructure/containers/host-config.yml (generated; service-ip.txt).
 
 config_files:
-  secrets: /app/configs/.env.secrets
+  secrets: ../../configs/environment/.env.secrets
   master: /app/configs/.env.master
 
 service:
@@ -116,7 +116,6 @@ dependencies:
         - "lucid-recording-data:/data/recordings"
         - "lucid-chunk-data:/data/chunks"
        
-
 # Pipeline Configuration
 pipeline:
   states:

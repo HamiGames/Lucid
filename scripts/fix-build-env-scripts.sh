@@ -48,18 +48,36 @@ fix_build_env_script() {
 #!/bin/bash
 # Path: infrastructure/docker/$service_name/build-env.sh
 # Build Environment Script for Lucid $service_name Services
-# Repo root = directory containing master-env-config.txt (Docker COPY -> /app/configs/.env.master)
+# Repo root: resolved by scripts/lib/lucid-repo-paths.sh (same rules as other Lucid scripts).
+# Host: walk up from this file until scripts/lib/lucid-repo-paths.sh is found, then source it.
+# Container: lucid-repo-paths detects /app when configs are laid out per Dockerfiles + x-files.json.
+# Do not use a fixed ../ depth — build-env.sh may live at varying paths under the repo.
 
 set -euo pipefail
 
 # =============================================================================
-# PATHS (aligned with infrastructure/containers Docker layout)
+# PATHS (via lucid-repo-paths.sh — not ../../.. from this file)
 # =============================================================================
+_lucid_rootwalk="\$(cd "\$(dirname "\${BASH_SOURCE[0]}")" && pwd)"
+while [[ "\$_lucid_rootwalk" != "/" ]]; do
+    if [[ -f "\$_lucid_rootwalk/scripts/lib/lucid-repo-paths.sh" ]]; then
+        # shellcheck source=scripts/lib/lucid-repo-paths.sh
+        # shellcheck disable=SC1091
+        source "\$_lucid_rootwalk/scripts/lib/lucid-repo-paths.sh"
+        break
+    fi
+    _lucid_rootwalk="\$(dirname "\$_lucid_rootwalk")"
+done
+unset _lucid_rootwalk
+if [[ -z "\${LUCID_REPO_ROOT:-}" ]]; then
+    echo "ERROR: Lucid repo root not resolved. Expected an ancestor of this script to contain scripts/lib/lucid-repo-paths.sh, or run in an /app image with configs (see lucid-repo-paths.sh)." >&2
+    exit 1
+fi
+PROJECT_ROOT="\$LUCID_REPO_ROOT"
 SCRIPT_DIR="\$(cd "\$(dirname "\${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="\$(cd "\$SCRIPT_DIR/../../.." && pwd)"
 ENV_DIR="\$PROJECT_ROOT/configs/environment"
-SCRIPTS_DIR="\$PROJECT_ROOT/scripts"
-CONFIG_SCRIPTS_DIR="\$PROJECT_ROOT/scripts/config"
+SCRIPTS_DIR="\$LUCID_SCRIPTS_DIR"
+CONFIG_SCRIPTS_DIR="\$LUCID_SCRIPTS_DIR/config"
 
 validate_repo_root() {
     if [[ ! -f "\$PROJECT_ROOT/master-env-config.txt" ]]; then
@@ -67,7 +85,7 @@ validate_repo_root() {
         exit 1
     fi
     if [[ ! -f "\$PROJECT_ROOT/infrastructure/containers/host-config.yml" ]]; then
-        echo "WARNING: host-config.yml missing (canonical in-image /app/service_configs/host-config.yml per x-files-listing.txt; equivalent /app/configs/host-config.yml)"
+        echo "WARNING: host-config.yml missing (canonical in-image /app/configs/host-config.yml per x-files.json / x-files-listing.txt; source: infrastructure/containers/host-config.yml)"
     fi
 }
 

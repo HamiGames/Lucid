@@ -10,8 +10,9 @@
 # =============================================================================
 # File: infrastructure/containers/services/gui-docker-manager-service-groups.yml
 # Purpose: Defines service groups and their configurations
+# Auth alignment: lucid-server-manager pairs with lucid-auth-service for pre-auth + registry (gui_token_auth_realignment).
 # Tor / service ports: infrastructure/containers/host-config.yml + repository root service-ip.txt (tor_socks, tor_control, …)
-# Env: /app/configs/.env.secrets + /app/configs/.env.master
+# Env: ../../configs/environment/.env.secrets + /app/configs/.env.master
 # Last updated: 2026-03-25
 # =============================================================================
 
@@ -28,6 +29,7 @@ service_groups:
       - lucid-redis
       - lucid-elasticsearch
       - lucid-auth-service
+      - lucid-server-manager
     access_control:
       user: false
       developer: false

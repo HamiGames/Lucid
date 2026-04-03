@@ -67,6 +67,10 @@ services:
       - GENERATE_REPORTS=true
       - LUCID_API_GATEWAY_HTTP_PATH=http://api-gateway:8080/app
     volumes:
+      - ../../../../configs/environment/.env.master:/app/configs/.env.master:ro
+      - ../../../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
+      - ..:/app/service_configs:ro
+      - ../../host-config.yml:/app/configs/host-config.yml:ro
       - layer-reports:/reports
       - ${LUCID_DOCKER_SOCK:-/var/run/docker.sock}:/var/run/docker.sock
     networks:
@@ -91,6 +95,10 @@ services:
       - CLEANUP_OLD_CACHES=true
       - LUCID_API_GATEWAY_HTTP_PATH=http://api-gateway:8080/app
     volumes:
+      - ../../../../configs/environment/.env.master:/app/configs/.env.master:ro
+      - ../../../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
+      - ..:/app/service_configs:ro
+      - ../../host-config.yml:/app/configs/host-config.yml:ro
       - build-cache:/cache
       - cache-reports:/reports
       - ${LUCID_DOCKER_SOCK:-/var/run/docker.sock}:/var/run/docker.sock
@@ -119,6 +127,10 @@ services:
       - LUCID_PROMETHEUS_PORT=9090
       - LUCID_PROMETHEUS_HOST_IP=172.20.10.74
     volumes:
+      - ../../../../configs/environment/.env.master:/app/configs/.env.master:ro
+      - ../../../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
+      - ..:/app/service_configs:ro
+      - ../../host-config.yml:/app/configs/host-config.yml:ro
       - validation-reports:/reports
       - ${LUCID_DOCKER_SOCK:-/var/run/docker.sock}:/var/run/docker.sock
     networks:

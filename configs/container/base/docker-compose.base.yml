@@ -1,101 +1,84 @@
-# File: /app/configs/container/base/docker-compose.base.yml
-# x-lucid-file-path: /app/configs/container/base/docker-compose.base.yml
-# x-lucid-file-directory: /app/configs/container/base
-# x-lucid-file-type: YAML
-
-# Lucid Base Container Development Environment
-# Docker Compose for testing base distroless images
-# Supports multi-platform builds for ARM64 and AMD64
-# env_file: master-env-config.txt + configs/environment/.env.secrets (repo paths, aligned with Dockerfile.* LUCID_IMAGE_CONFIG → /app/configs/)
-
-x-lucid-env-files: &lucid-env-files
-  - ../../../master-env-config.txt
-  - ../../../configs/environment/.env.secrets
-
+x-lucid-env-files: &id001
+- ../../../configs/environment/.env.master
+- ../../environment/.env.secrets
 services:
   python-base:
     build:
       context: .
       dockerfile: Dockerfile.python-base
       platforms:
-        - linux/amd64
-        - linux/arm64
+      - linux/amd64
+      - linux/arm64
       args:
         BUILDKIT_INLINE_CACHE: 1
         BUILDKIT_PROGRESS: plain
     image: lucid-python-base:latest
     container_name: lucid-python-base
     hostname: lucid-python-base
-
-    env_file: *lucid-env-files
-
+    env_file: *id001
     volumes:
-      - ../../../master-env-config.txt:/app/configs/.env.master:ro
-      - ../../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
-
+    - ../../../configs/environment/.env.master:/app/configs/.env.master:ro
+    - ../../environment/.env.secrets:/app/configs/.env.secrets:ro
     environment:
-      - PYTHONUNBUFFERED=1
-      - PYTHONDONTWRITEBYTECODE=1
-      - LUCID_ENV=dev
-
+    - PYTHONUNBUFFERED=1
+    - PYTHONDONTWRITEBYTECODE=1
+    - LUCID_ENV=dev
     ports:
-      - "8000:8000"
-      - "8080:8080"
-      - "8081:8081"
-
+    - 8000:8000
+    - 8080:8080
+    - 8081:8081
     healthcheck:
-      test: ["python", "-c", "import sys; sys.exit(0)"]
+      test:
+      - python
+      - -c
+      - import sys; sys.exit(0)
       interval: 30s
       timeout: 10s
       start_period: 5s
       retries: 3
-
-    command: ["python", "-c", "print('Lucid Python Base Container Ready')"]
-
+    command:
+    - python
+    - -c
+    - print('Lucid Python Base Container Ready')
     networks:
-      - lucid-distroless-dev
-
+    - lucid-distroless-dev
   java-base:
     build:
       context: .
       dockerfile: Dockerfile.java-base
       platforms:
-        - linux/amd64
-        - linux/arm64
+      - linux/amd64
+      - linux/arm64
       args:
         BUILDKIT_INLINE_CACHE: 1
         BUILDKIT_PROGRESS: plain
     image: lucid-java-base:latest
     container_name: lucid-java-base
     hostname: lucid-java-base
-
-    env_file: *lucid-env-files
-
+    env_file: *id001
     volumes:
-      - ../../../master-env-config.txt:/app/configs/.env.master:ro
-      - ../../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
-
+    - ../../../configs/environment/.env.master:/app/configs/.env.master:ro
+    - ../../environment/.env.secrets:/app/configs/.env.secrets:ro
     environment:
-      - JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
-      - LUCID_ENV=dev
-
+    - JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+    - LUCID_ENV=dev
     ports:
-      - "8080:8080"
-      - "8081:8081"
-      - "8082:8082"
-
+    - 8080:8080
+    - 8081:8081
+    - 8082:8082
     healthcheck:
-      test: ["java", "-version"]
+      test:
+      - java
+      - -version
       interval: 30s
       timeout: 10s
       start_period: 5s
       retries: 3
-
-    command: ["java", "-version"]
-
+    command:
+    - java
+    - -version
     networks:
-      - lucid-distroless-dev
-
+    - lucid-distroless-dev
 networks:
   lucid-distroless-dev:
     name: lucid-distroless-dev
@@ -103,10 +86,34 @@ networks:
     attachable: true
     ipam:
       config:
-        - subnet: 172.29.0.0/16
-          gateway: 172.29.0.1
-
+      - subnet: 172.29.0.0/16
+        gateway: 172.29.0.1
 volumes:
   lucid-base-data:
     name: lucid-base-data
     driver: local
+secrets:
+  MONGODB_PASSWORD:
+    file: C:/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/configs/secrets/runtime/compose/MONGODB_PASSWORD.secret
+  REDIS_PASSWORD:
+    file: C:/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/configs/secrets/runtime/compose/REDIS_PASSWORD.secret
+  JWT_SECRET_KEY:
+    file: C:/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/configs/secrets/runtime/compose/JWT_SECRET_KEY.secret
+  ENCRYPTION_KEY:
+    file: C:/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/configs/secrets/runtime/compose/ENCRYPTION_KEY.secret
+  SESSION_SECRET:
+    file: C:/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/configs/secrets/runtime/compose/SESSION_SECRET.secret
+  TRON_PRIVATE_KEY:
+    file: C:/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/configs/secrets/runtime/compose/TRON_PRIVATE_KEY.secret
+  TRON_API_KEY:
+    file: C:/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/configs/secrets/runtime/compose/TRON_API_KEY.secret
+  API_GATEWAY_SECRET:
+    file: C:/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/configs/secrets/runtime/compose/API_GATEWAY_SECRET.secret
+  ELASTICSEARCH_PASSWORD:
+    file: C:/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/configs/secrets/runtime/compose/ELASTICSEARCH_PASSWORD.secret
+  TOR_PASSWORD:
+    file: C:/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/configs/secrets/runtime/compose/TOR_PASSWORD.secret
+  TOR_CONTROL_PASSWORD:
+    file: C:/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/configs/secrets/runtime/compose/TOR_CONTROL_PASSWORD.secret
+  WALLET_ENCRYPTION_KEY:
+    file: C:/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/configs/secrets/runtime/compose/WALLET_ENCRYPTION_KEY.secret

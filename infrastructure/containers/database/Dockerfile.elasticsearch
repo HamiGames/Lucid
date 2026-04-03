@@ -14,15 +14,10 @@ ARG BUILDPLATFORM=linux/amd64
 ############################
 # Stage 1 – Elasticsearch builder
 ############################
-FROM --platform=$TARGETPLATFORM elasticsearch:8.11.0 AS es-builder
-
 ARG BUILDPLATFORM
 ARG TARGETPLATFORM
 
-ENV DEBIAN_FRONTEND=noninteractive \
-    DEBCONF_NONINTERACTIVE_SEEN=true
-
-USER root
+FROM --platform=$TARGETPLATFORM elasticsearch:8.11.0 AS es-builder
 
 WORKDIR /build
 
@@ -56,10 +51,35 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
         openssl \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+# LUCID_LIB_SKELETON_BEGIN
+# Generated: FHS dirs for builder (from final-stage COPY --from, excluding /build/ sources;
+# ancestor dirs collapsed; overlaps with builder mkdir/.keep removed — see collect_skeleton_paths_from_dockerfile).
+RUN set -eux; \
+  mkdir -p \
+    '/bin' \
+    '/etc/ssl' \
+    '/usr/bin' \
+    '/var/lib' \
+    '/var/run' \
+    '/usr/lib/python3.11' \
+    '/usr/share/elasticsearch/config'; \
+  for d in \
+    '/bin' \
+    '/etc/ssl' \
+    '/usr/bin' \
+    '/var/lib' \
+    '/var/run' \
+    '/usr/lib/python3.11' \
+    '/usr/share/elasticsearch/config'; \
+  do \
+    printf 'LUCID_LIB_SKELETON_%s' "$(date +%s)" > "$d/.keep"; \
+    touch "$d/.keep"; \
+  done
+# LUCID_LIB_SKELETON_END
 # LUCID_X_FILES_SKELETON_BEGIN
 # Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
 RUN set -eux; \
-    mkdir -p '.' './admin' './configs' './database' './gui_api_bridge' './gui_docker_manager' './gui_hardware_manager' './gui_tor_manager' './server' './service_configs' './service_mesh' './sessions' './storage' './admin/admin_ui' './admin/api' './admin/audit' './admin/config' './admin/emergency' './admin/governance' './admin/key_rotation' './admin/over_lord' './admin/rbac' './admin/services' './admin/system' './admin/ui' './admin/utils' './configs/.devcontainer' './configs/.ssh' './configs/admin' './configs/auth' './configs/base' './configs/blockchain' './configs/compose' './configs/container' './configs/database' './configs/docker' './configs/electron_gui' './configs/environment' './configs/gui' './configs/integration' './configs/logging' './configs/network' './configs/node' './configs/overlord' './configs/payment_systems' './configs/pi' './configs/rdp' './configs/secrets' './configs/security' './configs/server' './configs/tor' './configs/user' './database/admin' './database/api' './database/config' './database/elasticsearch' './database/models' './database/mongodb' './database/redis' './database/repositories' './database/schema' './database/schemas' './database/services' './gui_api_bridge/config' './gui_api_bridge/gui_api_bridge' './gui_api_bridge/scripts' './gui_docker_manager/gui_docker_manager' './gui_hardware_manager/gui_hardware_manager' './gui_tor_manager/gui_tor_manager' './service_configs/blockchain' './service_configs/distroless' './service_configs/kubernetes' './service_configs/logging' './service_configs/multi-stage' './service_configs/node' './service_configs/payment_services' './service_configs/rdp' './service_configs/security' './service_configs/service_mesh' './service_configs/sessions' './service_configs/storage' './service_configs/tor' './service_configs/x_lucid_cluster_calibration' './service_mesh/communication' './service_mesh/config' './service_mesh/controller' './service_mesh/discovery' './service_mesh/docs' './service_mesh/security' './service_mesh/sidecar' './sessions/api' './sessions/config' './sessions/core' './sessions/encryption' './sessions/integration' './sessions/pipeline' './sessions/processor' './sessions/recorder' './sessions/security' './sessions/session_systems_control' './sessions/storage' './storage/backups' './storage/cache' './storage/data' './admin/ui/static' './admin/ui/templates' './configs/admin/admin-system-gateway' './configs/admin/config' './configs/blockchain/chain-to-pay' './configs/blockchain/config' './configs/container/admin' './configs/container/auth' './configs/container/base' './configs/container/blockchain' './configs/container/database' './configs/container/electron_gui' './configs/container/gui' './configs/container/node' './configs/container/payment_systems' './configs/container/rdp' './configs/container/server' './configs/container/sessions' './configs/container/storage' './configs/container/tor' './configs/database/elasticsearch' './configs/database/redis' './configs/docker/compose' './configs/docker/distroless' './configs/docker/docs' './configs/docker/multi-stage' './configs/docker/on-system-chain' './configs/environment/development' './configs/environment/pi' './configs/environment/production' './configs/environment/staging' './configs/node/config' './configs/node/node-system-gateway' './configs/overlord/runtime' './configs/pi/ssh' './database/services/backup' './database/services/migration' './database/services/monitoring' './gui_api_bridge/gui_api_bridge/config' './gui_api_bridge/gui_api_bridge/integration' './gui_api_bridge/gui_api_bridge/middleware' './gui_api_bridge/gui_api_bridge/models' './gui_api_bridge/gui_api_bridge/routers' './gui_api_bridge/gui_api_bridge/services' './gui_api_bridge/gui_api_bridge/utils' './gui_api_bridge/gui_api_bridge/{config,middleware,routers,services,integration,models,utils}' './gui_docker_manager/gui_docker_manager/config' './gui_docker_manager/gui_docker_manager/integration' './gui_docker_manager/gui_docker_manager/middleware' './gui_docker_manager/gui_docker_manager/models' './gui_docker_manager/gui_docker_manager/routers' './gui_docker_manager/gui_docker_manager/services' './gui_docker_manager/gui_docker_manager/utils' './gui_hardware_manager/gui_hardware_manager/integration' './gui_hardware_manager/gui_hardware_manager/middleware' './gui_hardware_manager/gui_hardware_manager/models' './gui_hardware_manager/gui_hardware_manager/routers' './gui_hardware_manager/gui_hardware_manager/services' './gui_hardware_manager/gui_hardware_manager/utils' './gui_tor_manager/gui_tor_manager/config' './gui_tor_manager/gui_tor_manager/integration' './gui_tor_manager/gui_tor_manager/middleware' './gui_tor_manager/gui_tor_manager/models' './gui_tor_manager/gui_tor_manager/routers' './gui_tor_manager/gui_tor_manager/services' './gui_tor_manager/gui_tor_manager/utils' './service_configs/kubernetes/01_configmaps' './service_configs/kubernetes/02-secrets' './service_configs/kubernetes/03-databases' './service_configs/kubernetes/04-auth' './service_configs/kubernetes/04-network' './service_configs/kubernetes/05-core' './service_configs/kubernetes/06-application' './service_configs/kubernetes/07-support' './service_configs/kubernetes/08-ingress' './service_configs/kubernetes/patches' './service_mesh/config/policies' './service_mesh/config/services' './service_mesh/sidecar/envoy' './service_mesh/sidecar/proxy' './sessions/api/config' './sessions/api/integration' './sessions/pipeline/integration' './sessions/processor/config' './sessions/processor/integration' './sessions/recorder/config' './sessions/recorder/integration' './sessions/storage/config' './storage/backups/configs' './storage/backups/database' './storage/backups/user-data' './storage/cache/build' './storage/cache/docker' './storage/cache/temp' './storage/data/blockchain' './storage/data/logs' './storage/data/sessions' './admin/ui/static/css' './admin/ui/static/js' './configs/docker/compose/mongodb' './configs/docker/compose/nats' './configs/docker/compose/nginx' './configs/docker/compose/redis' './configs/docker/compose/vault' './configs/docker/distroless/base' './service_mesh/sidecar/envoy/config'; \
+    mkdir -p '.' './admin' './configs' './database' './gui_api_bridge' './gui_docker_manager' './gui_hardware_manager' './gui_tor_manager' './server' './service_configs' './service_mesh' './sessions' './storage' './admin/__pycache__' './admin/admin_ui' './admin/api' './admin/audit' './admin/config' './admin/emergency' './admin/governance' './admin/key_rotation' './admin/over_lord' './admin/rbac' './admin/services' './admin/system' './admin/ui' './admin/utils' './configs/.ssh' './configs/compose' './configs/container' './configs/database' './configs/docker' './configs/env' './configs/integration' './configs/kubernetes' './configs/logging' './configs/pi' './configs/secrets' './configs/security' './configs/tor' './database/__pycache__' './database/admin' './database/api' './database/config' './database/elasticsearch' './database/models' './database/mongodb' './database/redis' './database/repositories' './database/schema' './database/schemas' './database/services' './gui_api_bridge/__pycache__' './gui_api_bridge/config' './gui_api_bridge/gui_api_bridge' './gui_api_bridge/integration' './gui_api_bridge/middleware' './gui_api_bridge/models' './gui_api_bridge/routers' './gui_api_bridge/scripts' './gui_api_bridge/services' './gui_api_bridge/utils' './gui_docker_manager/gui_docker_manager' './gui_hardware_manager/__pycache__' './gui_hardware_manager/gui_hardware_manager' './gui_tor_manager/gui_tor_manager' './server/__pycache__' './service_configs/blockchain' './service_configs/distroless' './service_configs/kubernetes' './service_configs/logging' './service_configs/multi-stage' './service_configs/node' './service_configs/payment_services' './service_configs/rdp' './service_configs/security' './service_configs/service_mesh' './service_configs/services' './service_configs/sessions' './service_configs/tor' './service_configs/x_lucid_cluster_calibration' './service_mesh/__pycache__' './service_mesh/communication' './service_mesh/config' './service_mesh/controller' './service_mesh/discovery' './service_mesh/docs' './service_mesh/security' './service_mesh/sidecar' './sessions/__pycache__' './sessions/api' './sessions/config' './sessions/core' './sessions/encryption' './sessions/integration' './sessions/pipeline' './sessions/processor' './sessions/recorder' './sessions/security' './sessions/session_systems_control' './sessions/storage' './storage/__pycache__' './storage/backups' './storage/cache' './storage/data' './admin/admin_ui/__pycache__' './admin/api/__pycache__' './admin/audit/__pycache__' './admin/config/__pycache__' './admin/emergency/__pycache__' './admin/governance/__pycache__' './admin/key_rotation/__pycache__' './admin/rbac/__pycache__' './admin/services/__pycache__' './admin/system/__pycache__' './admin/ui/__pycache__' './admin/ui/static' './admin/ui/templates' './admin/utils/__pycache__' './configs/container/admin' './configs/container/auth' './configs/container/base' './configs/container/blockchain' './configs/container/database' './configs/container/electron_gui' './configs/container/gui' './configs/container/node' './configs/container/payment_systems' './configs/container/rdp' './configs/container/server' './configs/container/sessions' './configs/container/storage' './configs/container/tor' './configs/database/elasticsearch' './configs/database/redis' './configs/docker/distroless' './configs/docker/docs' './configs/docker/multi-stage' './configs/pi/ssh' './database/admin/__pycache__' './database/api/__pycache__' './database/config/__pycache__' './database/elasticsearch/__pycache__' './database/models/__pycache__' './database/mongodb/__pycache__' './database/redis/__pycache__' './database/repositories/__pycache__' './database/schema/__pycache__' './database/services/__pycache__' './database/services/backup' './database/services/migration' './database/services/monitoring' './gui_api_bridge/gui_api_bridge/__pycache__' './gui_api_bridge/gui_api_bridge/config' './gui_api_bridge/gui_api_bridge/integration' './gui_api_bridge/gui_api_bridge/middleware' './gui_api_bridge/gui_api_bridge/models' './gui_api_bridge/gui_api_bridge/routers' './gui_api_bridge/gui_api_bridge/services' './gui_api_bridge/gui_api_bridge/utils' './gui_api_bridge/gui_api_bridge/{config,middleware,routers,services,integration,models,utils}' './gui_docker_manager/gui_docker_manager/__pycache__' './gui_docker_manager/gui_docker_manager/config' './gui_docker_manager/gui_docker_manager/integration' './gui_docker_manager/gui_docker_manager/middleware' './gui_docker_manager/gui_docker_manager/models' './gui_docker_manager/gui_docker_manager/routers' './gui_docker_manager/gui_docker_manager/services' './gui_docker_manager/gui_docker_manager/utils' './gui_hardware_manager/gui_hardware_manager/__pycache__' './gui_hardware_manager/gui_hardware_manager/integration' './gui_hardware_manager/gui_hardware_manager/middleware' './gui_hardware_manager/gui_hardware_manager/models' './gui_hardware_manager/gui_hardware_manager/routers' './gui_hardware_manager/gui_hardware_manager/services' './gui_hardware_manager/gui_hardware_manager/utils' './gui_tor_manager/gui_tor_manager/__pycache__' './gui_tor_manager/gui_tor_manager/config' './gui_tor_manager/gui_tor_manager/integration' './gui_tor_manager/gui_tor_manager/middleware' './gui_tor_manager/gui_tor_manager/models' './gui_tor_manager/gui_tor_manager/routers' './gui_tor_manager/gui_tor_manager/services' './gui_tor_manager/gui_tor_manager/utils' './service_configs/x_lucid_cluster_calibration/__pycache__' './service_mesh/communication/__pycache__' './service_mesh/config/policies' './service_mesh/config/services' './service_mesh/controller/__pycache__' './service_mesh/discovery/__pycache__' './service_mesh/security/__pycache__' './service_mesh/sidecar/envoy' './service_mesh/sidecar/proxy' './sessions/api/__pycache__' './sessions/api/config' './sessions/api/integration' './sessions/core/__pycache__' './sessions/encryption/__pycache__' './sessions/integration/__pycache__' './sessions/pipeline/__pycache__' './sessions/pipeline/integration' './sessions/processor/__pycache__' './sessions/processor/config' './sessions/processor/integration' './sessions/recorder/__pycache__' './sessions/recorder/config' './sessions/recorder/integration' './sessions/security/__pycache__' './sessions/session_systems_control/__pycache__' './sessions/storage/__pycache__' './sessions/storage/config' './storage/backups/configs' './storage/backups/database' './storage/backups/user-data' './storage/cache/build' './storage/cache/docker' './storage/cache/temp' './storage/data/blockchain' './storage/data/logs' './storage/data/sessions' './admin/ui/static/css' './admin/ui/static/js' './database/services/backup/__pycache__' './database/services/migration/__pycache__' './database/services/monitoring/__pycache__' './gui_docker_manager/gui_docker_manager/integration/__pycache__' './gui_docker_manager/gui_docker_manager/middleware/__pycache__' './gui_docker_manager/gui_docker_manager/models/__pycache__' './gui_docker_manager/gui_docker_manager/routers/__pycache__' './gui_docker_manager/gui_docker_manager/services/__pycache__' './gui_docker_manager/gui_docker_manager/utils/__pycache__' './gui_hardware_manager/gui_hardware_manager/integration/__pycache__' './gui_hardware_manager/gui_hardware_manager/middleware/__pycache__' './gui_hardware_manager/gui_hardware_manager/models/__pycache__' './gui_hardware_manager/gui_hardware_manager/routers/__pycache__' './gui_hardware_manager/gui_hardware_manager/services/__pycache__' './gui_hardware_manager/gui_hardware_manager/utils/__pycache__' './gui_tor_manager/gui_tor_manager/config/__pycache__' './gui_tor_manager/gui_tor_manager/integration/__pycache__' './gui_tor_manager/gui_tor_manager/middleware/__pycache__' './gui_tor_manager/gui_tor_manager/models/__pycache__' './gui_tor_manager/gui_tor_manager/routers/__pycache__' './gui_tor_manager/gui_tor_manager/services/__pycache__' './gui_tor_manager/gui_tor_manager/utils/__pycache__' './service_mesh/sidecar/envoy/__pycache__' './service_mesh/sidecar/envoy/config' './service_mesh/sidecar/proxy/__pycache__' './sessions/api/integration/__pycache__' './sessions/pipeline/integration/__pycache__' './sessions/processor/integration/__pycache__' './sessions/recorder/integration/__pycache__'; \
     for d in \
       '.' \
       './admin' \
@@ -74,6 +94,7 @@ RUN set -eux; \
       './service_mesh' \
       './sessions' \
       './storage' \
+      './admin/__pycache__' \
       './admin/admin_ui' \
       './admin/api' \
       './admin/audit' \
@@ -87,32 +108,20 @@ RUN set -eux; \
       './admin/system' \
       './admin/ui' \
       './admin/utils' \
-      './configs/.devcontainer' \
       './configs/.ssh' \
-      './configs/admin' \
-      './configs/auth' \
-      './configs/base' \
-      './configs/blockchain' \
       './configs/compose' \
       './configs/container' \
       './configs/database' \
       './configs/docker' \
-      './configs/electron_gui' \
-      './configs/environment' \
-      './configs/gui' \
+      './configs/env' \
       './configs/integration' \
+      './configs/kubernetes' \
       './configs/logging' \
-      './configs/network' \
-      './configs/node' \
-      './configs/overlord' \
-      './configs/payment_systems' \
       './configs/pi' \
-      './configs/rdp' \
       './configs/secrets' \
       './configs/security' \
-      './configs/server' \
       './configs/tor' \
-      './configs/user' \
+      './database/__pycache__' \
       './database/admin' \
       './database/api' \
       './database/config' \
@@ -124,12 +133,21 @@ RUN set -eux; \
       './database/schema' \
       './database/schemas' \
       './database/services' \
+      './gui_api_bridge/__pycache__' \
       './gui_api_bridge/config' \
       './gui_api_bridge/gui_api_bridge' \
+      './gui_api_bridge/integration' \
+      './gui_api_bridge/middleware' \
+      './gui_api_bridge/models' \
+      './gui_api_bridge/routers' \
       './gui_api_bridge/scripts' \
+      './gui_api_bridge/services' \
+      './gui_api_bridge/utils' \
       './gui_docker_manager/gui_docker_manager' \
+      './gui_hardware_manager/__pycache__' \
       './gui_hardware_manager/gui_hardware_manager' \
       './gui_tor_manager/gui_tor_manager' \
+      './server/__pycache__' \
       './service_configs/blockchain' \
       './service_configs/distroless' \
       './service_configs/kubernetes' \
@@ -140,10 +158,11 @@ RUN set -eux; \
       './service_configs/rdp' \
       './service_configs/security' \
       './service_configs/service_mesh' \
+      './service_configs/services' \
       './service_configs/sessions' \
-      './service_configs/storage' \
       './service_configs/tor' \
       './service_configs/x_lucid_cluster_calibration' \
+      './service_mesh/__pycache__' \
       './service_mesh/communication' \
       './service_mesh/config' \
       './service_mesh/controller' \
@@ -151,6 +170,7 @@ RUN set -eux; \
       './service_mesh/docs' \
       './service_mesh/security' \
       './service_mesh/sidecar' \
+      './sessions/__pycache__' \
       './sessions/api' \
       './sessions/config' \
       './sessions/core' \
@@ -162,15 +182,24 @@ RUN set -eux; \
       './sessions/security' \
       './sessions/session_systems_control' \
       './sessions/storage' \
+      './storage/__pycache__' \
       './storage/backups' \
       './storage/cache' \
       './storage/data' \
+      './admin/admin_ui/__pycache__' \
+      './admin/api/__pycache__' \
+      './admin/audit/__pycache__' \
+      './admin/config/__pycache__' \
+      './admin/emergency/__pycache__' \
+      './admin/governance/__pycache__' \
+      './admin/key_rotation/__pycache__' \
+      './admin/rbac/__pycache__' \
+      './admin/services/__pycache__' \
+      './admin/system/__pycache__' \
+      './admin/ui/__pycache__' \
       './admin/ui/static' \
       './admin/ui/templates' \
-      './configs/admin/admin-system-gateway' \
-      './configs/admin/config' \
-      './configs/blockchain/chain-to-pay' \
-      './configs/blockchain/config' \
+      './admin/utils/__pycache__' \
       './configs/container/admin' \
       './configs/container/auth' \
       './configs/container/base' \
@@ -187,22 +216,24 @@ RUN set -eux; \
       './configs/container/tor' \
       './configs/database/elasticsearch' \
       './configs/database/redis' \
-      './configs/docker/compose' \
       './configs/docker/distroless' \
       './configs/docker/docs' \
       './configs/docker/multi-stage' \
-      './configs/docker/on-system-chain' \
-      './configs/environment/development' \
-      './configs/environment/pi' \
-      './configs/environment/production' \
-      './configs/environment/staging' \
-      './configs/node/config' \
-      './configs/node/node-system-gateway' \
-      './configs/overlord/runtime' \
       './configs/pi/ssh' \
+      './database/admin/__pycache__' \
+      './database/api/__pycache__' \
+      './database/config/__pycache__' \
+      './database/elasticsearch/__pycache__' \
+      './database/models/__pycache__' \
+      './database/mongodb/__pycache__' \
+      './database/redis/__pycache__' \
+      './database/repositories/__pycache__' \
+      './database/schema/__pycache__' \
+      './database/services/__pycache__' \
       './database/services/backup' \
       './database/services/migration' \
       './database/services/monitoring' \
+      './gui_api_bridge/gui_api_bridge/__pycache__' \
       './gui_api_bridge/gui_api_bridge/config' \
       './gui_api_bridge/gui_api_bridge/integration' \
       './gui_api_bridge/gui_api_bridge/middleware' \
@@ -211,6 +242,7 @@ RUN set -eux; \
       './gui_api_bridge/gui_api_bridge/services' \
       './gui_api_bridge/gui_api_bridge/utils' \
       './gui_api_bridge/gui_api_bridge/{config,middleware,routers,services,integration,models,utils}' \
+      './gui_docker_manager/gui_docker_manager/__pycache__' \
       './gui_docker_manager/gui_docker_manager/config' \
       './gui_docker_manager/gui_docker_manager/integration' \
       './gui_docker_manager/gui_docker_manager/middleware' \
@@ -218,12 +250,14 @@ RUN set -eux; \
       './gui_docker_manager/gui_docker_manager/routers' \
       './gui_docker_manager/gui_docker_manager/services' \
       './gui_docker_manager/gui_docker_manager/utils' \
+      './gui_hardware_manager/gui_hardware_manager/__pycache__' \
       './gui_hardware_manager/gui_hardware_manager/integration' \
       './gui_hardware_manager/gui_hardware_manager/middleware' \
       './gui_hardware_manager/gui_hardware_manager/models' \
       './gui_hardware_manager/gui_hardware_manager/routers' \
       './gui_hardware_manager/gui_hardware_manager/services' \
       './gui_hardware_manager/gui_hardware_manager/utils' \
+      './gui_tor_manager/gui_tor_manager/__pycache__' \
       './gui_tor_manager/gui_tor_manager/config' \
       './gui_tor_manager/gui_tor_manager/integration' \
       './gui_tor_manager/gui_tor_manager/middleware' \
@@ -231,27 +265,32 @@ RUN set -eux; \
       './gui_tor_manager/gui_tor_manager/routers' \
       './gui_tor_manager/gui_tor_manager/services' \
       './gui_tor_manager/gui_tor_manager/utils' \
-      './service_configs/kubernetes/01_configmaps' \
-      './service_configs/kubernetes/02-secrets' \
-      './service_configs/kubernetes/03-databases' \
-      './service_configs/kubernetes/04-auth' \
-      './service_configs/kubernetes/04-network' \
-      './service_configs/kubernetes/05-core' \
-      './service_configs/kubernetes/06-application' \
-      './service_configs/kubernetes/07-support' \
-      './service_configs/kubernetes/08-ingress' \
-      './service_configs/kubernetes/patches' \
+      './service_configs/x_lucid_cluster_calibration/__pycache__' \
+      './service_mesh/communication/__pycache__' \
       './service_mesh/config/policies' \
       './service_mesh/config/services' \
+      './service_mesh/controller/__pycache__' \
+      './service_mesh/discovery/__pycache__' \
+      './service_mesh/security/__pycache__' \
       './service_mesh/sidecar/envoy' \
       './service_mesh/sidecar/proxy' \
+      './sessions/api/__pycache__' \
       './sessions/api/config' \
       './sessions/api/integration' \
+      './sessions/core/__pycache__' \
+      './sessions/encryption/__pycache__' \
+      './sessions/integration/__pycache__' \
+      './sessions/pipeline/__pycache__' \
       './sessions/pipeline/integration' \
+      './sessions/processor/__pycache__' \
       './sessions/processor/config' \
       './sessions/processor/integration' \
+      './sessions/recorder/__pycache__' \
       './sessions/recorder/config' \
       './sessions/recorder/integration' \
+      './sessions/security/__pycache__' \
+      './sessions/session_systems_control/__pycache__' \
+      './sessions/storage/__pycache__' \
       './sessions/storage/config' \
       './storage/backups/configs' \
       './storage/backups/database' \
@@ -264,37 +303,48 @@ RUN set -eux; \
       './storage/data/sessions' \
       './admin/ui/static/css' \
       './admin/ui/static/js' \
-      './configs/docker/compose/mongodb' \
-      './configs/docker/compose/nats' \
-      './configs/docker/compose/nginx' \
-      './configs/docker/compose/redis' \
-      './configs/docker/compose/vault' \
-      './configs/docker/distroless/base' \
+      './database/services/backup/__pycache__' \
+      './database/services/migration/__pycache__' \
+      './database/services/monitoring/__pycache__' \
+      './gui_docker_manager/gui_docker_manager/integration/__pycache__' \
+      './gui_docker_manager/gui_docker_manager/middleware/__pycache__' \
+      './gui_docker_manager/gui_docker_manager/models/__pycache__' \
+      './gui_docker_manager/gui_docker_manager/routers/__pycache__' \
+      './gui_docker_manager/gui_docker_manager/services/__pycache__' \
+      './gui_docker_manager/gui_docker_manager/utils/__pycache__' \
+      './gui_hardware_manager/gui_hardware_manager/integration/__pycache__' \
+      './gui_hardware_manager/gui_hardware_manager/middleware/__pycache__' \
+      './gui_hardware_manager/gui_hardware_manager/models/__pycache__' \
+      './gui_hardware_manager/gui_hardware_manager/routers/__pycache__' \
+      './gui_hardware_manager/gui_hardware_manager/services/__pycache__' \
+      './gui_hardware_manager/gui_hardware_manager/utils/__pycache__' \
+      './gui_tor_manager/gui_tor_manager/config/__pycache__' \
+      './gui_tor_manager/gui_tor_manager/integration/__pycache__' \
+      './gui_tor_manager/gui_tor_manager/middleware/__pycache__' \
+      './gui_tor_manager/gui_tor_manager/models/__pycache__' \
+      './gui_tor_manager/gui_tor_manager/routers/__pycache__' \
+      './gui_tor_manager/gui_tor_manager/services/__pycache__' \
+      './gui_tor_manager/gui_tor_manager/utils/__pycache__' \
+      './service_mesh/sidecar/envoy/__pycache__' \
       './service_mesh/sidecar/envoy/config' \
+      './service_mesh/sidecar/proxy/__pycache__' \
+      './sessions/api/integration/__pycache__' \
+      './sessions/pipeline/integration/__pycache__' \
+      './sessions/processor/integration/__pycache__' \
+      './sessions/recorder/integration/__pycache__' \
     ; do \
       printf 'LUCID_X_FILES_SKELETON_%s' "$(date +%s)" > "$d/.keep"; \
       touch "$d/.keep"; \
     done
 # LUCID_X_FILES_SKELETON_END
-
-RUN printf "LUCID_ELASTICSEARCH_RUNTIME_DIRECTORY" > /var/run/.keep && \
-    printf "LUCID_ELASTICSEARCH_LIB_DIRECTORY" > /var/lib/.keep && \
-    chmod 644 /var/run/.keep /var/lib/.keep
-
-USER elasticsearch
 COPY configs/ ./configs/
+RUN rm -rf configs/environment 2>/dev/null || true
 
-RUN rm -rf ./configs/environment && \
-    echo ".env.* files removed"
 
 COPY infrastructure/compose/ ./configs/compose/
-COPY configs/environment/.env.secrets ./configs/.env.secrets
-COPY master-env-config.txt ./configs/.env.master
+
 
 COPY storage/ ./storage/
-COPY infrastructure/containers/services/ ./service_configs/
-COPY infrastructure/containers/host-config.yml ./service_configs/host-config.yml
-COPY infrastructure/containers/services/x_lucid_cluster_calibration/ ./service_configs/x_lucid_cluster_calibration/
 
 
 COPY infrastructure/containers/database/docker-compose.database-system.yml ./configs/docker-compose.database-system.yml
@@ -314,6 +364,12 @@ COPY server/ ./server/
 COPY database/ ./database/
 COPY gui_api_bridge/ ./gui_api_bridge/
 
+COPY configs/database/elasticsearch/elasticsearch.yml /usr/share/elasticsearch/config/elasticsearch.yml
+
+RUN printf "LUCID_ELASTICSEARCH_RUNTIME_DIRECTORY" > /var/run/.keep && \
+    printf "LUCID_ELASTICSEARCH_LIB_DIRECTORY" > /var/lib/.keep && \
+    chmod 644 /var/run/.keep /var/lib/.keep
+
 RUN cat > /usr/share/elasticsearch/config/elasticsearch.yml <<'EOFCONFIG'
 cluster.name: lucid-cluster
 node.name: lucid-node
@@ -332,7 +388,6 @@ RUN /usr/share/elasticsearch/bin/elasticsearch-keystore create && \
     chown elasticsearch:elasticsearch /usr/share/elasticsearch/config/elasticsearch.keystore && \
     echo "✅ Elasticsearch keystore created during build"
 
-COPY configs/database/elasticsearch/elasticsearch.yml /usr/share/elasticsearch/config/elasticsearch.yml
 RUN chmod 644 /usr/share/elasticsearch/config/elasticsearch.yml
 RUN chown elasticsearch:elasticsearch /usr/share/elasticsearch/config/elasticsearch.yml
 RUN echo "✅ Elasticsearch config copied and permissions set"
@@ -344,8 +399,6 @@ RUN test -f /usr/share/elasticsearch/bin/elasticsearch && \
     echo "✅ Elasticsearch builder artifacts verified"
 
 # Export glibc + arch libs for distroless root overlay (multi-arch via dpkg-architecture)
-USER root
-
 RUN MULTIARCH=$(dpkg-architecture -qDEB_HOST_MULTIARCH) && \
     mkdir -p "/export/rootfs/lib/${MULTIARCH}" /export/rootfs/lib64 && \
     cp -a "/lib/${MULTIARCH}/." "/export/rootfs/lib/${MULTIARCH}/" && \
@@ -358,15 +411,15 @@ RUN MULTIARCH=$(dpkg-architecture -qDEB_HOST_MULTIARCH) && \
 ############################
 FROM --platform=$TARGETPLATFORM gcr.io/distroless/java17-debian12:latest
 
-WORKDIR /app
-
 ARG BUILD_DATE
 ARG VCS_REF
 ARG VERSION=1.0.0
-# Lucid Tor egress / network isolation (PUBLIC_TOR_IP: master-env-config.txt; compose: lucid-tor-egress-network)
+# Lucid Tor egress / network isolation (PUBLIC_TOR_IP: ../../configs/environment/ ; compose: lucid-tor-egress-network)
 ARG PUBLIC_TOR_IP=109.70.100.1
 ARG LUCID_INTERNAL_NETWORK_NAME=lucid-pi-network
 ARG LUCID_TOR_EGRESS_NETWORK_NAME=lucid-tor-egress-network
+
+WORKDIR /app
 
 LABEL maintainer="Lucid Development Team" \
       com.lucid.network.internal="${LUCID_INTERNAL_NETWORK_NAME}" \
@@ -399,56 +452,29 @@ ENV     PUBLIC_TOR_IP="${PUBLIC_TOR_IP}" \
     LUCID_ELASTICSEARCH_TRANSPORT_SERVICE_PATH=http://lucid-elasticsearch-transport:9300/app
 # LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
 # Generated: apt + RUN scaffold (mkdir/printf/touch/chown) -> FHS (not ./ or /build/; lib_search_and_inject.py).
-COPY --from=es-builder --chown=65532:65532 /usr/lib/*/libcurl.so* /app/usr/lib/
-COPY --from=es-builder --chown=65532:65532 /usr/lib/*/libffi.so* /app/usr/lib/
-COPY --from=es-builder --chown=65532:65532 /usr/lib/*/libssl.so* /app/usr/lib/
-COPY --from=es-builder --chown=65532:65532 /usr/lib/*/ossl-modules/ /app/usr/lib/
-COPY --from=es-builder --chown=65532:65532 /usr/lib/*/libpq.so.5 /app/usr/lib/
-COPY --from=es-builder --chown=65532:65532 /bin/ /app/bin/
-COPY --from=es-builder --chown=65532:65532 /etc/ssl/ /app/etc/ssl/
-COPY --from=es-builder --chown=65532:65532 /export/rootfs/lib64/ /app/export/rootfs/lib64/
-COPY --from=es-builder --chown=65532:65532 /usr/bin/ /app/usr/bin/
-COPY --from=es-builder --chown=65532:65532 /usr/lib/python3.11/ /app/usr/lib/python3.11/
-COPY --from=es-builder --chown=65532:65532 /usr/share/elasticsearch/config/ /app/usr/share/elasticsearch/config/
-COPY --from=es-builder --chown=65532:65532 /var/lib/ /app/var/lib/
-COPY --from=es-builder --chown=65532:65532 /var/run/ /app/var/run/
+COPY --from=es-builder --chown=root /usr/lib/*/libcurl.so* /app/usr/lib/
+COPY --from=es-builder --chown=root /usr/lib/*/libffi.so* /app/usr/lib/
+COPY --from=es-builder --chown=root /usr/lib/*/libssl.so* /app/usr/lib/
+COPY --from=es-builder --chown=root /usr/lib/*/ossl-modules/ /app/usr/lib/
+COPY --from=es-builder --chown=root /usr/lib/*/libpq.so.5 /app/usr/lib/
+COPY --from=es-builder --chown=root /bin/ /app/bin/
+COPY --from=es-builder --chown=root /etc/ssl/ /app/etc/ssl/
+COPY --from=es-builder --chown=root /export/rootfs/lib64/ /app/export/rootfs/lib64/
+COPY --from=es-builder --chown=root /usr/bin/ /app/usr/bin/
+COPY --from=es-builder --chown=root /usr/lib/python3.11/ /app/usr/lib/python3.11/
+COPY --from=es-builder --chown=root /usr/share/elasticsearch/config/ /app/usr/share/elasticsearch/config/
+COPY --from=es-builder --chown=root /var/lib/ /app/var/lib/
+COPY --from=es-builder --chown=root /var/run/ /app/var/run/
 # LUCID_RUNTIME_COPY_FROM_BUILDER_APT_END
 
-# LUCID_RUNTIME_COPY_FROM_BUILD_BEGIN
-# Generated: same directory set as LUCID_X_FILES_SKELETON (./ under WORKDIR /build).
-COPY --from=es-builder --chown=65532:65532 /build/admin/ /app/admin/
-COPY --from=es-builder --chown=65532:65532 /build/configs/ /app/configs/
-COPY --from=es-builder --chown=65532:65532 /build/database/ /app/database/
-COPY --from=es-builder --chown=65532:65532 /build/gui_api_bridge/ /app/gui_api_bridge/
-COPY --from=es-builder --chown=65532:65532 /build/gui_docker_manager/ /app/gui_docker_manager/
-COPY --from=es-builder --chown=65532:65532 /build/gui_hardware_manager/ /app/gui_hardware_manager/
-COPY --from=es-builder --chown=65532:65532 /build/gui_tor_manager/ /app/gui_tor_manager/
-COPY --from=es-builder --chown=65532:65532 /build/server/ /app/server/
-COPY --from=es-builder --chown=65532:65532 /build/service_configs/ /app/service_configs/
-COPY --from=es-builder --chown=65532:65532 /build/service_mesh/ /app/service_mesh/
-COPY --from=es-builder --chown=65532:65532 /build/sessions/ /app/sessions/
-COPY --from=es-builder --chown=65532:65532 /build/storage/ /app/storage/
-# LUCID_RUNTIME_COPY_FROM_BUILD_END
+
+
+
 
 
 
 
 # Generated: apt + RUN scaffold (mkdir/printf/touch/chown) -> FHS (not ./ or /build/; lib_search_and_inject.py).
-
-COPY --from=es-builder /export/rootfs/ /app/export/rootfs/
-
-COPY --from=es-builder --chown=65532:65532 /usr/share/elasticsearch/ /app/usr/share/elasticsearch/
-
-COPY --from=es-builder /usr/bin/basename/ /app/usr/bin/basename/
-COPY --from=es-builder /usr/bin/dirname/ /app/usr/bin/dirname/
-COPY --from=es-builder /usr/bin/uname/ /app/usr/bin/uname/
-COPY --from=es-builder /usr/bin/curl/ /app/usr/bin/curl/
-COPY --from=es-builder /usr/bin/bash/ /app/usr/bin/bash/
-COPY --from=es-builder /usr/bin/ /app/usr/bin/
-
-COPY --from=es-builder /etc/ssl/certs/ca-certificates.crt /app/etc/ssl/certs/ca-certificates.crt
-
-SHELL ["/app/usr/bin/bash", "-c"]
 
 RUN test -d /app/usr/share/elasticsearch || { echo "CRITICAL: elasticsearch directory missing"; exit 1; } && \
     test -f /app/usr/share/elasticsearch/bin/elasticsearch || { echo "CRITICAL: elasticsearch binary missing"; exit 1; } && \
@@ -468,5 +494,11 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
 USER 65532:65532
 
 # ES_JAVA_OPTS from compose (e.g. heap) must apply; configs/database/elasticsearch/elasticsearch.yml documents compose env for JVM.
+USER root
+
+USER elasticsearch
+USER root
+
 ENTRYPOINT ["/app/usr/bin/tini", "--", "/app/usr/bin/bash", "-c", "exec /app/usr/share/elasticsearch/bin/elasticsearch"]
 CMD []
+SHELL ["/app/usr/bin/bash", "-c"]

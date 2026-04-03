@@ -11,33 +11,14 @@ ARG PYTHON_VERSION=3.11
 
 # Stage 1: Builder
 # ===========================================================================================
-FROM --platform=$TARGETPLATFORM python:3.11-slim-bookworm as builder
-
 ARG BUILDPLATFORM
 ARG TARGETPLATFORM
 ARG PYTHON_VERSION
 
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1 \
-    PIP_PREFER_BINARY=1 \
-    DEBIAN_FRONTEND=noninteractive
+FROM --platform=$TARGETPLATFORM python:3.11-slim-bookworm as builder
 
-# Set working directory
 WORKDIR /build
-# LUCID_IMAGE_CONFIG: .env.secrets + .env.master + host-config + container services (builder)
-COPY configs/ ./configs/
-RUN rm -rf ./configs/environment && \
-    echo ".env.* files removed"
-COPY configs/environment/.env.secrets ./configs/.env.secrets
-COPY master-env-config.txt ./configs/.env.master
-COPY infrastructure/containers/host-config.yml /build/configs/host-config.yml
-COPY infrastructure/containers/services/ /build/service_configs/
-COPY infrastructure/containers/services/x_lucid_cluster_calibration/gui-integration-cluster-host-alignment.yml ./service_configs/x_lucid_cluster_calibration/gui-integration-cluster-host-alignment.yml
-COPY infrastructure/containers/tor/docker-compose.proxy-systems.yml /build/service_configs/tor/docker-compose.proxy-systems.yml
-
-# System packages with cache mounts
+# LUCID_IMAGE_CONFIG: host-config + container services (builder)
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
     rm -rf /var/lib/apt/lists/* && \
@@ -51,23 +32,46 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     && rm -rf /var/lib/apt/lists/*
 
 # Create system markers (per Dockerfile-copy-pattern.md)
-RUN echo "LUCID_GUI_TOR_MANAGER_RUNTIME_DIRECTORY" > /var/run/.keep && \
-    echo "LUCID_GUI_TOR_MANAGER_LIB_DIRECTORY" > /var/lib/.keep && \
-    chown -R 65532:65532 /var/run /var/lib
+# LUCID_LIB_SKELETON_BEGIN
+# Generated: FHS dirs for builder (from final-stage COPY --from, excluding /build/ sources;
+# ancestor dirs collapsed; see collect_skeleton_paths_from_dockerfile).
+RUN set -eux; \
+  mkdir -p \
+    '/bin' \
+    '/etc/ssl' \
+    '/usr/bin' \
+    '/usr/lib' \
+    '/var/lib' \
+    '/var/run' \
+    '/usr/local/bin' \
+    '/usr/local/lib/python3.11/site-packages'; \
+  for d in \
+    '/bin' \
+    '/etc/ssl' \
+    '/usr/bin' \
+    '/usr/lib' \
+    '/var/lib' \
+    '/var/run' \
+    '/usr/local/bin' \
+    '/usr/local/lib/python3.11/site-packages'; \
+  do \
+    printf 'LUCID_LIB_SKELETON_%s' "$(date +%s)" > "$d/.keep"; \
+    touch "$d/.keep"; \
+  done
+# LUCID_LIB_SKELETON_END
 
-# Copy requirements
 COPY gui_tor_manager/requirements.txt ./requirements.txt
 
-# Install Python dependencies with pip caching
-
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --upgrade pip setuptools wheel
 
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --no-cache-dir --no-index --find-links /build/wheels --upgrade pip setuptools wheel && \
-    pip install --no-cache-dir -r requirements.txt
+    mkdir -p /build/wheels && \
+    pip wheel --no-cache-dir --wheel-dir /build/wheels -r requirements.txt
 # LUCID_X_FILES_SKELETON_BEGIN
 # Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
 RUN set -eux; \
-    mkdir -p '.' './common' './configs' './gui_tor_manager' './scripts' './service_configs' './common/governance' './common/security' './common/server-tools' './common/tor' './configs/.devcontainer' './configs/.ssh' './configs/admin' './configs/auth' './configs/base' './configs/blockchain' './configs/compose' './configs/container' './configs/database' './configs/docker' './configs/electron_gui' './configs/environment' './configs/gui' './configs/integration' './configs/logging' './configs/network' './configs/node' './configs/overlord' './configs/payment_systems' './configs/pi' './configs/rdp' './configs/secrets' './configs/security' './configs/server' './configs/tor' './configs/user' './gui_tor_manager/config' './gui_tor_manager/gui_tor_manager' './gui_tor_manager/integration' './gui_tor_manager/middleware' './gui_tor_manager/models' './gui_tor_manager/routers' './gui_tor_manager/services' './gui_tor_manager/utils' './scripts/build' './scripts/compliance' './scripts/config' './scripts/contracts' './scripts/database' './scripts/deployment' './scripts/devcontainer' './scripts/docs' './scripts/foundation' './scripts/gui' './scripts/hardware' './scripts/integration' './scripts/lib' './scripts/load' './scripts/logging' './scripts/maintenance' './scripts/migration' './scripts/monitoring' './scripts/network' './scripts/registry' './scripts/secrets' './scripts/security' './scripts/services' './scripts/testing' './scripts/validation' './scripts/verification' './service_configs/blockchain' './service_configs/distroless' './service_configs/kubernetes' './service_configs/logging' './service_configs/multi-stage' './service_configs/node' './service_configs/payment_services' './service_configs/rdp' './service_configs/security' './service_configs/service_mesh' './service_configs/sessions' './service_configs/storage' './service_configs/tor' './service_configs/x_lucid_cluster_calibration' './configs/admin/admin-system-gateway' './configs/admin/config' './configs/blockchain/chain-to-pay' './configs/blockchain/config' './configs/container/admin' './configs/container/auth' './configs/container/base' './configs/container/blockchain' './configs/container/database' './configs/container/electron_gui' './configs/container/gui' './configs/container/node' './configs/container/payment_systems' './configs/container/rdp' './configs/container/server' './configs/container/sessions' './configs/container/storage' './configs/container/tor' './configs/database/elasticsearch' './configs/database/redis' './configs/docker/compose' './configs/docker/distroless' './configs/docker/docs' './configs/docker/multi-stage' './configs/docker/on-system-chain' './configs/environment/development' './configs/environment/pi' './configs/environment/production' './configs/environment/staging' './configs/node/config' './configs/node/node-system-gateway' './configs/overlord/runtime' './configs/pi/ssh' './gui_tor_manager/gui_tor_manager/config' './gui_tor_manager/gui_tor_manager/integration' './gui_tor_manager/gui_tor_manager/middleware' './gui_tor_manager/gui_tor_manager/models' './gui_tor_manager/gui_tor_manager/routers' './gui_tor_manager/gui_tor_manager/services' './gui_tor_manager/gui_tor_manager/utils' './scripts/build/components' './scripts/build/core' './scripts/build/distroless' './scripts/build/utils' './scripts/compliance/distroless' './scripts/compliance/general' './scripts/deployment/devcontainer' './scripts/deployment/distroless' './scripts/deployment/pi' './scripts/deployment/utils' './scripts/maintenance/cleanup' './scripts/maintenance/optimization' './scripts/maintenance/recovery' './scripts/network/diagnostics' './scripts/network/security' './scripts/network/setup' './scripts/testing/integration' './scripts/testing/unit' './scripts/testing/utils' './service_configs/kubernetes/01_configmaps' './service_configs/kubernetes/02-secrets' './service_configs/kubernetes/03-databases' './service_configs/kubernetes/04-auth' './service_configs/kubernetes/04-network' './service_configs/kubernetes/05-core' './service_configs/kubernetes/06-application' './service_configs/kubernetes/07-support' './service_configs/kubernetes/08-ingress' './service_configs/kubernetes/patches' './configs/docker/compose/mongodb' './configs/docker/compose/nats' './configs/docker/compose/nginx' './configs/docker/compose/redis' './configs/docker/compose/vault' './configs/docker/distroless/base'; \
+    mkdir -p '.' './common' './configs' './gui_tor_manager' './scripts' './service_configs' './common/__pycache__' './common/governance' './common/security' './common/server-tools' './common/templates' './common/tor' './configs/.ssh' './configs/container' './configs/database' './configs/docker' './configs/env' './configs/environment' './configs/gui-alignment' './configs/integration' './configs/kubernetes' './configs/logging' './configs/pi' './configs/secrets' './configs/security' './configs/tor' './gui_tor_manager/gui_tor_manager' './scripts/__pycache__' './scripts/auth_sm_realignment' './scripts/build' './scripts/compliance' './scripts/config' './scripts/contracts' './scripts/database' './scripts/deployment' './scripts/devcontainer' './scripts/docs' './scripts/foundation' './scripts/gui' './scripts/gui_auth_realignment' './scripts/hardware' './scripts/integration' './scripts/lib' './scripts/load' './scripts/logging' './scripts/maintenance' './scripts/migration' './scripts/monitoring' './scripts/network' './scripts/re-build' './scripts/registry' './scripts/secrets' './scripts/security' './scripts/services' './scripts/testing' './scripts/validation' './scripts/verification' './service_configs/distroless' './service_configs/logging' './service_configs/multi-stage' './service_configs/node' './service_configs/payment_services' './service_configs/rdp' './service_configs/security' './service_configs/service_mesh' './service_configs/services' './service_configs/sessions' './service_configs/tor' './service_configs/x_lucid_cluster_calibration' './common/governance/__pycache__' './common/security/__pycache__' './common/server-tools/__pycache__' './common/tor/__pycache__' './configs/container/admin' './configs/container/auth' './configs/container/base' './configs/container/blockchain' './configs/container/database' './configs/container/electron_gui' './configs/container/gui' './configs/container/node' './configs/container/payment_systems' './configs/container/rdp' './configs/container/server' './configs/container/sessions' './configs/container/storage' './configs/container/tor' './configs/database/elasticsearch' './configs/database/redis' './configs/docker/distroless' './configs/docker/docs' './configs/docker/multi-stage' './configs/kubernetes/01_configmaps' './configs/pi/ssh' './gui_tor_manager/gui_tor_manager/__pycache__' './gui_tor_manager/gui_tor_manager/config' './gui_tor_manager/gui_tor_manager/integration' './gui_tor_manager/gui_tor_manager/middleware' './gui_tor_manager/gui_tor_manager/models' './gui_tor_manager/gui_tor_manager/routers' './gui_tor_manager/gui_tor_manager/services' './gui_tor_manager/gui_tor_manager/utils' './scripts/auth_sm_realignment/.cache' './scripts/auth_sm_realignment/lib' './scripts/build/__pycache__' './scripts/build/components' './scripts/build/core' './scripts/build/distroless' './scripts/build/utils' './scripts/compliance/distroless' './scripts/compliance/general' './scripts/deployment/devcontainer' './scripts/deployment/distroless' './scripts/deployment/pi' './scripts/deployment/utils' './scripts/gui_auth_realignment/.cache' './scripts/gui_auth_realignment/lib' './scripts/maintenance/cleanup' './scripts/maintenance/optimization' './scripts/maintenance/recovery' './scripts/network/diagnostics' './scripts/network/security' './scripts/network/setup' './scripts/testing/integration' './scripts/testing/unit' './scripts/testing/utils' './scripts/validation/__pycache__' './scripts/verification/__pycache__' './service_configs/x_lucid_cluster_calibration/__pycache__' './gui_tor_manager/gui_tor_manager/config/__pycache__' './gui_tor_manager/gui_tor_manager/integration/__pycache__' './gui_tor_manager/gui_tor_manager/middleware/__pycache__' './gui_tor_manager/gui_tor_manager/models/__pycache__' './gui_tor_manager/gui_tor_manager/routers/__pycache__' './gui_tor_manager/gui_tor_manager/services/__pycache__' './gui_tor_manager/gui_tor_manager/utils/__pycache__'; \
     for d in \
       '.' \
       './common' \
@@ -75,44 +79,29 @@ RUN set -eux; \
       './gui_tor_manager' \
       './scripts' \
       './service_configs' \
+      './common/__pycache__' \
       './common/governance' \
       './common/security' \
       './common/server-tools' \
+      './common/templates' \
       './common/tor' \
-      './configs/.devcontainer' \
       './configs/.ssh' \
-      './configs/admin' \
-      './configs/auth' \
-      './configs/base' \
-      './configs/blockchain' \
-      './configs/compose' \
       './configs/container' \
       './configs/database' \
       './configs/docker' \
-      './configs/electron_gui' \
+      './configs/env' \
       './configs/environment' \
-      './configs/gui' \
+      './configs/gui-alignment' \
       './configs/integration' \
+      './configs/kubernetes' \
       './configs/logging' \
-      './configs/network' \
-      './configs/node' \
-      './configs/overlord' \
-      './configs/payment_systems' \
       './configs/pi' \
-      './configs/rdp' \
       './configs/secrets' \
       './configs/security' \
-      './configs/server' \
       './configs/tor' \
-      './configs/user' \
-      './gui_tor_manager/config' \
       './gui_tor_manager/gui_tor_manager' \
-      './gui_tor_manager/integration' \
-      './gui_tor_manager/middleware' \
-      './gui_tor_manager/models' \
-      './gui_tor_manager/routers' \
-      './gui_tor_manager/services' \
-      './gui_tor_manager/utils' \
+      './scripts/__pycache__' \
+      './scripts/auth_sm_realignment' \
       './scripts/build' \
       './scripts/compliance' \
       './scripts/config' \
@@ -123,6 +112,7 @@ RUN set -eux; \
       './scripts/docs' \
       './scripts/foundation' \
       './scripts/gui' \
+      './scripts/gui_auth_realignment' \
       './scripts/hardware' \
       './scripts/integration' \
       './scripts/lib' \
@@ -132,6 +122,7 @@ RUN set -eux; \
       './scripts/migration' \
       './scripts/monitoring' \
       './scripts/network' \
+      './scripts/re-build' \
       './scripts/registry' \
       './scripts/secrets' \
       './scripts/security' \
@@ -139,9 +130,7 @@ RUN set -eux; \
       './scripts/testing' \
       './scripts/validation' \
       './scripts/verification' \
-      './service_configs/blockchain' \
       './service_configs/distroless' \
-      './service_configs/kubernetes' \
       './service_configs/logging' \
       './service_configs/multi-stage' \
       './service_configs/node' \
@@ -149,14 +138,14 @@ RUN set -eux; \
       './service_configs/rdp' \
       './service_configs/security' \
       './service_configs/service_mesh' \
+      './service_configs/services' \
       './service_configs/sessions' \
-      './service_configs/storage' \
       './service_configs/tor' \
       './service_configs/x_lucid_cluster_calibration' \
-      './configs/admin/admin-system-gateway' \
-      './configs/admin/config' \
-      './configs/blockchain/chain-to-pay' \
-      './configs/blockchain/config' \
+      './common/governance/__pycache__' \
+      './common/security/__pycache__' \
+      './common/server-tools/__pycache__' \
+      './common/tor/__pycache__' \
       './configs/container/admin' \
       './configs/container/auth' \
       './configs/container/base' \
@@ -173,19 +162,12 @@ RUN set -eux; \
       './configs/container/tor' \
       './configs/database/elasticsearch' \
       './configs/database/redis' \
-      './configs/docker/compose' \
       './configs/docker/distroless' \
       './configs/docker/docs' \
       './configs/docker/multi-stage' \
-      './configs/docker/on-system-chain' \
-      './configs/environment/development' \
-      './configs/environment/pi' \
-      './configs/environment/production' \
-      './configs/environment/staging' \
-      './configs/node/config' \
-      './configs/node/node-system-gateway' \
-      './configs/overlord/runtime' \
+      './configs/kubernetes/01_configmaps' \
       './configs/pi/ssh' \
+      './gui_tor_manager/gui_tor_manager/__pycache__' \
       './gui_tor_manager/gui_tor_manager/config' \
       './gui_tor_manager/gui_tor_manager/integration' \
       './gui_tor_manager/gui_tor_manager/middleware' \
@@ -193,6 +175,9 @@ RUN set -eux; \
       './gui_tor_manager/gui_tor_manager/routers' \
       './gui_tor_manager/gui_tor_manager/services' \
       './gui_tor_manager/gui_tor_manager/utils' \
+      './scripts/auth_sm_realignment/.cache' \
+      './scripts/auth_sm_realignment/lib' \
+      './scripts/build/__pycache__' \
       './scripts/build/components' \
       './scripts/build/core' \
       './scripts/build/distroless' \
@@ -203,6 +188,8 @@ RUN set -eux; \
       './scripts/deployment/distroless' \
       './scripts/deployment/pi' \
       './scripts/deployment/utils' \
+      './scripts/gui_auth_realignment/.cache' \
+      './scripts/gui_auth_realignment/lib' \
       './scripts/maintenance/cleanup' \
       './scripts/maintenance/optimization' \
       './scripts/maintenance/recovery' \
@@ -212,30 +199,112 @@ RUN set -eux; \
       './scripts/testing/integration' \
       './scripts/testing/unit' \
       './scripts/testing/utils' \
-      './service_configs/kubernetes/01_configmaps' \
-      './service_configs/kubernetes/02-secrets' \
-      './service_configs/kubernetes/03-databases' \
-      './service_configs/kubernetes/04-auth' \
-      './service_configs/kubernetes/04-network' \
-      './service_configs/kubernetes/05-core' \
-      './service_configs/kubernetes/06-application' \
-      './service_configs/kubernetes/07-support' \
-      './service_configs/kubernetes/08-ingress' \
-      './service_configs/kubernetes/patches' \
-      './configs/docker/compose/mongodb' \
-      './configs/docker/compose/nats' \
-      './configs/docker/compose/nginx' \
-      './configs/docker/compose/redis' \
-      './configs/docker/compose/vault' \
-      './configs/docker/distroless/base' \
+      './scripts/validation/__pycache__' \
+      './scripts/verification/__pycache__' \
+      './service_configs/x_lucid_cluster_calibration/__pycache__' \
+      './gui_tor_manager/gui_tor_manager/config/__pycache__' \
+      './gui_tor_manager/gui_tor_manager/integration/__pycache__' \
+      './gui_tor_manager/gui_tor_manager/middleware/__pycache__' \
+      './gui_tor_manager/gui_tor_manager/models/__pycache__' \
+      './gui_tor_manager/gui_tor_manager/routers/__pycache__' \
+      './gui_tor_manager/gui_tor_manager/services/__pycache__' \
+      './gui_tor_manager/gui_tor_manager/utils/__pycache__' \
     ; do \
       printf 'LUCID_X_FILES_SKELETON_%s' "$(date +%s)" > "$d/.keep"; \
       touch "$d/.keep"; \
     done
 # LUCID_X_FILES_SKELETON_END
+
+
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --no-cache-dir --no-index --find-links /build/wheels -r requirements.txt
+# LUCID_ALIGNMENT_MAT_COPY_DIRECTORIES_BEGIN
+# alignment-mat gui-tor-manager_manifest.json: compose_service='gui-tor-manager' — explicit manifest paths → 66 builder COPY line(s).
+COPY common/load_host_config.py ./common/load_host_config.py
+COPY configs/container/gui/docker-compose.user-gui.yml ./configs/container/gui/docker-compose.user-gui.yml
+COPY configs/container/tor/docker-compose.proxy-systems.yml ./configs/container/tor/docker-compose.proxy-systems.yml
+COPY configs/docker/docker-compose.gui-integration.yml ./configs/docker/docker-compose.gui-integration.yml
+COPY configs/gui-alignment/gui-services.json ./configs/gui-alignment/gui-services.json
+COPY configs/gui-alignment/gui-tor-manager.json ./configs/gui-alignment/gui-tor-manager.json
+COPY configs/integration/master-integration-config.yml ./configs/integration/master-integration-config.yml
+COPY service_configs/beta-sidecar.yml ./service_configs/beta-sidecar.yml
+COPY service_configs/gui-docker-manager-service-groups.yml ./service_configs/gui-docker-manager-service-groups.yml
+COPY service_configs/gui-docker-manager.yml ./service_configs/gui-docker-manager.yml
+COPY service_configs/gui-services.json ./service_configs/gui-services.json
+COPY service_configs/service-discovery.yml ./service_configs/service-discovery.yml
+COPY service_configs/service-registry.json ./service_configs/service-registry.json
+COPY configs/x-files.json ./configs/x-files.json
+COPY gui_tor_manager/gui_tor_manager/__init__.py ./gui_tor_manager/gui_tor_manager/__init__.py
+COPY gui_tor_manager/gui_tor_manager/config.py ./gui_tor_manager/gui_tor_manager/config.py
+COPY gui_tor_manager/gui_tor_manager/config/__init__.py ./gui_tor_manager/gui_tor_manager/config/__init__.py
+COPY gui_tor_manager/gui_tor_manager/config/load_host_config.py ./gui_tor_manager/gui_tor_manager/config/load_host_config.py
+COPY gui_tor_manager/gui_tor_manager/entrypoint.py ./gui_tor_manager/gui_tor_manager/entrypoint.py
+COPY gui_tor_manager/gui_tor_manager/gui_tor_manager_service.py ./gui_tor_manager/gui_tor_manager/gui_tor_manager_service.py
+COPY gui_tor_manager/gui_tor_manager/healthcheck.py ./gui_tor_manager/gui_tor_manager/healthcheck.py
+COPY gui_tor_manager/gui_tor_manager/integration/__init__.py ./gui_tor_manager/gui_tor_manager/integration/__init__.py
+COPY gui_tor_manager/gui_tor_manager/integration/service_base.py ./gui_tor_manager/gui_tor_manager/integration/service_base.py
+COPY gui_tor_manager/gui_tor_manager/integration/tor_proxy_client.py ./gui_tor_manager/gui_tor_manager/integration/tor_proxy_client.py
+COPY gui_tor_manager/gui_tor_manager/main.py ./gui_tor_manager/gui_tor_manager/main.py
+COPY gui_tor_manager/gui_tor_manager/middleware/__init__.py ./gui_tor_manager/gui_tor_manager/middleware/__init__.py
+COPY gui_tor_manager/gui_tor_manager/middleware/auth.py ./gui_tor_manager/gui_tor_manager/middleware/auth.py
+COPY gui_tor_manager/gui_tor_manager/middleware/cors.py ./gui_tor_manager/gui_tor_manager/middleware/cors.py
+COPY gui_tor_manager/gui_tor_manager/middleware/logging.py ./gui_tor_manager/gui_tor_manager/middleware/logging.py
+COPY gui_tor_manager/gui_tor_manager/middleware/rate_limit.py ./gui_tor_manager/gui_tor_manager/middleware/rate_limit.py
+COPY gui_tor_manager/gui_tor_manager/models/__init__.py ./gui_tor_manager/gui_tor_manager/models/__init__.py
+COPY gui_tor_manager/gui_tor_manager/models/common.py ./gui_tor_manager/gui_tor_manager/models/common.py
+COPY gui_tor_manager/gui_tor_manager/models/onion.py ./gui_tor_manager/gui_tor_manager/models/onion.py
+COPY gui_tor_manager/gui_tor_manager/models/tor.py ./gui_tor_manager/gui_tor_manager/models/tor.py
+COPY gui_tor_manager/gui_tor_manager/routers/__init__.py ./gui_tor_manager/gui_tor_manager/routers/__init__.py
+COPY gui_tor_manager/gui_tor_manager/routers/health.py ./gui_tor_manager/gui_tor_manager/routers/health.py
+COPY gui_tor_manager/gui_tor_manager/routers/onion.py ./gui_tor_manager/gui_tor_manager/routers/onion.py
+COPY gui_tor_manager/gui_tor_manager/routers/proxy.py ./gui_tor_manager/gui_tor_manager/routers/proxy.py
+COPY gui_tor_manager/gui_tor_manager/routers/tor.py ./gui_tor_manager/gui_tor_manager/routers/tor.py
+COPY gui_tor_manager/gui_tor_manager/services/__init__.py ./gui_tor_manager/gui_tor_manager/services/__init__.py
+COPY gui_tor_manager/gui_tor_manager/services/onion_service.py ./gui_tor_manager/gui_tor_manager/services/onion_service.py
+COPY gui_tor_manager/gui_tor_manager/services/proxy_service.py ./gui_tor_manager/gui_tor_manager/services/proxy_service.py
+COPY gui_tor_manager/gui_tor_manager/services/tor_service.py ./gui_tor_manager/gui_tor_manager/services/tor_service.py
+COPY gui_tor_manager/gui_tor_manager/utils/__init__.py ./gui_tor_manager/gui_tor_manager/utils/__init__.py
+COPY gui_tor_manager/gui_tor_manager/utils/errors.py ./gui_tor_manager/gui_tor_manager/utils/errors.py
+COPY gui_tor_manager/gui_tor_manager/utils/logging.py ./gui_tor_manager/gui_tor_manager/utils/logging.py
+COPY gui_tor_manager/gui_tor_manager/utils/validation.py ./gui_tor_manager/gui_tor_manager/utils/validation.py
+COPY infrastructure/containers/config-listings.json ./infrastructure/containers/config-listings.json
+COPY infrastructure/containers/dockerfile_layout_run_report.json ./infrastructure/containers/dockerfile_layout_run_report.json
+COPY infrastructure/containers/dockerfile_recalibration_map.json ./infrastructure/containers/dockerfile_recalibration_map.json
+COPY infrastructure/containers/dockerfile_recalibration_map_REPAIRED.json ./infrastructure/containers/dockerfile_recalibration_map_REPAIRED.json
+COPY infrastructure/containers/gui/docker-compose.user-gui.yml ./infrastructure/containers/gui/docker-compose.user-gui.yml
+COPY infrastructure/containers/host-config.yml ./infrastructure/containers/host-config.yml
+COPY infrastructure/containers/services/beta-sidecar.yml ./infrastructure/containers/services/beta-sidecar.yml
+COPY infrastructure/containers/services/gui-docker-manager-service-groups.yml ./infrastructure/containers/services/gui-docker-manager-service-groups.yml
+COPY infrastructure/containers/services/gui-docker-manager.yml ./infrastructure/containers/services/gui-docker-manager.yml
+COPY infrastructure/containers/services/master-endpoint.yml ./infrastructure/containers/services/master-endpoint.yml
+COPY infrastructure/containers/services/service-discovery.yml ./infrastructure/containers/services/service-discovery.yml
+COPY infrastructure/containers/services/service-registry.json ./infrastructure/containers/services/service-registry.json
+COPY infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.json ./infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.json
+COPY infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.yml ./infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.yml
+COPY infrastructure/containers/services/x_lucid_cluster_calibration/core-cluster-host-alignment.yml ./infrastructure/containers/services/x_lucid_cluster_calibration/core-cluster-host-alignment.yml
+COPY infrastructure/containers/services/x_lucid_cluster_calibration/foundation-cluster-host-alignment.yml ./infrastructure/containers/services/x_lucid_cluster_calibration/foundation-cluster-host-alignment.yml
+COPY infrastructure/containers/services/x_lucid_cluster_calibration/gui-integration-cluster-host-alignment.yml ./infrastructure/containers/services/x_lucid_cluster_calibration/gui-integration-cluster-host-alignment.yml
+COPY infrastructure/containers/services/x_lucid_cluster_calibration/processing-cluster-host-alignment.yml ./infrastructure/containers/services/x_lucid_cluster_calibration/processing-cluster-host-alignment.yml
+COPY infrastructure/service_mesh/config/service-mesh.yaml ./infrastructure/service_mesh/config/service-mesh.yaml
+# LUCID_ALIGNMENT_MAT_COPY_DIRECTORIES_END
+RUN rm -rf configs/environment 2>/dev/null || true
+
+COPY infrastructure/containers/tor/docker-compose.proxy-systems.yml /build/service_configs/tor/docker-compose.proxy-systems.yml
+
+# System packages with cache mounts
 COPY scripts/ ./scripts/
 
 # Create marker files with actual content to lock in directory structure (per Dockerfile-copy-pattern.md)
+COPY common/__init__.py /build/common/__init__.py
+COPY common/tor/ /build/common/tor/
+COPY service_configs/kubernetes/01_configmaps/ ./configs/kubernetes/01_configmaps/
+
+# Verify application files in builder stage
+RUN echo "LUCID_GUI_TOR_MANAGER_RUNTIME_DIRECTORY" > /var/run/.keep && \
+    echo "LUCID_GUI_TOR_MANAGER_LIB_DIRECTORY" > /var/lib/.keep && \
+    chown -R 65532:65532 /var/run /var/lib
+
+# Copy requirements
 RUN echo "LUCID_GUI_TOR_MANAGER_PACKAGES_INSTALLED_$(date +%s)" > /usr/local/lib/python3.11/site-packages/.lucid-marker && \
     echo "LUCID_GUI_TOR_MANAGER_BINARIES_INSTALLED_$(date +%s)" > /usr/local/bin/.lucid-marker && \
     chmod 644 /usr/local/lib/python3.11/site-packages/.lucid-marker && \
@@ -250,27 +319,12 @@ RUN python3 -c "import fastapi, uvicorn, stem, httpx, pydantic, redis; print('�
 
 # Container directory layout (03_api_gateway/Dockerfile): common/tor, kubernetes configmaps
 
-COPY common/__init__.py /build/common/__init__.py
-COPY common/tor/ /build/common/tor/
-COPY service_configs/kubernetes/01_configmaps/ /build/configs/
-
-# Application modules (explicit per-directory COPY)
-COPY gui_tor_manager/gui_tor_manager/*.py ./gui_tor_manager/
-COPY gui_tor_manager/gui_tor_manager/config/ ./gui_tor_manager/config/
-COPY gui_tor_manager/gui_tor_manager/routers/ ./gui_tor_manager/routers/
-COPY gui_tor_manager/gui_tor_manager/middleware/ ./gui_tor_manager/middleware/
-COPY gui_tor_manager/gui_tor_manager/services/ ./gui_tor_manager/services/
-COPY gui_tor_manager/gui_tor_manager/integration/ ./gui_tor_manager/integration/
-COPY gui_tor_manager/gui_tor_manager/utils/ ./gui_tor_manager/utils/
-COPY gui_tor_manager/gui_tor_manager/models/ ./gui_tor_manager/models/
-
-# Verify application files in builder stage
 RUN echo "=== Verifying GUI Tor Manager application files ===" && \
-    test -f ./gui_tor_manager/entrypoint.py && echo "✅ entrypoint.py found" && \
-    test -f ./gui_tor_manager/main.py && echo "✅ main.py found" && \
-    test -f ./gui_tor_manager/config.py && echo "✅ config.py found" && \
+    test -f ./gui_tor_manager/gui_tor_manager/entrypoint.py && echo "✅ entrypoint.py found" && \
+    test -f ./gui_tor_manager/gui_tor_manager/main.py && echo "✅ main.py found" && \
+    test -f ./gui_tor_manager/gui_tor_manager/config.py && echo "✅ config.py found" && \
     test -f ./configs/api-gateway-config.yaml && \
-    python3 -c "import sys; sys.path.insert(0, './gui_tor_manager'); from main import app; print('✅ Application initialization successful in builder')" && \
+    PYTHONPATH=/build/gui_tor_manager python3 -c "from gui_tor_manager.main import app; print('✅ Application initialization successful in builder')" && \
     echo "All application files verified in builder stage"
 
 # Stage 2: Runtime (Distroless)
@@ -280,12 +334,31 @@ FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12:latest
 ARG BUILD_DATE
 ARG VCS_REF
 ARG VERSION=1.0.0
-# Lucid Tor egress / network isolation (PUBLIC_TOR_IP: master-env-config.txt; compose: lucid-tor-egress-network)
+# Lucid Tor egress / network isolation (PUBLIC_TOR_IP: ../../configs/environment/ ; compose: lucid-tor-egress-network)
 ARG PUBLIC_TOR_IP=109.70.100.1
 ARG LUCID_INTERNAL_NETWORK_NAME=lucid-pi-network
 ARG LUCID_TOR_EGRESS_NETWORK_NAME=lucid-tor-egress-network
 
 # Labels for container identification
+WORKDIR /app
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Verify packages were properly copied to runtime stage (distroless-compatible - no shell)
 LABEL maintainer="Lucid Development Team" \
       com.lucid.network.internal="${LUCID_INTERNAL_NETWORK_NAME}" \
       com.lucid.network.tor_egress="${LUCID_TOR_EGRESS_NETWORK_NAME}" \
@@ -306,7 +379,7 @@ LABEL maintainer="Lucid Development Team" \
       com.lucid.expose="8097" \
       com.lucid.cluster="gui-integration" \
       com.lucid.tor.compatible="true" \
-      com.lucid.env.config=".env.tunnel-tools,.env.secrets,.env.foundation" \
+      com.lucid.env.config=".env.tunnel-tools,.env.foundation" \
       com.lucid.hostconfig.service_name="gui-tor-manager" \
       com.lucid.hostconfig.port="8097" \
       com.lucid.hostconfig.tor_socks_host="tor-socks" \
@@ -324,79 +397,24 @@ ENV     PUBLIC_TOR_IP="${PUBLIC_TOR_IP}" \
     PATH="/usr/local/bin:/usr/bin:/bin" \
     PYTHONUNBUFFERED="1" \
     PYTHONDONTWRITEBYTECODE="1" \
-    PYTHONPATH="/app:/usr/local/lib/python3.11/site-packages" \
+    PYTHONPATH="/app/gui_tor_manager:/app:/usr/local/lib/python3.11/site-packages" \
     PYTHONIOENCODING="utf-8" \
     LANG="C.UTF-8" \
     LC_ALL="C.UTF-8" \
     LUCID_API_GATEWAY_HOST="api-gateway" \
-    LUCID_API_GATEWAY_PORT="8080" \
+    LUCID_API_GATEWAY_PORT="8097" \
     LUCID_HOST_CONFIG_PATH="/app/configs/host-config.yml" \
     LUCID_HOST_CONFIG_SERVICE_NAME=gui_tor_manager_http \
     LUCID_SERVICE_HOST_IP=172.20.10.63 \
     LUCID_SERVICE_HTTP_PATH=http://gui-tor-manager:8097/app \
     LUCID_TOR_SOCKS_HOST="tor-socks" \
-    LUCID_TOR_SOCKS_PORT="9050"
+    LUCID_TOR_SOCKS_PORT="8097"
 
-# LUCID_IMAGE_CONFIG: .env.secrets + .env.master + host-config + container services (runtime)
-COPY --from=builder --chown=65532:65532 /build/configs/.env.secrets /app/configs/.env.secrets
-COPY --from=builder --chown=65532:65532 /build/configs/.env.master /app/configs/.env.master
-COPY --from=builder --chown=65532:65532 /build/configs/host-config.yml /app/configs/host-config.yml
-COPY --from=builder --chown=65532:65532 /build/service_configs/x_lucid_cluster_calibration/gui-integration-cluster-host-alignment.yml /app/service_configs/x_lucid_cluster_calibration/gui-integration-cluster-host-alignment.yml
-COPY --from=builder --chown=65532:65532 /build/service_configs /app/service_configs
-
-COPY --from=builder --chown=65532:65532 /build/common/__init__.py /app/common/__init__.py
-COPY --from=builder --chown=65532:65532 /build/common/tor/ /app/common/tor/
-
-COPY --from=builder --chown=65532:65532 /var/run /var/run
-COPY --from=builder --chown=65532:65532 /var/lib /var/lib
-COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
-
-COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
-COPY --from=builder /usr/local/bin /usr/local/bin
-
-COPY --chown=65532:65532 --from=builder /build/gui_tor_manager /app/gui_tor_manager
-
-# Set Python path
-WORKDIR /app
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# Verify packages were properly copied to runtime stage (distroless-compatible - no shell)
-RUN ["/usr/bin/python3.11", "-c", "import os; site_packages = '/usr/local/lib/python3.11/site-packages'; app_dirs = ['/app/gui_tor_manager']; checks = [os.path.isdir(site_packages), os.path.isfile(os.path.join(site_packages, '.lucid-marker')), os.path.isdir('/usr/local/bin'), os.path.isfile('/usr/local/bin/.lucid-marker')] + [os.path.isdir(d) for d in app_dirs]; assert all(checks), f'Verification failed: site_packages={os.path.isdir(site_packages)}, marker={os.path.isfile(os.path.join(site_packages, \".lucid-marker\"))}, bin={os.path.isdir(\"/usr/local/bin\")}, bin_marker={os.path.isfile(\"/usr/local/bin/.lucid-marker\")}, app_dirs={[os.path.isdir(d) for d in app_dirs]}'; print('✅ All package and application directories verified in runtime stage')"]
-
-# Set default environment variables
+# LUCID_IMAGE_CONFIG: host-config + container services (runtime)
 ENV PORT=8097 \
     HOST=0.0.0.0 \
     LOG_LEVEL=INFO \
     DEBUG=false
-# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
-# Generated: apt + RUN scaffold (mkdir/printf/touch/chown) -> FHS (not ./ or /build/; lib_search_and_inject.py).
-COPY --from=builder --chown=65532:65532 /usr/lib/*/libssl.so* /app/usr/lib/
-COPY --from=builder --chown=65532:65532 /usr/lib/*/ossl-modules/ /app/usr/lib/
-COPY --from=builder --chown=65532:65532 /usr/lib/*/libffi.so* /app/usr/lib/
-COPY --from=builder --chown=65532:65532 /bin/ /app/bin/
-COPY --from=builder --chown=65532:65532 /etc/ssl/ /app/etc/ssl/
-COPY --from=builder --chown=65532:65532 /usr/bin/ /app/usr/bin/
-COPY --from=builder --chown=65532:65532 /usr/local/bin/ /app/usr/local/bin/
-COPY --from=builder --chown=65532:65532 /usr/local/lib/python3.11/site-packages/ /app/usr/local/lib/python3.11/site-packages/
-COPY --from=builder --chown=65532:65532 /var/lib/ /app/var/lib/
-COPY --from=builder --chown=65532:65532 /var/run/ /app/var/run/
-# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_END
-
 # LUCID_RUNTIME_COPY_FROM_BUILD_BEGIN
 # Generated: same directory set as LUCID_X_FILES_SKELETON (./ under WORKDIR /build).
 COPY --from=builder --chown=65532:65532 /build/common/ /app/common/
@@ -406,15 +424,29 @@ COPY --from=builder --chown=65532:65532 /build/scripts/ /app/scripts/
 COPY --from=builder --chown=65532:65532 /build/service_configs/ /app/service_configs/
 # LUCID_RUNTIME_COPY_FROM_BUILD_END
 
+# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
+# Generated: apt + RUN scaffold (mkdir/printf/touch/chown) -> FHS (not ./ or /build/; lib_search_and_inject.py).
+COPY --from=builder --chown=65532:65532 /usr/lib/*/libssl.so* /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /usr/lib/*/ossl-modules/ /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /usr/lib/*/libffi.so* /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /bin/ /app/bin/
+COPY --from=builder --chown=65532:65532 /dev/null/ /app/dev/null/
+COPY --from=builder --chown=65532:65532 /etc/ssl/ /app/etc/ssl/
+COPY --from=builder --chown=65532:65532 /usr/bin/ /app/usr/bin/
+COPY --from=builder --chown=65532:65532 /usr/local/bin/ /app/usr/local/bin/
+COPY --from=builder --chown=65532:65532 /usr/local/lib/python3.11/site-packages/ /app/usr/local/lib/python3.11/site-packages/
+COPY --from=builder --chown=65532:65532 /var/lib/ /app/var/lib/
+COPY --from=builder --chown=65532:65532 /var/run/ /app/var/run/
+# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_END
 
+RUN ["python3", "-c", "import os; site_packages = '/usr/local/lib/python3.11/site-packages'; app_dirs = ['/app/gui_tor_manager/gui_tor_manager']; checks = [os.path.isdir(site_packages), os.path.isfile(os.path.join(site_packages, '.lucid-marker')), os.path.isdir('/usr/local/bin'), os.path.isfile('/usr/local/bin/.lucid-marker')] + [os.path.isdir(d) for d in app_dirs]; assert all(checks), f'Verification failed: site_packages={os.path.isdir(site_packages)}, marker={os.path.isfile(os.path.join(site_packages, \".lucid-marker\"))}, bin={os.path.isdir(\"/usr/local/bin\")}, bin_marker={os.path.isfile(\"/usr/local/bin/.lucid-marker\")}, app_dirs={[os.path.isdir(d) for d in app_dirs]}'; print('✅ All package and application directories verified in runtime stage')"]
 
-
-# Expose port
+# Set default environment variables
 EXPOSE 8097
 
 # Health check using Python socket (distroless compatible)
 HEALTHCHECK --interval=60s --timeout=10s --retries=3 --start-period=60s \
-    CMD ["/usr/bin/python3.11", "-c", "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', 8097)); s.close(); exit(0 if result == 0 else 1)"]
+    CMD ["python3", "-c", "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', 8097)); s.close(); exit(0 if result == 0 else 1)"]
 
 # Set user and permissions (non-root)
 USER 65532:65532
@@ -423,4 +455,4 @@ USER 65532:65532
 ENTRYPOINT []
 
 # Run entrypoint
-CMD ["/usr/bin/python3.11", "/app/gui_tor_manager/entrypoint.py"]
+CMD ["python3", "/app/gui_tor_manager/gui_tor_manager/entrypoint.py"]

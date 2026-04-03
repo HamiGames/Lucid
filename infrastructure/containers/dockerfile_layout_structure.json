@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "description": "Deterministic Dockerfile section order and matching rules aligned to Dockerfile-layout.txt",
+  "sections": [
+    { "id": "HEADER", "number": 1, "name": "HEADER" },
+    { "id": "ARG", "number": 2, "name": "ARG" },
+    { "id": "FIRST_COMPILER", "number": 3, "name": "FIRST COMPILER" },
+    { "id": "APT_GET_INSTALLER", "number": 4, "name": "APT-GET INSTALLER" },
+    { "id": "LIB_SKELETON", "number": 5, "name": "LIB_SKELETON" },
+    { "id": "RUSTC_AND_CARGO_SUPPORT", "number": 6, "name": "RUSTC AND CARGO SUPPORT" },
+    { "id": "COPY_REQUIREMENTS", "number": 7, "name": "COPY requirements" },
+    { "id": "PIP_WHEEL_UPDATE_INSTALL", "number": 8, "name": "PIP WHEEL UPDATE & INSTALL" },
+    { "id": "DIRECTORY_SKELETON", "number": 9, "name": "DIRECTORY SKELETON" },
+    { "id": "COPY_DIRECTORIES", "number": 10, "name": "COPY DIRECTORIES" },
+    { "id": "RUN_RM_RF_CONFIGS_ENV", "number": 11, "name": "RUN rm -rf ./configs/environment" },
+    { "id": "COPY_CHECK", "number": 12, "name": "COPY CHECK" },
+    { "id": "DISTROLESS_COMPILER", "number": 13, "name": "DISTROLESS COMPILER" },
+    { "id": "DISTROLESS_ARG", "number": 14, "name": "DIRSTROLESS ARG" },
+    { "id": "SECOND_WORKDIR", "number": 15, "name": "SECOND WORKDIR" },
+    { "id": "LABEL", "number": 16, "name": "LABEL" },
+    { "id": "DISTROLESS_ENV", "number": 17, "name": "DISTROLESS ENV" },
+    { "id": "COPY_LIB_DIRECTORIES", "number": 18, "name": "COPY LIB DIRECTORIES" },
+    { "id": "COPY_CONTENT", "number": 20, "name": "COPY CONTENT" },
+    { "id": "COMPILER_CHECKS", "number": 21, "name": "COMPILER CHECKS" },
+    { "id": "EXPOSE_PORT", "number": 22, "name": "EXPOSE PORT" },
+    { "id": "HEALTHCHECK", "number": 23, "name": "HEALTHCHECK" },
+    { "id": "USER", "number": 24, "name": "USER" },
+    { "id": "ENTRYPOINT", "number": 25, "name": "ENTRYPOINT" },
+    { "id": "CMD", "number": 26, "name": "CMD" }
+  ],
+  "runtime_start_section_id": "DISTROLESS_COMPILER"
+}

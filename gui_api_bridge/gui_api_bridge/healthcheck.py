@@ -90,16 +90,19 @@ class HealthCheck:
             now = datetime.now(timezone.utc)
             uptime = (now - self.start_time).total_seconds()
             
-            # Check backend services
+            pairs = [
+                ("api_gateway", self.config.API_GATEWAY_URL),
+                ("blockchain_engine", self.config.BLOCKCHAIN_ENGINE_URL),
+                ("auth_service", self.config.AUTH_SERVICE_URL),
+                ("session_api", self.config.SESSION_API_URL),
+                ("node_management", self.config.NODE_MANAGEMENT_URL),
+                ("admin_interface", self.config.ADMIN_INTERFACE_URL),
+                ("tron_payment", self.config.TRON_PAYMENT_URL),
+            ]
+            active = [(n, u) for n, u in pairs if (u or "").strip()]
             backend_checks = await asyncio.gather(
-                self.check_backend_service("api_gateway", self.config.API_GATEWAY_URL),
-                self.check_backend_service("blockchain_engine", self.config.BLOCKCHAIN_ENGINE_URL),
-                self.check_backend_service("auth_service", self.config.AUTH_SERVICE_URL),
-                self.check_backend_service("session_api", self.config.SESSION_API_URL),
-                self.check_backend_service("node_management", self.config.NODE_MANAGEMENT_URL),
-                self.check_backend_service("admin_interface", self.config.ADMIN_INTERFACE_URL),
-                self.check_backend_service("tron_payment", self.config.TRON_PAYMENT_URL),
-            )
+                *[self.check_backend_service(n, u) for n, u in active],
+            ) if active else []
             
             # Determine overall health status
             unhealthy_services = [s for s in backend_checks if s.get("status") != "healthy"]

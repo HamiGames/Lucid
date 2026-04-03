@@ -1,21 +1,3 @@
-# File: /app/configs/compose/docker-compose.sessions.yaml
-# x-lucid-file-path: /app/configs/compose/docker-compose.sessions.yaml
-# x-lucid-file-directory: /app/infrastructure/compose
-# x-lucid-file-type: YAML
-
-# LUCID SESSION PIPELINE - Distroless Deployment
-# Phase 2: Session Pipeline Services (Chunker, Encryptor, Merkle, Orchestrator, Auth)
-# Aligned with essentials.md Phase 3 and service-ip-configuration.md
-# Project Root: /mnt/myssd/Lucid/Lucid/
-# Paths in this file are relative to: infrastructure/compose/
-# master-env-config.txt is bind-mounted to /app/configs/.env.master (runtime; matches Dockerfiles).
-# configs/environment/.env.secrets is bind-mounted to /app/configs/.env.secrets and listed in env_file for Compose.
-# Do not list master-env-config.txt in env_file: Compose interpolates ${...} and breaks on required placeholders.
-# Optional per-service env fragments (e.g. .env.node): bind-mount from configs/environment/ into /app/configs/ when present; omitted from env_file so compose does not require those files on the host.
-# Host registry: infrastructure/containers/host-config.yml -> /app/configs/host-config.yml (x-lucid-file-path).
-# Packaged service configs tree: infrastructure/containers/services/ -> /app/service_configs/ (container-runtime-layout.yml).
-# Build references: infrastructure/containers/<stack>/Dockerfile* (repo root build context).
-
 services:
   lucid-session-chunker:
     image: pickme/lucid-session-chunker:latest-arm64
@@ -24,40 +6,40 @@ services:
     platform: linux/arm64
     restart: unless-stopped
     env_file:
-      - ../../configs/environment/.env.secrets
+    - ../../configs/environment/.env.master
+    - ../../configs/environment/.env.secrets
     environment:
-      - LUCID_ENV=production
-      - LUCID_PLATFORM=arm64
-      - PROJECT_ROOT=/mnt/myssd/Lucid/Lucid
-      - CHUNK_SIZE_MB=8
-      - COMPRESSION_LEVEL=3
-      - CHUNKER_PORT=8090
-      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin
-      - REDIS_URL=redis://lucid-redis:6379/0
-      - SESSION_CHUNK_SIZE=10485760
-      - SESSION_COMPRESSION_LEVEL=6
-      - CHUNKER_URL=http://lucid-session-chunker:8090
-      - API_GATEWAY_URL=http://lucid-api-gateway:8080
-    user: "65532:65532"
+    - LUCID_ENV=production
+    - LUCID_PLATFORM=arm64
+    - PROJECT_ROOT=/mnt/myssd/Lucid/Lucid
+    - CHUNK_SIZE_MB=8
+    - COMPRESSION_LEVEL=3
+    - CHUNKER_PORT=8090
+    - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin
+    - REDIS_URL=redis://lucid-redis:6379/0
+    - SESSION_CHUNK_SIZE=10485760
+    - SESSION_COMPRESSION_LEVEL=6
+    - CHUNKER_URL=http://lucid-session-chunker:8090
+    - API_GATEWAY_URL=http://lucid-api-gateway:8080
+    user: 65532:65532
     security_opt:
-      - no-new-privileges:true
-      - seccomp:unconfined
+    - no-new-privileges:true
+    - seccomp:unconfined
     cap_drop:
-      - ALL
+    - ALL
     cap_add:
-      - NET_BIND_SERVICE
+    - NET_BIND_SERVICE
     read_only: true
     tmpfs:
-      - /tmp:noexec,nosuid,size=100m
+    - /tmp:noexec,nosuid,size=100m
     volumes:
-      - ../../master-env-config.txt:/app/configs/.env.master:ro
-      - ../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
-      - ../../infrastructure/containers/services:/app/service_configs:ro
-      - ../../infrastructure/containers/host-config.yml:/app/configs/host-config.yml:ro
-
-      - /mnt/myssd/Lucid/Lucid/data/sessions:/data/sessions:rw
-      - /mnt/myssd/Lucid/Lucid/logs/session-chunker:/app/logs:rw
-      - session-chunker-cache:/tmp/chunker
+    - ../../configs/environment/.env.master:/app/configs/.env.master:ro
+    - ../../infrastructure/containers/services:/app/service_configs:ro
+    - ../../infrastructure/containers/host-config.yml:/app/configs/host-config.yml:ro
+    - /mnt/myssd/Lucid/Lucid/data/sessions:/data/sessions:rw
+    - /mnt/myssd/Lucid/Lucid/logs/session-chunker:/app/logs:rw
+    - session-chunker-cache:/tmp/chunker
+    - ../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
     networks:
       lucid-pi-network:
         ipv4_address: 172.20.0.20
@@ -67,9 +49,11 @@ services:
       lucid-redis:
         condition: service_healthy
     ports:
-      - "8090:8090"
+    - 8090:8090
     healthcheck:
-      test: ["CMD-SHELL", "curl -fsS http://localhost:8090/health || exit 1"]
+      test:
+      - CMD-SHELL
+      - curl -fsS http://localhost:8090/health || exit 1
       interval: 30s
       timeout: 10s
       retries: 3
@@ -78,17 +62,16 @@ services:
       resources:
         limits:
           memory: 512M
-          cpus: "1.0"
+          cpus: '1.0'
         reservations:
           memory: 128M
-          cpus: "0.25"
+          cpus: '0.25'
     labels:
-      - "lucid.service=session-chunker"
-      - "lucid.type=distroless"
-      - "lucid.platform=arm64"
-      - "lucid.security=hardened"
-      - "lucid.cluster=sessions"
-
+    - lucid.service=session-chunker
+    - lucid.type=distroless
+    - lucid.platform=arm64
+    - lucid.security=hardened
+    - lucid.cluster=sessions
   lucid-session-encryptor:
     image: pickme/lucid-session-encryptor:latest-arm64
     container_name: lucid-session-encryptor
@@ -96,39 +79,39 @@ services:
     platform: linux/arm64
     restart: unless-stopped
     env_file:
-      - ../../configs/environment/.env.secrets
+    - ../../configs/environment/.env.master
+    - ../../configs/environment/.env.secrets
     environment:
-      - LUCID_ENV=production
-      - LUCID_PLATFORM=arm64
-      - PROJECT_ROOT=/mnt/myssd/Lucid/Lucid
-      - ENCRYPTION_ALGORITHM=XChaCha20-Poly1305
-      - ENCRYPTOR_PORT=8091
-      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
-      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin
-      - REDIS_URL=redis://lucid-redis:6379/0
-      - ENCRYPTOR_URL=http://lucid-session-encryptor:8091
-      - API_GATEWAY_URL=http://lucid-api-gateway:8080
-    user: "65532:65532"
+    - LUCID_ENV=production
+    - LUCID_PLATFORM=arm64
+    - PROJECT_ROOT=/mnt/myssd/Lucid/Lucid
+    - ENCRYPTION_ALGORITHM=XChaCha20-Poly1305
+    - ENCRYPTOR_PORT=8091
+    - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+    - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin
+    - REDIS_URL=redis://lucid-redis:6379/0
+    - ENCRYPTOR_URL=http://lucid-session-encryptor:8091
+    - API_GATEWAY_URL=http://lucid-api-gateway:8080
+    user: 65532:65532
     security_opt:
-      - no-new-privileges:true
-      - seccomp:unconfined
+    - no-new-privileges:true
+    - seccomp:unconfined
     cap_drop:
-      - ALL
+    - ALL
     cap_add:
-      - NET_BIND_SERVICE
+    - NET_BIND_SERVICE
     read_only: true
     tmpfs:
-      - /tmp:noexec,nosuid,size=100m
+    - /tmp:noexec,nosuid,size=100m
     volumes:
-      - ../../master-env-config.txt:/app/configs/.env.master:ro
-      - ../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
-      - ../../infrastructure/containers/services:/app/service_configs:ro
-      - ../../infrastructure/containers/host-config.yml:/app/configs/host-config.yml:ro
-
-      - /mnt/myssd/Lucid/Lucid/data/sessions:/data/sessions:ro
-      - /mnt/myssd/Lucid/Lucid/data/encrypted:/data/encrypted:rw
-      - /mnt/myssd/Lucid/Lucid/logs/session-encryptor:/app/logs:rw
-      - session-encryptor-cache:/tmp/encryptor
+    - ../../configs/environment/.env.master:/app/configs/.env.master:ro
+    - ../../infrastructure/containers/services:/app/service_configs:ro
+    - ../../infrastructure/containers/host-config.yml:/app/configs/host-config.yml:ro
+    - /mnt/myssd/Lucid/Lucid/data/sessions:/data/sessions:ro
+    - /mnt/myssd/Lucid/Lucid/data/encrypted:/data/encrypted:rw
+    - /mnt/myssd/Lucid/Lucid/logs/session-encryptor:/app/logs:rw
+    - session-encryptor-cache:/tmp/encryptor
+    - ../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
     networks:
       lucid-pi-network:
         ipv4_address: 172.20.0.20
@@ -140,9 +123,11 @@ services:
       lucid-redis:
         condition: service_healthy
     ports:
-      - "8091:8091"
+    - 8091:8091
     healthcheck:
-      test: ["CMD-SHELL", "curl -fsS http://localhost:8091/health || exit 1"]
+      test:
+      - CMD-SHELL
+      - curl -fsS http://localhost:8091/health || exit 1
       interval: 30s
       timeout: 10s
       retries: 3
@@ -151,17 +136,16 @@ services:
       resources:
         limits:
           memory: 512M
-          cpus: "1.0"
+          cpus: '1.0'
         reservations:
           memory: 128M
-          cpus: "0.25"
+          cpus: '0.25'
     labels:
-      - "lucid.service=session-encryptor"
-      - "lucid.type=distroless"
-      - "lucid.platform=arm64"
-      - "lucid.security=hardened"
-      - "lucid.cluster=sessions"
-
+    - lucid.service=session-encryptor
+    - lucid.type=distroless
+    - lucid.platform=arm64
+    - lucid.security=hardened
+    - lucid.cluster=sessions
   lucid-merkle-builder:
     image: pickme/lucid-merkle-builder:latest-arm64
     container_name: lucid-merkle-builder
@@ -169,38 +153,38 @@ services:
     platform: linux/arm64
     restart: unless-stopped
     env_file:
-      - ../../configs/environment/.env.secrets
+    - ../../configs/environment/.env.master
+    - ../../configs/environment/.env.secrets
     environment:
-      - LUCID_ENV=production
-      - LUCID_PLATFORM=arm64
-      - PROJECT_ROOT=/mnt/myssd/Lucid/Lucid
-      - MERKLE_ALGORITHM=BLAKE3
-      - MERKLE_PORT=8092
-      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin
-      - REDIS_URL=redis://lucid-redis:6379/0
-      - MERKLE_URL=http://lucid-merkle-builder:8092
-      - API_GATEWAY_URL=http://lucid-api-gateway:8080
-    user: "65532:65532"
+    - LUCID_ENV=production
+    - LUCID_PLATFORM=arm64
+    - PROJECT_ROOT=/mnt/myssd/Lucid/Lucid
+    - MERKLE_ALGORITHM=BLAKE3
+    - MERKLE_PORT=8092
+    - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin
+    - REDIS_URL=redis://lucid-redis:6379/0
+    - MERKLE_URL=http://lucid-merkle-builder:8092
+    - API_GATEWAY_URL=http://lucid-api-gateway:8080
+    user: 65532:65532
     security_opt:
-      - no-new-privileges:true
-      - seccomp:unconfined
+    - no-new-privileges:true
+    - seccomp:unconfined
     cap_drop:
-      - ALL
+    - ALL
     cap_add:
-      - NET_BIND_SERVICE
+    - NET_BIND_SERVICE
     read_only: true
     tmpfs:
-      - /tmp:noexec,nosuid,size=100m
+    - /tmp:noexec,nosuid,size=100m
     volumes:
-      - ../../master-env-config.txt:/app/configs/.env.master:ro
-      - ../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
-      - ../../infrastructure/containers/services:/app/service_configs:ro
-      - ../../infrastructure/containers/host-config.yml:/app/configs/host-config.yml:ro
-
-      - /mnt/myssd/Lucid/Lucid/data/encrypted:/data/encrypted:ro
-      - /mnt/myssd/Lucid/Lucid/data/merkle:/data/merkle:rw
-      - /mnt/myssd/Lucid/Lucid/logs/merkle-builder:/app/logs:rw
-      - merkle-builder-cache:/tmp/merkle
+    - ../../configs/environment/.env.master:/app/configs/.env.master:ro
+    - ../../infrastructure/containers/services:/app/service_configs:ro
+    - ../../infrastructure/containers/host-config.yml:/app/configs/host-config.yml:ro
+    - /mnt/myssd/Lucid/Lucid/data/encrypted:/data/encrypted:ro
+    - /mnt/myssd/Lucid/Lucid/data/merkle:/data/merkle:rw
+    - /mnt/myssd/Lucid/Lucid/logs/merkle-builder:/app/logs:rw
+    - merkle-builder-cache:/tmp/merkle
+    - ../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
     networks:
       lucid-pi-network:
         ipv4_address: 172.20.0.20
@@ -212,9 +196,11 @@ services:
       lucid-redis:
         condition: service_healthy
     ports:
-      - "8092:8092"
+    - 8092:8092
     healthcheck:
-      test: ["CMD-SHELL", "curl -fsS http://localhost:8092/health || exit 1"]
+      test:
+      - CMD-SHELL
+      - curl -fsS http://localhost:8092/health || exit 1
       interval: 30s
       timeout: 10s
       retries: 3
@@ -223,17 +209,16 @@ services:
       resources:
         limits:
           memory: 512M
-          cpus: "1.0"
+          cpus: '1.0'
         reservations:
           memory: 128M
-          cpus: "0.25"
+          cpus: '0.25'
     labels:
-      - "lucid.service=merkle-builder"
-      - "lucid.type=distroless"
-      - "lucid.platform=arm64"
-      - "lucid.security=hardened"
-      - "lucid.cluster=sessions"
-
+    - lucid.service=merkle-builder
+    - lucid.type=distroless
+    - lucid.platform=arm64
+    - lucid.security=hardened
+    - lucid.cluster=sessions
   lucid-session-orchestrator:
     image: pickme/lucid-session-orchestrator:latest-arm64
     container_name: lucid-session-orchestrator
@@ -241,43 +226,43 @@ services:
     platform: linux/arm64
     restart: unless-stopped
     env_file:
-      - ../../configs/environment/.env.secrets
+    - ../../configs/environment/.env.master
+    - ../../configs/environment/.env.secrets
     environment:
-      - LUCID_ENV=production
-      - LUCID_PLATFORM=arm64
-      - PROJECT_ROOT=/mnt/myssd/Lucid/Lucid
-      - CHUNKER_URL=http://lucid-session-chunker:8090
-      - ENCRYPTOR_URL=http://lucid-session-encryptor:8091
-      - MERKLE_URL=http://lucid-merkle-builder:8092
-      - ORCHESTRATOR_PORT=8093
-      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin
-      - REDIS_URL=redis://lucid-redis:6379/0
-      - SESSION_PIPELINE_URL=http://lucid-session-orchestrator:8093
-      - API_GATEWAY_URL=http://lucid-api-gateway:8080
-      - SESSION_TIMEOUT=1800
-      - SESSION_PIPELINE_STATES=recording,chunk_generation,compression,encryption,merkle_building,storage
-    user: "65532:65532"
+    - LUCID_ENV=production
+    - LUCID_PLATFORM=arm64
+    - PROJECT_ROOT=/mnt/myssd/Lucid/Lucid
+    - CHUNKER_URL=http://lucid-session-chunker:8090
+    - ENCRYPTOR_URL=http://lucid-session-encryptor:8091
+    - MERKLE_URL=http://lucid-merkle-builder:8092
+    - ORCHESTRATOR_PORT=8093
+    - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin
+    - REDIS_URL=redis://lucid-redis:6379/0
+    - SESSION_PIPELINE_URL=http://lucid-session-orchestrator:8093
+    - API_GATEWAY_URL=http://lucid-api-gateway:8080
+    - SESSION_TIMEOUT=1800
+    - SESSION_PIPELINE_STATES=recording,chunk_generation,compression,encryption,merkle_building,storage
+    user: 65532:65532
     security_opt:
-      - no-new-privileges:true
-      - seccomp:unconfined
+    - no-new-privileges:true
+    - seccomp:unconfined
     cap_drop:
-      - ALL
+    - ALL
     cap_add:
-      - NET_BIND_SERVICE
+    - NET_BIND_SERVICE
     read_only: true
     tmpfs:
-      - /tmp:noexec,nosuid,size=100m
+    - /tmp:noexec,nosuid,size=100m
     volumes:
-      - ../../master-env-config.txt:/app/configs/.env.master:ro
-      - ../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
-      - ../../infrastructure/containers/services:/app/service_configs:ro
-      - ../../infrastructure/containers/host-config.yml:/app/configs/host-config.yml:ro
-
-      - /mnt/myssd/Lucid/Lucid/data/sessions:/data/sessions:rw
-      - /mnt/myssd/Lucid/Lucid/data/encrypted:/data/encrypted:ro
-      - /mnt/myssd/Lucid/Lucid/data/merkle:/data/merkle:ro
-      - /mnt/myssd/Lucid/Lucid/logs/session-orchestrator:/app/logs:rw
-      - session-orchestrator-cache:/tmp/orchestrator
+    - ../../configs/environment/.env.master:/app/configs/.env.master:ro
+    - ../../infrastructure/containers/services:/app/service_configs:ro
+    - ../../infrastructure/containers/host-config.yml:/app/configs/host-config.yml:ro
+    - /mnt/myssd/Lucid/Lucid/data/sessions:/data/sessions:rw
+    - /mnt/myssd/Lucid/Lucid/data/encrypted:/data/encrypted:ro
+    - /mnt/myssd/Lucid/Lucid/data/merkle:/data/merkle:ro
+    - /mnt/myssd/Lucid/Lucid/logs/session-orchestrator:/app/logs:rw
+    - session-orchestrator-cache:/tmp/orchestrator
+    - ../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
     networks:
       lucid-pi-network:
         ipv4_address: 172.20.0.20
@@ -293,9 +278,11 @@ services:
       lucid-redis:
         condition: service_healthy
     ports:
-      - "8093:8093"
+    - 8093:8093
     healthcheck:
-      test: ["CMD-SHELL", "curl -fsS http://localhost:8093/health || exit 1"]
+      test:
+      - CMD-SHELL
+      - curl -fsS http://localhost:8093/health || exit 1
       interval: 30s
       timeout: 10s
       retries: 3
@@ -304,17 +291,16 @@ services:
       resources:
         limits:
           memory: 512M
-          cpus: "1.0"
+          cpus: '1.0'
         reservations:
           memory: 128M
-          cpus: "0.25"
+          cpus: '0.25'
     labels:
-      - "lucid.service=session-orchestrator"
-      - "lucid.type=distroless"
-      - "lucid.platform=arm64"
-      - "lucid.security=hardened"
-      - "lucid.cluster=sessions"
-
+    - lucid.service=session-orchestrator
+    - lucid.type=distroless
+    - lucid.platform=arm64
+    - lucid.security=hardened
+    - lucid.cluster=sessions
   lucid-auth-service:
     image: pickme/lucid-auth-service:latest-arm64
     container_name: lucid-auth-service
@@ -322,43 +308,43 @@ services:
     platform: linux/arm64
     restart: unless-stopped
     env_file:
-      - ../../configs/environment/.env.secrets
+    - ../../configs/environment/.env.master
+    - ../../configs/environment/.env.secrets
     environment:
-      - LUCID_ENV=production
-      - LUCID_PLATFORM=arm64
-      - PROJECT_ROOT=/mnt/myssd/Lucid/Lucid
-      - AUTH_SERVICE_PORT=8089
-      - AUTH_SERVICE_URL=http://lucid-auth-service:8089
-      - AUTH_SERVICE_HOST=172.20.0.14
-      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid_auth?authSource=admin
-      - REDIS_URL=redis://lucid-redis:6379/0
-      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
-      - JWT_ALGORITHM=HS256
-      - JWT_ACCESS_TOKEN_EXPIRE_MINUTES=15
-      - JWT_REFRESH_TOKEN_EXPIRE_DAYS=7
-      - API_GATEWAY_URL=http://lucid-api-gateway:8080
-      - TRON_NETWORK=mainnet
-      - TRON_RPC_URL=https://api.trongrid.io
-    user: "65532:65532"
+    - LUCID_ENV=production
+    - LUCID_PLATFORM=arm64
+    - PROJECT_ROOT=/mnt/myssd/Lucid/Lucid
+    - AUTH_SERVICE_PORT=8089
+    - AUTH_SERVICE_URL=http://lucid-auth-service:8089
+    - AUTH_SERVICE_HOST=172.20.0.14
+    - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid_auth?authSource=admin
+    - REDIS_URL=redis://lucid-redis:6379/0
+    - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+    - JWT_ALGORITHM=HS256
+    - JWT_ACCESS_TOKEN_EXPIRE_MINUTES=15
+    - JWT_REFRESH_TOKEN_EXPIRE_DAYS=7
+    - API_GATEWAY_URL=http://lucid-api-gateway:8080
+    - TRON_NETWORK=mainnet
+    - TRON_RPC_URL=https://api.trongrid.io
+    user: 65532:65532
     security_opt:
-      - no-new-privileges:true
-      - seccomp:unconfined
+    - no-new-privileges:true
+    - seccomp:unconfined
     cap_drop:
-      - ALL
+    - ALL
     cap_add:
-      - NET_BIND_SERVICE
+    - NET_BIND_SERVICE
     read_only: true
     tmpfs:
-      - /tmp:noexec,nosuid,size=100m
+    - /tmp:noexec,nosuid,size=100m
     volumes:
-      - ../../master-env-config.txt:/app/configs/.env.master:ro
-      - ../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
-      - ../../infrastructure/containers/services:/app/service_configs:ro
-      - ../../infrastructure/containers/host-config.yml:/app/configs/host-config.yml:ro
-
-      - /mnt/myssd/Lucid/Lucid/data/auth:/data/auth:rw
-      - /mnt/myssd/Lucid/Lucid/logs/auth-service:/app/logs:rw
-      - authentication-service-cache:/tmp/auth
+    - ../../configs/environment/.env.master:/app/configs/.env.master:ro
+    - ../../infrastructure/containers/services:/app/service_configs:ro
+    - ../../infrastructure/containers/host-config.yml:/app/configs/host-config.yml:ro
+    - /mnt/myssd/Lucid/Lucid/data/auth:/data/auth:rw
+    - /mnt/myssd/Lucid/Lucid/logs/auth-service:/app/logs:rw
+    - authentication-service-cache:/tmp/auth
+    - ../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
     networks:
       lucid-pi-network:
         ipv4_address: 172.20.0.14
@@ -368,9 +354,11 @@ services:
       lucid-redis:
         condition: service_healthy
     ports:
-      - "8089:8089"
+    - 8089:8089
     healthcheck:
-      test: ["CMD-SHELL", "curl -fsS http://localhost:8089/health || exit 1"]
+      test:
+      - CMD-SHELL
+      - curl -fsS http://localhost:8089/health || exit 1
       interval: 30s
       timeout: 10s
       retries: 3
@@ -379,17 +367,16 @@ services:
       resources:
         limits:
           memory: 512M
-          cpus: "1.0"
+          cpus: '1.0'
         reservations:
           memory: 128M
-          cpus: "0.25"
+          cpus: '0.25'
     labels:
-      - "lucid.service=authentication-service"
-      - "lucid.type=distroless"
-      - "lucid.platform=arm64"
-      - "lucid.security=hardened"
-      - "lucid.cluster=sessions"
-
+    - lucid.service=authentication-service
+    - lucid.type=distroless
+    - lucid.platform=arm64
+    - lucid.security=hardened
+    - lucid.cluster=sessions
 volumes:
   session-chunker-cache:
     driver: local
@@ -421,8 +408,32 @@ volumes:
       type: none
       o: bind
       device: /mnt/myssd/Lucid/Lucid/data/cache/auth-service
-
 networks:
   lucid-pi-network:
     external: true
     name: lucid-pi-network
+secrets:
+  MONGODB_PASSWORD:
+    file: C:/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/configs/secrets/runtime/compose/MONGODB_PASSWORD.secret
+  REDIS_PASSWORD:
+    file: C:/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/configs/secrets/runtime/compose/REDIS_PASSWORD.secret
+  JWT_SECRET_KEY:
+    file: C:/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/configs/secrets/runtime/compose/JWT_SECRET_KEY.secret
+  ENCRYPTION_KEY:
+    file: C:/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/configs/secrets/runtime/compose/ENCRYPTION_KEY.secret
+  SESSION_SECRET:
+    file: C:/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/configs/secrets/runtime/compose/SESSION_SECRET.secret
+  TRON_PRIVATE_KEY:
+    file: C:/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/configs/secrets/runtime/compose/TRON_PRIVATE_KEY.secret
+  TRON_API_KEY:
+    file: C:/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/configs/secrets/runtime/compose/TRON_API_KEY.secret
+  API_GATEWAY_SECRET:
+    file: C:/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/configs/secrets/runtime/compose/API_GATEWAY_SECRET.secret
+  ELASTICSEARCH_PASSWORD:
+    file: C:/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/configs/secrets/runtime/compose/ELASTICSEARCH_PASSWORD.secret
+  TOR_PASSWORD:
+    file: C:/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/configs/secrets/runtime/compose/TOR_PASSWORD.secret
+  TOR_CONTROL_PASSWORD:
+    file: C:/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/configs/secrets/runtime/compose/TOR_CONTROL_PASSWORD.secret
+  WALLET_ENCRYPTION_KEY:
+    file: C:/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/configs/secrets/runtime/compose/WALLET_ENCRYPTION_KEY.secret

@@ -21,10 +21,10 @@ name: lucid-node-management-services
 x-lucid-host-config:
   file: ../../host-config.yml
   repo_path: infrastructure/containers/host-config.yml
-  version: '1.0'
+  version: "1.0"
   description: Lucid container host registry for Docker DNS hostnames, ports, discovery URLs, and static host IPs.
-  http_path_template: 'http://${service_name}:${port}/app'
-  host_ip_range: '172.20.10.1–172.20.10.76'
+  http_path_template: "http://${service_name}:${port}/app"
+  host_ip_range: "172.20.10.1–172.20.10.76"
   in_container_path: /app/configs/host-config.yml
 
 x-repo-context: &repo-context
@@ -39,7 +39,7 @@ x-lucid-build-args: &lucid-build-args
   PYTHON_VERSION: ${PYTHON_VERSION:-3.11}
 
 x-env-node-mgmt: &env-node-mgmt
-  - ../../../../master-env-config.txt
+  - ../../../../configs/environment/.env.master
   - ../../../../configs/environment/.env.secrets
 
 services:
@@ -72,7 +72,7 @@ services:
     security_opt:
       - no-new-privileges:true
     volumes:
-      - ../../../../master-env-config.txt:/app/configs/.env.master:ro
+      - ../../../../configs/environment/.env.master:/app/configs/.env.master:ro
       - ../../../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
     labels:
       com.lucid.service: node-management
@@ -107,7 +107,9 @@ services:
     security_opt:
       - no-new-privileges:true
     volumes:
-      - ../../../../master-env-config.txt:/app/configs/.env.master:ro
+      - ..:/app/service_configs:ro
+      - ../../host-config.yml:/app/configs/host-config.yml:ro
+      - ../../../../configs/environment/.env.master:/app/configs/.env.master:ro
       - ../../../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
     labels:
       com.lucid.service: node-management-staging

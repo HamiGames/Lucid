@@ -4,10 +4,18 @@
 # x-lucid-file-path: /app/02_network_security/tor/scripts/tor_env.sh
 # x-lucid-file-directory: /app/02_network_security/tor/scripts
 # x-lucid-file-type: shell
+# Cross-container names, ports, and host IPs: /app/service_configs/host-config.yml (see set_host_config.sh).
 
 log() { printf '[tor_env] %s\n' "$*"; }
 
-# Host & ports (piggy-back on tor-proxy container)
+_LUCID_TOR_SCRIPTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [[ -f "${_LUCID_TOR_SCRIPTS_DIR}/set_host_config.sh" ]]; then
+  # shellcheck source=/dev/null
+  . "${_LUCID_TOR_SCRIPTS_DIR}/set_host_config.sh"
+  lucid_load_host_config
+fi
+
+# Host & ports (piggy-back on tor-socks / tor-proxy container — registry: tor_socks in host-config.yml)
 TOR_HOST="${TOR_HOST:-127.0.0.1}"
 TOR_SOCKS_PORT="${TOR_SOCKS_PORT:-9050}"
 TOR_CONTROL_PORT="${TOR_CONTROL_PORT:-9051}"

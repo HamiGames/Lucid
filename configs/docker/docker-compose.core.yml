@@ -1,24 +1,3 @@
-# File: /app/configs/docker/docker-compose.core.yml
-# x-lucid-file-path: /app/configs/docker/docker-compose.core.yml
-# x-lucid-file-directory: /app/configs/docker
-# x-lucid-file-type: YAML
-
-# Lucid — aligned with infrastructure/containers/**/Dockerfile* (build context: repo root),
-# x-files-listing.txt (packaged paths under /app/configs/docker/…),
-# infrastructure/containers/host-config.yml (→ /app/configs/host-config.yml),
-# infrastructure/containers/services/ (→ /app/service_configs/, container-runtime-layout.yml).
-# Host data/logs: ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/…  Override on non-Pi hosts.
-# Image env files: master-env-config.txt → /app/configs/.env.master ; configs/environment/.env.secrets → /app/configs/.env.secrets (bind-mount or image COPY). Do not list master-env-config.txt in env_file (Compose interpolates ${…} and fails on required placeholders).
-#
-# Dockerfile ↔ image (healthchecks and /app/* mounts follow these):
-#   api-gateway          — infrastructure/containers/user/Dockerfile
-#   blockchain-engine    — infrastructure/containers/blockchain/Dockerfile.engine
-#   service-mesh         — infrastructure/containers/server/Dockerfile.service-mesh-controller
-#   session-anchoring    — infrastructure/containers/sessions/Dockerfile.anchoring
-#   block-manager        — infrastructure/containers/blockchain/Dockerfile.block-manager
-#   data-chain           — infrastructure/containers/blockchain/Dockerfile.data
-#   lucid-tunnel-tools   — infrastructure/containers/tor/Dockerfile
-
 name: lucid-foundation
 services:
   api-gateway:
@@ -26,66 +5,67 @@ services:
     container_name: api-gateway
     restart: unless-stopped
     env_file:
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.foundation
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.tor-proxy
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.api-gateway
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.core
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.secrets
+    - ../environment/.env.master
+    - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.foundation
+    - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.tor-proxy
+    - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.api-gateway
+    - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.core
+    - ../environment/.env.secrets
     networks:
-      - lucid-pi-network
-      - lucid-tor-egress-network
+    - lucid-pi-network
+    - lucid-tor-egress-network
     ports:
-      - "8080:8080"
+    - 8080:8080
     volumes:
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/api-gateway:/app/logs:rw
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/api-gateway/cache:/app/cache:rw
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/api-gateway:/app/config:ro
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/certs/api-gateway:/certs:ro
-      - api-gateway-tmp:/tmp/api
-      - onion-state:/app/run/lucid/onion:ro
+    - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/api-gateway:/app/logs:rw
+    - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/api-gateway/cache:/app/cache:rw
+    - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/api-gateway:/app/config:ro
+    - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/certs/api-gateway:/certs:ro
+    - api-gateway-tmp:/tmp/api
+    - onion-state:/app/run/lucid/onion:ro
+    - ../environment/.env.master:/app/configs/.env.master:ro
+    - ../environment/.env.secrets:/app/configs/.env.secrets:ro
     environment:
-      - LUCID_ENV=production
-      - LUCID_PLATFORM=arm64
-      - API_GATEWAY_HOST=api-gateway
-      - API_GATEWAY_PORT=8080
-      - API_GATEWAY_URL=http://api-gateway:8080
-      - AUTH_SERVICE_URL=http://lucid-auth-service:8089
-      - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
-      - REDIS_URL=${REDIS_URL}
-      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
-      - BLOCKCHAIN_CORE_URL=http://blockchain-engine:8084
-      - SESSION_MANAGEMENT_URL=http://session-anchoring:8085
-      - TRON_PAYMENT_URL=${TRON_PAYMENT_URL:-http://tron-client:8091}
-    user: "65532:65532"
+    - LUCID_ENV=production
+    - LUCID_PLATFORM=arm64
+    - API_GATEWAY_HOST=api-gateway
+    - API_GATEWAY_PORT=8080
+    - API_GATEWAY_URL=http://api-gateway:8080
+    - AUTH_SERVICE_URL=http://lucid-auth-service:8089
+    - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
+    - REDIS_URL=${REDIS_URL}
+    - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+    - BLOCKCHAIN_CORE_URL=http://blockchain-engine:8084
+    - SESSION_MANAGEMENT_URL=http://session-anchoring:8085
+    - TRON_PAYMENT_URL=${TRON_PAYMENT_URL:-http://tron-client:8091}
+    user: 65532:65532
     security_opt:
-      - no-new-privileges:true
-      - seccomp:unconfined
+    - no-new-privileges:true
+    - seccomp:unconfined
     cap_drop:
-      - ALL
+    - ALL
     cap_add:
-      - NET_BIND_SERVICE
+    - NET_BIND_SERVICE
     read_only: true
     tmpfs:
-      - /tmp:noexec,nosuid,size=100m
+    - /tmp:noexec,nosuid,size=100m
     healthcheck:
-      # Matches HEALTHCHECK in infrastructure/containers/user/Dockerfile (socket to service hostname).
       test:
-        [
-          "CMD",
-          "/app/usr/bin/python3.11",
-          "-c",
-          "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('api-gateway', 8080)); s.close(); exit(0 if result == 0 else 1)",
-        ]
+      - CMD
+      - /app/usr/bin/python3.11
+      - -c
+      - import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('api-gateway', 8080)); s.close(); exit(0
+        if result == 0 else 1)
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
     labels:
-      - "lucid.service=api-gateway"
-      - "lucid.type=distroless"
-      - "lucid.platform=arm64"
-      - "lucid.security=hardened"
-      - "lucid.cluster=core"
+    - lucid.service=api-gateway
+    - lucid.type=distroless
+    - lucid.platform=arm64
+    - lucid.security=hardened
+    - lucid.cluster=core
     depends_on:
       tor-proxy:
         condition: service_healthy
@@ -95,66 +75,66 @@ services:
         condition: service_healthy
       lucid-auth-service:
         condition: service_healthy
-
   blockchain-engine:
     image: pickme/lucid-blockchain-engine:latest-arm64
     container_name: blockchain-engine
     restart: unless-stopped
     env_file:
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.foundation
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.core
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.secrets
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.blockchain-governance
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.blockchain-ledger
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.blockchain-sessions-data
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.blockchain-api
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.blockchain-vm
+    - ../environment/.env.master
+    - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.foundation
+    - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.core
+    - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.blockchain-governance
+    - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.blockchain-ledger
+    - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.blockchain-sessions-data
+    - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.blockchain-api
+    - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.blockchain-vm
+    - ../environment/.env.secrets
     networks:
-      - lucid-pi-network
+    - lucid-pi-network
     ports:
-      - "8084:8084"
+    - 8084:8084
     volumes:
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/blockchain:/app/data:rw
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/blockchain-engine:/app/logs:rw
-      - blockchain-cache:/tmp/blockchain
+    - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/blockchain:/app/data:rw
+    - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/blockchain-engine:/app/logs:rw
+    - blockchain-cache:/tmp/blockchain
+    - ../environment/.env.master:/app/configs/.env.master:ro
+    - ../environment/.env.secrets:/app/configs/.env.secrets:ro
     environment:
-      - LUCID_ENV=${LUCID_ENV:-production}
-      - LUCID_PLATFORM=${LUCID_PLATFORM:-arm64}
-      - BLOCKCHAIN_ENGINE_HOST=${BLOCKCHAIN_ENGINE_HOST:-blockchain-engine}
-      - BLOCKCHAIN_ENGINE_PORT=${BLOCKCHAIN_ENGINE_PORT:-8084}
-      - BLOCKCHAIN_ENGINE_URL=${BLOCKCHAIN_ENGINE_URL:-http://blockchain-engine:8084}
-      - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
-      - REDIS_URL=${REDIS_URL}
-    user: "65532:65532"
+    - LUCID_ENV=${LUCID_ENV:-production}
+    - LUCID_PLATFORM=${LUCID_PLATFORM:-arm64}
+    - BLOCKCHAIN_ENGINE_HOST=${BLOCKCHAIN_ENGINE_HOST:-blockchain-engine}
+    - BLOCKCHAIN_ENGINE_PORT=${BLOCKCHAIN_ENGINE_PORT:-8084}
+    - BLOCKCHAIN_ENGINE_URL=${BLOCKCHAIN_ENGINE_URL:-http://blockchain-engine:8084}
+    - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
+    - REDIS_URL=${REDIS_URL}
+    user: 65532:65532
     security_opt:
-      - no-new-privileges:true
-      - seccomp:unconfined
+    - no-new-privileges:true
+    - seccomp:unconfined
     cap_drop:
-      - ALL
+    - ALL
     cap_add:
-      - NET_BIND_SERVICE
+    - NET_BIND_SERVICE
     read_only: true
     tmpfs:
-      - /tmp:noexec,nosuid,size=200m
+    - /tmp:noexec,nosuid,size=200m
     healthcheck:
-      # Matches HEALTHCHECK in infrastructure/containers/blockchain/Dockerfile.engine
       test:
-        [
-          "CMD",
-          "/app/usr/bin/python3.11",
-          "-c",
-          "import os,socket,sys; p=int(os.getenv('BLOCKCHAIN_ENGINE_PORT','8084')); s=socket.socket(); s.settimeout(2); r=s.connect_ex(('127.0.0.1',p)); s.close(); sys.exit(0 if r==0 else 1)",
-        ]
+      - CMD
+      - /app/usr/bin/python3.11
+      - -c
+      - import os,socket,sys; p=int(os.getenv('BLOCKCHAIN_ENGINE_PORT','8084')); s=socket.socket(); s.settimeout(2); r=s.connect_ex(('127.0.0.1',p));
+        s.close(); sys.exit(0 if r==0 else 1)
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
     labels:
-      - "lucid.service=blockchain-engine"
-      - "lucid.type=distroless"
-      - "lucid.platform=arm64"
-      - "lucid.security=hardened"
-      - "lucid.cluster=core"
+    - lucid.service=blockchain-engine
+    - lucid.type=distroless
+    - lucid.platform=arm64
+    - lucid.security=hardened
+    - lucid.cluster=core
     depends_on:
       tor-proxy:
         condition: service_started
@@ -162,65 +142,65 @@ services:
         condition: service_healthy
       lucid-redis:
         condition: service_healthy
-
   service-mesh:
     image: pickme/lucid-service-mesh-controller:latest-arm64
     container_name: service-mesh
     restart: unless-stopped
     env_file:
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.foundation
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.core
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.service-mesh
+    - ../environment/.env.master
+    - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.foundation
+    - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.core
+    - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.service-mesh
+    - ../environment/.env.secrets
     networks:
-      - lucid-pi-network
+    - lucid-pi-network
     ports:
-      - "8500:8500"
-      - "8088:8088"
+    - 8500:8500
+    - 8088:8088
     volumes:
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/service-mesh:/app/logs:rw
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/service-mesh/config:/app/config:rw
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/service-mesh/certificates:/app/certificates:rw
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/service-mesh/envoy-configs:/app/envoy-configs:rw
-      - service-mesh-cache:/tmp/mesh
+    - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/service-mesh:/app/logs:rw
+    - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/service-mesh/config:/app/config:rw
+    - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/service-mesh/certificates:/app/certificates:rw
+    - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/service-mesh/envoy-configs:/app/envoy-configs:rw
+    - service-mesh-cache:/tmp/mesh
+    - ../environment/.env.master:/app/configs/.env.master:ro
+    - ../environment/.env.secrets:/app/configs/.env.secrets:ro
     environment:
-      - LUCID_ENV=production
-      - LUCID_PLATFORM=arm64
-      - SERVICE_MESH_HOST=0.0.0.0
-      - SERVICE_MESH_PORT=8500
-      - SERVICE_MESH_URL=http://service-mesh:8500
-      - HTTP_PORT=8088
-      - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
-      - REDIS_URL=${REDIS_URL}
-    user: "65532:65532"
+    - LUCID_ENV=production
+    - LUCID_PLATFORM=arm64
+    - SERVICE_MESH_HOST=0.0.0.0
+    - SERVICE_MESH_PORT=8500
+    - SERVICE_MESH_URL=http://service-mesh:8500
+    - HTTP_PORT=8088
+    - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
+    - REDIS_URL=${REDIS_URL}
+    user: 65532:65532
     security_opt:
-      - no-new-privileges:true
-      - seccomp:unconfined
+    - no-new-privileges:true
+    - seccomp:unconfined
     cap_drop:
-      - ALL
+    - ALL
     cap_add:
-      - NET_BIND_SERVICE
+    - NET_BIND_SERVICE
     read_only: true
     tmpfs:
-      - /tmp:noexec,nosuid,size=100m
+    - /tmp:noexec,nosuid,size=100m
     healthcheck:
-      # Matches HEALTHCHECK in infrastructure/containers/server/Dockerfile.service-mesh-controller
       test:
-        [
-          "CMD",
-          "/app/usr/bin/python3.11",
-          "-c",
-          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8088/health', timeout=5).read(); exit(0)",
-        ]
+      - CMD
+      - /app/usr/bin/python3.11
+      - -c
+      - import urllib.request; urllib.request.urlopen('http://127.0.0.1:8088/health', timeout=5).read(); exit(0)
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
     labels:
-      - "lucid.service=service-mesh"
-      - "lucid.type=distroless"
-      - "lucid.platform=arm64"
-      - "lucid.security=hardened"
-      - "lucid.cluster=core"
+    - lucid.service=service-mesh
+    - lucid.type=distroless
+    - lucid.platform=arm64
+    - lucid.security=hardened
+    - lucid.cluster=core
     depends_on:
       tor-proxy:
         condition: service_started
@@ -228,61 +208,61 @@ services:
         condition: service_healthy
       lucid-redis:
         condition: service_started
-
   session-anchoring:
     image: pickme/lucid-session-anchoring:latest-arm64
     container_name: session-anchoring
     restart: unless-stopped
     env_file:
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.secrets
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.foundation
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.core
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.session-anchoring
+    - ../environment/.env.master
+    - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.foundation
+    - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.core
+    - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.session-anchoring
+    - ../environment/.env.secrets
     networks:
-      - lucid-pi-network
+    - lucid-pi-network
     ports:
-      - "8085:8085"
+    - 8085:8085
     volumes:
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/session-anchoring:/app/data:rw
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/session-anchoring:/app/logs:rw
-      - session-anchoring-cache:/tmp/anchoring
+    - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/session-anchoring:/app/data:rw
+    - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/session-anchoring:/app/logs:rw
+    - session-anchoring-cache:/tmp/anchoring
+    - ../environment/.env.master:/app/configs/.env.master:ro
+    - ../environment/.env.secrets:/app/configs/.env.secrets:ro
     environment:
-      - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
-      - REDIS_URL=${REDIS_URL:?REDIS_URL not set}
-      - BLOCKCHAIN_ENGINE_URL=${BLOCKCHAIN_ENGINE_URL}
-      - SECRET_KEY=${SECRET_KEY:-${BLOCKCHAIN_SECRET_KEY:-${JWT_SECRET_KEY}}}
-      - SESSION_ANCHORING_HOST=${SESSION_ANCHORING_HOST:-0.0.0.0}
-      - SESSION_ANCHORING_PORT=${SESSION_ANCHORING_PORT:-8085}
-      - SESSION_ANCHORING_HEALTH_PATH=${SESSION_ANCHORING_HEALTH_PATH:-/health}
-      - SESSION_ANCHORING_HEALTH_CHECK_TIMEOUT=${SESSION_ANCHORING_HEALTH_CHECK_TIMEOUT:-10}
-    user: "65532:65532"
+    - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
+    - REDIS_URL=${REDIS_URL:?REDIS_URL not set}
+    - BLOCKCHAIN_ENGINE_URL=${BLOCKCHAIN_ENGINE_URL}
+    - SECRET_KEY=${SECRET_KEY:-${BLOCKCHAIN_SECRET_KEY:-${JWT_SECRET_KEY}}}
+    - SESSION_ANCHORING_HOST=${SESSION_ANCHORING_HOST:-0.0.0.0}
+    - SESSION_ANCHORING_PORT=${SESSION_ANCHORING_PORT:-8085}
+    - SESSION_ANCHORING_HEALTH_PATH=${SESSION_ANCHORING_HEALTH_PATH:-/health}
+    - SESSION_ANCHORING_HEALTH_CHECK_TIMEOUT=${SESSION_ANCHORING_HEALTH_CHECK_TIMEOUT:-10}
+    user: 65532:65532
     security_opt:
-      - no-new-privileges:true
-      - seccomp:unconfined
+    - no-new-privileges:true
+    - seccomp:unconfined
     cap_drop:
-      - ALL
+    - ALL
     read_only: true
     tmpfs:
-      - /tmp:noexec,nosuid,size=100m
+    - /tmp:noexec,nosuid,size=100m
     healthcheck:
-      # Matches HEALTHCHECK in infrastructure/containers/sessions/Dockerfile.anchoring (/usr/bin/python3.11, distroless)
       test:
-        [
-          "CMD",
-          "/usr/bin/python3.11",
-          "-c",
-          "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', 8085)); s.close(); exit(0 if result == 0 else 1)",
-        ]
+      - CMD
+      - /usr/bin/python3.11
+      - -c
+      - import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', 8085)); s.close(); exit(0
+        if result == 0 else 1)
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 60s
     labels:
-      - "lucid.service=session-anchoring"
-      - "lucid.type=distroless"
-      - "lucid.platform=arm64"
-      - "lucid.security=hardened"
-      - "lucid.cluster=core"
+    - lucid.service=session-anchoring
+    - lucid.type=distroless
+    - lucid.platform=arm64
+    - lucid.security=hardened
+    - lucid.cluster=core
     depends_on:
       tor-proxy:
         condition: service_started
@@ -294,62 +274,62 @@ services:
         condition: service_healthy
       data-chain:
         condition: service_started
-
   block-manager:
     image: pickme/lucid-block-manager:latest-arm64
     container_name: block-manager
     restart: unless-stopped
     env_file:
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.secrets
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.foundation
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.core
+    - ../environment/.env.master
+    - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.foundation
+    - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.core
+    - ../environment/.env.secrets
     networks:
-      - lucid-pi-network
+    - lucid-pi-network
     ports:
-      - "8086:8086"
+    - 8086:8086
     volumes:
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/block-manager:/app/data:rw
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/block-manager:/app/logs:rw
-      - block-manager-cache:/tmp/blocks
+    - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/block-manager:/app/data:rw
+    - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/block-manager:/app/logs:rw
+    - block-manager-cache:/tmp/blocks
+    - ../environment/.env.master:/app/configs/.env.master:ro
+    - ../environment/.env.secrets:/app/configs/.env.secrets:ro
     environment:
-      - LUCID_ENV=${LUCID_ENV:-production}
-      - LUCID_PLATFORM=${LUCID_PLATFORM:-arm64}
-      - BLOCK_MANAGER_HOST=${BLOCK_MANAGER_HOST:-0.0.0.0}
-      - BLOCK_MANAGER_PORT=${BLOCK_MANAGER_PORT:-8086}
-      - BLOCK_MANAGER_URL=${BLOCK_MANAGER_URL:-http://block-manager:8086}
-      - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
-      - REDIS_URL=${REDIS_URL}
-      - BLOCKCHAIN_ENGINE_URL=${BLOCKCHAIN_ENGINE_URL}
-    user: "65532:65532"
+    - LUCID_ENV=${LUCID_ENV:-production}
+    - LUCID_PLATFORM=${LUCID_PLATFORM:-arm64}
+    - BLOCK_MANAGER_HOST=${BLOCK_MANAGER_HOST:-0.0.0.0}
+    - BLOCK_MANAGER_PORT=${BLOCK_MANAGER_PORT:-8086}
+    - BLOCK_MANAGER_URL=${BLOCK_MANAGER_URL:-http://block-manager:8086}
+    - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
+    - REDIS_URL=${REDIS_URL}
+    - BLOCKCHAIN_ENGINE_URL=${BLOCKCHAIN_ENGINE_URL}
+    user: 65532:65532
     security_opt:
-      - no-new-privileges:true
-      - seccomp:unconfined
+    - no-new-privileges:true
+    - seccomp:unconfined
     cap_drop:
-      - ALL
+    - ALL
     cap_add:
-      - NET_BIND_SERVICE
+    - NET_BIND_SERVICE
     read_only: true
     tmpfs:
-      - /tmp:noexec,nosuid,size=100m
+    - /tmp:noexec,nosuid,size=100m
     healthcheck:
-      # Matches HEALTHCHECK in infrastructure/containers/blockchain/Dockerfile.block-manager
       test:
-        [
-          "CMD",
-          "/app/usr/bin/python3.11",
-          "-c",
-          "import os,socket,sys; p=int(os.getenv('BLOCK_MANAGER_PORT','8086')); s=socket.socket(); s.settimeout(2); r=s.connect_ex(('127.0.0.1',p)); s.close(); sys.exit(0 if r==0 else 1)",
-        ]
+      - CMD
+      - /app/usr/bin/python3.11
+      - -c
+      - import os,socket,sys; p=int(os.getenv('BLOCK_MANAGER_PORT','8086')); s=socket.socket(); s.settimeout(2); r=s.connect_ex(('127.0.0.1',p));
+        s.close(); sys.exit(0 if r==0 else 1)
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 60s
     labels:
-      - "lucid.service=block-manager"
-      - "lucid.type=distroless"
-      - "lucid.platform=arm64"
-      - "lucid.security=hardened"
-      - "lucid.cluster=core"
+    - lucid.service=block-manager
+    - lucid.type=distroless
+    - lucid.platform=arm64
+    - lucid.security=hardened
+    - lucid.cluster=core
     depends_on:
       tor-proxy:
         condition: service_started
@@ -364,56 +344,57 @@ services:
     container_name: data-chain
     restart: unless-stopped
     env_file:
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.secrets
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.foundation
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.core
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.data-chain
+    - ../environment/.env.master
+    - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.foundation
+    - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.core
+    - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.data-chain
+    - ../environment/.env.secrets
     networks:
-      - lucid-pi-network
+    - lucid-pi-network
     ports:
-      - "${DATA_CHAIN_PORT:-8087}:${DATA_CHAIN_PORT:-8087}"
+    - ${DATA_CHAIN_PORT:-8087}:${DATA_CHAIN_PORT:-8087}
     volumes:
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/data-chain:/app/data:rw
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/data-chain:/app/logs:rw
-      - data-chain-cache:/tmp/chain
+    - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/data-chain:/app/data:rw
+    - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/data-chain:/app/logs:rw
+    - data-chain-cache:/tmp/chain
+    - ../environment/.env.master:/app/configs/.env.master:ro
+    - ../environment/.env.secrets:/app/configs/.env.secrets:ro
     environment:
-      - LUCID_ENV=${LUCID_ENV:-production}
-      - LUCID_PLATFORM=${LUCID_PLATFORM:-arm64}
-      - DATA_CHAIN_PORT=${DATA_CHAIN_PORT:-8087}
-      - DATA_CHAIN_URL=${DATA_CHAIN_URL:-http://data-chain:8087}
-      - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
-      - REDIS_URL=${REDIS_URL}
-      - BLOCKCHAIN_ENGINE_URL=${BLOCKCHAIN_ENGINE_URL:-http://blockchain-engine:8084}
-      - DATA_CHAIN_HEALTH_PATH=${DATA_CHAIN_HEALTH_PATH:-/health}
-      - DATA_CHAIN_HEALTH_CHECK_TIMEOUT=${DATA_CHAIN_HEALTH_CHECK_TIMEOUT:-10}
-    user: "65532:65532"
+    - LUCID_ENV=${LUCID_ENV:-production}
+    - LUCID_PLATFORM=${LUCID_PLATFORM:-arm64}
+    - DATA_CHAIN_PORT=${DATA_CHAIN_PORT:-8087}
+    - DATA_CHAIN_URL=${DATA_CHAIN_URL:-http://data-chain:8087}
+    - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
+    - REDIS_URL=${REDIS_URL}
+    - BLOCKCHAIN_ENGINE_URL=${BLOCKCHAIN_ENGINE_URL:-http://blockchain-engine:8084}
+    - DATA_CHAIN_HEALTH_PATH=${DATA_CHAIN_HEALTH_PATH:-/health}
+    - DATA_CHAIN_HEALTH_CHECK_TIMEOUT=${DATA_CHAIN_HEALTH_CHECK_TIMEOUT:-10}
+    user: 65532:65532
     security_opt:
-      - no-new-privileges:true
-      - seccomp:unconfined
+    - no-new-privileges:true
+    - seccomp:unconfined
     cap_drop:
-      - ALL
+    - ALL
     read_only: true
     tmpfs:
-      - /tmp:noexec,nosuid,size=100m
+    - /tmp:noexec,nosuid,size=100m
     healthcheck:
-      # Matches HEALTHCHECK in infrastructure/containers/blockchain/Dockerfile.data
       test:
-        [
-          "CMD",
-          "/app/usr/bin/python3.11",
-          "-c",
-          "import os,socket,sys; p=int(os.getenv('DATA_CHAIN_PORT','8087')); s=socket.socket(); s.settimeout(2); r=s.connect_ex(('127.0.0.1',p)); s.close(); sys.exit(0 if r==0 else 1)",
-        ]
+      - CMD
+      - /app/usr/bin/python3.11
+      - -c
+      - import os,socket,sys; p=int(os.getenv('DATA_CHAIN_PORT','8087')); s=socket.socket(); s.settimeout(2); r=s.connect_ex(('127.0.0.1',p));
+        s.close(); sys.exit(0 if r==0 else 1)
       interval: 30s
       timeout: 15s
       retries: 3
       start_period: 120s
     labels:
-      - "lucid.service=data-chain"
-      - "lucid.type=distroless"
-      - "lucid.platform=arm64"
-      - "lucid.security=hardened"
-      - "lucid.cluster=core"
+    - lucid.service=data-chain
+    - lucid.type=distroless
+    - lucid.platform=arm64
+    - lucid.security=hardened
+    - lucid.cluster=core
     depends_on:
       tor-proxy:
         condition: service_started
@@ -423,69 +404,66 @@ services:
         condition: service_healthy
       blockchain-engine:
         condition: service_healthy
-
   lucid-tunnel-tools:
     image: pickme/lucid-tunnel-tools:latest-arm64
     container_name: lucid-tunnel-tools
     restart: unless-stopped
     env_file:
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.foundation
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.core
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.secrets
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.tunnel-tools
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.tor-proxy
+    - ../environment/.env.master
+    - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.foundation
+    - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.core
+    - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.tunnel-tools
+    - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.tor-proxy
+    - ../environment/.env.secrets
     networks:
-      - lucid-pi-network
-      - lucid-tor-egress-network
+    - lucid-pi-network
+    - lucid-tor-egress-network
     ports:
-      - "7000:7000"
+    - 7000:7000
     volumes:
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/tor:/opt/lib/tor:ro
-      - onion-state:/app/run/lucid/onion:rw
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/tunnel:/opt/lib/tunnel:rw
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/tunnel-tools:/app/logs:rw
+    - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/tor:/opt/lib/tor:ro
+    - onion-state:/app/run/lucid/onion:rw
+    - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/tunnel:/opt/lib/tunnel:rw
+    - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/tunnel-tools:/app/logs:rw
+    - ../environment/.env.master:/app/configs/.env.master:ro
+    - ../environment/.env.secrets:/app/configs/.env.secrets:ro
     environment:
-      - LUCID_ENV=production
-      - LUCID_PLATFORM=arm64
-      # Tor Proxy Configuration (can be overridden by .env.tunnel-tools)
-      - TOR_CONTAINER_NAME=tor-proxy
-      - CONTROL_HOST=tor-proxy
-      - CONTROL_PORT=9051
-      - COOKIE_FILE_SHARED=/app/run/lucid/onion/control_auth_cookie
-      - COOKIE_FILE=/app/var/lib/tor/control_auth_cookie
-      - TOR_PROXY=tor-proxy:9050
-      - TOR_PROXY_HOST=tor-proxy
-      - TOR_PROXY_PORT=${TOR_PROXY_PORT}
-      # Onion Service Configuration
-      - ONION_PORTS=80 api-gateway:8080
-      - UPSTREAM_SERVICE=api-gateway
-      - UPSTREAM_PORT=8080
-      - WRITE_ENV=/app/run/lucid/onion/.onion.env
-      - ENV_FILE=/app/run/lucid/onion/.onion.env
-      - ROTATE_INTERVAL=0
-      # Tunnel Configuration
-      - TUNNEL_PORT=7000
-      - TUNNEL_MODE=client
-    user: "65532:65532"
+    - LUCID_ENV=production
+    - LUCID_PLATFORM=arm64
+    - TOR_CONTAINER_NAME=tor-proxy
+    - CONTROL_HOST=tor-proxy
+    - CONTROL_PORT=9051
+    - COOKIE_FILE_SHARED=/app/run/lucid/onion/control_auth_cookie
+    - COOKIE_FILE=/app/var/lib/tor/control_auth_cookie
+    - TOR_PROXY=tor-proxy:9050
+    - TOR_PROXY_HOST=tor-proxy
+    - TOR_PROXY_PORT=${TOR_PROXY_PORT}
+    - ONION_PORTS=80 api-gateway:8080
+    - UPSTREAM_SERVICE=api-gateway
+    - UPSTREAM_PORT=8080
+    - WRITE_ENV=/app/run/lucid/onion/.onion.env
+    - ENV_FILE=/app/run/lucid/onion/.onion.env
+    - ROTATE_INTERVAL=0
+    - TUNNEL_PORT=7000
+    - TUNNEL_MODE=client
+    user: 65532:65532
     security_opt:
-      - no-new-privileges:true
-      - seccomp:unconfined
+    - no-new-privileges:true
+    - seccomp:unconfined
     cap_drop:
-      - ALL
+    - ALL
     cap_add:
-      - NET_BIND_SERVICE
+    - NET_BIND_SERVICE
     read_only: true
     tmpfs:
-      - /tmp:noexec,nosuid,size=100m
+    - /tmp:noexec,nosuid,size=100m
     healthcheck:
-      # Matches HEALTHCHECK in infrastructure/containers/tor/Dockerfile (CONTROL_HOST / CONTROL_PORT)
       test:
-        [
-          "CMD",
-          "/usr/bin/python3.11",
-          "-c",
-          "import os, socket; host = os.getenv('CONTROL_HOST', 'tor-proxy'); port = int(os.getenv('CONTROL_PORT', '9051')); s = socket.socket(); s.settimeout(2); r = s.connect_ex((host, port)); s.close(); exit(0 if r == 0 else 1)",
-        ]
+      - CMD
+      - /usr/bin/python3.11
+      - -c
+      - import os, socket; host = os.getenv('CONTROL_HOST', 'tor-proxy'); port = int(os.getenv('CONTROL_PORT', '9051')); s
+        = socket.socket(); s.settimeout(2); r = s.connect_ex((host, port)); s.close(); exit(0 if r == 0 else 1)
       interval: 30s
       timeout: 10s
       retries: 3
@@ -495,7 +473,6 @@ services:
         condition: service_started
       api-gateway:
         condition: service_healthy
-
 networks:
   lucid-pi-network:
     external: true
@@ -503,7 +480,6 @@ networks:
   lucid-tor-egress-network:
     external: true
     name: lucid-tor-egress-network
-
 volumes:
   api-gateway-tmp:
     driver: local
@@ -532,3 +508,28 @@ volumes:
   onion-state:
     name: lucid-onion-state
     external: true
+secrets:
+  MONGODB_PASSWORD:
+    file: C:/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/configs/secrets/runtime/compose/MONGODB_PASSWORD.secret
+  REDIS_PASSWORD:
+    file: C:/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/configs/secrets/runtime/compose/REDIS_PASSWORD.secret
+  JWT_SECRET_KEY:
+    file: C:/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/configs/secrets/runtime/compose/JWT_SECRET_KEY.secret
+  ENCRYPTION_KEY:
+    file: C:/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/configs/secrets/runtime/compose/ENCRYPTION_KEY.secret
+  SESSION_SECRET:
+    file: C:/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/configs/secrets/runtime/compose/SESSION_SECRET.secret
+  TRON_PRIVATE_KEY:
+    file: C:/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/configs/secrets/runtime/compose/TRON_PRIVATE_KEY.secret
+  TRON_API_KEY:
+    file: C:/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/configs/secrets/runtime/compose/TRON_API_KEY.secret
+  API_GATEWAY_SECRET:
+    file: C:/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/configs/secrets/runtime/compose/API_GATEWAY_SECRET.secret
+  ELASTICSEARCH_PASSWORD:
+    file: C:/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/configs/secrets/runtime/compose/ELASTICSEARCH_PASSWORD.secret
+  TOR_PASSWORD:
+    file: C:/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/configs/secrets/runtime/compose/TOR_PASSWORD.secret
+  TOR_CONTROL_PASSWORD:
+    file: C:/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/configs/secrets/runtime/compose/TOR_CONTROL_PASSWORD.secret
+  WALLET_ENCRYPTION_KEY:
+    file: C:/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/configs/secrets/runtime/compose/WALLET_ENCRYPTION_KEY.secret

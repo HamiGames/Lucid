@@ -21,8 +21,9 @@ __pycache__/
 .Python
 *.so
 *.egg-info/
-dist/
-build/
+# Root-only: unanchored dist/build/docker-compose patterns strip manifest-listed trees under configs/, infrastructure/, electron_gui/.
+/dist/
+/build/
 .cache/
 .pytest_cache/
 .coverage
@@ -47,9 +48,10 @@ htmlcov/
 .gitignore
 .gitattributes
 
-# Docker files (don't need to copy Dockerfiles into the image)
-Dockerfile*
-docker-compose*.yml
+# Docker files at repo root only (do not exclude configs/**/docker-compose*.yml or infrastructure/** compose files)
+/Dockerfile*
+/docker-compose*.yml
+/docker-compose*.yaml
 .dockerignore
 
 # Documentation

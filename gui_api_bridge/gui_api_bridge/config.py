@@ -12,6 +12,7 @@ Aligned with 03_api_gateway configuration patterns
 
 import os
 import re
+import json
 import logging
 from pathlib import Path
 from typing import Optional, List
@@ -19,6 +20,19 @@ from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 logger = logging.getLogger(__name__)
+
+
+def load_gui_alignment_dict() -> dict:
+    path = os.environ.get("LUCID_GUI_ALIGNMENT_JSON", "").strip()
+    if not path or not os.path.isfile(path):
+        return {}
+    try:
+        with open(path, encoding="utf-8") as f:
+            return json.load(f)
+    except (OSError, json.JSONDecodeError) as e:
+        logger.warning("Could not load LUCID_GUI_ALIGNMENT_JSON %s: %s", path, e)
+        return {}
+
 
 # Regex patterns for URL validation (compiled at module level)
 LOCALHOST_PATTERN = re.compile(r'\blocalhost\b', re.IGNORECASE)
@@ -32,11 +46,11 @@ class GuiAPIBridgeSettings(BaseSettings):
     SERVICE_NAME: str = Field(default="gui_api_bridge", description="Service name")
     SERVICE_VERSION: str = Field(default="1.0.0", description="Service version")
     HOST: str = Field(default="0.0.0.0", description="Service host")
-    PORT: int = Field(default=8102, description="Service port")
+    PORT: int = Field(default=8203, description="Service listen port (aligned with host-config gui_api_bridge / Dockerfile EXPOSE)")
     SERVICE_URL: str = Field(default="", description="Service URL")
     
     # Database Configuration (Required)
-    MONGODB_URL: str = Field(default="", description="MongoDB connection URL")
+    MONGODB_URL: str = Field(default="", description="MongoDB connection URL (optional when proxy-only)")
     MONGODB_URI: str = Field(default="", description="MongoDB connection URI (alternative)")
     REDIS_URL: str = Field(default="", description="Redis connection URL")
     
@@ -50,7 +64,7 @@ class GuiAPIBridgeSettings(BaseSettings):
     TRON_PAYMENT_URL: str = Field(default="", description="TRON Payment URL")
     
     # Security Configuration
-    JWT_SECRET_KEY: str = Field(default="", description="JWT secret key")
+    JWT_SECRET_KEY: str = Field(default="", description="JWT secret (unused when bridge forwards to gateway)")
     JWT_ALGORITHM: str = Field(default="HS256", description="JWT algorithm")
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(default=15, description="JWT access token expiry minutes")
     JWT_REFRESH_TOKEN_EXPIRE_DAYS: int = Field(default=7, description="JWT refresh token expiry days")
@@ -182,29 +196,29 @@ class GuiAPIBridgeConfigManager:
         """Initialize configuration manager and validate settings"""
         try:
             self.settings = GuiAPIBridgeSettings()
+            overlay = load_gui_alignment_dict()
+            if overlay.get("api_gateway_url"):
+                self.settings.API_GATEWAY_URL = str(overlay["api_gateway_url"])
+            lp = overlay.get("listen_port")
+            if lp is not None:
+                self.settings.PORT = int(lp)
+            if overlay.get("calling_service"):
+                self.settings.SERVICE_NAME = str(overlay["calling_service"])
             self._validate_config()
         except Exception as e:
             logger.error(f"Configuration validation failed: {e}")
             raise
     
     def _validate_config(self):
-        """Validate critical configuration"""
-        required_fields = {
-            'MONGODB_URL': 'MongoDB URL',
-            'REDIS_URL': 'Redis URL',
-            'API_GATEWAY_URL': 'API Gateway URL',
-            'AUTH_SERVICE_URL': 'Auth Service URL',
-            'JWT_SECRET_KEY': 'JWT Secret Key',
-        }
-        
-        missing = []
-        for field, description in required_fields.items():
-            value = getattr(self.settings, field, '')
-            if not value:
-                missing.append(description)
-        
-        if missing:
-            logger.warning(f"Missing configuration: {', '.join(missing)}")
+        """Validate critical configuration — Tier A bridge only requires API gateway upstream."""
+        if not (self.settings.API_GATEWAY_URL or "").strip():
+            raise ValueError("API_GATEWAY_URL is required (or set api_gateway_url in LUCID_GUI_ALIGNMENT_JSON)")
+        optional = []
+        for field in ("MONGODB_URL", "REDIS_URL", "AUTH_SERVICE_URL", "JWT_SECRET_KEY"):
+            if not (getattr(self.settings, field, "") or "").strip():
+                optional.append(field)
+        if optional:
+            logger.info("Optional bridge fields unset (proxy mode): %s", ", ".join(optional))
     
     def get_config_dict(self) -> dict:
         """Get configuration as dictionary"""

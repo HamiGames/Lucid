@@ -10,7 +10,7 @@
 # Listen: gui-hardware-manager:8099 (gui_hardware_manager @ host-config.yml; collision_notes vs node_management_staging — remap publish)
 
 config_files:
-  secrets: /app/configs/.env.secrets
+  secrets: ../../configs/environment/.env.secrets
   master: /app/configs/.env.master
 
 service:
@@ -35,8 +35,12 @@ database:
 # Integration Service URLs
 integration:
   api_gateway_url: "http://api-gateway:8080/app"
+  # Primary path for GUI-originated auth: api-gateway → lucid-auth-service. Direct auth URL is legacy/diagnostic only.
   auth_service_url: "http://lucid-auth-service:8089/app"
   gui_api_bridge_url: "http://gui-api-bridge:8102/app"
+  gui_auth_policy:
+    user_login_via: "api-gateway"
+    direct_auth_service: "discouraged_for_tier_a"
 
 # Hardware Wallet Configuration
 hardware-wallets:

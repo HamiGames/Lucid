@@ -9,7 +9,7 @@ Service Discovery Service
 
 import logging
 from typing import Dict, List, Optional, Any
-from ...gui_api_bridge.config import GuiAPIBridgeSettings
+from ..config import GuiAPIBridgeSettings
 
 logger = logging.getLogger(__name__)
 
@@ -24,6 +24,7 @@ class ServiceDiscoveryService:
     
     def _build_service_registry(self) -> Dict[str, Dict[str, str]]:
         """Build service registry from configuration"""
+        auth_base = (self.config.AUTH_SERVICE_URL or "").strip() or self.config.API_GATEWAY_URL
         return {
             "api-gateway": {
                 "url": self.config.API_GATEWAY_URL,
@@ -34,7 +35,7 @@ class ServiceDiscoveryService:
                 "health": "/health",
             },
             "auth-service": {
-                "url": self.config.AUTH_SERVICE_URL,
+                "url": auth_base,
                 "health": "/health",
             },
             "session-api": {

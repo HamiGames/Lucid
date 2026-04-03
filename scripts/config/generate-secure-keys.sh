@@ -10,14 +10,9 @@
 set -euo pipefail
 
 # Project root configuration - Dynamic detection
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-
-# Change to project root if not already there
-if [ "$(pwd)" != "$PROJECT_ROOT" ]; then
-    echo "Changing to project root: $PROJECT_ROOT"
-    cd "$PROJECT_ROOT"
-fi
+_lucid_container_here="/app/scripts/config"
+SCRIPT_DIR="$_lucid_container_here"
+PROJECT_ROOT="$LUCID_REPO_ROOT"
 
 # Colors for output
 RED='\033[0;31m'

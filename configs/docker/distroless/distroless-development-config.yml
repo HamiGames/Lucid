@@ -8,7 +8,7 @@
 # infrastructure/containers/host-config.yml (→ /app/configs/host-config.yml),
 # infrastructure/containers/services/ (→ /app/service_configs/, container-runtime-layout.yml).
 # Host data/logs: ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/…  Override on non-Pi hosts.
-# Image env files: master-env-config.txt → /app/configs/.env.master ; configs/environment/.env.secrets → /app/configs/.env.secrets (bind-mount or image COPY). Do not list master-env-config.txt in env_file (Compose interpolates ${…} and fails on required placeholders).
+# Image env files: master-env-config.txt → /app/configs/.env.master ; configs/environment/.env.secrets → ../../configs/environment/.env.secrets (bind-mount or image COPY). Do not list master-env-config.txt in env_file (Compose interpolates ${…} and fails on required placeholders).
 
 services:
   dev-distroless:

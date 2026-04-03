@@ -9,7 +9,14 @@
 
 set -Eeuo pipefail
 
-# Configuration
+_LUCID_TOR_SCRIPTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [[ -f "${_LUCID_TOR_SCRIPTS_DIR}/set_host_config.sh" ]]; then
+  # shellcheck source=/dev/null
+  . "${_LUCID_TOR_SCRIPTS_DIR}/set_host_config.sh"
+  lucid_load_host_config
+fi
+
+# Configuration — target/control defaults from /app/service_configs/host-config.yml (set_host_config.sh).
 TOR_CONTROL_HOST="${TOR_CONTROL_HOST:-127.0.0.1}"
 TOR_CONTROL_PORT="${TOR_CONTROL_PORT:-9051}"
 TOR_COOKIE_PATH="${TOR_COOKIE_PATH:-/app/run/lucid/tor/control_auth_cookie}"
@@ -18,15 +25,19 @@ ONION_COUNT="${ONION_COUNT:-5}"
 UPSTREAM_SERVICE="${UPSTREAM_SERVICE:-api-gateway}"
 UPSTREAM_PORT="${UPSTREAM_PORT:-8080}"
 
-# Service mapping configuration for 5 onions
+# Service mapping for 5 onions — hostnames and ports match host-config.yml (main_lucid_gateway, gui_api_bridge, tunnel_tools, lucid_mongodb, tor_socks).
 # Format: "service_name:onion_port:target_host:target_port:env_var"
-declare -a SERVICE_MAP=(
-  "api_gateway:80:gateway:8080:ONION_API_GATEWAY"
-  "api_server:8081:api:8081:ONION_API_SERVER"
-  "tunnel_socks:1080:tunnel:7000:ONION_TUNNEL"
-  "mongo_proxy:27017:mongo:27017:ONION_MONGO"
-  "tor_control:9051:tor-proxy:9051:ONION_TOR_CONTROL"
-)
+declare -a SERVICE_MAP=()
+
+_lucid_build_ephemeral_service_map() {
+  SERVICE_MAP=(
+    "api_gateway:80:${LUCID_API_GATEWAY_SERVICE}:${LUCID_API_GATEWAY_PORT}:ONION_API_GATEWAY"
+    "gui_api_bridge:${LUCID_GUI_API_BRIDGE_PORT}:${LUCID_GUI_API_BRIDGE_SERVICE}:${LUCID_GUI_API_BRIDGE_PORT}:ONION_GUI_API"
+    "tunnel_tools:${LUCID_TUNNEL_TOOLS_PORT}:${LUCID_TUNNEL_TOOLS_SERVICE}:${LUCID_TUNNEL_TOOLS_PORT}:ONION_TUNNEL"
+    "lucid_mongodb:${LUCID_MONGODB_PORT}:${LUCID_MONGODB_SERVICE}:${LUCID_MONGODB_PORT}:ONION_MONGO"
+    "tor_control:${TOR_CONTROL_PORT}:${LUCID_TOR_SOCKS_SERVICE}:${TOR_CONTROL_PORT}:ONION_TOR_CONTROL"
+  )
+}
 
 # Logging functions
 log() { printf '[multi-onion] %s\n' "$*"; }
@@ -108,6 +119,8 @@ create_single_onion() {
 # Main execution
 main() {
   log "Starting multi-onion creation (count: $ONION_COUNT)"
+
+  _lucid_build_ephemeral_service_map
   
   validate_environment
   

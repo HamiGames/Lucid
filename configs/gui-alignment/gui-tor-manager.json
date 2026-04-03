@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "compose_service": "gui-tor-manager",
+  "calling_service": "gui-tor-manager",
+  "listen_port": 8097,
+  "api_gateway_url": "http://api-gateway:8080",
+  "gui_api_bridge_url": "http://gui-api-bridge:8203",
+  "machine_id": "",
+  "location": "",
+  "tor_socks_host": "tor-socks",
+  "tor_socks_port": 9050,
+  "tor_control_host": "tor-socks",
+  "tor_control_port": 9051,
+  "tor_control_url": "http://tor-socks:9051",
+  "tunnel_tools_host": "tunnel-tools",
+  "tunnel_tools_port": 7000,
+  "tunnel_tools_base_url": "http://tunnel-tools:7000",
+  "gui_api_bridge_public_url": "http://gui-api-bridge:8203",
+  "host_config_alignment": {
+    "schema_version": 1,
+    "gateway": {
+      "service_id": "main_lucid_gateway",
+      "http_path": "http://api-gateway:8080/app"
+    },
+    "gui_api_bridge": {
+      "service_id": "gui_api_bridge",
+      "http_path": "http://gui-api-bridge:8203/app"
+    },
+    "tor_socks": {
+      "service_id": "tor_socks",
+      "service_name": "tor-socks",
+      "port": 9050
+    },
+    "tunnel_tools": {
+      "service_id": "tunnel_tools",
+      "service_name": "tunnel-tools",
+      "port": 7000
+    },
+    "gui_tor_manager": {
+      "service_id": "gui_tor_manager_http",
+      "service_name": "gui-tor-manager",
+      "port": 8097,
+      "http_path": "http://gui-tor-manager:8097/app"
+    }
+  }
+}

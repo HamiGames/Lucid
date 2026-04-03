@@ -82,7 +82,14 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path, PurePosixPath
 from typing import Any, Iterable
 
-from dockerfile_alignment import load_alignment_criteria, normalize_repo_rel, validate_alignment
+from dockerfile_alignment import (
+    discover_lucid_dockerfiles_under_roots,
+    discover_repo_root,
+    load_alignment_criteria,
+    normalize_repo_rel,
+    read_dockerfile_text,
+    validate_alignment,
+)
 
 # Stage -2 = penultimate ``FROM`` stage (second-to-last multi-stage slice). See
 # :func:`extract_stage_minus2_copy_instructions`.
@@ -179,6 +186,13 @@ PACKAGE_RUNTIME_SUPPORT: dict[str, tuple[str, ...]] = {
     "openssl": ("/usr/bin/openssl", "/etc/ssl/openssl.cnf"),
     "libpython3.11": ("/usr/lib/python3.11/",),
 }
+
+# Official ``FROM node:…`` / ``nodejs`` images: ``node``/``npm`` live under ``/usr/local``, not from
+# ``apt-get install`` — so apt-only parsing never sees them. Distroless+COPY layouts still need these.
+NODE_BASE_IMAGE_FHS_PATHS: tuple[str, ...] = (
+    "/usr/local/bin/",
+    "/usr/local/lib/",
+)
 
 # Optional JSON next to this script: overrides/extends built-in maps (see ``lib-inject-path.json``).
 _LIB_INJECT_PATH_JSON = Path(__file__).resolve().with_name("lib-inject-path.json")
@@ -387,7 +401,7 @@ def flatten_discovered_paths(
 
 
 def repo_root_from_here() -> Path:
-    return Path(__file__).resolve().parent.parent.parent
+    return discover_repo_root(Path(__file__))
 
 
 def resolve_path_from_repo(path: Path, repo_root: Path) -> Path:
@@ -431,23 +445,14 @@ def repo_rel_for_summary(file_rel: str) -> str:
 
 def discover_dockerfiles(containers_roots: list[Path]) -> list[Path]:
     """
-    Collect Dockerfile* and dockerfile* under multiple containers_roots.
-    Merges results and dedupes.
+    Collect ``Dockerfile`` / ``Dockerfile.*`` / ``dockerfile.*`` under each root (recursive).
+
+    Same filtering and dedupe as :func:`dockerfile_alignment.discover_lucid_dockerfiles_under_roots`
+    (backup names, ``__pycache__``, strict stem; lowercase names on case-sensitive FS).
     """
-    seen: set[Path] = set()
-    out: list[Path] = []
-    for containers_root in containers_roots:
-        if not containers_root.is_dir():
-            continue
-        for pattern in ("Dockerfile*", "dockerfile*"):
-            for p in containers_root.rglob(pattern):
-                if p.is_file() and not p.name.startswith("."):
-                    key = p.resolve()
-                    if key in seen:
-                        continue
-                    seen.add(key)
-                    out.append(p)
-    return sorted(out, key=lambda x: str(x).lower())
+    return discover_lucid_dockerfiles_under_roots(
+        [r for r in containers_roots if r.is_dir()]
+    )
 
 
 def split_build_stages_lines(lines: list[str]) -> list[tuple[int, int]]:
@@ -479,12 +484,97 @@ def from_instruction_as_name(from_line: str) -> str | None:
 
 RE_RUN_MOUNT_TARGET = re.compile(r"--mount=[^\n\\]+?target=([^\s,\\]+)", re.IGNORECASE)
 RE_USER_LINE = re.compile(r"^\s*USER\s+(?P<u>\S+)", re.IGNORECASE)
+RE_LAYOUT_SECTION = re.compile(r"^\s*(\d+)\.\s*\*\*(.*?)\*\*")
 
 
 def extract_builder_stage_name(content: str) -> str:
     """First ``FROM … AS <name>`` in the Dockerfile (same as inject); defaults to ``builder``."""
     m = re.search(r"^\s*FROM\s+.+\bAS\s+(\S+)", content, re.MULTILINE | re.IGNORECASE)
     return m.group(1) if m else "builder"
+
+
+def first_from_line_in_dockerfile(text: str) -> str | None:
+    """First ``FROM`` instruction line (builder stage in typical two-stage files)."""
+    for line in text.splitlines():
+        if re.match(r"^\s*FROM\s", line, re.IGNORECASE):
+            return line
+    return None
+
+
+def builder_uses_node_base_image(text: str) -> bool:
+    """True when the first ``FROM`` uses the official Node image (not only Debian+apt nodejs)."""
+    fl = first_from_line_in_dockerfile(text)
+    if not fl:
+        return False
+    low = fl.lower()
+    return bool(
+        re.search(r"\bnode\s*:", low)
+        or re.search(r"\bnodejs\s*:", low)
+        or "/nodejs" in low
+    )
+
+
+def parse_layout_sections(layout_text: str) -> dict[int, str]:
+    out: dict[int, str] = {}
+    for line in layout_text.splitlines():
+        m = RE_LAYOUT_SECTION.match(line)
+        if not m:
+            continue
+        out[int(m.group(1))] = m.group(2).strip().lower()
+    return out
+
+
+def _parse_copy_from_sources_and_dest(merged: str) -> tuple[str | None, list[str], str | None]:
+    one = re.sub(r"\\\s*\n\s*", " ", merged.strip())
+    one = re.sub(r"\s+", " ", one)
+    try:
+        parts = shlex.split(one, posix=True)
+    except ValueError:
+        return None, [], None
+    if not parts or parts[0].upper() != "COPY":
+        return None, [], None
+    stage: str | None = None
+    i = 1
+    while i < len(parts) and parts[i].startswith("--"):
+        if parts[i].startswith("--from="):
+            stage = parts[i].split("=", 1)[1].strip()
+        i += 1
+    rest = parts[i:]
+    if len(rest) < 2:
+        return stage, [], None
+    return stage, rest[:-1], rest[-1]
+
+
+def extract_final_stage_copy_lib_sources(text: str) -> list[str]:
+    """
+    Section-19 equivalent in real Dockerfiles: final-stage ``COPY --from=builder`` into ``/app/...``
+    where source is **not** ``/build/...``.
+    """
+    lines = text.splitlines(keepends=False)
+    stages = split_build_stages_lines(lines)
+    if len(stages) < 2:
+        return []
+    s0, s1 = stages[-1]
+    out: list[str] = []
+    seen: set[str] = set()
+    for _start, _end, merged in iter_copy_instruction_spans_in_lines_range(lines, s0 + 1, s1):
+        stage, sources, dest = _parse_copy_from_sources_and_dest(merged)
+        if stage is None or not sources or not dest:
+            continue
+        if not dest.startswith("/app"):
+            continue
+        for src in sources:
+            if src.startswith("/build/") or src == "/build":
+                continue
+            if not src.startswith("/"):
+                continue
+            root = src if src.endswith("/") else path_to_copy_root(src)
+            if not root:
+                continue
+            if root not in seen:
+                seen.add(root)
+                out.append(root)
+    return out
 
 
 def last_user_instruction(dockerfile_text: str) -> str | None:
@@ -620,6 +710,8 @@ def _normalize_scaffold_to_copy_dir(raw_path: str) -> str | None:
     t = raw_path.strip()
     if not t.startswith("/") or t.startswith("/build/") or t.startswith("./"):
         return None
+    if t == "/":
+        return None
     if "*" in t:
         return None
     if _scaffold_path_excluded_raw(t):
@@ -705,6 +797,8 @@ def path_to_copy_root(p: str) -> str | None:
     """Directory used as COPY source root for a file or dir path (no globs)."""
     if "*" in p or not p.startswith("/"):
         return None
+    if p.strip() == "/":
+        return None
     if p.endswith("/"):
         return p
     parent = PurePosixPath(p).parent
@@ -719,6 +813,8 @@ def merge_copy_roots(support_paths: Iterable[str]) -> list[str]:
     for p in support_paths:
         r = path_to_copy_root(p)
         if not r:
+            continue
+        if r == "/":
             continue
         pp = PurePosixPath(r.rstrip("/"))
         if str(pp) == "/":
@@ -737,9 +833,8 @@ def merge_copy_roots(support_paths: Iterable[str]) -> list[str]:
     out: list[str] = []
     for p in sorted(result, key=str):
         if str(p) == "/":
-            out.append("/")
-        else:
-            out.append(str(p) + "/")
+            continue
+        out.append(str(p) + "/")
     return out
 
 
@@ -1217,7 +1312,7 @@ def dedupe_stage_minus2_build_app_copy_all_dockerfiles(
             "error": None,
         }
         try:
-            text = path.read_text(encoding="utf-8", errors="replace")
+            text = read_dockerfile_text(path)
         except OSError as e:
             row["error"] = str(e)
             results.append(row)
@@ -1293,7 +1388,7 @@ def collect_stage_minus2_copy_from_all_dockerfiles(
     results: list[dict[str, object]] = []
     for path in discover_dockerfiles([containers_root]):
         try:
-            text = path.read_text(encoding="utf-8", errors="replace")
+            text = read_dockerfile_text(path)
         except OSError as e:
             results.append(
                 {
@@ -1449,7 +1544,7 @@ def scan_file(
     discover_docker_timeout: int = 900,
     discover_docker_unknown_only: bool = False,
 ) -> dict:
-    text = path.read_text(encoding="utf-8", errors="replace")
+    text = read_dockerfile_text(path)
     as_name = extract_builder_stage_name(text)
     runtime_user = last_user_instruction(text)
     apt_runs = apt_install_runs_detail(text)
@@ -1479,6 +1574,7 @@ def scan_file(
         for p in collect_scaffold_fhs_paths_from_text(text)
         if not _path_is_under_builder_app(p)
     ]
+    section19_copy_lib_sources = extract_final_stage_copy_lib_sources(text)
     seen_support: set[str] = set()
     combined_support: list[str] = []
     for p in path_hints:
@@ -1487,6 +1583,19 @@ def scan_file(
             combined_support.append(p)
     for p in run_scaffold_paths:
         if p not in seen_support:
+            seen_support.add(p)
+            combined_support.append(p)
+    for p in section19_copy_lib_sources:
+        if p not in seen_support:
+            seen_support.add(p)
+            combined_support.append(p)
+    if builder_uses_node_base_image(text):
+        canon_support = {str(PurePosixPath(x.rstrip("/"))) for x in combined_support}
+        for p in NODE_BASE_IMAGE_FHS_PATHS:
+            nk = str(PurePosixPath(p.rstrip("/")))
+            if nk in canon_support:
+                continue
+            canon_support.add(nk)
             seen_support.add(p)
             combined_support.append(p)
 
@@ -1547,6 +1656,7 @@ def scan_file(
         "build_only_packages": build_only_hit,
         "run_scaffold_fhs_paths": run_scaffold_paths,
         "runtime_support_paths": combined_support,
+        "copy_lib_sources_final_stage": section19_copy_lib_sources,
         "merged_copy_roots": merged_roots,
         "unknown_packages_no_map": unknown,
         "expanded_packages_for_mapping": expanded,
@@ -1596,7 +1706,7 @@ def apply_actions_to_dockerfile(r: dict, args: argparse.Namespace) -> dict[str, 
     }
     if args.inject_dockerfile:
         try:
-            raw_df = df.read_text(encoding="utf-8", errors="replace")
+            raw_df = read_dockerfile_text(df)
         except OSError as e:
             out["docker_skipped"] = 1
             out["inject_skip_reason"] = f"read error: {e}"
@@ -1622,7 +1732,7 @@ def apply_actions_to_dockerfile(r: dict, args: argparse.Namespace) -> dict[str, 
                 out["inject_would"] = True
     elif args.cleanup_commented_copy:
         try:
-            raw_df = df.read_text(encoding="utf-8", errors="replace")
+            raw_df = read_dockerfile_text(df)
         except OSError as e:
             out["docker_skipped"] = 1
             out["inject_skip_reason"] = f"read error: {e}"
@@ -1647,7 +1757,7 @@ def apply_actions_to_dockerfile(r: dict, args: argparse.Namespace) -> dict[str, 
                 out["inject_would"] = True
     elif args.dedupe_build_app_copy:
         try:
-            raw_df = df.read_text(encoding="utf-8", errors="replace")
+            raw_df = read_dockerfile_text(df)
         except OSError as e:
             out["docker_skipped"] = 1
             out["inject_skip_reason"] = f"read error: {e}"
@@ -1700,6 +1810,15 @@ Examples (repo root):
 
   --inject-dockerfile without --apply is dry-run. --apply persists with --inject-dockerfile, --cleanup-commented-copy, or --dedupe-build-app-copy.
 """,
+    )
+    ap.add_argument(
+        "--layout-template",
+        type=Path,
+        default=Path("Dockerfile-layout.txt"),
+        help=(
+            "Layout template used to validate section markers for APT-GET INSTALLER and "
+            "COPY LIB DIRECTORIES (default: Dockerfile-layout.txt at repo root)."
+        ),
     )
     ap.add_argument(
         "--containers-root",
@@ -1862,6 +1981,21 @@ Examples (repo root):
         ),
     )
     args = ap.parse_args()
+    layout_path = resolve_path_from_repo(args.layout_template, root)
+    if not layout_path.is_file():
+        print(f"error: layout template not found: {layout_path}", file=sys.stderr)
+        return 1
+    layout_sections = parse_layout_sections(layout_path.read_text(encoding="utf-8", errors="replace"))
+    wanted = {4: "apt-get installer", 19: "copy lib directories"}
+    for num, expected in wanted.items():
+        got = layout_sections.get(num, "")
+        if expected not in got:
+            print(
+                f"error: layout section {num} missing/invalid in {layout_path} (expected contains '{expected}', got '{got}')",
+                file=sys.stderr,
+            )
+            return 1
+
     if args.write:
         args.apply = True
     if args.recommend:
@@ -2161,7 +2295,7 @@ Examples (repo root):
             if criteria is None:
                 continue
             checked += 1
-            text = Path(rr["path"]).read_text(encoding="utf-8", errors="replace")
+            text = read_dockerfile_text(Path(rr["path"]))
             problems = validate_alignment(text, criteria)
             if problems:
                 mismatches += 1

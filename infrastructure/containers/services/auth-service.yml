@@ -9,12 +9,22 @@
 # This file contains configuration for the Lucid authentication service
 # lucid_auth_service: lucid-auth-service:8089 — infrastructure/containers/host-config.yml
 #
+# GUI / credential realignment (gui_token_auth_realignment + auth_sm_alignment):
+# - Tier A (*-interface → gui-api-bridge → api-gateway) MUST NOT call this service directly;
+#   gateway reaches lucid-auth-service for auth + token introspection.
+# - JWT_SECRET_KEY here signs the auth token lease (access/refresh) and /auth/token/introspect;
+#   it is NOT required to match lucid-api-gateway JWT_SECRET_KEY when the gateway validates GUI
+#   traffic via POST /auth/token/introspect to this service.
+# - lucid-server-manager (8081): pre-auth token, verify-preauth, registry, verify-login hooks;
+#   env SERVER_MANAGEMENT_* in runtime compose (see configs/container/auth/docker-compose.auth.yml).
+# - Vocabulary: prefer "auth token lease" / "credential grant" over "session" for this service.
+#
 # Container env files (aligned with Dockerfile.* + Dockerfile.tor-proxy-02 pattern):
-#   /app/configs/.env.secrets  ← configs/environment/.env.secrets
-#   /app/configs/.env.master   ← master-env-config.txt
+#   ../../configs/environment/.env.secrets  ← configs/environment/.env.secrets
+#   /app/configs/.env.master   ← configs/environment/.env.master
 
 config_files:
-  secrets: /app/configs/.env.secrets
+  secrets: ../../configs/environment/.env.secrets
   master: /app/configs/.env.master
 
 # Service Information
@@ -36,12 +46,15 @@ server:
 # Authentication Configuration
 authentication:
   jwt:
-    secret: "${JWT_SECRET}"
+    # Application uses JWT_SECRET_KEY. Legacy key name JWT_SECRET may still appear in older env files — align values in .env.secrets.
+    secret: "${JWT_SECRET_KEY}"
     algorithm: "HS256"
     access_token_expire_minutes: 15
     refresh_token_expire_days: 7
     issuer: "lucid-auth"
     audience: "lucid-system"
+    introspection_path: "/auth/token/introspect"
+    note: "Auth-only signing secret; api-gateway introspects here without sharing this secret."
 
   session:
     timeout: "${SESSION_TIMEOUT:-3600}"
@@ -57,6 +70,15 @@ authentication:
     window: 1
     digits: 6
     period: 30
+
+# lucid-server-manager handshake (credential + pre-auth; Mongo user doc holds password_hash + registration_key)
+server_management:
+  base_url: "${SERVER_MANAGEMENT_BASE_URL:-http://lucid-server-manager:8081}"
+  verify_login_path: "${SERVER_MANAGEMENT_VERIFY_PATH:-/app/auth/verify-login}"
+  verify_preauth_path: "${SERVER_MANAGEMENT_PREAUTH_VERIFY_PATH:-/app/auth/verify-preauth}"
+  registry_users_path: "${SERVER_MANAGEMENT_REGISTRY_PATH:-/app/registry/users}"
+  http_timeout_seconds: "${SERVER_MANAGEMENT_HTTP_TIMEOUT:-15}"
+  verify_enabled: "${SERVER_MANAGEMENT_VERIFY_ENABLED:-true}"
 
 # Hardware Wallet Configuration
 hardware_wallet:
@@ -297,11 +319,26 @@ dependencies:
     port: 6379
     timeout: 10
 
+  - name: "lucid-server-manager"
+    host: "lucid-server-manager"
+    port: 8081
+    timeout: 15
+    http_path: "http://lucid-server-manager:8081/app"
+    note: "Pre-auth + user registry for GUI/auth realignment (not the RDP-only rdp-server-manager host unless co-deployed)."
+
 # Environment Variables
 environment:
   AUTH_SERVICE_HOST: "${AUTH_SERVICE_HOST:-lucid-auth-service}"
   AUTH_SERVICE_PORT: "${AUTH_SERVICE_PORT:-8089}"
+  API_GATEWAY_URL: "${API_GATEWAY_URL:-http://api-gateway:8080}"
+  JWT_SECRET_KEY: "${JWT_SECRET_KEY}"
   JWT_SECRET: "${JWT_SECRET}"
+  SERVER_MANAGEMENT_BASE_URL: "${SERVER_MANAGEMENT_BASE_URL:-http://lucid-server-manager:8081}"
+  SERVER_MANAGEMENT_VERIFY_PATH: "${SERVER_MANAGEMENT_VERIFY_PATH:-/app/auth/verify-login}"
+  SERVER_MANAGEMENT_PREAUTH_VERIFY_PATH: "${SERVER_MANAGEMENT_PREAUTH_VERIFY_PATH:-/app/auth/verify-preauth}"
+  SERVER_MANAGEMENT_REGISTRY_PATH: "${SERVER_MANAGEMENT_REGISTRY_PATH:-/app/registry/users}"
+  SERVER_MANAGEMENT_HTTP_TIMEOUT: "${SERVER_MANAGEMENT_HTTP_TIMEOUT:-15}"
+  SERVER_MANAGEMENT_VERIFY_ENABLED: "${SERVER_MANAGEMENT_VERIFY_ENABLED:-true}"
   SESSION_SECRET: "${SESSION_SECRET}"
   ENCRYPTION_KEY: "${ENCRYPTION_KEY}"
   MONGODB_URI: "mongodb://${MONGODB_USERNAME}:${MONGODB_LUCID_AUTH_PASSWORD:-${MONGODB_PASSWORD}}@${MONGODB_HOST}:${MONGODB_PORT}/${MONGODB_DATABASE}?authSource=admin"

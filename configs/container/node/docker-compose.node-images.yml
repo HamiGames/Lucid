@@ -1,32 +1,11 @@
-# File: /app/configs/container/node/docker-compose.node-images.yml
-# x-lucid-file-path: /app/configs/container/node/docker-compose.node-images.yml
-# x-lucid-file-directory: /app/configs/container/node
-# x-lucid-file-type: YAML
-
-# Path: infrastructure/containers/node/docker-compose.node-images.yml
-# Builds and runs: node-worker (8600), node-registry (8610), node-gov (8620), node-utils (8630)
-# aligned with infrastructure/containers/node/Dockerfile.node-* and node/docker-compose.yml patterns.
-#
-# Run from repository root (c:\Users\surba\Desktop\personal\THE_FUCKER\lucid_2\Lucid):
-#   docker compose -f infrastructure/containers/node/docker-compose.node-images.yml up -d --build
-#
-# Run from this directory:
-#   docker compose -f docker-compose.node-images.yml up -d --build
-#
-# Override platform on Windows/AMD64 dev host:
-#   DOCKER_DEFAULT_PLATFORM=linux/amd64 docker compose -f infrastructure/containers/node/docker-compose.node-images.yml build
-
 name: lucid-node-images
-
-x-node-build-args: &node-build-args
+x-node-build-args:
   BUILD_DATE: ${BUILD_DATE:-}
   VCS_REF: ${VCS_REF:-local}
   VERSION: ${VERSION:-1.0.0}
-
-x-lucid-env-files: &lucid-env-files
-  - ../../../master-env-config.txt
-  - ../../../configs/environment/.env.secrets
-
+x-lucid-env-files: &id001
+- ../../../configs/environment/.env.master
+- ../../environment/.env.secrets
 services:
   lucid-mongodb:
     image: mongo:7
@@ -35,248 +14,277 @@ services:
     environment:
       MONGO_INITDB_DATABASE: lucid_node_management
     volumes:
-      - lucid-node-images-mongodb-data:/data/db
+    - lucid-node-images-mongodb-data:/data/db
+    - ../../environment/.env.master:/app/configs/.env.master:ro
+    - ../../environment/.env.secrets:/app/configs/.env.secrets:ro
     networks:
       lucid-node-images:
         aliases:
-          - lucid-mongodb
+        - lucid-mongodb
     ports:
-      - "${LUCID_NODE_IMAGES_MONGO_PORT:-27017}:27017"
+    - ${LUCID_NODE_IMAGES_MONGO_PORT:-27017}:27017
     healthcheck:
       test:
-        ["CMD", "mongosh", "--quiet", "--eval", "db.runCommand({ ping: 1 }).ok"]
+      - CMD
+      - mongosh
+      - --quiet
+      - --eval
+      - 'db.runCommand({ ping: 1 }).ok'
       interval: 15s
       timeout: 5s
       retries: 5
       start_period: 30s
     restart: unless-stopped
-
+    env_file:
+    - ../../environment/.env.master
+    - ../../environment/.env.secrets
   lucid-redis:
     image: redis:7-alpine
     container_name: lucid-node-images-redis
     hostname: lucid-redis
-    command: ["redis-server", "--appendonly", "yes"]
+    command:
+    - redis-server
+    - --appendonly
+    - 'yes'
     volumes:
-      - lucid-node-images-redis-data:/data
+    - lucid-node-images-redis-data:/data
+    - ../../environment/.env.master:/app/configs/.env.master:ro
+    - ../../environment/.env.secrets:/app/configs/.env.secrets:ro
     networks:
       lucid-node-images:
         aliases:
-          - lucid-redis
+        - lucid-redis
     ports:
-      - "${LUCID_NODE_IMAGES_REDIS_PORT:-6379}:6379"
+    - ${LUCID_NODE_IMAGES_REDIS_PORT:-6379}:6379
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test:
+      - CMD
+      - redis-cli
+      - ping
       interval: 15s
       timeout: 5s
       retries: 5
       start_period: 10s
     restart: unless-stopped
-
+    env_file:
+    - ../../environment/.env.master
+    - ../../environment/.env.secrets
   node-worker:
     build:
       context: ../../../
       dockerfile: infrastructure/containers/node/Dockerfile.node-worker
       platforms:
-        - ${LUCID_NODE_IMAGES_PLATFORM:-linux/arm64}
+      - ${LUCID_NODE_IMAGES_PLATFORM:-linux/arm64}
       args:
-        <<: *node-build-args
+        BUILD_DATE: ${BUILD_DATE:-}
+        VCS_REF: ${VCS_REF:-local}
+        VERSION: ${VERSION:-1.0.0}
     image: pickme/lucid-node-worker:${VERSION:-1.0.0}-arm64
     container_name: node-worker
     hostname: node-worker
-    env_file: *lucid-env-files
+    env_file: *id001
     networks:
       lucid-node-images:
         aliases:
-          - node-worker
+        - node-worker
     ports:
-      - "${NODE_WORKER_PORT:-8600}:8600"
+    - ${NODE_WORKER_PORT:-8600}:8600
     environment:
       LUCID_ENV: production
       LUCID_PLATFORM: ${LUCID_PLATFORM:-arm64}
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
-      PYTHONUNBUFFERED: "1"
-      PYTHONDONTWRITEBYTECODE: "1"
-      NODE_MANAGEMENT_HOST: "0.0.0.0"
-      NODE_MANAGEMENT_PORT: "8600"
+      PYTHONUNBUFFERED: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+      NODE_MANAGEMENT_HOST: 0.0.0.0
+      NODE_MANAGEMENT_PORT: '8600'
       NODE_MANAGEMENT_STAGING_PORT: ${NODE_MANAGEMENT_STAGING_PORT:-8099}
       NODE_MANAGEMENT_URL: http://node-worker:8600
-      NODE_WORKER_PORT: "8600"
+      NODE_WORKER_PORT: '8600'
       MONGODB_URL: ${MONGODB_URL:-mongodb://lucid-mongodb:27017/lucid_node_management}
       MONGODB_DATABASE: ${MONGODB_DATABASE:-lucid_node_management}
       REDIS_URL: ${REDIS_URL:-redis://lucid-redis:6379/0}
       NODE_ID: ${NODE_WORKER_ID:-node-worker-1}
     volumes:
-      - lucid-node-worker-data:/app/data
-      - lucid-node-worker-logs:/app/logs
-      - lucid-node-worker-cache:/app/cache
+    - lucid-node-worker-data:/app/data
+    - lucid-node-worker-logs:/app/logs
+    - lucid-node-worker-cache:/app/cache
+    - ../../environment/.env.master:/app/configs/.env.master:ro
+    - ../../environment/.env.secrets:/app/configs/.env.secrets:ro
     depends_on:
       lucid-mongodb:
         condition: service_healthy
       lucid-redis:
         condition: service_healthy
-    user: "65532:65532"
+    user: 65532:65532
     read_only: true
     tmpfs:
-      - /tmp:noexec,nosuid,size=100m
+    - /tmp:noexec,nosuid,size=100m
     security_opt:
-      - no-new-privileges:true
+    - no-new-privileges:true
     restart: unless-stopped
-
   node-registry:
     build:
       context: ../../../
       dockerfile: infrastructure/containers/node/Dockerfile.node-registry
       platforms:
-        - ${LUCID_NODE_IMAGES_PLATFORM:-linux/arm64}
+      - ${LUCID_NODE_IMAGES_PLATFORM:-linux/arm64}
       args:
-        <<: *node-build-args
+        BUILD_DATE: ${BUILD_DATE:-}
+        VCS_REF: ${VCS_REF:-local}
+        VERSION: ${VERSION:-1.0.0}
     image: pickme/lucid-node-registry:${VERSION:-1.0.0}-arm64
     container_name: node-registry
     hostname: node-registry
-    env_file: *lucid-env-files
+    env_file: *id001
     networks:
       lucid-node-images:
         aliases:
-          - node-registry
+        - node-registry
     ports:
-      - "${NODE_REGISTRY_PORT:-8610}:8610"
+    - ${NODE_REGISTRY_PORT:-8610}:8610
     environment:
       LUCID_ENV: production
       LUCID_PLATFORM: ${LUCID_PLATFORM:-arm64}
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
-      PYTHONUNBUFFERED: "1"
-      PYTHONDONTWRITEBYTECODE: "1"
-      NODE_MANAGEMENT_HOST: "0.0.0.0"
-      NODE_MANAGEMENT_PORT: "8610"
+      PYTHONUNBUFFERED: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+      NODE_MANAGEMENT_HOST: 0.0.0.0
+      NODE_MANAGEMENT_PORT: '8610'
       NODE_MANAGEMENT_STAGING_PORT: ${NODE_MANAGEMENT_STAGING_PORT:-8099}
       NODE_MANAGEMENT_URL: http://node-registry:8610
-      NODE_REGISTRY_PORT: "8610"
+      NODE_REGISTRY_PORT: '8610'
       MONGODB_URL: ${MONGODB_URL:-mongodb://lucid-mongodb:27017/lucid_node_management}
       MONGODB_DATABASE: ${MONGODB_DATABASE:-lucid_node_management}
       REDIS_URL: ${REDIS_URL:-redis://lucid-redis:6379/0}
       NODE_ID: ${NODE_REGISTRY_ID:-node-registry-1}
     volumes:
-      - lucid-node-registry-data:/app/data
-      - lucid-node-registry-logs:/app/logs
-      - lucid-node-registry-cache:/app/cache
+    - lucid-node-registry-data:/app/data
+    - lucid-node-registry-logs:/app/logs
+    - lucid-node-registry-cache:/app/cache
+    - ../../environment/.env.master:/app/configs/.env.master:ro
+    - ../../environment/.env.secrets:/app/configs/.env.secrets:ro
     depends_on:
       lucid-mongodb:
         condition: service_healthy
       lucid-redis:
         condition: service_healthy
-    user: "65532:65532"
+    user: 65532:65532
     read_only: true
     tmpfs:
-      - /tmp:noexec,nosuid,size=100m
+    - /tmp:noexec,nosuid,size=100m
     security_opt:
-      - no-new-privileges:true
+    - no-new-privileges:true
     restart: unless-stopped
-
   node-gov:
     build:
       context: ../../../
       dockerfile: infrastructure/containers/node/Dockerfile.node-gov
       platforms:
-        - ${LUCID_NODE_IMAGES_PLATFORM:-linux/arm64}
+      - ${LUCID_NODE_IMAGES_PLATFORM:-linux/arm64}
       args:
-        <<: *node-build-args
+        BUILD_DATE: ${BUILD_DATE:-}
+        VCS_REF: ${VCS_REF:-local}
+        VERSION: ${VERSION:-1.0.0}
     image: pickme/lucid-node-gov:${VERSION:-1.0.0}-arm64
     container_name: node-gov
     hostname: node-gov
-    env_file: *lucid-env-files
+    env_file: *id001
     networks:
       lucid-node-images:
         aliases:
-          - node-gov
+        - node-gov
     ports:
-      - "${NODE_GOV_PORT:-8620}:8620"
+    - ${NODE_GOV_PORT:-8620}:8620
     environment:
       LUCID_ENV: production
       LUCID_PLATFORM: ${LUCID_PLATFORM:-arm64}
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
-      PYTHONUNBUFFERED: "1"
-      PYTHONDONTWRITEBYTECODE: "1"
-      NODE_MANAGEMENT_HOST: "0.0.0.0"
-      NODE_MANAGEMENT_PORT: "8620"
+      PYTHONUNBUFFERED: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+      NODE_MANAGEMENT_HOST: 0.0.0.0
+      NODE_MANAGEMENT_PORT: '8620'
       NODE_MANAGEMENT_STAGING_PORT: ${NODE_MANAGEMENT_STAGING_PORT:-8099}
       NODE_MANAGEMENT_URL: http://node-gov:8620
-      NODE_GOV_PORT: "8620"
+      NODE_GOV_PORT: '8620'
       MONGODB_URL: ${MONGODB_URL:-mongodb://lucid-mongodb:27017/lucid_node_management}
       MONGODB_DATABASE: ${MONGODB_DATABASE:-lucid_node_management}
       REDIS_URL: ${REDIS_URL:-redis://lucid-redis:6379/0}
       NODE_ID: ${NODE_GOV_ID:-node-gov-1}
     volumes:
-      - lucid-node-gov-data:/app/data
-      - lucid-node-gov-logs:/app/logs
-      - lucid-node-gov-cache:/app/cache
+    - lucid-node-gov-data:/app/data
+    - lucid-node-gov-logs:/app/logs
+    - lucid-node-gov-cache:/app/cache
+    - ../../environment/.env.master:/app/configs/.env.master:ro
+    - ../../environment/.env.secrets:/app/configs/.env.secrets:ro
     depends_on:
       lucid-mongodb:
         condition: service_healthy
       lucid-redis:
         condition: service_healthy
-    user: "65532:65532"
+    user: 65532:65532
     read_only: true
     tmpfs:
-      - /tmp:noexec,nosuid,size=100m
+    - /tmp:noexec,nosuid,size=100m
     security_opt:
-      - no-new-privileges:true
+    - no-new-privileges:true
     restart: unless-stopped
-
   node-utils:
     build:
       context: ../../../
       dockerfile: infrastructure/containers/node/Dockerfile.node-utils
       platforms:
-        - ${LUCID_NODE_IMAGES_PLATFORM:-linux/arm64}
+      - ${LUCID_NODE_IMAGES_PLATFORM:-linux/arm64}
       args:
-        <<: *node-build-args
+        BUILD_DATE: ${BUILD_DATE:-}
+        VCS_REF: ${VCS_REF:-local}
+        VERSION: ${VERSION:-1.0.0}
     image: pickme/lucid-node-utils:${VERSION:-1.0.0}-arm64
     container_name: node-utils
     hostname: node-utils
-    env_file: *lucid-env-files
+    env_file: *id001
     networks:
       lucid-node-images:
         aliases:
-          - node-utils
+        - node-utils
     ports:
-      - "${NODE_UTILS_PORT:-8630}:8630"
+    - ${NODE_UTILS_PORT:-8630}:8630
     environment:
       LUCID_ENV: production
       LUCID_PLATFORM: ${LUCID_PLATFORM:-arm64}
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
-      PYTHONUNBUFFERED: "1"
-      PYTHONDONTWRITEBYTECODE: "1"
-      NODE_MANAGEMENT_HOST: "0.0.0.0"
-      NODE_MANAGEMENT_PORT: "8630"
+      PYTHONUNBUFFERED: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+      NODE_MANAGEMENT_HOST: 0.0.0.0
+      NODE_MANAGEMENT_PORT: '8630'
       NODE_MANAGEMENT_STAGING_PORT: ${NODE_MANAGEMENT_STAGING_PORT:-8099}
       NODE_MANAGEMENT_URL: http://node-utils:8630
-      NODE_UTILS_PORT: "8630"
+      NODE_UTILS_PORT: '8630'
       MONGODB_URL: ${MONGODB_URL:-mongodb://lucid-mongodb:27017/lucid_node_management}
       MONGODB_DATABASE: ${MONGODB_DATABASE:-lucid_node_management}
       REDIS_URL: ${REDIS_URL:-redis://lucid-redis:6379/0}
       NODE_ID: ${NODE_UTILS_ID:-node-utils-1}
     volumes:
-      - lucid-node-utils-data:/app/data
-      - lucid-node-utils-logs:/app/logs
-      - lucid-node-utils-cache:/app/cache
+    - lucid-node-utils-data:/app/data
+    - lucid-node-utils-logs:/app/logs
+    - lucid-node-utils-cache:/app/cache
+    - ../../environment/.env.master:/app/configs/.env.master:ro
+    - ../../environment/.env.secrets:/app/configs/.env.secrets:ro
     depends_on:
       lucid-mongodb:
         condition: service_healthy
       lucid-redis:
         condition: service_healthy
-    user: "65532:65532"
+    user: 65532:65532
     read_only: true
     tmpfs:
-      - /tmp:noexec,nosuid,size=100m
+    - /tmp:noexec,nosuid,size=100m
     security_opt:
-      - no-new-privileges:true
+    - no-new-privileges:true
     restart: unless-stopped
-
 networks:
   lucid-node-images:
     driver: bridge
     name: lucid-node-images
-
 volumes:
   lucid-node-images-mongodb-data:
     name: lucid-node-images-mongodb-data
@@ -306,3 +314,28 @@ volumes:
     name: lucid-node-utils-logs
   lucid-node-utils-cache:
     name: lucid-node-utils-cache
+secrets:
+  MONGODB_PASSWORD:
+    file: C:/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/configs/secrets/runtime/compose/MONGODB_PASSWORD.secret
+  REDIS_PASSWORD:
+    file: C:/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/configs/secrets/runtime/compose/REDIS_PASSWORD.secret
+  JWT_SECRET_KEY:
+    file: C:/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/configs/secrets/runtime/compose/JWT_SECRET_KEY.secret
+  ENCRYPTION_KEY:
+    file: C:/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/configs/secrets/runtime/compose/ENCRYPTION_KEY.secret
+  SESSION_SECRET:
+    file: C:/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/configs/secrets/runtime/compose/SESSION_SECRET.secret
+  TRON_PRIVATE_KEY:
+    file: C:/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/configs/secrets/runtime/compose/TRON_PRIVATE_KEY.secret
+  TRON_API_KEY:
+    file: C:/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/configs/secrets/runtime/compose/TRON_API_KEY.secret
+  API_GATEWAY_SECRET:
+    file: C:/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/configs/secrets/runtime/compose/API_GATEWAY_SECRET.secret
+  ELASTICSEARCH_PASSWORD:
+    file: C:/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/configs/secrets/runtime/compose/ELASTICSEARCH_PASSWORD.secret
+  TOR_PASSWORD:
+    file: C:/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/configs/secrets/runtime/compose/TOR_PASSWORD.secret
+  TOR_CONTROL_PASSWORD:
+    file: C:/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/configs/secrets/runtime/compose/TOR_CONTROL_PASSWORD.secret
+  WALLET_ENCRYPTION_KEY:
+    file: C:/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/configs/secrets/runtime/compose/WALLET_ENCRYPTION_KEY.secret

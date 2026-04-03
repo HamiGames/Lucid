@@ -120,7 +120,14 @@ import shlex
 import sys
 from pathlib import Path, PurePosixPath
 
-from dockerfile_alignment import load_alignment_criteria, normalize_repo_rel, validate_alignment
+from dockerfile_alignment import (
+    discover_lucid_dockerfiles_under_roots,
+    discover_repo_root,
+    load_alignment_criteria,
+    normalize_repo_rel,
+    read_dockerfile_text,
+    validate_alignment,
+)
 from lib_search_and_inject import (
     expand_infrastructure_docker_sibling_roots,
     find_insert_after_workdir_arg_label_env_runtime,
@@ -143,7 +150,7 @@ REQUIREMENTS_COPY = re.compile(
 
 
 def repo_root_from_here() -> Path:
-    return Path(__file__).resolve().parent.parent.parent
+    return discover_repo_root(Path(__file__))
 
 
 def wheel_keep_marker_inner_for_dockerfile(dockerfile_path: Path) -> str:
@@ -433,7 +440,7 @@ def rewrite_stage1_layout_copy_paths_in_stage(
 
 
 def parse_x_files_dirs(listing_path: Path) -> list[str]:
-    text = listing_path.read_text(encoding="utf-8")
+    text = listing_path.read_text(encoding="utf-8", errors="replace")
     dirs_abs: set[str] = set()
     for m in re.finditer(r"x-lucid-file-path:\s*(\S+)", text):
         fp = m.group(1).strip()
@@ -713,6 +720,37 @@ def filter_listing_dirs_by_copy_approval(
     return sorted(set(out), key=lambda s: (s.count("/"), s))
 
 
+def implicit_npm_workspace_dirs_for_runtime_copy(content: str) -> set[str]:
+    """
+    ``npm install`` / ``yarn install`` create ``./node_modules`` under WORKDIR ``/build`` without a
+    prior directory ``COPY``, and host ``os.walk`` skips ``node_modules`` — so the runtime
+    ``LUCID_RUNTIME_COPY_FROM_BUILD`` set would miss them unless we add roots explicitly.
+
+    When the **builder** stage uses a Node base image (``FROM … node:…``) and runs a package install
+    or build, union the usual artifact dirs so stage-2 ``COPY --from=… /build/… /app/…`` can stay in
+    sync with inject tooling.
+    """
+    plain = [ln.rstrip("\r\n") for ln in content.splitlines()]
+    stages = split_build_stages(plain)
+    if len(stages) < 2:
+        return set()
+    s0, s1 = builder_stage_range(plain)
+    from_line = plain[s0] if s0 < len(plain) else ""
+    if not re.search(r"\bnode\s*:", from_line, re.IGNORECASE):
+        return set()
+    chunk = "\n".join(plain[s0:s1])
+    low = chunk.lower()
+    out: set[str] = set()
+    if re.search(
+        r"\bnpm\s+ci\b|\bnpm\s+install\b|\byarn\s+install\b|\bpnpm\s+install\b",
+        low,
+    ):
+        out.add("./node_modules")
+    if re.search(r"\bnpm\s+run\s+build\b", low):
+        out.add("./dist")
+    return out
+
+
 def skeleton_dirs_for_dockerfile(
     content: str,
     listing_path: Path,
@@ -731,8 +769,9 @@ def skeleton_dirs_for_dockerfile(
     filtered = filter_listing_dirs_by_copy_approval(listing, approved)
     stage1 = stage1_dest_dirs_for_runtime_copy(content)
     host_dirs = collect_host_tree_skeleton_dirs_from_stage1(content, repo_root)
+    npm_implicit = implicit_npm_workspace_dirs_for_runtime_copy(content)
     merged = sorted(
-        set(filtered) | set(stage1) | host_dirs,
+        set(filtered) | set(stage1) | host_dirs | npm_implicit,
         key=lambda s: (s.count("/"), s),
     )
     merged = [d for d in merged if not is_blocked_top_level_build_dir_path(d)]
@@ -1190,7 +1229,7 @@ def sync_build_app_copy_paths_in_text(text: str) -> tuple[str, int]:
             out.append(line)
             i += 1
             continue
-        merged, _start, after = merge_run_block(plain, i, stage_end)
+        merged, _start, after = merge_copy_or_add_instruction(plain, i, stage_end)
         collapsed = re.sub(r"\\\s*\n\s*", " ", merged.strip())
         new_collapsed = normalize_copy_build_to_app_line(
             collapsed + "\n", builder_stage
@@ -1209,7 +1248,7 @@ def sync_build_app_copy_paths_in_text(text: str) -> tuple[str, int]:
 
 def process_sync_build_app_copy(path: Path, dry_run: bool) -> tuple[bool, int]:
     """Last-``FROM`` ``COPY --from=`` normalization only; see :func:`sync_build_app_copy_paths_in_text`."""
-    original = path.read_text(encoding="utf-8")
+    original = read_dockerfile_text(path)
     new_text, nlines = sync_build_app_copy_paths_in_text(original)
     if new_text == original:
         return False, 0
@@ -1551,7 +1590,7 @@ def process_inject_runtime_copy_from_build(
     repo_root: Path | None = None,
 ) -> bool:
     """Insert/replace runtime COPY block (see ``dirs_for_runtime_copy_block``)."""
-    original = path.read_text(encoding="utf-8")
+    original = read_dockerfile_text(path)
     dirs = dirs_for_runtime_copy_block(original, listing_path, repo_root=repo_root)
     builder_stage = extract_builder_stage_name(original)
     new_text = inject_runtime_copy_from_build_block(original, dirs, builder_stage)
@@ -2135,7 +2174,7 @@ def process_file(
     after the last LABEL/ENV in the final stage. If ``post_sync_build_app_copy``, normalize last-stage
     ``COPY --from=`` paths on the resulting text (in-memory, so dry-run is accurate).
     """
-    original = path.read_text(encoding="utf-8")
+    original = read_dockerfile_text(path)
 
     text = original
     while True:
@@ -2192,7 +2231,7 @@ def process_file(
 
 
 def process_strip_file(path: Path, dry_run: bool) -> bool:
-    original = path.read_text(encoding="utf-8")
+    original = read_dockerfile_text(path)
     text = strip_all_injections(original)
     if text != original:
         if not dry_run:
@@ -2202,50 +2241,13 @@ def process_strip_file(path: Path, dry_run: bool) -> bool:
 
 
 def process_strip_build_scaffold(path: Path, dry_run: bool) -> bool:
-    original = path.read_text(encoding="utf-8")
+    original = read_dockerfile_text(path)
     text = strip_build_scaffold_runs(original)
     if text != original:
         if not dry_run:
             path.write_text(text, encoding="utf-8", newline="\n")
         return True
     return False
-
-
-def discover_dockerfiles(containers_root: Path) -> list[Path]:
-    """
-    ``Dockerfile``, ``Dockerfile.*``, and ``dockerfile.*`` (lowercase names are missed by
-    ``rglob('Dockerfile*')`` alone on case-sensitive filesystems).
-    """
-    seen: set[Path] = set()
-    out: list[Path] = []
-    for pattern in ("Dockerfile*", "dockerfile*"):
-        for p in containers_root.rglob(pattern):
-            if p.is_dir():
-                continue
-            key = p.resolve()
-            if key in seen:
-                continue
-            name = p.name
-            if name == "Dockerfile" or name.startswith("Dockerfile.") or name.startswith("dockerfile."):
-                seen.add(key)
-                out.append(p)
-    return sorted(out)
-
-
-def discover_dockerfiles_under_roots(roots: list[Path]) -> list[Path]:
-    """Merge ``discover_dockerfiles`` for each root; dedupe by resolved path; stable sort."""
-    seen: set[Path] = set()
-    out: list[Path] = []
-    for containers_root in roots:
-        if not containers_root.is_dir():
-            continue
-        for p in discover_dockerfiles(containers_root):
-            key = p.resolve()
-            if key in seen:
-                continue
-            seen.add(key)
-            out.append(p)
-    return sorted(out, key=lambda x: str(x).lower())
 
 
 def dedupe_scan_roots(paths: list[Path]) -> list[Path]:
@@ -2444,7 +2446,9 @@ def main() -> int:
         for r in scan_roots:
             if not r.is_dir():
                 print(f"warning: not a directory (skipped): {r}", file=sys.stderr)
-        dockerfiles = discover_dockerfiles_under_roots([r for r in scan_roots if r.is_dir()])
+        dockerfiles = discover_lucid_dockerfiles_under_roots(
+            [r for r in scan_roots if r.is_dir()]
+        )
         roots_display = ", ".join(
             str(r.relative_to(root)) if r.is_relative_to(root) else str(r) for r in scan_roots
         )
@@ -2652,7 +2656,7 @@ def main() -> int:
             if criteria is None:
                 continue
             checked += 1
-            text = df.read_text(encoding="utf-8", errors="replace")
+            text = read_dockerfile_text(df)
             problems = validate_alignment(text, criteria)
             if problems:
                 mismatches += 1

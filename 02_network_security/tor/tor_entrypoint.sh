@@ -30,7 +30,7 @@ if [[ -d /app/bin ]]; then
 fi
 export PATH
 
-readonly SCRIPT_VERSION="5.5.0"
+readonly SCRIPT_VERSION="5.5.1"
 readonly COOKIE_SIZE=32
 readonly COOKIE_HEX_LENGTH=64
 
@@ -70,6 +70,8 @@ TORRC="${TOR_CONFIG_DIR}/torrc"
 
 TOR_SOCKS_PORT="${TOR_SOCKS_PORT:-9050}"
 TOR_CONTROL_PORT="${TOR_CONTROL_PORT:-9051}"
+# Align with tor-health.sh and docker-compose; bash /dev/tcp used in _tor_ctl.
+TOR_CONTROL_HOST="${TOR_CONTROL_HOST:-127.0.0.1}"
 TOR_CONTROL_SOCKET="${TOR_CONTROL_SOCKET:-}"
 TOR_DNS_PORT="${TOR_DNS_PORT:-0}"
 TOR_TRANS_PORT="${TOR_TRANS_PORT:-0}"
@@ -77,6 +79,8 @@ TOR_TRANS_PORT="${TOR_TRANS_PORT:-0}"
 TOR_COOKIE_AUTH="${TOR_COOKIE_AUTH:-1}"
 TOR_COOKIE_FILE="${TOR_COOKIE_FILE:-${TOR_DATA_DIR}/control_auth_cookie}"
 TOR_COOKIE_TARGETS="${TOR_COOKIE_TARGETS:-}"
+# 1 = failed copy to any TOR_COOKIE_TARGETS path fails the container; 0 = warn only (canonical cookie still valid).
+TOR_COOKIE_DISTRIBUTE_STRICT="${TOR_COOKIE_DISTRIBUTE_STRICT:-1}"
 TOR_COOKIE_TMP="/tmp/lucid/tor/control_auth_cookie"
 BOOTSTRAP_HELPER="${BOOTSTRAP_HELPER:-/app/run/lucid/tor/bin/bootstrap-helper.sh}"
 # Seed data: preloaded consensus/certs (optional volume: /app/var/lib/tor/seed).
@@ -1019,8 +1023,11 @@ copy_cookie_to_shared() {
     fi
 
     if (( fail > 0 )); then
-        log_error "${fail} cookie distribution(s) failed — exit"
-        exit 1
+        if [[ "${TOR_COOKIE_DISTRIBUTE_STRICT}" == "1" ]]; then
+            log_error "${fail} cookie distribution(s) failed — exit"
+            exit 1
+        fi
+        log_warn "${fail} cookie distribution(s) failed — continuing (TOR_COOKIE_DISTRIBUTE_STRICT=0)"
     fi
 }
 
@@ -1039,14 +1046,14 @@ _tor_ctl() {
         fi
     fi
 
-    # Pre-check /dev/tcp availability before attempting exec.
+    # Pre-check /dev/tcp availability before attempting exec (host must match ControlPort bind).
     set +e
-    exec 3<>"/dev/tcp/127.0.0.1/${TOR_CONTROL_PORT}" 2>/dev/null
+    exec 3<>"/dev/tcp/${TOR_CONTROL_HOST}/${TOR_CONTROL_PORT}" 2>/dev/null
     local tcp_rc=$?
     set -e
 
     if (( tcp_rc != 0 )); then
-        log_error "_tor_ctl: cannot connect to control port ${TOR_CONTROL_PORT}"
+        log_error "_tor_ctl: cannot connect to ${TOR_CONTROL_HOST}:${TOR_CONTROL_PORT}"
         exit 1
     fi
 
@@ -1243,8 +1250,10 @@ main() {
     log_debug "TOR_DATA_DIR    = ${TOR_DATA_DIR}"
     log_debug "TOR_CONFIG_DIR  = ${TOR_CONFIG_DIR}"
     log_debug "TOR_LOG_DIR     = ${TOR_LOG_DIR}"
+    log_debug "TOR_CONTROL_HOST= ${TOR_CONTROL_HOST}"
     log_debug "TOR_COOKIE_FILE = ${TOR_COOKIE_FILE}"
     log_debug "TOR_COOKIE_TMP  = ${TOR_COOKIE_TMP}"
+    log_debug "TOR_COOKIE_DISTRIBUTE_STRICT = ${TOR_COOKIE_DISTRIBUTE_STRICT}"
     log_debug "TOR_SEED_DIR    = ${TOR_SEED_DIR}"
     log_debug "TOR_SOCKS_PORT  = ${TOR_SOCKS_PORT}"
     log_debug "TOR_CONTROL_PORT= ${TOR_CONTROL_PORT}"

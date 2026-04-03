@@ -13,15 +13,10 @@ ARG BUILDPLATFORM=linux/amd64
 ############################
 # Stage 1: extract redis-server + health tooling
 ############################
-FROM --platform=$TARGETPLATFORM redis:7.2 AS redis-builder
-
 ARG BUILDPLATFORM
 ARG TARGETPLATFORM
 
-ENV DEBIAN_FRONTEND=noninteractive \
-    DEBCONF_NONINTERACTIVE_SEEN=true
-
-# LUCID_IMAGE_CONFIG: .env.secrets + .env.master (builder)
+FROM --platform=$TARGETPLATFORM redis:7.2 AS redis-builder
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
@@ -56,41 +51,50 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
         cargo \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+RUN apt-get remove -y rustc cargo && rm -rf /root/.cargo /root/.rustup && \
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
+# LUCID_LIB_SKELETON_BEGIN
+# Generated: FHS dirs for builder (from final-stage COPY --from, excluding /build/ sources;
+# ancestor dirs collapsed; overlaps with builder mkdir/.keep removed — see collect_skeleton_paths_from_dockerfile).
+RUN set -eux; \
+  mkdir -p \
+    '/bin' \
+    '/etc/ssl' \
+    '/usr/bin' \
+    '/usr/lib/python3.11'; \
+  for d in \
+    '/bin' \
+    '/etc/ssl' \
+    '/usr/bin' \
+    '/usr/lib/python3.11'; \
+  do \
+    printf 'LUCID_LIB_SKELETON_%s' "$(date +%s)" > "$d/.keep"; \
+    touch "$d/.keep"; \
+  done
+# LUCID_LIB_SKELETON_END
 # LUCID_X_FILES_SKELETON_BEGIN
 # Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
 RUN set -eux; \
-    mkdir -p '.' './configs' './scripts' './service_configs' './configs/.devcontainer' './configs/.ssh' './configs/admin' './configs/auth' './configs/base' './configs/blockchain' './configs/compose' './configs/container' './configs/database' './configs/docker' './configs/electron_gui' './configs/environment' './configs/gui' './configs/integration' './configs/logging' './configs/network' './configs/node' './configs/overlord' './configs/payment_systems' './configs/pi' './configs/rdp' './configs/secrets' './configs/security' './configs/server' './configs/tor' './configs/user' './scripts/build' './scripts/compliance' './scripts/config' './scripts/contracts' './scripts/database' './scripts/deployment' './scripts/devcontainer' './scripts/docs' './scripts/foundation' './scripts/gui' './scripts/hardware' './scripts/integration' './scripts/lib' './scripts/load' './scripts/logging' './scripts/maintenance' './scripts/migration' './scripts/monitoring' './scripts/network' './scripts/registry' './scripts/secrets' './scripts/security' './scripts/services' './scripts/testing' './scripts/validation' './scripts/verification' './service_configs/distroless' './service_configs/kubernetes' './service_configs/logging' './service_configs/multi-stage' './service_configs/node' './service_configs/payment_services' './service_configs/rdp' './service_configs/security' './service_configs/service_mesh' './service_configs/sessions' './service_configs/storage' './service_configs/tor' './service_configs/x_lucid_cluster_calibration' './configs/admin/admin-system-gateway' './configs/admin/config' './configs/blockchain/chain-to-pay' './configs/blockchain/config' './configs/container/admin' './configs/container/auth' './configs/container/base' './configs/container/blockchain' './configs/container/database' './configs/container/electron_gui' './configs/container/gui' './configs/container/node' './configs/container/payment_systems' './configs/container/rdp' './configs/container/server' './configs/container/sessions' './configs/container/storage' './configs/container/tor' './configs/database/elasticsearch' './configs/database/redis' './configs/docker/compose' './configs/docker/distroless' './configs/docker/docs' './configs/docker/multi-stage' './configs/docker/on-system-chain' './configs/environment/development' './configs/environment/pi' './configs/environment/production' './configs/environment/staging' './configs/node/config' './configs/node/node-system-gateway' './configs/overlord/runtime' './configs/pi/ssh' './scripts/build/components' './scripts/build/core' './scripts/build/distroless' './scripts/build/utils' './scripts/compliance/distroless' './scripts/compliance/general' './scripts/deployment/devcontainer' './scripts/deployment/distroless' './scripts/deployment/pi' './scripts/deployment/utils' './scripts/maintenance/cleanup' './scripts/maintenance/optimization' './scripts/maintenance/recovery' './scripts/network/diagnostics' './scripts/network/security' './scripts/network/setup' './scripts/testing/integration' './scripts/testing/unit' './scripts/testing/utils' './service_configs/kubernetes/01_configmaps' './service_configs/kubernetes/02-secrets' './service_configs/kubernetes/03-databases' './service_configs/kubernetes/04-auth' './service_configs/kubernetes/04-network' './service_configs/kubernetes/05-core' './service_configs/kubernetes/06-application' './service_configs/kubernetes/07-support' './service_configs/kubernetes/08-ingress' './service_configs/kubernetes/patches' './configs/docker/compose/mongodb' './configs/docker/compose/nats' './configs/docker/compose/nginx' './configs/docker/compose/redis' './configs/docker/compose/vault' './configs/docker/distroless/base'; \
+    mkdir -p '.' './configs' './scripts' './service_configs' './configs/.ssh' './configs/container' './configs/database' './configs/docker' './configs/env' './configs/integration' './configs/kubernetes' './configs/logging' './configs/pi' './configs/secrets' './configs/security' './configs/tor' './scripts/__pycache__' './scripts/build' './scripts/compliance' './scripts/config' './scripts/contracts' './scripts/database' './scripts/deployment' './scripts/devcontainer' './scripts/docs' './scripts/foundation' './scripts/gui' './scripts/hardware' './scripts/integration' './scripts/lib' './scripts/load' './scripts/logging' './scripts/maintenance' './scripts/migration' './scripts/monitoring' './scripts/network' './scripts/registry' './scripts/secrets' './scripts/security' './scripts/services' './scripts/testing' './scripts/validation' './scripts/verification' './service_configs/distroless' './service_configs/logging' './service_configs/multi-stage' './service_configs/node' './service_configs/payment_services' './service_configs/rdp' './service_configs/security' './service_configs/service_mesh' './service_configs/services' './service_configs/sessions' './service_configs/storage' './service_configs/tor' './service_configs/x_lucid_cluster_calibration' './configs/container/admin' './configs/container/auth' './configs/container/base' './configs/container/blockchain' './configs/container/database' './configs/container/electron_gui' './configs/container/gui' './configs/container/node' './configs/container/payment_systems' './configs/container/rdp' './configs/container/server' './configs/container/sessions' './configs/container/storage' './configs/container/tor' './configs/database/elasticsearch' './configs/database/redis' './configs/docker/distroless' './configs/docker/docs' './configs/docker/multi-stage' './configs/pi/ssh' './scripts/build/__pycache__' './scripts/build/components' './scripts/build/core' './scripts/build/distroless' './scripts/build/utils' './scripts/compliance/distroless' './scripts/compliance/general' './scripts/deployment/devcontainer' './scripts/deployment/distroless' './scripts/deployment/pi' './scripts/deployment/utils' './scripts/maintenance/cleanup' './scripts/maintenance/optimization' './scripts/maintenance/recovery' './scripts/network/diagnostics' './scripts/network/security' './scripts/network/setup' './scripts/testing/integration' './scripts/testing/unit' './scripts/testing/utils' './scripts/validation/__pycache__' './scripts/verification/__pycache__' './service_configs/x_lucid_cluster_calibration/__pycache__'; \
     for d in \
       '.' \
       './configs' \
       './scripts' \
       './service_configs' \
-      './configs/.devcontainer' \
       './configs/.ssh' \
-      './configs/admin' \
-      './configs/auth' \
-      './configs/base' \
-      './configs/blockchain' \
-      './configs/compose' \
       './configs/container' \
       './configs/database' \
       './configs/docker' \
-      './configs/electron_gui' \
-      './configs/environment' \
-      './configs/gui' \
+      './configs/env' \
       './configs/integration' \
+      './configs/kubernetes' \
       './configs/logging' \
-      './configs/network' \
-      './configs/node' \
-      './configs/overlord' \
-      './configs/payment_systems' \
       './configs/pi' \
-      './configs/rdp' \
       './configs/secrets' \
       './configs/security' \
-      './configs/server' \
       './configs/tor' \
-      './configs/user' \
+      './scripts/__pycache__' \
       './scripts/build' \
       './scripts/compliance' \
       './scripts/config' \
@@ -118,7 +122,6 @@ RUN set -eux; \
       './scripts/validation' \
       './scripts/verification' \
       './service_configs/distroless' \
-      './service_configs/kubernetes' \
       './service_configs/logging' \
       './service_configs/multi-stage' \
       './service_configs/node' \
@@ -126,14 +129,11 @@ RUN set -eux; \
       './service_configs/rdp' \
       './service_configs/security' \
       './service_configs/service_mesh' \
+      './service_configs/services' \
       './service_configs/sessions' \
       './service_configs/storage' \
       './service_configs/tor' \
       './service_configs/x_lucid_cluster_calibration' \
-      './configs/admin/admin-system-gateway' \
-      './configs/admin/config' \
-      './configs/blockchain/chain-to-pay' \
-      './configs/blockchain/config' \
       './configs/container/admin' \
       './configs/container/auth' \
       './configs/container/base' \
@@ -150,19 +150,11 @@ RUN set -eux; \
       './configs/container/tor' \
       './configs/database/elasticsearch' \
       './configs/database/redis' \
-      './configs/docker/compose' \
       './configs/docker/distroless' \
       './configs/docker/docs' \
       './configs/docker/multi-stage' \
-      './configs/docker/on-system-chain' \
-      './configs/environment/development' \
-      './configs/environment/pi' \
-      './configs/environment/production' \
-      './configs/environment/staging' \
-      './configs/node/config' \
-      './configs/node/node-system-gateway' \
-      './configs/overlord/runtime' \
       './configs/pi/ssh' \
+      './scripts/build/__pycache__' \
       './scripts/build/components' \
       './scripts/build/core' \
       './scripts/build/distroless' \
@@ -182,33 +174,18 @@ RUN set -eux; \
       './scripts/testing/integration' \
       './scripts/testing/unit' \
       './scripts/testing/utils' \
-      './service_configs/kubernetes/01_configmaps' \
-      './service_configs/kubernetes/02-secrets' \
-      './service_configs/kubernetes/03-databases' \
-      './service_configs/kubernetes/04-auth' \
-      './service_configs/kubernetes/04-network' \
-      './service_configs/kubernetes/05-core' \
-      './service_configs/kubernetes/06-application' \
-      './service_configs/kubernetes/07-support' \
-      './service_configs/kubernetes/08-ingress' \
-      './service_configs/kubernetes/patches' \
-      './configs/docker/compose/mongodb' \
-      './configs/docker/compose/nats' \
-      './configs/docker/compose/nginx' \
-      './configs/docker/compose/redis' \
-      './configs/docker/compose/vault' \
-      './configs/docker/distroless/base' \
+      './scripts/validation/__pycache__' \
+      './scripts/verification/__pycache__' \
+      './service_configs/x_lucid_cluster_calibration/__pycache__' \
     ; do \
       printf 'LUCID_X_FILES_SKELETON_%s' "$(date +%s)" > "$d/.keep"; \
       touch "$d/.keep"; \
     done
 # LUCID_X_FILES_SKELETON_END
-COPY configs/ ./configs/
-RUN rm -rf ./configs/environment && \
-    echo ".env.* files removed"
-COPY configs/environment/.env.secrets ./configs/.env.secrets
-COPY master-env-config.txt ./configs/.env.master
-COPY infrastructure/containers/services/container-runtime-layout.yml /build/service_configs/container-runtime-layout.yml
+
+RUN rm -rf configs/environment 2>/dev/null || true
+
+
 COPY infrastructure/containers/storage/redis.conf /build/service_configs/storage/redis.conf
 COPY scripts/ ./scripts/
 
@@ -220,10 +197,12 @@ FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12:latest
 ARG BUILD_DATE
 ARG VCS_REF
 ARG VERSION=1.0.0
-# Lucid Tor egress / network isolation (PUBLIC_TOR_IP: master-env-config.txt; compose: lucid-tor-egress-network)
+# Lucid Tor egress / network isolation (PUBLIC_TOR_IP: ../../configs/environment/ ; compose: lucid-tor-egress-network)
 ARG PUBLIC_TOR_IP=109.70.100.1
 ARG LUCID_INTERNAL_NETWORK_NAME=lucid-pi-network
 ARG LUCID_TOR_EGRESS_NETWORK_NAME=lucid-tor-egress-network
+
+WORKDIR /app
 
 LABEL maintainer="Lucid Development Team" \
       com.lucid.network.internal="${LUCID_INTERNAL_NETWORK_NAME}" \
@@ -244,34 +223,14 @@ LABEL maintainer="Lucid Development Team" \
       com.lucid.vulnerabilities="zero" \
       com.lucid.expose="6380" \
       com.lucid.tor.compatible="true" \
-      com.lucid.env.config=".env.tunnel-tools,.env.secrets,.env.foundation" \
+      com.lucid.env.config=".env.tunnel-tools,.env.foundation" \
       com.lucid.storage.engine="redis" \
       com.lucid.redis.version="7.2"
 
-# LUCID_IMAGE_CONFIG: .env.secrets + .env.master (runtime) \
+# LUCID_IMAGE_CONFIG: (runtime) \
       com.lucid.service_id="com.lucid.dockerfile.v1.61fd3450f8ba8a48.infrastructure.containers.storage.Dockerfile.redis" \
       onion.lucid.service_id="lucid-61fd3450f8ba8a48-infrastructure-container" \
       org.lucid.service_id="org.lucid.dockerfile.v1.61fd3450f8ba8a48:infrastructure/containers/storage/Dockerfile.redis" \
-COPY --from=redis-builder --chown=65532:65532 /build/configs/.env.secrets /app/configs/.env.secrets
-COPY --from=redis-builder --chown=65532:65532 /build/configs/.env.master /app/configs/.env.master
-COPY --from=redis-builder --chown=65532:65532 /build/service_configs /app/service_configs
-
-COPY --from=redis-builder /usr/local/bin/redis-server /app/usr/local/bin/redis-server
-COPY --from=redis-builder /usr/local/bin/redis-cli /app/usr/local/bin/redis-cli
-COPY --from=redis-builder /usr/bin/python3 /app/usr/bin/python3
-COPY --from=redis-builder /usr/lib/python3.* /app/usr/lib/
-COPY --from=redis-builder /usr/bin/tini /app/usr/bin/tini
-
-COPY --from=redis-builder /lib/*/libc.so.6 /app/lib/
-COPY --from=redis-builder /lib/*/libssl.so.3 /app/lib/
-COPY --from=redis-builder /lib/*/libcrypto.so.3 /app/lib/
-COPY --from=redis-builder /lib/*/libz.so.1 /app/lib/
-COPY --from=redis-builder /lib*/ld-linux-*.so.2 /app/lib64/
-
-COPY --from=redis-builder /etc/ssl/certs/ca-certificates.crt /app/etc/ssl/certs/ca-certificates.crt
-
-COPY infrastructure/containers/storage/redis.conf /app/etc/redis/redis.conf
-
 ENV PUBLIC_TOR_IP="${PUBLIC_TOR_IP}" \
     LUCID_INTERNAL_NETWORK_NAME="${LUCID_INTERNAL_NETWORK_NAME}" \
     LUCID_TOR_EGRESS_NETWORK_NAME="${LUCID_TOR_EGRESS_NETWORK_NAME}" \
@@ -289,17 +248,15 @@ COPY --from=redis-builder --chown=65532:65532 /usr/bin/ /app/usr/bin/
 COPY --from=redis-builder --chown=65532:65532 /usr/lib/python3.11/ /app/usr/lib/python3.11/
 # LUCID_RUNTIME_COPY_FROM_BUILDER_APT_END
 
-# LUCID_RUNTIME_COPY_FROM_BUILD_BEGIN
-# Generated: same directory set as LUCID_X_FILES_SKELETON (./ under WORKDIR /build).
+
+
+
+
+
 COPY --from=redis-builder --chown=65532:65532 /build/configs/ /app/configs/
 COPY --from=redis-builder --chown=65532:65532 /build/scripts/ /app/scripts/
-COPY --from=redis-builder --chown=65532:65532 /build/service_configs/ /app/service_configs/
 # LUCID_RUNTIME_COPY_FROM_BUILD_END
-
-
-WORKDIR /app
-
-VOLUME ["/app/redis/storage/data"]
+# LUCID_IMAGE_CONFIG: (builder)
 
 EXPOSE 6380
 
@@ -311,3 +268,6 @@ USER 65532:65532
 ENTRYPOINT ["/usr/bin/tini", "--", "/usr/local/bin/redis-server"]
 
 CMD ["/app/etc/redis/redis.conf"]
+COPY infrastructure/containers/storage/redis.conf /app/etc/redis/redis.conf
+
+VOLUME ["/app/redis/storage/data"]

@@ -56,12 +56,12 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
         openssl \
         pkg-config \
         procps \
-        pyhton3.11 \
-        pyhton3.11-dev \
+        python3.11 \
+        python3.11-dev \
         python3-pip \
-        pyhton3.11-setuptools \
+        python3.11-setuptools \
         python3-venv \
-        pyhton3.11-wheel \
+        python3.11-wheel \
         rsync \
         socat \
         strace \
@@ -76,6 +76,29 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
         xxd \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# LUCID_LIB_SKELETON_BEGIN
+# Generated: FHS dirs for builder (from final-stage COPY --from, excluding /build/ sources;
+# ancestor dirs collapsed; overlaps with builder mkdir/.keep removed — see collect_skeleton_paths_from_dockerfile).
+RUN set -eux; \
+  mkdir -p \
+    '/bin' \
+    '/etc/ssl' \
+    '/usr/bin' \
+    '/var/log/lucid' \
+    '/usr/lib/python3/dist-packages'; \
+  for d in \
+    '/bin' \
+    '/etc/ssl' \
+    '/usr/bin' \
+    '/var/log/lucid' \
+    '/usr/lib/python3/dist-packages'; \
+  do \
+    printf 'LUCID_LIB_SKELETON_%s' "$(date +%s)" > "$d/.keep"; \
+    touch "$d/.keep"; \
+  done
+# LUCID_LIB_SKELETON_END
+
 
 RUN --mount=type=cache,target=/root/.cache/pip \
     mkdir -p /build/wheels && \
@@ -118,18 +141,20 @@ WORKDIR /build
 # LUCID_X_FILES_SKELETON_BEGIN
 # Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
 RUN set -eux; \
-    mkdir -p '.' './admin' './common' './configs' './node' './rdp' './scripts' './service_configs' './sessions' './tools' './admin/admin_ui' './admin/api' './admin/audit' './admin/config' './admin/emergency' './admin/governance' './admin/key_rotation' './admin/over_lord' './admin/rbac' './admin/services' './admin/system' './admin/ui' './admin/utils' './common/governance' './common/security' './common/server-tools' './common/templates' './common/tor' './configs/.devcontainer' './configs/.ssh' './configs/admin' './configs/auth' './configs/base' './configs/blockchain' './configs/compose' './configs/container' './configs/database' './configs/docker' './configs/electron_gui' './configs/environment' './configs/gui' './configs/integration' './configs/logging' './configs/network' './configs/node' './configs/overlord' './configs/payment_systems' './configs/pi' './configs/rdp' './configs/secrets' './configs/security' './configs/server' './configs/tor' './configs/user' './node/api' './node/config' './node/consensus' './node/dht_crdt' './node/economy' './node/flags' './node/governance' './node/models' './node/over_lord' './node/payouts' './node/pools' './node/poot' './node/registration' './node/repositories' './node/resources' './node/shards' './node/sync' './node/tor' './node/validation' './node/worker' './rdp/client' './rdp/common' './rdp/config' './rdp/monitoring' './rdp/protocol' './rdp/recorder' './rdp/resource_monitor' './rdp/security' './rdp/server' './rdp/server_manager' './rdp/session_controller' './rdp/xrdp' './scripts/build' './scripts/compliance' './scripts/config' './scripts/contracts' './scripts/database' './scripts/deployment' './scripts/devcontainer' './scripts/docs' './scripts/foundation' './scripts/gui' './scripts/hardware' './scripts/integration' './scripts/lib' './scripts/load' './scripts/logging' './scripts/maintenance' './scripts/migration' './scripts/monitoring' './scripts/network' './scripts/registry' './scripts/secrets' './scripts/security' './scripts/services' './scripts/testing' './scripts/validation' './scripts/verification' './sessions/api' './sessions/config' './sessions/core' './sessions/encryption' './sessions/integration' './sessions/pipeline' './sessions/processor' './sessions/recorder' './sessions/security' './sessions/session_systems_control' './sessions/storage' './tools/build' './tools/dev' './tools/ops' './configs/admin/admin-system-gateway' './configs/admin/config' './configs/blockchain/chain-to-pay' './configs/blockchain/config' './configs/container/admin' './configs/container/auth' './configs/container/base' './configs/container/blockchain' './configs/container/database' './configs/container/electron_gui' './configs/container/gui' './configs/container/node' './configs/container/payment_systems' './configs/container/rdp' './configs/container/server' './configs/container/sessions' './configs/container/storage' './configs/container/tor' './configs/database/elasticsearch' './configs/database/redis' './configs/docker/compose' './configs/docker/distroless' './configs/docker/docs' './configs/docker/multi-stage' './configs/docker/on-system-chain' './configs/environment/development' './configs/environment/pi' './configs/environment/production' './configs/environment/staging' './configs/node/config' './configs/node/node-system-gateway' './configs/overlord/runtime' './configs/pi/ssh' './lucid/scripts/db-backup.sh' './lucid/scripts/health-check.sh' './lucid/scripts/network-test.sh' './rdp/monitoring/grafana' './rdp/session_controller/integration' './rdp/xrdp/config' './scripts/build/components' './scripts/build/core' './scripts/build/distroless' './scripts/build/utils' './scripts/compliance/distroless' './scripts/compliance/general' './scripts/deployment/devcontainer' './scripts/deployment/distroless' './scripts/deployment/pi' './scripts/deployment/utils' './scripts/maintenance/cleanup' './scripts/maintenance/optimization' './scripts/maintenance/recovery' './scripts/network/diagnostics' './scripts/network/security' './scripts/network/setup' './scripts/testing/integration' './scripts/testing/unit' './scripts/testing/utils' './sessions/api/config' './sessions/api/integration' './sessions/pipeline/integration' './sessions/processor/config' './sessions/processor/integration' './sessions/recorder/config' './sessions/recorder/integration' './sessions/storage/config' './tools/ops/backup' './tools/ops/monitoring' './tools/ops/ota' './configs/docker/compose/mongodb' './configs/docker/compose/nats' './configs/docker/compose/nginx' './configs/docker/compose/redis' './configs/docker/compose/vault' './configs/docker/distroless/base' './rdp/monitoring/grafana/datasources'; \
+    mkdir -p '.' './admin' './common' './configs' './lucid' './node' './rdp' './scripts' './service_configs' './sessions' './tools' './admin/__pycache__' './admin/admin_ui' './admin/api' './admin/audit' './admin/config' './admin/emergency' './admin/governance' './admin/key_rotation' './admin/over_lord' './admin/rbac' './admin/services' './admin/system' './admin/ui' './admin/utils' './common/__pycache__' './common/governance' './common/security' './common/server-tools' './common/templates' './common/tor' './configs/.ssh' './configs/container' './configs/database' './configs/docker' './configs/env' './configs/integration' './configs/kubernetes' './configs/logging' './configs/pi' './configs/secrets' './configs/security' './configs/tor' './lucid/scripts' './node/__pycache__' './node/api' './node/config' './node/consensus' './node/dht_crdt' './node/economy' './node/flags' './node/governance' './node/models' './node/over_lord' './node/payouts' './node/pools' './node/poot' './node/registration' './node/repositories' './node/resources' './node/service_configs' './node/shards' './node/sync' './node/tor' './node/validation' './node/worker' './rdp/__pycache__' './rdp/client' './rdp/common' './rdp/config' './rdp/database' './rdp/monitoring' './rdp/protocol' './rdp/recorder' './rdp/resource_monitor' './rdp/scripts' './rdp/security' './rdp/server' './rdp/server_manager' './rdp/session_controller' './rdp/xrdp' './scripts/__pycache__' './scripts/build' './scripts/compliance' './scripts/config' './scripts/contracts' './scripts/database' './scripts/deployment' './scripts/devcontainer' './scripts/docs' './scripts/foundation' './scripts/gui' './scripts/hardware' './scripts/integration' './scripts/lib' './scripts/load' './scripts/logging' './scripts/maintenance' './scripts/migration' './scripts/monitoring' './scripts/network' './scripts/registry' './scripts/secrets' './scripts/security' './scripts/services' './scripts/testing' './scripts/validation' './scripts/verification' './sessions/__pycache__' './sessions/api' './sessions/config' './sessions/core' './sessions/encryption' './sessions/integration' './sessions/pipeline' './sessions/processor' './sessions/recorder' './sessions/security' './sessions/session_systems_control' './sessions/storage' './tools/__pycache__' './tools/build' './tools/dev' './tools/ops' './admin/admin_ui/__pycache__' './admin/api/__pycache__' './admin/audit/__pycache__' './admin/config/__pycache__' './admin/emergency/__pycache__' './admin/governance/__pycache__' './admin/key_rotation/__pycache__' './admin/rbac/__pycache__' './admin/services/__pycache__' './admin/system/__pycache__' './admin/ui/__pycache__' './admin/ui/static' './admin/ui/templates' './admin/utils/__pycache__' './common/governance/__pycache__' './common/security/__pycache__' './common/server-tools/__pycache__' './common/tor/__pycache__' './configs/container/admin' './configs/container/auth' './configs/container/base' './configs/container/blockchain' './configs/container/database' './configs/container/electron_gui' './configs/container/gui' './configs/container/node' './configs/container/payment_systems' './configs/container/rdp' './configs/container/server' './configs/container/sessions' './configs/container/storage' './configs/container/tor' './configs/database/elasticsearch' './configs/database/redis' './configs/docker/distroless' './configs/docker/docs' './configs/docker/multi-stage' './configs/pi/ssh' './lucid/scripts/db-backup.sh' './lucid/scripts/health-check.sh' './lucid/scripts/network-test.sh' './node/api/__pycache__' './node/consensus/__pycache__' './node/dht_crdt/__pycache__' './node/economy/__pycache__' './node/flags/__pycache__' './node/governance/__pycache__' './node/models/__pycache__' './node/payouts/__pycache__' './node/pools/__pycache__' './node/poot/__pycache__' './node/registration/__pycache__' './node/repositories/__pycache__' './node/resources/__pycache__' './node/service_configs/x_lucid_cluster_calibration' './node/shards/__pycache__' './node/sync/__pycache__' './node/tor/__pycache__' './node/validation/__pycache__' './node/worker/__pycache__' './rdp/client/__pycache__' './rdp/common/__pycache__' './rdp/monitoring/grafana' './rdp/protocol/__pycache__' './rdp/recorder/__pycache__' './rdp/resource_monitor/__pycache__' './rdp/resource_monitor/config' './rdp/security/__pycache__' './rdp/server/__pycache__' './rdp/server_manager/__pycache__' './rdp/server_manager/config' './rdp/session_controller/__pycache__' './rdp/session_controller/config' './rdp/session_controller/integration' './rdp/xrdp/__pycache__' './rdp/xrdp/config' './scripts/build/__pycache__' './scripts/build/components' './scripts/build/core' './scripts/build/distroless' './scripts/build/utils' './scripts/compliance/distroless' './scripts/compliance/general' './scripts/deployment/devcontainer' './scripts/deployment/distroless' './scripts/deployment/pi' './scripts/deployment/utils' './scripts/maintenance/cleanup' './scripts/maintenance/optimization' './scripts/maintenance/recovery' './scripts/network/diagnostics' './scripts/network/security' './scripts/network/setup' './scripts/testing/integration' './scripts/testing/unit' './scripts/testing/utils' './scripts/validation/__pycache__' './scripts/verification/__pycache__' './sessions/api/__pycache__' './sessions/api/config' './sessions/api/integration' './sessions/core/__pycache__' './sessions/encryption/__pycache__' './sessions/integration/__pycache__' './sessions/pipeline/__pycache__' './sessions/pipeline/integration' './sessions/processor/__pycache__' './sessions/processor/config' './sessions/processor/integration' './sessions/recorder/__pycache__' './sessions/recorder/config' './sessions/recorder/integration' './sessions/security/__pycache__' './sessions/session_systems_control/__pycache__' './sessions/storage/__pycache__' './sessions/storage/config' './tools/build/__pycache__' './tools/dev/__pycache__' './tools/ops/__pycache__' './tools/ops/backup' './tools/ops/monitoring' './tools/ops/ota' './admin/ui/static/css' './admin/ui/static/js' './rdp/monitoring/grafana/dashboards' './rdp/monitoring/grafana/datasources' './rdp/session_controller/integration/__pycache__' './sessions/api/integration/__pycache__' './sessions/pipeline/integration/__pycache__' './sessions/processor/integration/__pycache__' './sessions/recorder/integration/__pycache__' './tools/ops/backup/__pycache__' './tools/ops/monitoring/__pycache__' './tools/ops/ota/__pycache__'; \
     for d in \
       '.' \
       './admin' \
       './common' \
       './configs' \
+      './lucid' \
       './node' \
       './rdp' \
       './scripts' \
       './service_configs' \
       './sessions' \
       './tools' \
+      './admin/__pycache__' \
       './admin/admin_ui' \
       './admin/api' \
       './admin/audit' \
@@ -143,37 +168,26 @@ RUN set -eux; \
       './admin/system' \
       './admin/ui' \
       './admin/utils' \
+      './common/__pycache__' \
       './common/governance' \
       './common/security' \
       './common/server-tools' \
       './common/templates' \
       './common/tor' \
-      './configs/.devcontainer' \
       './configs/.ssh' \
-      './configs/admin' \
-      './configs/auth' \
-      './configs/base' \
-      './configs/blockchain' \
-      './configs/compose' \
       './configs/container' \
       './configs/database' \
       './configs/docker' \
-      './configs/electron_gui' \
-      './configs/environment' \
-      './configs/gui' \
+      './configs/env' \
       './configs/integration' \
+      './configs/kubernetes' \
       './configs/logging' \
-      './configs/network' \
-      './configs/node' \
-      './configs/overlord' \
-      './configs/payment_systems' \
       './configs/pi' \
-      './configs/rdp' \
       './configs/secrets' \
       './configs/security' \
-      './configs/server' \
       './configs/tor' \
-      './configs/user' \
+      './lucid/scripts' \
+      './node/__pycache__' \
       './node/api' \
       './node/config' \
       './node/consensus' \
@@ -189,23 +203,28 @@ RUN set -eux; \
       './node/registration' \
       './node/repositories' \
       './node/resources' \
+      './node/service_configs' \
       './node/shards' \
       './node/sync' \
       './node/tor' \
       './node/validation' \
       './node/worker' \
+      './rdp/__pycache__' \
       './rdp/client' \
       './rdp/common' \
       './rdp/config' \
+      './rdp/database' \
       './rdp/monitoring' \
       './rdp/protocol' \
       './rdp/recorder' \
       './rdp/resource_monitor' \
+      './rdp/scripts' \
       './rdp/security' \
       './rdp/server' \
       './rdp/server_manager' \
       './rdp/session_controller' \
       './rdp/xrdp' \
+      './scripts/__pycache__' \
       './scripts/build' \
       './scripts/compliance' \
       './scripts/config' \
@@ -232,6 +251,7 @@ RUN set -eux; \
       './scripts/testing' \
       './scripts/validation' \
       './scripts/verification' \
+      './sessions/__pycache__' \
       './sessions/api' \
       './sessions/config' \
       './sessions/core' \
@@ -243,13 +263,28 @@ RUN set -eux; \
       './sessions/security' \
       './sessions/session_systems_control' \
       './sessions/storage' \
+      './tools/__pycache__' \
       './tools/build' \
       './tools/dev' \
       './tools/ops' \
-      './configs/admin/admin-system-gateway' \
-      './configs/admin/config' \
-      './configs/blockchain/chain-to-pay' \
-      './configs/blockchain/config' \
+      './admin/admin_ui/__pycache__' \
+      './admin/api/__pycache__' \
+      './admin/audit/__pycache__' \
+      './admin/config/__pycache__' \
+      './admin/emergency/__pycache__' \
+      './admin/governance/__pycache__' \
+      './admin/key_rotation/__pycache__' \
+      './admin/rbac/__pycache__' \
+      './admin/services/__pycache__' \
+      './admin/system/__pycache__' \
+      './admin/ui/__pycache__' \
+      './admin/ui/static' \
+      './admin/ui/templates' \
+      './admin/utils/__pycache__' \
+      './common/governance/__pycache__' \
+      './common/security/__pycache__' \
+      './common/server-tools/__pycache__' \
+      './common/tor/__pycache__' \
       './configs/container/admin' \
       './configs/container/auth' \
       './configs/container/base' \
@@ -266,25 +301,49 @@ RUN set -eux; \
       './configs/container/tor' \
       './configs/database/elasticsearch' \
       './configs/database/redis' \
-      './configs/docker/compose' \
       './configs/docker/distroless' \
       './configs/docker/docs' \
       './configs/docker/multi-stage' \
-      './configs/docker/on-system-chain' \
-      './configs/environment/development' \
-      './configs/environment/pi' \
-      './configs/environment/production' \
-      './configs/environment/staging' \
-      './configs/node/config' \
-      './configs/node/node-system-gateway' \
-      './configs/overlord/runtime' \
       './configs/pi/ssh' \
       './lucid/scripts/db-backup.sh' \
       './lucid/scripts/health-check.sh' \
       './lucid/scripts/network-test.sh' \
+      './node/api/__pycache__' \
+      './node/consensus/__pycache__' \
+      './node/dht_crdt/__pycache__' \
+      './node/economy/__pycache__' \
+      './node/flags/__pycache__' \
+      './node/governance/__pycache__' \
+      './node/models/__pycache__' \
+      './node/payouts/__pycache__' \
+      './node/pools/__pycache__' \
+      './node/poot/__pycache__' \
+      './node/registration/__pycache__' \
+      './node/repositories/__pycache__' \
+      './node/resources/__pycache__' \
+      './node/service_configs/x_lucid_cluster_calibration' \
+      './node/shards/__pycache__' \
+      './node/sync/__pycache__' \
+      './node/tor/__pycache__' \
+      './node/validation/__pycache__' \
+      './node/worker/__pycache__' \
+      './rdp/client/__pycache__' \
+      './rdp/common/__pycache__' \
       './rdp/monitoring/grafana' \
+      './rdp/protocol/__pycache__' \
+      './rdp/recorder/__pycache__' \
+      './rdp/resource_monitor/__pycache__' \
+      './rdp/resource_monitor/config' \
+      './rdp/security/__pycache__' \
+      './rdp/server/__pycache__' \
+      './rdp/server_manager/__pycache__' \
+      './rdp/server_manager/config' \
+      './rdp/session_controller/__pycache__' \
+      './rdp/session_controller/config' \
       './rdp/session_controller/integration' \
+      './rdp/xrdp/__pycache__' \
       './rdp/xrdp/config' \
+      './scripts/build/__pycache__' \
       './scripts/build/components' \
       './scripts/build/core' \
       './scripts/build/distroless' \
@@ -304,34 +363,52 @@ RUN set -eux; \
       './scripts/testing/integration' \
       './scripts/testing/unit' \
       './scripts/testing/utils' \
+      './scripts/validation/__pycache__' \
+      './scripts/verification/__pycache__' \
+      './sessions/api/__pycache__' \
       './sessions/api/config' \
       './sessions/api/integration' \
+      './sessions/core/__pycache__' \
+      './sessions/encryption/__pycache__' \
+      './sessions/integration/__pycache__' \
+      './sessions/pipeline/__pycache__' \
       './sessions/pipeline/integration' \
+      './sessions/processor/__pycache__' \
       './sessions/processor/config' \
       './sessions/processor/integration' \
+      './sessions/recorder/__pycache__' \
       './sessions/recorder/config' \
       './sessions/recorder/integration' \
+      './sessions/security/__pycache__' \
+      './sessions/session_systems_control/__pycache__' \
+      './sessions/storage/__pycache__' \
       './sessions/storage/config' \
+      './tools/build/__pycache__' \
+      './tools/dev/__pycache__' \
+      './tools/ops/__pycache__' \
       './tools/ops/backup' \
       './tools/ops/monitoring' \
       './tools/ops/ota' \
-      './configs/docker/compose/mongodb' \
-      './configs/docker/compose/nats' \
-      './configs/docker/compose/nginx' \
-      './configs/docker/compose/redis' \
-      './configs/docker/compose/vault' \
-      './configs/docker/distroless/base' \
+      './admin/ui/static/css' \
+      './admin/ui/static/js' \
+      './rdp/monitoring/grafana/dashboards' \
       './rdp/monitoring/grafana/datasources' \
+      './rdp/session_controller/integration/__pycache__' \
+      './sessions/api/integration/__pycache__' \
+      './sessions/pipeline/integration/__pycache__' \
+      './sessions/processor/integration/__pycache__' \
+      './sessions/recorder/integration/__pycache__' \
+      './tools/ops/backup/__pycache__' \
+      './tools/ops/monitoring/__pycache__' \
+      './tools/ops/ota/__pycache__' \
     ; do \
       printf 'LUCID_X_FILES_SKELETON_%s' "$(date +%s)" > "$d/.keep"; \
       touch "$d/.keep"; \
     done
 # LUCID_X_FILES_SKELETON_END
-COPY configs/ ./configs/
-RUN rm -rf configs/environment
-COPY master-env-config.txt ./configs/.env.master
-COPY configs/environment/.env.secrets ./configs/.env.secrets
-COPY configs/environment/.env.secure ./configs/.env.secure
+
+RUN rm -rf configs/environment 2>/dev/null || true
+
 COPY sessions/ ./sessions/
 COPY infrastructure/compose/./configs/compose/
 
@@ -362,7 +439,7 @@ FROM gcr.io/distroless/base-debian12:latest
 ARG BUILD_DATE
 ARG VCS_REF
 ARG VERSION=1.0.0
-# Lucid Tor egress / network isolation (PUBLIC_TOR_IP: master-env-config.txt; compose: lucid-tor-egress-network)
+# Lucid Tor egress / network isolation (PUBLIC_TOR_IP: ../../configs/environment/ ; compose: lucid-tor-egress-network)
 ARG PUBLIC_TOR_IP=109.70.100.1
 ARG LUCID_INTERNAL_NETWORK_NAME=lucid-pi-network
 ARG LUCID_TOR_EGRESS_NETWORK_NAME=lucid-tor-egress-network
@@ -418,19 +495,15 @@ COPY --from=builder --chown=65532:65532 /var/log/lucid/ /app/var/log/lucid/
 # Generated: same directory set as LUCID_X_FILES_SKELETON (./ under WORKDIR /build).
 COPY --from=builder --chown=65532:65532 /build/admin/ /app/admin/
 COPY --from=builder --chown=65532:65532 /build/common/ /app/common/
-COPY --from=builder --chown=65532:65532 /build/configs/ /app/configs/
+
+COPY --from=builder --chown=65532:65532 /build/lucid/ /app/lucid/
 COPY --from=builder --chown=65532:65532 /build/node/ /app/node/
 COPY --from=builder --chown=65532:65532 /build/rdp/ /app/rdp/
 COPY --from=builder --chown=65532:65532 /build/scripts/ /app/scripts/
-COPY --from=builder --chown=65532:65532 /build/service_configs/ /app/service_configs/
 COPY --from=builder --chown=65532:65532 /build/sessions/ /app/sessions/
 COPY --from=builder --chown=65532:65532 /build/tools/ /app/tools/
-COPY --from=builder --chown=65532:65532 /build/lucid/scripts/db-backup.sh/ /app/lucid/scripts/db-backup.sh/
-COPY --from=builder --chown=65532:65532 /build/lucid/scripts/health-check.sh/ /app/lucid/scripts/health-check.sh/
-COPY --from=builder --chown=65532:65532 /build/lucid/scripts/network-test.sh/ /app/lucid/scripts/network-test.sh/
 # LUCID_RUNTIME_COPY_FROM_BUILD_END
 
-COPY --from=builder --chown=65532:65532 /build/lucid/ /app/lucid/
 
 COPY --from=builder /bin/bash /bin/bash
 COPY --from=builder /usr/bin/tini /usr/bin/tini

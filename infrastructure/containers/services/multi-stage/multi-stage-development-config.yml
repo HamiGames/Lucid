@@ -6,7 +6,7 @@
 
 # Runtime (container): /app/service_configs/multi-stage/multi-stage-development-config.yml — see ../container-runtime-layout.yml
 # Multi-Stage Development Configuration for Lucid Project
-# Container-hosted: no env_file (avoids compose-time interpolation from master-env-config.txt on hosts without secrets).
+# Container-hosted: no env_file (avoids compose-time interpolation from configs/environment/.env.master on hosts without secrets).
 # Inject env with: docker compose --env-file <path> up, or set variables in the orchestrator / stack.
 #
 # Canonical discovery: /app/configs/host-config.yml; host_ip column: repository root service-ip.txt
@@ -103,6 +103,10 @@ services:
       - no-new-privileges:true
     read_only: false
     volumes:
+      - ../../../../configs/environment/.env.master:/app/configs/.env.master:ro
+      - ../../../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
+      - ..:/app/service_configs:ro
+      - ../../host-config.yml:/app/configs/host-config.yml:ro
       - lucid-dev-src:/app/src
       - lucid-dev-build-cache:/cache
       - lucid-dev-build-artifacts:/artifacts
@@ -140,6 +144,10 @@ services:
       - no-new-privileges:true
     read_only: false
     volumes:
+      - ../../../../configs/environment/.env.master:/app/configs/.env.master:ro
+      - ../../../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
+      - ..:/app/service_configs:ro
+      - ../../host-config.yml:/app/configs/host-config.yml:ro
       - lucid-dev-src:/app/src:ro
       - lucid-dev-logs:/app/logs
       - lucid-dev-tools:/app/tools
@@ -177,6 +185,10 @@ services:
       - lucid-distroless-dev
     restart: unless-stopped
     volumes:
+      - ../../../../configs/environment/.env.master:/app/configs/.env.master:ro
+      - ../../../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
+      - ..:/app/service_configs:ro
+      - ../../host-config.yml:/app/configs/host-config.yml:ro
       - lucid-dev-db-data:/data/db
       - lucid-dev-db-init:/docker-entrypoint-initdb.d:ro
     expose:

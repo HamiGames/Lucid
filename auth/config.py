@@ -111,6 +111,24 @@ class Settings(BaseSettings):
         env="API_GATEWAY_URL",
         description="API Gateway URL. Must be set via environment variable: http://api-gateway:8080"
     )
+    SERVER_MANAGEMENT_VERIFY_ENABLED: bool = Field(
+        default=True, env="SERVER_MANAGEMENT_VERIFY_ENABLED"
+    )
+    SERVER_MANAGEMENT_BASE_URL: str = Field(
+        default="http://lucid-server-manager:8081", env="SERVER_MANAGEMENT_BASE_URL"
+    )
+    SERVER_MANAGEMENT_VERIFY_PATH: str = Field(
+        default="/app/auth/verify-login", env="SERVER_MANAGEMENT_VERIFY_PATH"
+    )
+    SERVER_MANAGEMENT_PREAUTH_VERIFY_PATH: str = Field(
+        default="/app/auth/verify-preauth", env="SERVER_MANAGEMENT_PREAUTH_VERIFY_PATH"
+    )
+    SERVER_MANAGEMENT_REGISTRY_PATH: str = Field(
+        default="/app/registry/users", env="SERVER_MANAGEMENT_REGISTRY_PATH"
+    )
+    SERVER_MANAGEMENT_HTTP_TIMEOUT: float = Field(
+        default=15.0, env="SERVER_MANAGEMENT_HTTP_TIMEOUT"
+    )
     
     # Service Mesh Integration
     SERVICE_MESH_ENABLED: bool = Field(default=False, env="SERVICE_MESH_ENABLED")

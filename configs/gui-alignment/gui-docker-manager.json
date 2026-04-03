@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "compose_service": "gui-docker-manager",
+  "calling_service": "gui-docker-manager",
+  "listen_port": 8098,
+  "api_gateway_url": "http://api-gateway:8080",
+  "gui_api_bridge_url": "http://gui-api-bridge:8203",
+  "machine_id": "",
+  "location": ""
+}

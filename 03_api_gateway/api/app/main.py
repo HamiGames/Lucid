@@ -43,6 +43,7 @@ from api.app.routers import (
     tron_support
 )
 from api.app.database.connection import init_database
+from api.app.services.access_orchestrator import close_access_http_session
 from api.app.models.common import ErrorResponse, ErrorDetail
 import uuid
 from datetime import datetime
@@ -83,6 +84,7 @@ async def lifespan(app: FastAPI):
     yield
     
     # Shutdown
+    await close_access_http_session()
     logger.info("Shutting down API Gateway service")
 
 # Create FastAPI application

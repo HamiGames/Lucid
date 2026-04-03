@@ -10,10 +10,14 @@
 # Service: API Gateway Cluster
 # Port: 8080 (HTTP), 8443 (HTTPS) — main_lucid_gateway @ host-config.yml (service_name api-gateway, host_ip 172.20.10.1); master-env for TLS/aux.
 # Note: keys below are gateway-local listen/aux ports, not the full fleet registry — session_storage uses 8082 in host-config for session-storage, not this service.
+#
+# GUI auth realignment: trusted GUI calls use token introspection (POST to lucid-auth-service /auth/token/introspect)
+# with the end-user Bearer; gateway JWT_SECRET_KEY is separate and may be used for legacy/local decode paths.
+# Wallet and SM access registration flow: auth first, then lucid-server-manager:8081 — see authentication.server_management.
 
-# Runtime config inside containers (Dockerfile pattern: COPY configs/environment/.env.secrets + master-env-config.txt)
+# Runtime config inside containers (Dockerfile pattern: COPY configs/environment/.env.secrets + configs/environment/.env.master)
 config_files:
-  secrets: /app/configs/.env.secrets
+  secrets: ../../configs/environment/.env.secrets
   master: /app/configs/.env.master
 
 service:
@@ -49,6 +53,11 @@ dependencies:
     - name: "lucid-auth-service"
       url: "http://lucid-auth-service:8089"
       required: true
+    - name: "lucid-server-manager"
+      url: "http://lucid-server-manager:8081"
+      required: true
+      http_root: "/app"
+      note: "Access registration + auth handshakes per gui_token_auth_realignment; not a Tier-A direct target."
     - name: "tron-payment-service"
       url: "http://tron-payment-service:8080"
       required: false
@@ -75,12 +84,19 @@ api:
 authentication:
   jwt:
     env_file:
-      - /app/configs/.env.secrets
-      - /app/configs/.env.master
+      - ../../configs/environment/.env.secrets
+      - ../../../configs/environment/.env.master
     secret_key: "${JWT_SECRET_KEY}"
     algorithm: "HS256"
     access_token_expire_minutes: 15
     refresh_token_expire_days: 7
+    note: "Gateway-local JWT operations; trusted GUI path delegates validation to lucid-auth-service introspection."
+  lucid_auth_service:
+    base_url: "http://lucid-auth-service:8089"
+    introspect_path: "${AUTH_SERVICE_INTROSPECT_PATH:-/auth/token/introspect}"
+  server_management:
+    base_url: "${SERVER_MANAGEMENT_URL:-http://lucid-server-manager:8081}"
+    access_register_path: "${SERVER_MANAGEMENT_ACCESS_PATH:-/app/access/register-check}"
   magic_link:
     enabled: true
     expiry_minutes: 15
@@ -149,6 +165,7 @@ health_check:
     - "lucid-mongodb"
     - "lucid-redis"
     - "lucid-auth-service"
+    - "lucid-server-manager"
 
 # Metrics Configuration
 metrics:

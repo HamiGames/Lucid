@@ -58,7 +58,7 @@ upstream_services:
       retry_on: ["5xx", "timeout"]
 
   auth_service:
-    url: "http://lucid-auth-service:8089"
+    url: "http://api-gateway:8080"
     timeout_seconds: 30
     max_connections: 1000
     health_check:

@@ -8,9 +8,9 @@
 # SPEC-4 compliant: Stage 0 Common & Base with plane isolation
 # Dual-network architecture: core services isolated, external connectivity maintained
 # Paths in this file are relative to: infrastructure/compose/
-# master-env-config.txt is bind-mounted to /app/configs/.env.master (runtime; matches Dockerfiles).
-# configs/environment/.env.secrets is bind-mounted to /app/configs/.env.secrets and listed in env_file for Compose.
-# Do not list master-env-config.txt in env_file: Compose interpolates ${...} and breaks on required placeholders.
+# configs/environment/.env.master is bind-mounted to /app/configs/.env.master (runtime; matches Dockerfiles).
+# configs/environment/.env.secrets is bind-mounted to ../../configs/environment/.env.secrets and listed in env_file for Compose.
+# Do not list configs/environment/.env.master in env_file: Compose interpolates ${...} and breaks on required placeholders.
 # Optional per-service env fragments (e.g. .env.node): bind-mount from configs/environment/ into /app/configs/ when present; omitted from env_file so compose does not require those files on the host.
 # Host registry: infrastructure/containers/host-config.yml -> /app/configs/host-config.yml (x-lucid-file-path).
 # Packaged service configs tree: infrastructure/containers/services/ -> /app/service_configs/ (container-runtime-layout.yml).
@@ -111,63 +111,63 @@ volumes:
     name: lucid-core_tor_data
     driver: local
     labels:
-      - "org.lucid.plane=ops"
-      - "org.lucid.service=tor-proxy"
-      - "org.lucid.stage=0"
-      - "org.lucid.tor.type=data"
-      - "org.lucid.tor.multi-onion=persistent"
-      - "org.lucid.tor.cookie-auth=enabled"
+  - "org.lucid.plane=ops"
+  - "org.lucid.service=tor-proxy"
+  - "org.lucid.stage=0"
+  - "org.lucid.tor.type=data"
+  - "org.lucid.tor.multi-onion=persistent"
+  - "org.lucid.tor.cookie-auth=enabled"
   
   # Tor configuration volume (multi-onion + cookie auth)
   tor_config:
     name: lucid-core_tor_config
     driver: local
     labels:
-      - "org.lucid.plane=ops"
-      - "org.lucid.service=tor-proxy"
-      - "org.lucid.stage=0"
-      - "org.lucid.tor.type=config"
-      - "org.lucid.tor.multi-onion=config"
-      - "org.lucid.tor.cookie-auth=ed25519-v3"
+  - "org.lucid.plane=ops"
+  - "org.lucid.service=tor-proxy"
+  - "org.lucid.stage=0"
+  - "org.lucid.tor.type=config"
+  - "org.lucid.tor.multi-onion=config"
+  - "org.lucid.tor.cookie-auth=ed25519-v3"
   
   # MongoDB 7 replica set data (ops plane database)
   mongo_data:
     name: lucid-core_mongo_data
     driver: local
     labels:
-      - "org.lucid.plane=ops"
-      - "org.lucid.service=mongo"
-      - "org.lucid.stage=0"
+  - "org.lucid.plane=ops"
+  - "org.lucid.service=mongo"
+  - "org.lucid.stage=0"
   
   # Multi-onion service state sharing (beta sidecar pattern)
   onion_state:
     name: lucid-core_onion_state
     driver: local
     labels:
-      - "org.lucid.plane=ops"
-      - "org.lucid.service=beta"
-      - "org.lucid.stage=0"
-      - "org.lucid.tor.multi-onion=state-sharing"
-      - "org.lucid.tor.ephemeral=enabled"
+  - "org.lucid.plane=ops"
+  - "org.lucid.service=beta"
+  - "org.lucid.stage=0"
+  - "org.lucid.tor.multi-onion=state-sharing"
+  - "org.lucid.tor.ephemeral=enabled"
   
   # Network security - tunnel tools with onion support
   tunnel_data:
     name: lucid-core_tunnel_data
     driver: local
     labels:
-      - "org.lucid.plane=ops"
-      - "org.lucid.service=tunnel-tools"
-      - "org.lucid.stage=0"
-      - "org.lucid.tor.integration=tunnel"
+  - "org.lucid.plane=ops"
+  - "org.lucid.service=tunnel-tools"
+  - "org.lucid.stage=0"
+  - "org.lucid.tor.integration=tunnel"
   
   # MongoDB configuration and logs
   mongo_config:
     name: lucid-core_mongo_config
     driver: local
     labels:
-      - "org.lucid.plane=ops"
-      - "org.lucid.service=mongo"
-      - "org.lucid.stage=0"
+  - "org.lucid.plane=ops"
+  - "org.lucid.service=mongo"
+  - "org.lucid.stage=0"
 
 services:
   # =============================================================================
@@ -197,11 +197,10 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: lucid
       MONGO_INITDB_DATABASE: lucid
     volumes:
-      - ../../master-env-config.txt:/app/configs/.env.master:ro
+      - ../../configs/environment/.env.master:/app/configs/.env.master:ro
       - ../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
       - ../../infrastructure/containers/services:/app/service_configs:ro
       - ../../infrastructure/containers/host-config.yml:/app/configs/host-config.yml:ro
-
       - mongo_data:/data/db
       - mongo_config:/data/configdb
     networks:
@@ -240,6 +239,7 @@ services:
     <<: *lucid-common
     env_file:
       - ../../configs/environment/.env.secrets
+      - ../../configs/environment/.env.master
     container_name: tor-proxy
     image: pickme/lucid:tor-proxy:latest
     pull_policy: always
@@ -257,11 +257,10 @@ services:
       - "9050:9050"   # SOCKS5 proxy port
       - "9051:9051"   # Control port
     volumes:
-      - ../../master-env-config.txt:/app/configs/.env.master:ro
+      - ../../configs/environment/.env.master:/app/configs/.env.master:ro
       - ../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
       - ../../infrastructure/containers/services:/app/service_configs:ro
       - ../../infrastructure/containers/host-config.yml:/app/configs/host-config.yml:ro
-
       - tor_data:/var/lib/tor
       - tor_config:/etc/tor
       - onion_state:/app/run/lucid/onion
@@ -310,6 +309,7 @@ services:
     pull_policy: always
     env_file:
       - ../../configs/environment/.env.secrets
+      - ../../configs/environment/.env.master
     environment:
       <<: *lucid-env
       PYTHONPATH: /app
@@ -320,7 +320,7 @@ services:
       # App tree first; config overlays after so /app bind does not hide /app/configs.
       - onion_state:/app/run/lucid/onion:ro
       - /mnt/myssd/Lucid/03-api-gateway/api/app:/app:ro
-      - ../../master-env-config.txt:/app/configs/.env.master:ro
+      - ../../configs/environment/.env.master:/app/configs/.env.master:ro
       - ../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
       - ../../infrastructure/containers/services:/app/service_configs:ro
       - ../../infrastructure/containers/host-config.yml:/app/configs/host-config.yml:ro
@@ -368,6 +368,7 @@ services:
     pull_policy: always
     env_file:
       - ../../configs/environment/.env.secrets
+      - ../../configs/environment/.env.master
     environment:
       <<: *lucid-env
       API_UPSTREAM: "lucid_api:8081"
@@ -376,7 +377,7 @@ services:
       NGINX_WORKER_CONNECTIONS: "1024"
     volumes:
       - onion_state:/app/run/lucid/onion:ro
-      - ../../master-env-config.txt:/app/configs/.env.master:ro
+      - ../../configs/environment/.env.master:/app/configs/.env.master:ro
       - ../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
       - ../../infrastructure/containers/services:/app/service_configs:ro
       - ../../infrastructure/containers/host-config.yml:/app/configs/host-config.yml:ro
@@ -420,17 +421,17 @@ services:
     pull_policy: always
     env_file:
       - ../../configs/environment/.env.secrets
+      - ../../configs/environment/.env.master
     environment:
       <<: *lucid-env
       TUNNEL_PORT: "7000"
       TUNNEL_MODE: "client"
     expose: ["7000"]  # Internal ops plane only
     volumes:
-      - ../../master-env-config.txt:/app/configs/.env.master:ro
+      - ../../configs/environment/.env.master:/app/configs/.env.master:ro
       - ../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
       - ../../infrastructure/containers/services:/app/service_configs:ro
       - ../../infrastructure/containers/host-config.yml:/app/configs/host-config.yml:ro
-
       - onion_state:/app/run/lucid/onion
       - tunnel_data:/var/lib/tunnel
     networks:
@@ -473,6 +474,7 @@ services:
     pull_policy: always
     env_file:
       - ../../configs/environment/.env.secrets
+      - ../../configs/environment/.env.master
     environment:
       <<: *lucid-env
     networks:
@@ -488,11 +490,10 @@ services:
       lucid_api:
         condition: service_healthy
     volumes:
-      - ../../master-env-config.txt:/app/configs/.env.master:ro
+      - ../../configs/environment/.env.master:/app/configs/.env.master:ro
       - ../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
       - ../../infrastructure/containers/services:/app/service_configs:ro
       - ../../infrastructure/containers/host-config.yml:/app/configs/host-config.yml:ro
-
       - onion_state:/app/run/lucid/onion:ro
       - tunnel_data:/var/lib/tunnel:ro
     command:

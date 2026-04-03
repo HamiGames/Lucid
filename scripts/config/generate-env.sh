@@ -521,7 +521,7 @@ EOF
     if [[ -f "$LUCID_MASTER_ENV_SOURCE" ]]; then
         log_info "Dockerfiles copy master-env-config.txt -> ${LUCID_IMAGE_MASTER_ENV} (repo: $LUCID_MASTER_ENV_SOURCE)"
     fi
-    log_info "Host registry in-image (x-files-listing canonical): ${LUCID_IMAGE_HOST_CONFIG}; alt ${LUCID_IMAGE_HOST_CONFIG_ALT}; service configs root: ${LUCID_IMAGE_SERVICE_CONFIGS}; listing: ${LUCID_X_FILES_LISTING}"
+    log_info "Host registry in-image (x-files.json section_to_canonical): ${LUCID_IMAGE_HOST_CONFIG}; alt ${LUCID_IMAGE_HOST_CONFIG_ALT}; service configs root: ${LUCID_IMAGE_SERVICE_CONFIGS}; LUCID_X_FILES_JSON=${LUCID_X_FILES_JSON:-}; LUCID_X_FILES_LISTING=${LUCID_X_FILES_LISTING:-}"
     
     # Save secrets to secure file
     cat > "$ENV_CONFIG_DIR/.env.secrets" << EOF

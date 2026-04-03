@@ -9,9 +9,10 @@
 # Manages Docker containers from Electron GUI
 # Implements access control based on user roles
 # HTTP: gui-docker-manager:8098 (gui_docker_manager @ host-config.yml). Tor: tor-socks:9050, tor-control:9051 (tor_socks, tor_control).
+# GUI auth realignment: user auth flows use gui-api-bridge → api-gateway → lucid-auth-service (+ lucid-server-manager:8081 for pre-auth/registry).
 
 config_files:
-  secrets: /app/configs/.env.secrets
+  secrets: ../../configs/environment/.env.secrets
   master: /app/configs/.env.master
 
 service:
@@ -100,6 +101,7 @@ service_groups:
       - "lucid-redis"
       - "lucid-elasticsearch"
       - "lucid-auth-service"
+      - "lucid-server-manager"
       - "lucid-base"
       - "lucid-base-python"
       - "lucid-base-java"
@@ -188,9 +190,8 @@ compose_management:
   compose_files_directory: "configs/docker/"
   default_project_name: "lucid"
   environment_files:
-    - /app/configs/.env.secrets
-    - /app/configs/.env.master
-  
+    - ../../configs/environment/.env.secrets
+    - ../../../configs/environment/.env.master
   # Service startup configuration
   startup:
     parallel_startup: true

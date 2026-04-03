@@ -22,6 +22,7 @@ from .server_manager import RDPServerManager
 from .port_manager import PortManager
 from .config_manager import ConfigManager
 from .config import RDPServerManagerConfigManager
+from .preauth_registry import get_preauth_registry
 
 # Configure logging (structured logging per master design)
 log_level = os.getenv("LOG_LEVEL", "INFO").upper()
@@ -29,7 +30,7 @@ logging.basicConfig(
     level=getattr(logging, log_level, logging.INFO),
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
-logger = logging.get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 # Global service instances
 server_manager_instance: Optional[RDPServerManager] = None
@@ -128,7 +129,116 @@ class ServerStatusResponse(BaseModel):
     started_at: Optional[str] = None
     resource_usage: Optional[Dict[str, Any]] = None
 
+
+class AccessRegistrationRequest(BaseModel):
+    """Internal: lucid-api-gateway access registration / allow-list (no credentials)."""
+
+    user_id: str
+    role: str
+    calling_service: str
+    correlation_id: str
+
+
+class AuthLoginVerifyRequest(BaseModel):
+    """Called by lucid-auth-service before issuing tokens; extend with real registration_key checks."""
+
+    phase: str
+    user_id: str
+    tron_address: str
+    registration_key: Optional[str] = None
+    pre_auth_token: Optional[str] = None
+    client_metadata: Optional[Dict[str, Any]] = None
+
+
+class PreauthIssueRequest(BaseModel):
+    client_metadata: Optional[Dict[str, Any]] = None
+
+
+class PreauthVerifyRequest(BaseModel):
+    pre_auth_token: str
+    intent: str  # login | register
+    user_id: Optional[str] = None
+
+
+class RegistryUserRequest(BaseModel):
+    user_id: str
+    registration_key: str
+
+
 # Health check endpoint
+@app.post("/app/auth/preauth-token")
+async def issue_preauth_token(request: PreauthIssueRequest):
+    """Issue a short-lived pre-auth token for GUI/bootstrap flows (lucid-auth-service verifies via verify-preauth)."""
+    reg = get_preauth_registry()
+    tok, ttl = reg.issue_token(request.client_metadata)
+    return {"pre_auth_token": tok, "expires_in": ttl}
+
+
+@app.post("/app/auth/verify-preauth")
+async def verify_preauth(request: PreauthVerifyRequest):
+    reg = get_preauth_registry()
+    ok, reason, claims = reg.verify_token(
+        request.pre_auth_token,
+        request.intent.lower(),
+        request.user_id,
+    )
+    if not ok:
+        return {"ok": False, "reason": reason, "claims": claims}
+    return {"ok": True, "claims": claims}
+
+
+@app.post("/app/registry/users")
+async def registry_users(request: RegistryUserRequest):
+    """Persist user_id + registration_key in server-manager registry (extend with DB as needed)."""
+    reg = get_preauth_registry()
+    ok, reason = reg.register_user(request.user_id, request.registration_key)
+    if not ok:
+        raise HTTPException(status_code=400, detail=reason)
+    return {"ok": True}
+
+
+@app.post("/app/auth/verify-login")
+async def auth_verify_login(request: AuthLoginVerifyRequest):
+    """
+    Verification hook for auth register/login. Replace stub with DB-backed registration_key
+    validation and policy before wallet-allow / payment paths.
+    """
+    logger.debug(
+        "auth verify-login phase=%s user_prefix=%s",
+        request.phase,
+        request.user_id[:8] if len(request.user_id) > 8 else request.user_id,
+    )
+    reg = get_preauth_registry()
+    if request.pre_auth_token:
+        ok, reason, _ = reg.verify_token(
+            request.pre_auth_token,
+            "register" if request.phase == "register" else "login",
+            request.user_id,
+        )
+        if not ok:
+            return {"ok": False, "reason": reason}
+    if request.registration_key and request.user_id:
+        rk = reg.get_registration_key(request.user_id)
+        if rk is not None and rk != request.registration_key:
+            return {"ok": False, "reason": "registration_key_mismatch"}
+    return {"ok": True}
+
+
+@app.post("/app/access/register-check")
+async def access_register_check(request: AccessRegistrationRequest):
+    """
+    Accept access registration from lucid-api-gateway after lucid-auth-service validation.
+    Extend with allow-list persistence and account creation as server-management evolves.
+    """
+    logger.debug(
+        "Access registration correlation=%s service=%s user_id_prefix=%s",
+        request.correlation_id,
+        request.calling_service,
+        request.user_id[:8] if len(request.user_id) > 8 else request.user_id,
+    )
+    return {"allowed": True}
+
+
 @app.get("/health")
 async def health_check():
     """Health check endpoint"""

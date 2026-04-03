@@ -27,10 +27,11 @@ WORKDIR /work/electron_gui
 # LUCID_X_FILES_SKELETON_BEGIN
 # Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
 RUN set -eux; \
-    mkdir -p '.' './scripts' './scripts/build' './scripts/compliance' './scripts/config' './scripts/contracts' './scripts/database' './scripts/deployment' './scripts/devcontainer' './scripts/docs' './scripts/foundation' './scripts/gui' './scripts/hardware' './scripts/integration' './scripts/lib' './scripts/load' './scripts/logging' './scripts/maintenance' './scripts/migration' './scripts/monitoring' './scripts/network' './scripts/registry' './scripts/secrets' './scripts/security' './scripts/services' './scripts/testing' './scripts/validation' './scripts/verification' './scripts/build/components' './scripts/build/core' './scripts/build/distroless' './scripts/build/utils' './scripts/compliance/distroless' './scripts/compliance/general' './scripts/deployment/devcontainer' './scripts/deployment/distroless' './scripts/deployment/pi' './scripts/deployment/utils' './scripts/maintenance/cleanup' './scripts/maintenance/optimization' './scripts/maintenance/recovery' './scripts/network/diagnostics' './scripts/network/security' './scripts/network/setup' './scripts/testing/integration' './scripts/testing/unit' './scripts/testing/utils'; \
+    mkdir -p '.' './scripts' './scripts/__pycache__' './scripts/build' './scripts/compliance' './scripts/config' './scripts/contracts' './scripts/database' './scripts/deployment' './scripts/devcontainer' './scripts/docs' './scripts/foundation' './scripts/gui' './scripts/hardware' './scripts/integration' './scripts/lib' './scripts/load' './scripts/logging' './scripts/maintenance' './scripts/migration' './scripts/monitoring' './scripts/network' './scripts/registry' './scripts/secrets' './scripts/security' './scripts/services' './scripts/testing' './scripts/validation' './scripts/verification' './scripts/build/__pycache__' './scripts/build/components' './scripts/build/core' './scripts/build/distroless' './scripts/build/utils' './scripts/compliance/distroless' './scripts/compliance/general' './scripts/deployment/devcontainer' './scripts/deployment/distroless' './scripts/deployment/pi' './scripts/deployment/utils' './scripts/maintenance/cleanup' './scripts/maintenance/optimization' './scripts/maintenance/recovery' './scripts/network/diagnostics' './scripts/network/security' './scripts/network/setup' './scripts/testing/integration' './scripts/testing/unit' './scripts/testing/utils' './scripts/validation/__pycache__' './scripts/verification/__pycache__'; \
     for d in \
       '.' \
       './scripts' \
+      './scripts/__pycache__' \
       './scripts/build' \
       './scripts/compliance' \
       './scripts/config' \
@@ -57,6 +58,7 @@ RUN set -eux; \
       './scripts/testing' \
       './scripts/validation' \
       './scripts/verification' \
+      './scripts/build/__pycache__' \
       './scripts/build/components' \
       './scripts/build/core' \
       './scripts/build/distroless' \
@@ -76,6 +78,8 @@ RUN set -eux; \
       './scripts/testing/integration' \
       './scripts/testing/unit' \
       './scripts/testing/utils' \
+      './scripts/validation/__pycache__' \
+      './scripts/verification/__pycache__' \
     ; do \
       printf 'LUCID_X_FILES_SKELETON_%s' "$(date +%s)" > "$d/.keep"; \
       touch "$d/.keep"; \
@@ -135,23 +139,36 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
+# LUCID_LIB_SKELETON_BEGIN
+# Generated: FHS dirs for builder (from final-stage COPY --from, excluding /build/ sources;
+# ancestor dirs collapsed; overlaps with builder mkdir/.keep removed — see collect_skeleton_paths_from_dockerfile).
+RUN set -eux; \
+  mkdir -p \
+    '/bin' \
+    '/usr/bin'; \
+  for d in \
+    '/bin' \
+    '/usr/bin'; \
+  do \
+    printf 'LUCID_LIB_SKELETON_%s' "$(date +%s)" > "$d/.keep"; \
+    touch "$d/.keep"; \
+  done
+# LUCID_LIB_SKELETON_END
+
+
 RUN ln -sf /bin/bash /bin/sh
 
 RUN mkdir -p "${BUNDLE_DIR}" "${STRAP_DIR}"
 
-# LUCID_IMAGE_CONFIG: .env.secrets + .env.master + host-config + container services (builder)
-COPY configs/ ./configs/
-RUN rm -rf ./configs/environment && \
-    echo ".env.* files removed"
-COPY configs/environment/.env.secrets ./configs/.env.secrets
-COPY master-env-config.txt ./configs/.env.master
-COPY infrastructure/containers/host-config.yml /build/configs/host-config.yml
-COPY infrastructure/containers/services/ /build/service_configs/
+# LUCID_IMAGE_CONFIG: host-config + container services (builder)
+
+RUN rm -rf configs/environment 2>/dev/null || true
+
 
 # Container directory layout (03_api_gateway/Dockerfile): common/tor, kubernetes configmaps
 COPY common/__init__.py /build/common/__init__.py
 COPY common/tor/ /build/common/tor/
-COPYservice_configs/kubernetes/01_configmaps/ /build/configs/
+COPY infrastucture/kubernetes/01_configmaps/ ./configs/kubernetes/01_configmaps/
 
 COPY --from=strapper /tmp/strap/electron_gui-src.tar.gz ${BUNDLE_DIR}/electron_gui-src.tar.gz
 COPY --from=strapper /tmp/strap/electron_gui-node_modules.tar.gz ${BUNDLE_DIR}/electron_gui-node_modules.tar.gz
@@ -205,7 +222,7 @@ WORKDIR /
 ARG BUILD_DATE
 ARG VCS_REF
 ARG VERSION=1.0.0
-# Lucid Tor egress / network isolation (PUBLIC_TOR_IP: master-env-config.txt; compose: lucid-tor-egress-network)
+# Lucid Tor egress / network isolation (PUBLIC_TOR_IP: ../../configs/environment/ ; compose: lucid-tor-egress-network)
 ARG PUBLIC_TOR_IP=109.70.100.1
 ARG LUCID_INTERNAL_NETWORK_NAME=lucid-pi-network
 ARG LUCID_TOR_EGRESS_NETWORK_NAME=lucid-tor-egress-network
@@ -213,11 +230,7 @@ ARG STRAP_DIR=/opt/lucid/electron_gui
 ARG BUNDLE_DIR=/opt/lucid/bundles
 
 COPY --from=bundle-prep ${BUNDLE_DIR} ${BUNDLE_DIR}
-# LUCID_IMAGE_CONFIG: .env.secrets + .env.master + host-config + container services (runtime)
-COPY --from=bundle-prep --chown=65532:65532 /build/configs/.env.secrets /app/configs/.env.secrets
-COPY --from=bundle-prep --chown=65532:65532 /build/configs/.env.master /app/configs/.env.master
-COPY --from=bundle-prep --chown=65532:65532 /build/configs/host-config.yml /app/configs/host-config.yml
-COPY --from=bundle-prep --chown=65532:65532 /build/service_configs /app/service_configs
+# LUCID_IMAGE_CONFIG: host-config + container services (runtime)
 
 COPY --from=bundle-prep --chown=65532:65532 /build/common/__init__.py /app/common/__init__.py
 COPY --from=bundle-prep --chown=65532:65532 /build/common/tor/ /app/common/tor/
@@ -258,7 +271,7 @@ LABEL maintainer="Lucid Development Team" \
       com.lucid.expose="" \
       com.lucid.cluster="support" \
       com.lucid.tor.compatible="true" \
-      com.lucid.env.config=".env.foundation,.env.secrets" \
+      com.lucid.env.config=".env.foundation" \
       com.lucid.hostconfig.upstream_api_gateway_host="api-gateway" \
       com.lucid.hostconfig.upstream_api_gateway_port="8080"
 

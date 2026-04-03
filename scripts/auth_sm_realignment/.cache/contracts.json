@@ -1,0 +1,32 @@
+{
+  "ClientMetadataPackage": {
+    "description": "Tier A client metadata forwarded to auth (non-secret): machine_id, location, etc.",
+    "example": {
+      "machine_id": "string",
+      "location": "string|unknown"
+    }
+  },
+  "sm_preauth_issue_response": {
+    "pre_auth_token": "string",
+    "expires_in": 600
+  },
+  "sm_verify_preauth_request": {
+    "pre_auth_token": "string",
+    "intent": "login|register",
+    "user_id": "optional for login binding"
+  },
+  "sm_verify_preauth_response": {
+    "ok": true,
+    "claims": {
+      "binding": "opaque"
+    }
+  },
+  "sm_registry_users_request": {
+    "user_id": "string",
+    "registration_key": "string",
+    "pre_auth_token": "optional"
+  },
+  "sm_registry_users_response": {
+    "ok": true
+  }
+}

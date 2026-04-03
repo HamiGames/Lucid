@@ -20,11 +20,11 @@ meta:
     HTTP/WebSocket entrypoints for gui-api-bridge and static upstream map aligned
     with Docker DNS service_name values from host-config.yml.
 
-# This service (host-config key gui_api_bridge → service_name gui-api-bridge:8102)
+# This service (host-config key gui_api_bridge → service_name gui-api-bridge:8203)
 self:
   host_registry_key: gui_api_bridge
   service_name: gui-api-bridge
-  internal_base_url: http://gui-api-bridge:8102
+  internal_base_url: http://gui-api-bridge:8203
   api:
     version: v1
     base_path: /api/v1
@@ -51,11 +51,12 @@ upstream:
     service_name: blockchain-engine
     base_url: http://blockchain-engine:8084
     health_path: /health
-  auth_service:
-    host_registry_key: lucid_auth_service
-    service_name: lucid-auth-service
-    base_url: http://lucid-auth-service:8089
+  auth_via_gateway:
+    host_registry_key: main_lucid_gateway
+    service_name: api-gateway
+    base_url: http://api-gateway:8080
     health_path: /health
+    note: "Tier A reaches auth only via api-gateway /api/v1/auth → lucid-auth-service"
   session_api:
     host_registry_key: session_api
     service_name: session-api

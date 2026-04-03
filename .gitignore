@@ -17,7 +17,7 @@ docs/api/swagger-ui/
 docs/api/node_modules/
 docs/api/package-lock.json
 docs/guides/
-
+master-env-config.txt
 # VS Code
 .vscode/
 *.code-workspace
@@ -26,6 +26,9 @@ docs/guides/
 *.ps1
 # Ssh
 .ssh/ 
+
+# GUI auth realignment automation cache
+scripts/gui_auth_realignment/.cache/
 
 # Cursor
 .cursor/
@@ -36,6 +39,10 @@ docs/guides/
 # Temp + logs
 .tmp/
 *.log
+
+# Timestamped copies before scripts/re-build/*.sh edits (00_rebuild_lib.sh backup_file)
+**/*.yml.bak.*
+**/*.yaml.bak.*
 # env files
 configs/environment/
 # Docker + coverage

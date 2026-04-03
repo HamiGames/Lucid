@@ -10,7 +10,7 @@
 # - builds the session-pipeline, session-recorder, session-chunk-processor, session-storage-service, session-api, session-anchoring, session-pipeline-manager, session-management, and session-systems-control services
 # - uses the ports.txt (session_pipeline 8083, session_recorder 8090, session_chunk-processor 8010, session_storage-service 8020, session_api 8113, session_anchoring 8085, session_pipeline-manager 7990, session_management 9090, session_systems-control 7988) to build the services
 # - uses the host-config.yml to build the services
-# - uses the master-env-config.txt and configs/environment/.env.secrets to build the services
+# - uses the configs/environment/.env.master and configs/environment/.env.secrets to build the services
 # - uses the x-lucid-file-path and x-lucid-file-type to identify the file path and file type
 
 x-lucid-host-config:
@@ -23,7 +23,7 @@ x-lucid-host-config:
   in_container_path: /app/configs/host-config.yml
 
 x-lucid-env-files: &lucid-env-files
-  - ../../../master-env-config.txt
+  - ../../../configs/environment/.env.master
   - ../../../configs/environment/.env.secrets
 
 services:
@@ -44,8 +44,8 @@ services:
       - PYTHONPATH=/app
       - PYTHONUNBUFFERED=1
     volumes:
-      - ../../../master-env-config.txt:/app/configs/.env.master:ro
-      - ../../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
+      - ../../../configs/environment/.env.master:/app/configs/.env.master:ro
+      - ../../../configs/environment/.env.secrets:../../configs/environment/.env.secrets:ro
       - session_data:/app/data/sessions
       - pipeline_logs:/app/logs
     networks:
@@ -87,8 +87,8 @@ services:
       - LUCID_BITRATE=2000k
       - LUCID_FPS=30
     volumes:
-      - ../../../master-env-config.txt:/app/configs/.env.master:ro
-      - ../../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
+      - ../../../configs/environment/.env.master:/app/configs/.env.master:ro
+      - ../../../configs/environment/.env.secrets:../../configs/environment/.env.secrets:ro
       - recording_data:/data/recordings
       - chunk_data:/data/chunks
       - recorder_logs:/app/logs
@@ -124,8 +124,8 @@ services:
       - PYTHONPATH=/app
       - PYTHONUNBUFFERED=1
     volumes:
-      - ../../../master-env-config.txt:/app/configs/.env.master:ro
-      - ../../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
+      - ../../../configs/environment/.env.master:/app/configs/.env.master:ro
+      - ../../../configs/environment/.env.secrets:../../configs/environment/.env.secrets:ro
       - chunk_data:/app/data/chunks
       - session_chunk_processor_logs:/app/logs
     networks:
@@ -162,8 +162,8 @@ services:
       - PYTHONPATH=/app
       - PYTHONUNBUFFERED=1
     volumes:
-      - ../../../master-env-config.txt:/app/configs/.env.master:ro
-      - ../../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
+      - ../../../configs/environment/.env.master:/app/configs/.env.master:ro
+      - ../../../configs/environment/.env.secrets:../../configs/environment/.env.secrets:ro
       - session_storage_data:/app/data/sessions
       - session_storage_data:/app/data/storage
       - session_storage_logs:/app/logs
@@ -199,8 +199,8 @@ services:
       - PYTHONPATH=/app
       - PYTHONUNBUFFERED=1
     volumes:
-      - ../../../master-env-config.txt:/app/configs/.env.master:ro
-      - ../../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
+      - ../../../configs/environment/.env.master:/app/configs/.env.master:ro
+      - ../../../configs/environment/.env.secrets:../../configs/environment/.env.secrets:ro
       - session_data:/app/data/sessions
       - session_api_logs:/app/logs
     networks:
@@ -236,8 +236,8 @@ services:
       - PYTHONPATH=/app
       - PYTHONUNBUFFERED=1
     volumes:
-      - ../../../master-env-config.txt:/app/configs/.env.master:ro
-      - ../../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
+      - ../../../configs/environment/.env.master:/app/configs/.env.master:ro
+      - ../../../configs/environment/.env.secrets:../../configs/environment/.env.secrets:ro
       - session_anchoring_data:/app/data/sessions
       - session_anchoring_logs:/app/logs
     networks:
@@ -272,8 +272,8 @@ services:
       - PYTHONPATH=/app
       - PYTHONUNBUFFERED=1
     volumes:
-      - ../../../master-env-config.txt:/app/configs/.env.master:ro
-      - ../../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
+      - ../../../configs/environment/.env.master:/app/configs/.env.master:ro
+      - ../../../configs/environment/.env.secrets:../../configs/environment/.env.secrets:ro
       - session_pipeline_data:/app/data/sessions
       - session_pipeline_manager_logs:/app/logs
     networks:
@@ -308,8 +308,8 @@ services:
       - PYTHONPATH=/app
       - PYTHONUNBUFFERED=1
     volumes:
-      - ../../../master-env-config.txt:/app/configs/.env.master:ro
-      - ../../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
+      - ../../../configs/environment/.env.master:/app/configs/.env.master:ro
+      - ../../../configs/environment/.env.secrets:../../configs/environment/.env.secrets:ro
       - session_management_data:/app/data/sessions
       - session_management_logs:/app/logs
     networks:
@@ -344,8 +344,8 @@ services:
       - PYTHONPATH=/app
       - PYTHONUNBUFFERED=1
     volumes:
-      - ../../../master-env-config.txt:/app/configs/.env.master:ro
-      - ../../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
+      - ../../../configs/environment/.env.master:/app/configs/.env.master:ro
+      - ../../../configs/environment/.env.secrets:../../configs/environment/.env.secrets:ro
       - session_systems_control_logs:/app/logs
     networks:
       - lucid-session-network

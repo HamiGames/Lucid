@@ -14,7 +14,7 @@
 
 set -euo pipefail
 
-if [[ ! -d "/mnt/myssd" ]]; then
+if [[ ! -d "/mnt/myssd/Lucid/Lucid" ]]; then
     echo "NOTE: /mnt/myssd not mounted — continuing (outputs use /app/configs)."
 fi
 

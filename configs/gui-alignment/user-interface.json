@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "compose_service": "user-interface",
+  "calling_service": "user-interface",
+  "gui_profile": "user",
+  "api_gateway_url": "http://api-gateway:8080",
+  "gui_api_bridge_url": "http://gui-api-bridge:8203",
+  "machine_id": "",
+  "location": ""
+}

@@ -100,6 +100,9 @@ class IntegrationManager:
     
     async def _init_blockchain_client(self):
         """Initialize Blockchain Engine client"""
+        if not (self.config.BLOCKCHAIN_ENGINE_URL or "").strip():
+            logger.info("BLOCKCHAIN_ENGINE_URL unset; skipping blockchain client")
+            return
         try:
             self._blockchain_client = BlockchainEngineClient(self.config)
             await self._blockchain_client.initialize()
@@ -118,6 +121,9 @@ class IntegrationManager:
     
     async def _init_session_api_client(self):
         """Initialize Session API client"""
+        if not (self.config.SESSION_API_URL or "").strip():
+            logger.info("SESSION_API_URL unset; skipping session client")
+            return
         try:
             self._session_api_client = SessionAPIClient(self.config)
             await self._session_api_client.initialize()
@@ -136,6 +142,9 @@ class IntegrationManager:
     
     async def _init_admin_interface_client(self):
         """Initialize Admin Interface client"""
+        if not (self.config.ADMIN_INTERFACE_URL or "").strip():
+            logger.info("ADMIN_INTERFACE_URL unset; skipping admin interface client")
+            return
         try:
             self._admin_interface_client = AdminInterfaceClient(self.config)
             await self._admin_interface_client.initialize()
@@ -145,6 +154,9 @@ class IntegrationManager:
     
     async def _init_tron_client(self):
         """Initialize TRON Payment client"""
+        if not (self.config.TRON_PAYMENT_URL or "").strip():
+            logger.info("TRON_PAYMENT_URL unset; skipping TRON client")
+            return
         try:
             self._tron_client = TronClient(self.config)
             await self._tron_client.initialize()

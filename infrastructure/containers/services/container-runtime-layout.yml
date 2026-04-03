@@ -37,7 +37,7 @@
 
 lucid_services_config_root: /app/service_configs
 
-# Tor egress Docker bridge: lucid-tor-egress-network (172.31.0.0/16) — create manually per infrastructure/containers/network/network.txt; dual-home tor-proxy in infrastructure/containers/tor/docker-compose.proxy-systems.yml; env keys LUCID_TOR_EGRESS_* and PUBLIC_TOR_IP in master-env-config.txt.
+# Tor egress Docker bridge: lucid-tor-egress-network (172.31.0.0/16) — create manually per infrastructure/containers/network/network.txt; dual-home tor-proxy in infrastructure/containers/tor/docker-compose.proxy-systems.yml; env keys LUCID_TOR_EGRESS_* and PUBLIC_TOR_IP in configs/environment/.env.master.
 #
 # Docker Compose files under configs/docker/ (orchestration on build/target host; not under lucid_services_config_root unless COPY'd explicitly).
 configs_docker_compose_yml:

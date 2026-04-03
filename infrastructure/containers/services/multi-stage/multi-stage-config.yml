@@ -140,6 +140,10 @@ services:
       - no-new-privileges:true
     read_only: false  # Allow writes for development
     volumes:
+      - ../../../../configs/environment/.env.master:/app/configs/.env.master:ro
+      - ../../../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
+      - ..:/app/service_configs:ro
+      - ../../host-config.yml:/app/configs/host-config.yml:ro
       - lucid-multi-stage-src:/app/src
       - lucid-multi-stage-logs:/app/logs
     cap_drop:
@@ -185,6 +189,10 @@ services:
       - no-new-privileges:true
     read_only: false
     volumes:
+      - ../../../../configs/environment/.env.master:/app/configs/.env.master:ro
+      - ../../../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
+      - ..:/app/service_configs:ro
+      - ../../host-config.yml:/app/configs/host-config.yml:ro
       - build-cache:/cache
       - build-artifacts:/artifacts
     cap_drop:

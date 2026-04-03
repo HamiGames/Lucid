@@ -1,0 +1,85 @@
+{
+  "schema_version": 1,
+  "description": "Maps gui-services.json compose_service names to Python trees and extra YAML (beyond compose_files[] in the mat). Paths are repo-root relative. node_modules is excluded when scanning Python dirs.",
+  "global_python_files": [
+    "common/load_host_config.py"
+  ],
+  "services": {
+    "admin-interface": {
+      "python_dirs": [
+        "gui/admin",
+        "gui/config",
+        "gui/core",
+        "gui/shared",
+        "electron_gui"
+      ],
+      "yml_extra": [
+        "configs/container/gui/docker-compose.gui-admin.yml",
+        "configs/container/electron_gui/docker-compose.electron-gui.yml",
+        "electron_gui/distroless/docker-compose.electron-gui.yml",
+        "electron_gui/configs/electron-endpoints.yml",
+        "infrastructure/containers/gui/docker-compose.gui-admin.yml"
+      ]
+    },
+    "user-interface": {
+      "python_dirs": [
+        "gui/user",
+        "gui/wallet",
+        "gui/config",
+        "gui/core",
+        "gui/shared",
+        "electron_gui"
+      ],
+      "yml_extra": [
+        "configs/container/gui/docker-compose.user-gui.yml",
+        "configs/container/electron_gui/docker-compose.electron-gui.yml",
+        "electron_gui/distroless/docker-compose.electron-gui.yml",
+        "electron_gui/configs/electron-endpoints.yml",
+        "infrastructure/containers/gui/docker-compose.user-gui.yml"
+      ]
+    },
+    "node-interface": {
+      "python_dirs": [
+        "gui/node",
+        "gui/config",
+        "gui/core",
+        "gui/shared",
+        "electron_gui"
+      ],
+      "yml_extra": [
+        "configs/container/gui/docker-compose.node-gui.yml",
+        "configs/container/node/docker-compose.node-gui.yml",
+        "configs/container/electron_gui/docker-compose.electron-gui.yml",
+        "electron_gui/distroless/docker-compose.electron-gui.yml",
+        "electron_gui/configs/electron-endpoints.yml",
+        "infrastructure/containers/gui/docker-compose.node-gui.yml"
+      ]
+    },
+    "gui-api-bridge": {
+      "python_dirs": ["gui_api_bridge"],
+      "yml_extra": [
+        "gui_api_bridge/docker-compose.yml",
+        "gui_api_bridge/config/gui-bridge-entrypoints.yml"
+      ]
+    },
+    "gui-docker-manager": {
+      "python_dirs": ["gui_docker_manager"],
+      "yml_extra": [
+        "configs/container/gui/docker-compose.user-gui.yml",
+        "infrastructure/containers/gui/docker-compose.user-gui.yml",
+        "infrastructure/containers/services/gui-docker-manager.yml",
+        "infrastructure/containers/services/master-endpoint.yml"
+      ]
+    },
+    "gui-hardware-manager": {
+      "python_dirs": ["gui_hardware_manager"],
+      "yml_extra": []
+    },
+    "gui-tor-manager": {
+      "python_dirs": ["gui_tor_manager"],
+      "yml_extra": [
+        "configs/container/tor/docker-compose.proxy-systems.yml"
+      ]
+    }
+  }
+}

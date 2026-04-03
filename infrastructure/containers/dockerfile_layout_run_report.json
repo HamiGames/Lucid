@@ -1,0 +1,398 @@
+[
+  {
+    "file": "C:\\Users\\surba\\Desktop\\personal\\THE_FUCKER\\lucid_2\\Lucid\\infrastructure\\containers\\.devcontainer\\Dockerfile.network-friendly",
+    "state": "skipped-unmapped",
+    "changed": false,
+    "unmapped": 4
+  },
+  {
+    "file": "C:\\Users\\surba\\Desktop\\personal\\THE_FUCKER\\lucid_2\\Lucid\\infrastructure\\containers\\.devcontainer\\Dockerfile.simple",
+    "state": "skipped-unmapped",
+    "changed": false,
+    "unmapped": 2
+  },
+  {
+    "file": "C:\\Users\\surba\\Desktop\\personal\\THE_FUCKER\\lucid_2\\Lucid\\infrastructure\\containers\\admin\\dockerfile.admin-overlord",
+    "state": "ok",
+    "changed": false,
+    "unmapped": 0
+  },
+  {
+    "file": "C:\\Users\\surba\\Desktop\\personal\\THE_FUCKER\\lucid_2\\Lucid\\infrastructure\\containers\\admin\\Dockerfile.admin-system-gateway",
+    "state": "ok",
+    "changed": false,
+    "unmapped": 0
+  },
+  {
+    "file": "C:\\Users\\surba\\Desktop\\personal\\THE_FUCKER\\lucid_2\\Lucid\\infrastructure\\containers\\admin\\Dockerfile.admin-ui-backend",
+    "state": "ok",
+    "changed": false,
+    "unmapped": 0
+  },
+  {
+    "file": "C:\\Users\\surba\\Desktop\\personal\\THE_FUCKER\\lucid_2\\Lucid\\infrastructure\\containers\\admin\\Dockerfile.gov-client",
+    "state": "ok",
+    "changed": false,
+    "unmapped": 0
+  },
+  {
+    "file": "C:\\Users\\surba\\Desktop\\personal\\THE_FUCKER\\lucid_2\\Lucid\\infrastructure\\containers\\admin\\Dockerfile.key-rotation",
+    "state": "ok",
+    "changed": false,
+    "unmapped": 0
+  },
+  {
+    "file": "C:\\Users\\surba\\Desktop\\personal\\THE_FUCKER\\lucid_2\\Lucid\\infrastructure\\containers\\admin\\Dockerfile.params-registry",
+    "state": "ok",
+    "changed": false,
+    "unmapped": 0
+  },
+  {
+    "file": "C:\\Users\\surba\\Desktop\\personal\\THE_FUCKER\\lucid_2\\Lucid\\infrastructure\\containers\\auth\\Dockerfile.auth-service",
+    "state": "ok",
+    "changed": false,
+    "unmapped": 0
+  },
+  {
+    "file": "C:\\Users\\surba\\Desktop\\personal\\THE_FUCKER\\lucid_2\\Lucid\\infrastructure\\containers\\auth\\Dockerfile.lucid-gov",
+    "state": "ok",
+    "changed": false,
+    "unmapped": 0
+  },
+  {
+    "file": "C:\\Users\\surba\\Desktop\\personal\\THE_FUCKER\\lucid_2\\Lucid\\infrastructure\\containers\\base\\Dockerfile.base",
+    "state": "skipped-unmapped",
+    "changed": false,
+    "unmapped": 5
+  },
+  {
+    "file": "C:\\Users\\surba\\Desktop\\personal\\THE_FUCKER\\lucid_2\\Lucid\\infrastructure\\containers\\base\\Dockerfile.java-base",
+    "state": "ok",
+    "changed": false,
+    "unmapped": 0
+  },
+  {
+    "file": "C:\\Users\\surba\\Desktop\\personal\\THE_FUCKER\\lucid_2\\Lucid\\infrastructure\\containers\\base\\Dockerfile.python-base",
+    "state": "skipped-unmapped",
+    "changed": false,
+    "unmapped": 5
+  },
+  {
+    "file": "C:\\Users\\surba\\Desktop\\personal\\THE_FUCKER\\lucid_2\\Lucid\\infrastructure\\containers\\blockchain\\Dockerfile.block-manager",
+    "state": "ok",
+    "changed": false,
+    "unmapped": 0
+  },
+  {
+    "file": "C:\\Users\\surba\\Desktop\\personal\\THE_FUCKER\\lucid_2\\Lucid\\infrastructure\\containers\\blockchain\\Dockerfile.chain-to-pay",
+    "state": "ok",
+    "changed": false,
+    "unmapped": 0
+  },
+  {
+    "file": "C:\\Users\\surba\\Desktop\\personal\\THE_FUCKER\\lucid_2\\Lucid\\infrastructure\\containers\\blockchain\\Dockerfile.consensus-engine",
+    "state": "skipped-unmapped",
+    "changed": false,
+    "unmapped": 1
+  },
+  {
+    "file": "C:\\Users\\surba\\Desktop\\personal\\THE_FUCKER\\lucid_2\\Lucid\\infrastructure\\containers\\blockchain\\Dockerfile.data",
+    "state": "ok",
+    "changed": false,
+    "unmapped": 0
+  },
+  {
+    "file": "C:\\Users\\surba\\Desktop\\personal\\THE_FUCKER\\lucid_2\\Lucid\\infrastructure\\containers\\blockchain\\Dockerfile.engine",
+    "state": "skipped-unmapped",
+    "changed": false,
+    "unmapped": 1
+  },
+  {
+    "file": "C:\\Users\\surba\\Desktop\\personal\\THE_FUCKER\\lucid_2\\Lucid\\infrastructure\\containers\\database\\Dockerfile.database",
+    "state": "skipped-unmapped",
+    "changed": false,
+    "unmapped": 12
+  },
+  {
+    "file": "C:\\Users\\surba\\Desktop\\personal\\THE_FUCKER\\lucid_2\\Lucid\\infrastructure\\containers\\database\\Dockerfile.database-overlord",
+    "state": "ok",
+    "changed": false,
+    "unmapped": 0
+  },
+  {
+    "file": "C:\\Users\\surba\\Desktop\\personal\\THE_FUCKER\\lucid_2\\Lucid\\infrastructure\\containers\\database\\Dockerfile.elasticsearch",
+    "state": "skipped-unmapped",
+    "changed": false,
+    "unmapped": 1
+  },
+  {
+    "file": "C:\\Users\\surba\\Desktop\\personal\\THE_FUCKER\\lucid_2\\Lucid\\infrastructure\\containers\\database\\Dockerfile.mongodb",
+    "state": "ok",
+    "changed": false,
+    "unmapped": 0
+  },
+  {
+    "file": "C:\\Users\\surba\\Desktop\\personal\\THE_FUCKER\\lucid_2\\Lucid\\infrastructure\\containers\\database\\Dockerfile.redis",
+    "state": "ok",
+    "changed": false,
+    "unmapped": 0
+  },
+  {
+    "file": "C:\\Users\\surba\\Desktop\\personal\\THE_FUCKER\\lucid_2\\Lucid\\infrastructure\\containers\\electron_gui\\Dockerfile.admin",
+    "state": "ok",
+    "changed": false,
+    "unmapped": 0
+  },
+  {
+    "file": "C:\\Users\\surba\\Desktop\\personal\\THE_FUCKER\\lucid_2\\Lucid\\infrastructure\\containers\\electron_gui\\Dockerfile.node",
+    "state": "ok",
+    "changed": false,
+    "unmapped": 0
+  },
+  {
+    "file": "C:\\Users\\surba\\Desktop\\personal\\THE_FUCKER\\lucid_2\\Lucid\\infrastructure\\containers\\electron_gui\\Dockerfile.user",
+    "state": "ok",
+    "changed": false,
+    "unmapped": 0
+  },
+  {
+    "file": "C:\\Users\\surba\\Desktop\\personal\\THE_FUCKER\\lucid_2\\Lucid\\infrastructure\\containers\\gui\\Dockerfile copy.gui-tor-manager",
+    "state": "ok",
+    "changed": false,
+    "unmapped": 0
+  },
+  {
+    "file": "C:\\Users\\surba\\Desktop\\personal\\THE_FUCKER\\lucid_2\\Lucid\\infrastructure\\containers\\gui\\Dockerfile.gui",
+    "state": "skipped-unmapped",
+    "changed": false,
+    "unmapped": 8
+  },
+  {
+    "file": "C:\\Users\\surba\\Desktop\\personal\\THE_FUCKER\\lucid_2\\Lucid\\infrastructure\\containers\\gui\\Dockerfile.gui-api-bridge",
+    "state": "ok",
+    "changed": false,
+    "unmapped": 0
+  },
+  {
+    "file": "C:\\Users\\surba\\Desktop\\personal\\THE_FUCKER\\lucid_2\\Lucid\\infrastructure\\containers\\gui\\Dockerfile.gui-hardware-manager",
+    "state": "ok",
+    "changed": false,
+    "unmapped": 0
+  },
+  {
+    "file": "C:\\Users\\surba\\Desktop\\personal\\THE_FUCKER\\lucid_2\\Lucid\\infrastructure\\containers\\gui\\Dockerfile.gui-tor-manager",
+    "state": "ok",
+    "changed": false,
+    "unmapped": 0
+  },
+  {
+    "file": "C:\\Users\\surba\\Desktop\\personal\\THE_FUCKER\\lucid_2\\Lucid\\infrastructure\\containers\\node\\Dockerfile.node-gov",
+    "state": "ok",
+    "changed": false,
+    "unmapped": 0
+  },
+  {
+    "file": "C:\\Users\\surba\\Desktop\\personal\\THE_FUCKER\\lucid_2\\Lucid\\infrastructure\\containers\\node\\Dockerfile.node-management",
+    "state": "ok",
+    "changed": false,
+    "unmapped": 0
+  },
+  {
+    "file": "C:\\Users\\surba\\Desktop\\personal\\THE_FUCKER\\lucid_2\\Lucid\\infrastructure\\containers\\node\\Dockerfile.node-overlord",
+    "state": "ok",
+    "changed": false,
+    "unmapped": 0
+  },
+  {
+    "file": "C:\\Users\\surba\\Desktop\\personal\\THE_FUCKER\\lucid_2\\Lucid\\infrastructure\\containers\\node\\Dockerfile.node-registry",
+    "state": "ok",
+    "changed": false,
+    "unmapped": 0
+  },
+  {
+    "file": "C:\\Users\\surba\\Desktop\\personal\\THE_FUCKER\\lucid_2\\Lucid\\infrastructure\\containers\\node\\Dockerfile.node-system-gateway",
+    "state": "ok",
+    "changed": false,
+    "unmapped": 0
+  },
+  {
+    "file": "C:\\Users\\surba\\Desktop\\personal\\THE_FUCKER\\lucid_2\\Lucid\\infrastructure\\containers\\node\\Dockerfile.node-utils",
+    "state": "ok",
+    "changed": false,
+    "unmapped": 0
+  },
+  {
+    "file": "C:\\Users\\surba\\Desktop\\personal\\THE_FUCKER\\lucid_2\\Lucid\\infrastructure\\containers\\node\\Dockerfile.node-worker",
+    "state": "ok",
+    "changed": false,
+    "unmapped": 0
+  },
+  {
+    "file": "C:\\Users\\surba\\Desktop\\personal\\THE_FUCKER\\lucid_2\\Lucid\\infrastructure\\containers\\payment_systems\\Dockerfile.on-system-chain-client",
+    "state": "ok",
+    "changed": false,
+    "unmapped": 0
+  },
+  {
+    "file": "C:\\Users\\surba\\Desktop\\personal\\THE_FUCKER\\lucid_2\\Lucid\\infrastructure\\containers\\payment_systems\\Dockerfile.payment-gateway",
+    "state": "ok",
+    "changed": false,
+    "unmapped": 0
+  },
+  {
+    "file": "C:\\Users\\surba\\Desktop\\personal\\THE_FUCKER\\lucid_2\\Lucid\\infrastructure\\containers\\payment_systems\\Dockerfile.tron-node-client",
+    "state": "ok",
+    "changed": false,
+    "unmapped": 0
+  },
+  {
+    "file": "C:\\Users\\surba\\Desktop\\personal\\THE_FUCKER\\lucid_2\\Lucid\\infrastructure\\containers\\payment_systems\\Dockerfile.tron-payment-service",
+    "state": "ok",
+    "changed": false,
+    "unmapped": 0
+  },
+  {
+    "file": "C:\\Users\\surba\\Desktop\\personal\\THE_FUCKER\\lucid_2\\Lucid\\infrastructure\\containers\\payment_systems\\Dockerfile.wallet",
+    "state": "ok",
+    "changed": false,
+    "unmapped": 0
+  },
+  {
+    "file": "C:\\Users\\surba\\Desktop\\personal\\THE_FUCKER\\lucid_2\\Lucid\\infrastructure\\containers\\rdp\\Dockerfile.rdp-controller",
+    "state": "ok",
+    "changed": false,
+    "unmapped": 0
+  },
+  {
+    "file": "C:\\Users\\surba\\Desktop\\personal\\THE_FUCKER\\lucid_2\\Lucid\\infrastructure\\containers\\server\\Dockerfile",
+    "state": "ok",
+    "changed": false,
+    "unmapped": 0
+  },
+  {
+    "file": "C:\\Users\\surba\\Desktop\\personal\\THE_FUCKER\\lucid_2\\Lucid\\infrastructure\\containers\\server\\Dockerfile.rdp-server-manager",
+    "state": "ok",
+    "changed": false,
+    "unmapped": 0
+  },
+  {
+    "file": "C:\\Users\\surba\\Desktop\\personal\\THE_FUCKER\\lucid_2\\Lucid\\infrastructure\\containers\\server\\Dockerfile.server-gateway",
+    "state": "ok",
+    "changed": false,
+    "unmapped": 0
+  },
+  {
+    "file": "C:\\Users\\surba\\Desktop\\personal\\THE_FUCKER\\lucid_2\\Lucid\\infrastructure\\containers\\server\\Dockerfile.server-manager",
+    "state": "ok",
+    "changed": false,
+    "unmapped": 0
+  },
+  {
+    "file": "C:\\Users\\surba\\Desktop\\personal\\THE_FUCKER\\lucid_2\\Lucid\\infrastructure\\containers\\server\\Dockerfile.service-mesh-controller",
+    "state": "ok",
+    "changed": false,
+    "unmapped": 0
+  },
+  {
+    "file": "C:\\Users\\surba\\Desktop\\personal\\THE_FUCKER\\lucid_2\\Lucid\\infrastructure\\containers\\sessions\\Dockerfile.anchoring",
+    "state": "ok",
+    "changed": false,
+    "unmapped": 0
+  },
+  {
+    "file": "C:\\Users\\surba\\Desktop\\personal\\THE_FUCKER\\lucid_2\\Lucid\\infrastructure\\containers\\sessions\\Dockerfile.api",
+    "state": "ok",
+    "changed": false,
+    "unmapped": 0
+  },
+  {
+    "file": "C:\\Users\\surba\\Desktop\\personal\\THE_FUCKER\\lucid_2\\Lucid\\infrastructure\\containers\\sessions\\Dockerfile.chunk-processor",
+    "state": "ok",
+    "changed": false,
+    "unmapped": 0
+  },
+  {
+    "file": "C:\\Users\\surba\\Desktop\\personal\\THE_FUCKER\\lucid_2\\Lucid\\infrastructure\\containers\\sessions\\Dockerfile.merkle-tree-builder",
+    "state": "ok",
+    "changed": false,
+    "unmapped": 0
+  },
+  {
+    "file": "C:\\Users\\surba\\Desktop\\personal\\THE_FUCKER\\lucid_2\\Lucid\\infrastructure\\containers\\sessions\\Dockerfile.session-overlord",
+    "state": "ok",
+    "changed": false,
+    "unmapped": 0
+  },
+  {
+    "file": "C:\\Users\\surba\\Desktop\\personal\\THE_FUCKER\\lucid_2\\Lucid\\infrastructure\\containers\\sessions\\Dockerfile.session-pipeline",
+    "state": "ok",
+    "changed": false,
+    "unmapped": 0
+  },
+  {
+    "file": "C:\\Users\\surba\\Desktop\\personal\\THE_FUCKER\\lucid_2\\Lucid\\infrastructure\\containers\\sessions\\Dockerfile.session-pipeline-manager",
+    "state": "ok",
+    "changed": false,
+    "unmapped": 0
+  },
+  {
+    "file": "C:\\Users\\surba\\Desktop\\personal\\THE_FUCKER\\lucid_2\\Lucid\\infrastructure\\containers\\sessions\\Dockerfile.session-storage-service",
+    "state": "ok",
+    "changed": false,
+    "unmapped": 0
+  },
+  {
+    "file": "C:\\Users\\surba\\Desktop\\personal\\THE_FUCKER\\lucid_2\\Lucid\\infrastructure\\containers\\sessions\\Dockerfile.session-systems-control",
+    "state": "ok",
+    "changed": false,
+    "unmapped": 0
+  },
+  {
+    "file": "C:\\Users\\surba\\Desktop\\personal\\THE_FUCKER\\lucid_2\\Lucid\\infrastructure\\containers\\storage\\Dockerfile.elasticsearch",
+    "state": "skipped-unmapped",
+    "changed": false,
+    "unmapped": 2
+  },
+  {
+    "file": "C:\\Users\\surba\\Desktop\\personal\\THE_FUCKER\\lucid_2\\Lucid\\infrastructure\\containers\\storage\\Dockerfile.mongodb",
+    "state": "skipped-unmapped",
+    "changed": false,
+    "unmapped": 2
+  },
+  {
+    "file": "C:\\Users\\surba\\Desktop\\personal\\THE_FUCKER\\lucid_2\\Lucid\\infrastructure\\containers\\storage\\Dockerfile.redis",
+    "state": "skipped-unmapped",
+    "changed": false,
+    "unmapped": 2
+  },
+  {
+    "file": "C:\\Users\\surba\\Desktop\\personal\\THE_FUCKER\\lucid_2\\Lucid\\infrastructure\\containers\\storage\\Dockerfile.storage",
+    "state": "ok",
+    "changed": false,
+    "unmapped": 0
+  },
+  {
+    "file": "C:\\Users\\surba\\Desktop\\personal\\THE_FUCKER\\lucid_2\\Lucid\\infrastructure\\containers\\tor\\Dockerfile.tor-proxy-02",
+    "state": "skipped-unmapped",
+    "changed": false,
+    "unmapped": 10
+  },
+  {
+    "file": "C:\\Users\\surba\\Desktop\\personal\\THE_FUCKER\\lucid_2\\Lucid\\infrastructure\\containers\\tor\\Dockerfile.tunnels",
+    "state": "ok",
+    "changed": false,
+    "unmapped": 0
+  },
+  {
+    "file": "C:\\Users\\surba\\Desktop\\personal\\THE_FUCKER\\lucid_2\\Lucid\\infrastructure\\containers\\user\\Dockerfile",
+    "state": "ok",
+    "changed": false,
+    "unmapped": 0
+  },
+  {
+    "file": "C:\\Users\\surba\\Desktop\\personal\\THE_FUCKER\\lucid_2\\Lucid\\infrastructure\\containers\\vm\\Dockerfile.vm",
+    "state": "ok",
+    "changed": false,
+    "unmapped": 0
+  }
+]

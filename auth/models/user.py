@@ -7,10 +7,13 @@ x-lucid-file-type: python
 Lucid Authentication Service - User Model
 """
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 from typing import Optional, Dict, Any, List
 from datetime import datetime
 from .permissions import Role
+
+# Synthetic TRON-shaped address for password-only accounts (34 chars, base format check only)
+CREDENTIAL_TRON_PLACEHOLDER = "T" + "1" * 33
 
 
 class User(BaseModel):
@@ -83,21 +86,36 @@ class User(BaseModel):
 
 
 class UserCreate(BaseModel):
-    """User creation request"""
+    """User creation request (TRON path or credential user_id+password path)."""
     
-    tron_address: str = Field(..., description="TRON wallet address")
-    signature: str = Field(..., description="TRON signature for verification")
-    message: str = Field(..., description="Signed message")
+    tron_address: Optional[str] = Field(None, description="TRON wallet address")
+    signature: Optional[str] = Field(None, description="TRON signature for verification")
+    message: Optional[str] = Field(None, description="Signed message")
     email: Optional[str] = Field(None, description="User email (optional)")
     display_name: Optional[str] = Field(None, description="Display name")
     hardware_wallet_type: Optional[str] = Field(None, description="Hardware wallet type")
+    registration_key: Optional[str] = Field(None, description="Platform registration key stored on user doc")
+    user_id: Optional[str] = Field(None, description="Explicit user id for credential registration")
+    password: Optional[str] = Field(None, description="Password (credential path; transport over TLS only)")
+    pre_auth_token: Optional[str] = Field(None, description="Short-lived SM-issued pre-auth token")
+    client_metadata: Optional[Dict[str, Any]] = Field(None, description="Tier A client metadata (non-secret)")
     
-    @validator("tron_address")
-    def validate_tron_address(cls, v):
-        """Validate TRON address format"""
-        if not v or not v.startswith("T") or len(v) != 34:
+    @field_validator("tron_address")
+    @classmethod
+    def validate_tron_when_present(cls, v: Optional[str]) -> Optional[str]:
+        if v is None or v == "":
+            return v
+        if not v.startswith("T") or len(v) != 34:
             raise ValueError("Invalid TRON address")
         return v
+
+    @model_validator(mode="after")
+    def tron_or_credential(self) -> "UserCreate":
+        if self.user_id and self.password:
+            return self
+        if self.tron_address and self.signature and self.message:
+            return self
+        raise ValueError("Either (tron_address, signature, message) or (user_id, password) is required")
     
     class Config:
         json_schema_extra = {
@@ -133,14 +151,14 @@ class UserResponse(BaseModel):
     """User response (public data only)"""
     
     user_id: str
-    tron_address: str
+    tron_address: str = ""
     email: Optional[str] = None
     role: str
     display_name: Optional[str] = None
     avatar_url: Optional[str] = None
-    is_active: bool
-    is_verified: bool
-    kyc_verified: bool
+    is_active: bool = True
+    is_verified: bool = False
+    kyc_verified: bool = False
     hardware_wallet_type: Optional[str] = None
     created_at: datetime
     updated_at: datetime
@@ -165,12 +183,33 @@ class UserResponse(BaseModel):
 
 
 class LoginRequest(BaseModel):
-    """Login request"""
+    """Login request (TRON path or credential user_id+password path)."""
     
-    tron_address: str = Field(..., description="TRON wallet address")
-    signature: str = Field(..., description="TRON signature")
-    message: str = Field(..., description="Signed message")
+    tron_address: Optional[str] = Field(None, description="TRON wallet address")
+    signature: Optional[str] = Field(None, description="TRON signature")
+    message: Optional[str] = Field(None, description="Signed message")
     hardware_wallet: bool = Field(default=False, description="Using hardware wallet")
+    user_id: Optional[str] = Field(None, description="User id for credential login")
+    password: Optional[str] = Field(None, description="Password (credential path)")
+    pre_auth_token: Optional[str] = Field(None, description="SM-issued pre-auth token")
+    client_metadata: Optional[Dict[str, Any]] = Field(None, description="Tier A client metadata (non-secret)")
+
+    @field_validator("tron_address")
+    @classmethod
+    def validate_tron_login(cls, v: Optional[str]) -> Optional[str]:
+        if v is None or v == "":
+            return v
+        if not v.startswith("T") or len(v) != 34:
+            raise ValueError("Invalid TRON address")
+        return v
+
+    @model_validator(mode="after")
+    def tron_or_credential_login(self) -> "LoginRequest":
+        if self.user_id and self.password:
+            return self
+        if self.tron_address and self.signature and self.message:
+            return self
+        raise ValueError("Either (tron_address, signature, message) or (user_id, password) is required")
     
     class Config:
         json_schema_extra = {

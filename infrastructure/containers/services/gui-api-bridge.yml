@@ -8,10 +8,15 @@
 # GUI API Bridge Service Configuration
 # Bridges Electron GUI with backend API services
 # Implements service discovery and API routing
-# Listen: gui-api-bridge:8102 (gui_api_bridge @ infrastructure/containers/host-config.yml)
+# Listen: gui-api-bridge:8203 (gui_api_bridge @ infrastructure/containers/host-config.yml)
+#
+# GUI token realignment — required call chain for Tier A:
+#   *-interface → gui-api-bridge → api-gateway → lucid-auth-service (never direct to lucid-auth-service from Tier A).
+# Forward on every request: client metadata JSON (non-secret), X-Lucid-Calling-Service, Authorization Bearer when present.
+# Do not treat this service as the authority for login validity; gateway + auth-service + server-manager enforce policy.
 
 config_files:
-  secrets: /app/configs/.env.secrets
+  secrets: ../../configs/environment/.env.secrets
   master: /app/configs/.env.master
 
 service:
@@ -57,12 +62,15 @@ backend_services:
     timeout: 30000
     retry_attempts: 3
 
+  # Direct lucid-auth-service URL is for emergency ops / health probes only — not for Tier A user login routing.
   auth_service:
     name: "lucid-auth-service"
     url: "http://lucid-auth-service:8089"
     health_check: "/health"
     timeout: 30000
     retry_attempts: 3
+    tier_a_user_traffic: false
+    use_api_gateway_instead: "http://api-gateway:8080"
 
   session_api:
     name: "session-api"
@@ -92,61 +100,63 @@ backend_services:
     timeout: 30000
     retry_attempts: 3
 
-# API Routing Configuration
+# API Routing Configuration (auth-bearing traffic goes through api_gateway only)
 routing:
-  # User API Routes
   user:
     prefix: "/api/v1/user"
     allowed_methods: ["GET", "POST"]
-    rate_limit: 100  # requests per minute
+    rate_limit: 100
     services:
-      - auth_service
-      - session_api
       - api_gateway
+      - session_api
 
-  # Developer API Routes
   developer:
     prefix: "/api/v1/developer"
     allowed_methods: ["GET", "POST", "PUT", "DELETE"]
-    rate_limit: 500  # requests per minute
+    rate_limit: 500
     services:
-      - auth_service
+      - api_gateway
       - session_api
       - blockchain_core
-      - api_gateway
 
-  # Node Operator API Routes
   node:
     prefix: "/api/v1/node"
     allowed_methods: ["GET", "POST", "PUT"]
-    rate_limit: 200  # requests per minute
+    rate_limit: 200
     services:
-      - auth_service
-      - node_management
       - api_gateway
+      - node_management
 
-  # Admin API Routes
   admin:
     prefix: "/api/v1/admin"
     allowed_methods: ["GET", "POST", "PUT", "DELETE", "PATCH"]
-    rate_limit: 1000  # requests per minute
+    rate_limit: 1000
     services:
-      - auth_service
+      - api_gateway
       - admin_interface
       - blockchain_core
       - node_management
-      - api_gateway
+
+forwarding:
+  required_headers:
+    - "X-Lucid-Calling-Service"
+  optional_headers:
+    - "Authorization"
+    - "X-Lucid-Correlation-Id"
+  client_metadata: "JSON body or dedicated header per bridge implementation; never store secrets in Tier A manifests."
 
 # Authentication Configuration
 authentication:
   enabled: true
-  method: "jwt"
-  jwt:
+  method: "forwarding"
+  note: "Bridge forwards Bearer to api-gateway; local JWT decode is discouraged for Tier A — gateway introspects via lucid-auth-service."
+  jwt_forward_only:
     secret_key_env: "JWT_SECRET_KEY"
-    access_token_expiry: 900  # 15 minutes
-    refresh_token_expiry: 604800  # 7 days
+    access_token_expiry: 900
+    refresh_token_expiry: 604800
     issuer: "lucid-gui-api-bridge"
     audience: "lucid-gui"
+    deprecated_local_validation: "Prefer gateway → auth introspection per gui_token_auth_realignment."
 
 # Authorization Configuration
 authorization:
@@ -179,7 +189,7 @@ cors:
     - "https://localhost:*"
     - "file://*"  # For Electron apps
   allowed_methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
-  allowed_headers: ["Content-Type", "Authorization", "X-Requested-With"]
+  allowed_headers: ["Content-Type", "Authorization", "X-Requested-With", "X-Lucid-Calling-Service", "X-Lucid-Correlation-Id"]
   allow_credentials: true
 
 # Logging Configuration

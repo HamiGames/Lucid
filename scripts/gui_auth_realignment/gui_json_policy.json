@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "forbidden_keys": [
+    "JWT_SECRET_KEY",
+    "SECRET",
+    "PASSWORD",
+    "PRIVATE_KEY",
+    "API_KEY",
+    "ENCRYPTION_KEY",
+    "SESSION_SECRET",
+    "MONGODB_PASSWORD",
+    "REDIS_PASSWORD",
+    "registration_key"
+  ],
+  "required_non_secret_fields": [
+    "schema_version",
+    "compose_service",
+    "api_gateway_url",
+    "calling_service",
+    "machine_id",
+    "location"
+  ],
+  "injection_from_anchors": {
+    "main_lucid_gateway": "api_gateway_url",
+    "gui_api_bridge": "gui_api_bridge_public_url"
+  }
+}

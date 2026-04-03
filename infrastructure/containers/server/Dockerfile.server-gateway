@@ -27,29 +27,13 @@ ARG PYTHON_VERSION=3.11
 ############################
 # Stage 1 – Builder
 ############################
-FROM --platform=$TARGETPLATFORM python:3.11-slim-bookworm AS builder
-
 ARG BUILDPLATFORM
 ARG TARGETPLATFORM
 ARG PYTHON_VERSION
 
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1 \
-    PIP_PREFER_BINARY=1 \
-    DEBIAN_FRONTEND=noninteractive
+FROM --platform=$TARGETPLATFORM python:3.11-slim-bookworm AS builder
 
 WORKDIR /build
-# LUCID_IMAGE_CONFIG: .env.secrets + .env.master + host-config + container services (builder)
-COPY configs/ ./configs/
-RUN rm -rf ./configs/environment && \
-    echo ".env.* files removed"
-COPY configs/environment/.env.secrets ./configs/.env.secrets
-COPY master-env-config.txt ./configs/.env.master
-COPY infrastructure/containers/host-config.yml /build/configs/host-config.yml
-COPY infrastructure/containers/services/ /build/service_configs/
-COPY infrastructure/containers/services/x_lucid_cluster_calibration/core-cluster-host-alignment.yml ./service_configs/x_lucid_cluster_calibration/core-cluster-host-alignment.yml
 
 # System packages
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
@@ -67,55 +51,56 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
         curl \
         ca-certificates \
         tini \
-        pyhton3.11-wheel \
-        pyhton3.11-dev \
+        python3.11-wheel \
+        python3.11-dev \
         python3-pip \
-        pyhton3.11-setuptools \
+        python3.11-setuptools \
         rustc \
         cargo \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-RUN mkdir -p /root /root/.rustup /root/.cargo && \
-    printf "LUCID_SERVER_GATEWAY_RUST_$(date +%s)" > /root/.keep && \
-    touch /root/.keep && \
-    printf "LUCID_SERVER_GATEWAY_RUSTUP_$(date +%s)" > /root/.rustup/.keep && \
-    touch /root/.rustup/.keep && \
-    printf "LUCID_SERVER_GATEWAY_CARGO_$(date +%s)" > /root/.cargo/.keep && \
-    touch /root/.cargo/.keep && \
-    chown -R 65532:65532 /root /root/.cargo /root/.rustup && \
-    chmod +x /root/.keep  /root/.rustup/.keep  /root/.cargo/.keep
-
+# LUCID_LIB_SKELETON_BEGIN
+# Generated: FHS dirs for builder (from final-stage COPY --from, excluding /build/ sources;
+# ancestor dirs collapsed; overlaps with builder mkdir/.keep removed — see collect_skeleton_paths_from_dockerfile).
+RUN set -eux; \
+  mkdir -p \
+    '/bin' \
+    '/root/.cargo' \
+    '/root/.rustup' \
+    '/usr/bin' \
+    '/usr/sbin' \
+    '/var/lib' \
+    '/var/run' \
+    '/etc/ssl/certs' \
+    '/usr/local/bin' \
+    '/usr/lib/python3/dist-packages' \
+    '/usr/local/lib/python3.11/site-packages'; \
+  for d in \
+    '/bin' \
+    '/root/.cargo' \
+    '/root/.rustup' \
+    '/usr/bin' \
+    '/usr/sbin' \
+    '/var/lib' \
+    '/var/run' \
+    '/etc/ssl/certs' \
+    '/usr/local/bin' \
+    '/usr/lib/python3/dist-packages' \
+    '/usr/local/lib/python3.11/site-packages'; \
+  do \
+    printf 'LUCID_LIB_SKELETON_%s' "$(date +%s)" > "$d/.keep"; \
+    touch "$d/.keep"; \
+  done
+# LUCID_LIB_SKELETON_END
 
 RUN apt-get remove -y rustc cargo && \
     rm -rf /root/.cargo /root/.rustup && \
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
 
-ENV PATH=/root/.cargo/bin:$PATH
+COPY 03_api_gateway/requirements.txt ./requirements.txt
 
-# System markers (per Dockerfile-copy-pattern.md)
-RUN printf "LUCID_SERVER_GATEWAY_RUNTIME_DIRECTORY" > /var/run/.keep && \
-    printf "LUCID_SERVER_GATEWAY_LIB_DIRECTORY" > /var/lib/.keep && \
-    chown -R 65532:65532 /var/run /var/lib && \
-    chmod 644 /var/run/.keep /var/lib/.keep
-
-RUN mkdir -p /usr /usr/local /usr/local/lib /usr/local/bin /usr/local/lib/python3.11 /usr/local/lib/python3.11/site-packages && \
-    printf "LUCID_SERVER_GATEWAY_USR_$(date +%s)" > /usr/.keep && \
-    touch /usr/.keep && \
-    printf "LUCID_SERVER_GATEWAY_USR_LOCAL_$(date +%s)" > /usr/local/.keep && \
-    touch /usr/local/.keep && \
-    printf "LUCID_SERVER_GATEWAY_USR_LOCAL_LIB_$(date +%s)" > /usr/local/lib/.keep && \
-    touch /usr/local/lib/.keep && \
-    printf "LUCID_SERVER_GATEWAY_USR_LOCAL_LIB_PYTHON3_11_$(date +%s)" > /usr/local/lib/python3.11/.keep && \
-    touch /usr/local/lib/python3.11/.keep && \
-    printf "LUCID_SERVER_GATEWAY_USR_LOCAL_LIB_PYTHON3_11_SITE_PACKAGES_$(date +%s)" > /usr/local/lib/python3.11/site-packages/.keep && \
-    touch /usr/local/lib/python3.11/site-packages/.keep && \
-    printf "LUCID_SERVER_GATEWAY_USR_LOCAL_BIN_$(date +%s)" > /usr/local/bin/.keep && \
-    touch /usr/local/bin/.keep && \
-    chown -R 65532:65532 /usr /usr/local /usr/local/lib /usr/local/bin /usr/local/lib/python3.11 /usr/local/lib/python3.11/site-packages && \
-    chmod 644 /usr/.keep /usr/local/.keep /usr/local/lib/.keep /usr/local/lib/python3.11/.keep /usr/local/lib/python3.11/site-packages/.keep /usr/local/bin/.keep && \
-    echo " Marker files created to lock in directory structure"
-# Python dependencies
+# Step 1: Build wheels explicitly - shows compilation happening
 RUN --mount=type=cache,target=/root/.cache/pip \
     mkdir -p /build/wheels && \
     printf "LUCID_SERVER_GATEWAY_BUILD_WHEELS_$(date +%s)" > /build/wheels/.keep && \
@@ -126,9 +111,6 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     ls -lh /build/wheels/ | head -20 && \
     echo "total wheels built: $(ls -1 /build/wheels/ | wc -l)"
 
-COPY 03_api_gateway/requirements.txt ./requirements.txt
-
-# Step 1: Build wheels explicitly - shows compilation happening
 RUN --mount=type=cache,target=/root/.cache/pip \
     mkdir -p /build/wheels && \
     echo "building wheels from source" &&\
@@ -139,56 +121,95 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 # LUCID_X_FILES_SKELETON_BEGIN
 # Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
 RUN set -eux; \
-    mkdir -p '.' './api' './common' './config' './configs' './database' './endpoints' './models' './scripts' './server' './service_configs' './services' './tmp' './utils' './api/app' './api/cluster' './api/lucid_api.egg-info' './api/tests' './common/governance' './common/security' './common/server-tools' './common/tor' './configs/.devcontainer' './configs/.ssh' './configs/admin' './configs/auth' './configs/base' './configs/blockchain' './configs/compose' './configs/container' './configs/database' './configs/docker' './configs/electron_gui' './configs/environment' './configs/gui' './configs/integration' './configs/logging' './configs/network' './configs/node' './configs/overlord' './configs/payment_systems' './configs/pi' './configs/rdp' './configs/secrets' './configs/security' './configs/server' './configs/tor' './configs/user' './database/admin' './database/api' './database/config' './database/elasticsearch' './database/models' './database/mongodb' './database/redis' './database/repositories' './database/schema' './database/services' './scripts/build' './scripts/compliance' './scripts/config' './scripts/contracts' './scripts/database' './scripts/deployment' './scripts/devcontainer' './scripts/docs' './scripts/foundation' './scripts/gui' './scripts/hardware' './scripts/integration' './scripts/lib' './scripts/load' './scripts/logging' './scripts/maintenance' './scripts/migration' './scripts/monitoring' './scripts/network' './scripts/registry' './scripts/secrets' './scripts/security' './scripts/services' './scripts/testing' './scripts/validation' './scripts/verification' './service_configs/blockchain' './service_configs/distroless' './service_configs/kubernetes' './service_configs/logging' './service_configs/multi-stage' './service_configs/node' './service_configs/payment_services' './service_configs/rdp' './service_configs/security' './service_configs/service_mesh' './service_configs/sessions' './service_configs/storage' './service_configs/tor' './service_configs/x_lucid_cluster_calibration' './api/app/database' './api/app/db' './api/app/middleware' './api/app/models' './api/app/routers' './api/app/routes' './api/app/schemas' './api/app/scripts' './api/app/security' './api/app/services' './api/app/utils' './api/tests/integration' './configs/admin/admin-system-gateway' './configs/admin/config' './configs/blockchain/chain-to-pay' './configs/blockchain/config' './configs/container/admin' './configs/container/auth' './configs/container/base' './configs/container/blockchain' './configs/container/database' './configs/container/electron_gui' './configs/container/gui' './configs/container/node' './configs/container/payment_systems' './configs/container/rdp' './configs/container/server' './configs/container/sessions' './configs/container/storage' './configs/container/tor' './configs/database/elasticsearch' './configs/database/redis' './configs/docker/compose' './configs/docker/distroless' './configs/docker/docs' './configs/docker/multi-stage' './configs/docker/on-system-chain' './configs/environment/development' './configs/environment/pi' './configs/environment/production' './configs/environment/staging' './configs/node/config' './configs/node/node-system-gateway' './configs/overlord/runtime' './configs/pi/ssh' './database/services/backup' './database/services/migration' './database/services/monitoring' './scripts/build/components' './scripts/build/core' './scripts/build/distroless' './scripts/build/utils' './scripts/compliance/distroless' './scripts/compliance/general' './scripts/deployment/devcontainer' './scripts/deployment/distroless' './scripts/deployment/pi' './scripts/deployment/utils' './scripts/maintenance/cleanup' './scripts/maintenance/optimization' './scripts/maintenance/recovery' './scripts/network/diagnostics' './scripts/network/security' './scripts/network/setup' './scripts/testing/integration' './scripts/testing/unit' './scripts/testing/utils' './service_configs/kubernetes/01_configmaps' './service_configs/kubernetes/02-secrets' './service_configs/kubernetes/03-databases' './service_configs/kubernetes/04-auth' './service_configs/kubernetes/04-network' './service_configs/kubernetes/05-core' './service_configs/kubernetes/06-application' './service_configs/kubernetes/07-support' './service_configs/kubernetes/08-ingress' './service_configs/kubernetes/patches' './api/app/db/models' './configs/docker/compose/mongodb' './configs/docker/compose/nats' './configs/docker/compose/nginx' './configs/docker/compose/redis' './configs/docker/compose/vault' './configs/docker/distroless/base'; \
+    mkdir -p '.' './02_network_security' './03_api_gateway' './auth' './blockchain' './common' './configs' './core' './database' './docs' './endpoints' './gui' './models' './node' './payment_systems' './rdp' './scripts' './server' './service_configs' './sessions' './02_network_security/__pycache__' './02_network_security/docs' './02_network_security/tor' './02_network_security/tunnels' './03_api_gateway/__pycache__' './03_api_gateway/api' './03_api_gateway/certs' './03_api_gateway/config' './03_api_gateway/database' './03_api_gateway/docs' './03_api_gateway/endpoints' './03_api_gateway/gateway' './03_api_gateway/legacy' './03_api_gateway/logs' './03_api_gateway/middleware' './03_api_gateway/models' './03_api_gateway/repositories' './03_api_gateway/scripts' './03_api_gateway/services' './03_api_gateway/utils' './auth/__pycache__' './auth/api' './auth/config' './auth/docs' './auth/middleware' './auth/models' './auth/services' './auth/utils' './blockchain/__pycache__' './blockchain/anchoring' './blockchain/api' './blockchain/chain_client' './blockchain/config' './blockchain/contracts' './blockchain/core' './blockchain/data' './blockchain/deployment' './blockchain/docs' './blockchain/evm' './blockchain/governance' './blockchain/manager' './blockchain/on_system_chain' './blockchain/scripts' './blockchain/tests' './blockchain/utils' './common/__pycache__' './common/governance' './common/security' './common/server-tools' './common/templates' './common/tor' './configs/.ssh' './configs/container' './configs/database' './configs/docker' './configs/env' './configs/integration' './configs/kubernetes' './configs/logging' './configs/pi' './configs/secrets' './configs/security' './configs/tor' './core/__pycache__' './core/blockchain' './core/session' './database/__pycache__' './database/admin' './database/api' './database/config' './database/elasticsearch' './database/models' './database/mongodb' './database/redis' './database/repositories' './database/schema' './database/schemas' './database/services' './docs/analysis' './docs/api' './docs/architecture' './docs/build' './docs/build-docs' './docs/compliance' './docs/database' './docs/deployment' './docs/development' './docs/guides' './docs/implementation' './docs/organisation' './docs/project files' './docs/rules' './docs/security' './docs/specs' './docs/testing' './docs/user' './docs/verification' './endpoints/__pycache__' './gui/__pycache__' './gui/admin' './gui/build' './gui/config' './gui/core' './gui/node' './gui/requirements' './gui/shared' './gui/tests' './gui/user' './gui/wallet' './models/__pycache__' './node/__pycache__' './node/api' './node/config' './node/consensus' './node/dht_crdt' './node/economy' './node/flags' './node/governance' './node/models' './node/over_lord' './node/payouts' './node/pools' './node/poot' './node/registration' './node/repositories' './node/resources' './node/service_configs' './node/shards' './node/sync' './node/tor' './node/validation' './node/worker' './payment_systems/__pycache__' './payment_systems/payment_acceptor' './payment_systems/tron' './payment_systems/tron_node' './payment_systems/tron_relay' './payment_systems/wallet' './rdp/__pycache__' './rdp/client' './rdp/common' './rdp/config' './rdp/database' './rdp/monitoring' './rdp/protocol' './rdp/recorder' './rdp/resource_monitor' './rdp/scripts' './rdp/security' './rdp/server' './rdp/server_manager' './rdp/session_controller' './rdp/xrdp' './scripts/__pycache__' './scripts/build' './scripts/compliance' './scripts/config' './scripts/contracts' './scripts/database' './scripts/deployment' './scripts/devcontainer' './scripts/docs' './scripts/foundation' './scripts/gui' './scripts/hardware' './scripts/integration' './scripts/lib' './scripts/load' './scripts/logging' './scripts/maintenance' './scripts/migration' './scripts/monitoring' './scripts/network' './scripts/registry' './scripts/secrets' './scripts/security' './scripts/services' './scripts/testing' './scripts/validation' './scripts/verification' './server/__pycache__' './service_configs/blockchain' './service_configs/distroless' './service_configs/logging' './service_configs/multi-stage' './service_configs/node' './service_configs/payment_services' './service_configs/rdp' './service_configs/security' './service_configs/service_mesh' './service_configs/services' './service_configs/sessions' './service_configs/tor' './service_configs/x_lucid_cluster_calibration' './sessions/__pycache__' './sessions/api' './sessions/config' './sessions/core' './sessions/encryption' './sessions/integration' './sessions/pipeline' './sessions/processor' './sessions/recorder' './sessions/security' './sessions/session_systems_control' './sessions/storage' './02_network_security/tor/scripts' './02_network_security/tunnels/__pycache__' './02_network_security/tunnels/config' './02_network_security/tunnels/scripts' './03_api_gateway/api/__pycache__' './03_api_gateway/api/app' './03_api_gateway/api/lucid_api.egg-info' './03_api_gateway/api/tests' './03_api_gateway/config/__pycache__' './03_api_gateway/database/__pycache__' './03_api_gateway/docs/swagger' './03_api_gateway/endpoints/__pycache__' './03_api_gateway/legacy/api' './03_api_gateway/legacy/gateway' './03_api_gateway/middleware/__pycache__' './03_api_gateway/models/__pycache__' './03_api_gateway/repositories/__pycache__' './03_api_gateway/services/__pycache__' './03_api_gateway/utils/__pycache__' './auth/api/__pycache__' './auth/config/__pycache__' './auth/middleware/__pycache__' './auth/models/__pycache__' './auth/services/__pycache__' './auth/utils/__pycache__' './blockchain/anchoring/__pycache__' './blockchain/api/app' './blockchain/chain_client/__pycache__' './blockchain/config/__pycache__' './blockchain/contracts/__pycache__' './blockchain/core/__pycache__' './blockchain/data/__pycache__' './blockchain/data/api' './blockchain/deployment/__pycache__' './blockchain/evm/__pycache__' './blockchain/governance/__pycache__' './blockchain/manager/__pycache__' './blockchain/on_system_chain/__pycache__' './blockchain/scripts/__pycache__' './blockchain/tests/__pycache__' './blockchain/utils/__pycache__' './common/governance/__pycache__' './common/security/__pycache__' './common/server-tools/__pycache__' './common/tor/__pycache__' './configs/container/admin' './configs/container/auth' './configs/container/base' './configs/container/blockchain' './configs/container/database' './configs/container/electron_gui' './configs/container/gui' './configs/container/node' './configs/container/payment_systems' './configs/container/rdp' './configs/container/server' './configs/container/sessions' './configs/container/storage' './configs/container/tor' './configs/database/elasticsearch' './configs/database/redis' './configs/docker/distroless' './configs/docker/docs' './configs/docker/multi-stage' './configs/pi/ssh' './core/blockchain/__pycache__' './core/session/__pycache__' './database/admin/__pycache__' './database/api/__pycache__' './database/config/__pycache__' './database/elasticsearch/__pycache__' './database/models/__pycache__' './database/mongodb/__pycache__' './database/redis/__pycache__' './database/repositories/__pycache__' './database/schema/__pycache__' './database/services/__pycache__' './database/services/backup' './database/services/migration' './database/services/monitoring' './docs/api/generated' './docs/api/node_modules' './docs/api/openapi' './docs/api/postman' './docs/api/redoc' './docs/api/sdks' './docs/api/swagger' './docs/api/swagger-ui' './docs/build-docs/Build_guide_docs' './docs/build/logs' './docs/organisation/build-order' './docs/verification/.verify' './gui/admin/__pycache__' './gui/build/__pycache__' './gui/config/__pycache__' './gui/core/__pycache__' './gui/node/__pycache__' './gui/requirements/__pycache__' './gui/shared/__pycache__' './gui/tests/__pycache__' './gui/user/__pycache__' './gui/wallet/wallet_gui' './node/api/__pycache__' './node/consensus/__pycache__' './node/dht_crdt/__pycache__' './node/economy/__pycache__' './node/flags/__pycache__' './node/governance/__pycache__' './node/models/__pycache__' './node/payouts/__pycache__' './node/pools/__pycache__' './node/poot/__pycache__' './node/registration/__pycache__' './node/repositories/__pycache__' './node/resources/__pycache__' './node/service_configs/x_lucid_cluster_calibration' './node/shards/__pycache__' './node/sync/__pycache__' './node/tor/__pycache__' './node/validation/__pycache__' './node/worker/__pycache__' './payment_systems/payment_acceptor/__pycache__' './payment_systems/tron/__pycache__' './payment_systems/tron/api' './payment_systems/tron/config' './payment_systems/tron/models' './payment_systems/tron/repositories' './payment_systems/tron/schemas' './payment_systems/tron/services' './payment_systems/tron/utils' './payment_systems/tron_node/__pycache__' './payment_systems/tron_relay/__pycache__' './payment_systems/tron_relay/api' './payment_systems/tron_relay/config' './payment_systems/tron_relay/services' './payment_systems/wallet/__pycache__' './rdp/client/__pycache__' './rdp/common/__pycache__' './rdp/common/governance' './rdp/monitoring/grafana' './rdp/protocol/__pycache__' './rdp/recorder/__pycache__' './rdp/resource_monitor/__pycache__' './rdp/resource_monitor/config' './rdp/security/__pycache__' './rdp/server/__pycache__' './rdp/server_manager/__pycache__' './rdp/server_manager/config' './rdp/session_controller/__pycache__' './rdp/session_controller/config' './rdp/session_controller/integration' './rdp/xrdp/__pycache__' './rdp/xrdp/config' './scripts/build/__pycache__' './scripts/build/components' './scripts/build/core' './scripts/build/distroless' './scripts/build/utils' './scripts/compliance/distroless' './scripts/compliance/general' './scripts/deployment/devcontainer' './scripts/deployment/distroless' './scripts/deployment/pi' './scripts/deployment/utils' './scripts/maintenance/cleanup' './scripts/maintenance/optimization' './scripts/maintenance/recovery' './scripts/network/diagnostics' './scripts/network/security' './scripts/network/setup' './scripts/testing/integration' './scripts/testing/unit' './scripts/testing/utils' './scripts/validation/__pycache__' './scripts/verification/__pycache__' './service_configs/x_lucid_cluster_calibration/__pycache__' './sessions/api/__pycache__' './sessions/api/config' './sessions/api/integration' './sessions/core/__pycache__' './sessions/encryption/__pycache__' './sessions/integration/__pycache__' './sessions/pipeline/__pycache__' './sessions/pipeline/integration' './sessions/processor/__pycache__' './sessions/processor/config' './sessions/processor/integration' './sessions/recorder/__pycache__' './sessions/recorder/config' './sessions/recorder/integration' './sessions/security/__pycache__' './sessions/session_systems_control/__pycache__' './sessions/storage/__pycache__' './sessions/storage/config' './03_api_gateway/api/app/__pycache__' './03_api_gateway/api/app/database' './03_api_gateway/api/app/db' './03_api_gateway/api/app/middleware' './03_api_gateway/api/app/models' './03_api_gateway/api/app/routers' './03_api_gateway/api/app/routes' './03_api_gateway/api/app/schemas' './03_api_gateway/api/app/scripts' './03_api_gateway/api/app/security' './03_api_gateway/api/app/services' './03_api_gateway/api/app/utils' './03_api_gateway/api/tests/__pycache__' './03_api_gateway/api/tests/integration' './03_api_gateway/docs/swagger/dist' './blockchain/api/app/__pycache__' './blockchain/api/app/crypto' './blockchain/api/app/database' './blockchain/api/app/db' './blockchain/api/app/middleware' './blockchain/api/app/models' './blockchain/api/app/repo' './blockchain/api/app/routers' './blockchain/api/app/routes' './blockchain/api/app/schemas' './blockchain/api/app/services' './blockchain/data/api/__pycache__' './database/services/backup/__pycache__' './database/services/migration/__pycache__' './database/services/monitoring/__pycache__' './docs/api/node_modules/.bin' './docs/api/node_modules/@babel' './docs/api/node_modules/@bcoe' './docs/api/node_modules/@borewit' './docs/api/node_modules/@emotion' './docs/api/node_modules/@eslint' './docs/api/node_modules/@eslint-community' './docs/api/node_modules/@exodus' './docs/api/node_modules/@faker-js' './docs/api/node_modules/@humanwhocodes' './docs/api/node_modules/@inquirer' './docs/api/node_modules/@isaacs' './docs/api/node_modules/@istanbuljs' './docs/api/node_modules/@jest' './docs/api/node_modules/@jridgewell' './docs/api/node_modules/@jsep-plugin' './docs/api/node_modules/@lukeed' './docs/api/node_modules/@nestjs' './docs/api/node_modules/@noble' './docs/api/node_modules/@nodelib' './docs/api/node_modules/@nuxt' './docs/api/node_modules/@nuxtjs' './docs/api/node_modules/@openapitools' './docs/api/node_modules/@opentelemetry' './docs/api/node_modules/@paralleldrive' './docs/api/node_modules/@protobufjs' './docs/api/node_modules/@redocly' './docs/api/node_modules/@sinclair' './docs/api/node_modules/@sinonjs' './docs/api/node_modules/@tokenizer' './docs/api/node_modules/@tootallnate' './docs/api/node_modules/@types' './docs/api/node_modules/@ungap' './docs/api/node_modules/abort-controller' './docs/api/node_modules/accepts' './docs/api/node_modules/acorn' './docs/api/node_modules/acorn-jsx' './docs/api/node_modules/agent-base' './docs/api/node_modules/ajv' './docs/api/node_modules/ansi-escapes' './docs/api/node_modules/ansi-regex' './docs/api/node_modules/ansi-styles' './docs/api/node_modules/anymatch' './docs/api/node_modules/argparse' './docs/api/node_modules/array-flatten' './docs/api/node_modules/asap' './docs/api/node_modules/ast-types' './docs/api/node_modules/asynckit' './docs/api/node_modules/axios' './docs/api/node_modules/babel-jest' './docs/api/node_modules/babel-plugin-istanbul' './docs/api/node_modules/babel-plugin-jest-hoist' './docs/api/node_modules/babel-preset-current-node-syntax' './docs/api/node_modules/babel-preset-jest' './docs/api/node_modules/balanced-match' './docs/api/node_modules/base64-js' './docs/api/node_modules/baseline-browser-mapping' './docs/api/node_modules/basic-auth' './docs/api/node_modules/basic-ftp' './docs/api/node_modules/better-ajv-errors' './docs/api/node_modules/binary-extensions' './docs/api/node_modules/bl' './docs/api/node_modules/body-parser' './docs/api/node_modules/brace-expansion' './docs/api/node_modules/braces' './docs/api/node_modules/browserslist' './docs/api/node_modules/bser' './docs/api/node_modules/buffer' './docs/api/node_modules/buffer-from' './docs/api/node_modules/bundle-name' './docs/api/node_modules/bytes' './docs/api/node_modules/call-bind-apply-helpers' './docs/api/node_modules/call-bound' './docs/api/node_modules/call-me-maybe' './docs/api/node_modules/callsites' './docs/api/node_modules/camelcase' './docs/api/node_modules/camelize' './docs/api/node_modules/caniuse-lite' './docs/api/node_modules/chalk' './docs/api/node_modules/char-regex' './docs/api/node_modules/chardet' './docs/api/node_modules/chokidar' './docs/api/node_modules/ci-info' './docs/api/node_modules/cjs-module-lexer' './docs/api/node_modules/classnames' './docs/api/node_modules/cli-cursor' './docs/api/node_modules/cli-spinners' './docs/api/node_modules/cli-width' './docs/api/node_modules/cliui' './docs/api/node_modules/clone' './docs/api/node_modules/clsx' './docs/api/node_modules/co' './docs/api/node_modules/collect-v8-coverage' './docs/api/node_modules/color-convert' './docs/api/node_modules/color-name' './docs/api/node_modules/colorette' './docs/api/node_modules/combined-stream' './docs/api/node_modules/commander' './docs/api/node_modules/compare-versions' './docs/api/node_modules/component-emitter' './docs/api/node_modules/compressible' './docs/api/node_modules/compression' './docs/api/node_modules/concat-map' './docs/api/node_modules/concat-stream' './docs/api/node_modules/concurrently' './docs/api/node_modules/consola' './docs/api/node_modules/console.table' './docs/api/node_modules/content-disposition' './docs/api/node_modules/content-type' './docs/api/node_modules/convert-source-map' './docs/api/node_modules/cookie' './docs/api/node_modules/cookie-signature' './docs/api/node_modules/cookiejar' './docs/api/node_modules/core-js' './docs/api/node_modules/cors' './docs/api/node_modules/create-jest' './docs/api/node_modules/cross-spawn' './docs/api/node_modules/css-color-keywords' './docs/api/node_modules/css-to-react-native' './docs/api/node_modules/csstype' './docs/api/node_modules/data-uri-to-buffer' './docs/api/node_modules/debug' './docs/api/node_modules/decko' './docs/api/node_modules/dedent' './docs/api/node_modules/deep-is' './docs/api/node_modules/deepmerge' './docs/api/node_modules/default-browser' './docs/api/node_modules/default-browser-id' './docs/api/node_modules/defaults' './docs/api/node_modules/define-lazy-prop' './docs/api/node_modules/degenerator' './docs/api/node_modules/delayed-stream' './docs/api/node_modules/depd' './docs/api/node_modules/destroy' './docs/api/node_modules/detect-newline' './docs/api/node_modules/dezalgo' './docs/api/node_modules/diff-sequences' './docs/api/node_modules/doctrine' './docs/api/node_modules/dompurify' './docs/api/node_modules/dotenv' './docs/api/node_modules/dunder-proto' './docs/api/node_modules/eastasianwidth' './docs/api/node_modules/easy-table' './docs/api/node_modules/ee-first' './docs/api/node_modules/electron-to-chromium' './docs/api/node_modules/emittery' './docs/api/node_modules/emoji-regex' './docs/api/node_modules/encodeurl' './docs/api/node_modules/error-ex' './docs/api/node_modules/es-define-property' './docs/api/node_modules/es-errors' './docs/api/node_modules/es-object-atoms' './docs/api/node_modules/es-set-tostringtag' './docs/api/node_modules/es6-promise' './docs/api/node_modules/escalade' './docs/api/node_modules/escape-html' './docs/api/node_modules/escape-string-regexp' './docs/api/node_modules/escodegen' './docs/api/node_modules/eslint' './docs/api/node_modules/eslint-config-prettier' './docs/api/node_modules/eslint-plugin-prettier' './docs/api/node_modules/eslint-scope' './docs/api/node_modules/eslint-visitor-keys' './docs/api/node_modules/espree' './docs/api/node_modules/esprima' './docs/api/node_modules/esquery' './docs/api/node_modules/esrecurse' './docs/api/node_modules/estraverse' './docs/api/node_modules/esutils' './docs/api/node_modules/etag' './docs/api/node_modules/event-target-shim' './docs/api/node_modules/eventemitter3' './docs/api/node_modules/execa' './docs/api/node_modules/exit' './docs/api/node_modules/expect' './docs/api/node_modules/express' './docs/api/node_modules/fast-deep-equal' './docs/api/node_modules/fast-diff' './docs/api/node_modules/fast-json-stable-stringify' './docs/api/node_modules/fast-levenshtein' './docs/api/node_modules/fast-safe-stringify' './docs/api/node_modules/fast-uri' './docs/api/node_modules/fast-xml-parser' './docs/api/node_modules/fastq' './docs/api/node_modules/fb-watchman' './docs/api/node_modules/fflate' './docs/api/node_modules/figures' './docs/api/node_modules/file-entry-cache' './docs/api/node_modules/file-type' './docs/api/node_modules/fill-range' './docs/api/node_modules/finalhandler' './docs/api/node_modules/find-up' './docs/api/node_modules/flat-cache' './docs/api/node_modules/flatted' './docs/api/node_modules/follow-redirects' './docs/api/node_modules/foreach' './docs/api/node_modules/foreground-child' './docs/api/node_modules/form-data' './docs/api/node_modules/formidable' './docs/api/node_modules/forwarded' './docs/api/node_modules/fresh' './docs/api/node_modules/fs-extra' './docs/api/node_modules/fs.realpath' './docs/api/node_modules/function-bind' './docs/api/node_modules/gensync' './docs/api/node_modules/get-caller-file' './docs/api/node_modules/get-intrinsic' './docs/api/node_modules/get-package-type' './docs/api/node_modules/get-port-please' './docs/api/node_modules/get-proto' './docs/api/node_modules/get-stream' './docs/api/node_modules/get-uri' './docs/api/node_modules/glob' './docs/api/node_modules/glob-parent' './docs/api/node_modules/globals' './docs/api/node_modules/gopd' './docs/api/node_modules/graceful-fs' './docs/api/node_modules/graphemer' './docs/api/node_modules/handlebars' './docs/api/node_modules/has-flag' './docs/api/node_modules/has-symbols' './docs/api/node_modules/has-tostringtag' './docs/api/node_modules/hasown' './docs/api/node_modules/helmet' './docs/api/node_modules/html-escaper' './docs/api/node_modules/http-errors' './docs/api/node_modules/http-proxy-agent' './docs/api/node_modules/http2-client' './docs/api/node_modules/https-proxy-agent' './docs/api/node_modules/human-signals' './docs/api/node_modules/iconv-lite' './docs/api/node_modules/ieee754' './docs/api/node_modules/ignore' './docs/api/node_modules/ignore-by-default' './docs/api/node_modules/import-fresh' './docs/api/node_modules/import-local' './docs/api/node_modules/imurmurhash' './docs/api/node_modules/inflight' './docs/api/node_modules/inherits' './docs/api/node_modules/inquirer' './docs/api/node_modules/ip-address' './docs/api/node_modules/ipaddr.js' './docs/api/node_modules/is-arrayish' './docs/api/node_modules/is-binary-path' './docs/api/node_modules/is-core-module' './docs/api/node_modules/is-docker' './docs/api/node_modules/is-extglob' './docs/api/node_modules/is-fullwidth-code-point' './docs/api/node_modules/is-generator-fn' './docs/api/node_modules/is-glob' './docs/api/node_modules/is-inside-container' './docs/api/node_modules/is-interactive' './docs/api/node_modules/is-number' './docs/api/node_modules/is-path-inside' './docs/api/node_modules/is-stream' './docs/api/node_modules/is-unicode-supported' './docs/api/node_modules/is-wsl' './docs/api/node_modules/isexe' './docs/api/node_modules/istanbul-lib-coverage' './docs/api/node_modules/istanbul-lib-instrument' './docs/api/node_modules/istanbul-lib-report' './docs/api/node_modules/istanbul-lib-source-maps' './docs/api/node_modules/istanbul-reports' './docs/api/node_modules/iterare' './docs/api/node_modules/jackspeak' './docs/api/node_modules/jest' './docs/api/node_modules/jest-changed-files' './docs/api/node_modules/jest-circus' './docs/api/node_modules/jest-cli' './docs/api/node_modules/jest-config' './docs/api/node_modules/jest-diff' './docs/api/node_modules/jest-docblock' './docs/api/node_modules/jest-each' './docs/api/node_modules/jest-environment-node' './docs/api/node_modules/jest-get-type' './docs/api/node_modules/jest-haste-map' './docs/api/node_modules/jest-leak-detector' './docs/api/node_modules/jest-matcher-utils' './docs/api/node_modules/jest-message-util' './docs/api/node_modules/jest-mock' './docs/api/node_modules/jest-pnp-resolver' './docs/api/node_modules/jest-regex-util' './docs/api/node_modules/jest-resolve' './docs/api/node_modules/jest-resolve-dependencies' './docs/api/node_modules/jest-runner' './docs/api/node_modules/jest-runtime' './docs/api/node_modules/jest-snapshot' './docs/api/node_modules/jest-util' './docs/api/node_modules/jest-validate' './docs/api/node_modules/jest-watcher' './docs/api/node_modules/jest-worker' './docs/api/node_modules/js-levenshtein' './docs/api/node_modules/js-tokens' './docs/api/node_modules/js-yaml' './docs/api/node_modules/jsep' './docs/api/node_modules/jsesc' './docs/api/node_modules/json-buffer' './docs/api/node_modules/json-parse-even-better-errors' './docs/api/node_modules/json-pointer' './docs/api/node_modules/json-schema-traverse' './docs/api/node_modules/json-stable-stringify-without-jsonify' './docs/api/node_modules/json5' './docs/api/node_modules/jsonfile' './docs/api/node_modules/jsonpath-plus' './docs/api/node_modules/jsonpointer' './docs/api/node_modules/keyv' './docs/api/node_modules/kleur' './docs/api/node_modules/leven' './docs/api/node_modules/levn' './docs/api/node_modules/lines-and-columns' './docs/api/node_modules/load-esm' './docs/api/node_modules/locate-path' './docs/api/node_modules/lodash' './docs/api/node_modules/lodash.merge' './docs/api/node_modules/log-symbols' './docs/api/node_modules/long' './docs/api/node_modules/loose-envify' './docs/api/node_modules/lru-cache' './docs/api/node_modules/lunr' './docs/api/node_modules/make-dir' './docs/api/node_modules/makeerror' './docs/api/node_modules/mark.js' './docs/api/node_modules/marked' './docs/api/node_modules/math-intrinsics' './docs/api/node_modules/media-typer' './docs/api/node_modules/merge-descriptors' './docs/api/node_modules/merge-stream' './docs/api/node_modules/methods' './docs/api/node_modules/micromatch' './docs/api/node_modules/mime' './docs/api/node_modules/mime-db' './docs/api/node_modules/mime-types' './docs/api/node_modules/mimic-fn' './docs/api/node_modules/minimatch' './docs/api/node_modules/minimist' './docs/api/node_modules/minipass' './docs/api/node_modules/mobx' './docs/api/node_modules/mobx-react' './docs/api/node_modules/mobx-react-lite' './docs/api/node_modules/morgan' './docs/api/node_modules/ms' './docs/api/node_modules/mute-stream' './docs/api/node_modules/nanoid' './docs/api/node_modules/natural-compare' './docs/api/node_modules/negotiator' './docs/api/node_modules/neo-async' './docs/api/node_modules/netmask' './docs/api/node_modules/node-fetch' './docs/api/node_modules/node-fetch-h2' './docs/api/node_modules/node-int64' './docs/api/node_modules/node-readfiles' './docs/api/node_modules/node-releases' './docs/api/node_modules/nodemon' './docs/api/node_modules/normalize-path' './docs/api/node_modules/npm-run-path' './docs/api/node_modules/oas-kit-common' './docs/api/node_modules/oas-linter' './docs/api/node_modules/oas-resolver' './docs/api/node_modules/oas-schema-walker' './docs/api/node_modules/oas-validator' './docs/api/node_modules/object-assign' './docs/api/node_modules/object-inspect' './docs/api/node_modules/on-finished' './docs/api/node_modules/on-headers' './docs/api/node_modules/once' './docs/api/node_modules/onetime' './docs/api/node_modules/open' './docs/api/node_modules/openapi-sampler' './docs/api/node_modules/optionator' './docs/api/node_modules/ora' './docs/api/node_modules/outdent' './docs/api/node_modules/p-limit' './docs/api/node_modules/p-locate' './docs/api/node_modules/p-try' './docs/api/node_modules/pac-proxy-agent' './docs/api/node_modules/pac-resolver' './docs/api/node_modules/package-json-from-dist' './docs/api/node_modules/parent-module' './docs/api/node_modules/parse-json' './docs/api/node_modules/parseurl' './docs/api/node_modules/path-browserify' './docs/api/node_modules/path-exists' './docs/api/node_modules/path-is-absolute' './docs/api/node_modules/path-key' './docs/api/node_modules/path-parse' './docs/api/node_modules/path-scurry' './docs/api/node_modules/path-to-regexp' './docs/api/node_modules/perfect-scrollbar' './docs/api/node_modules/picocolors' './docs/api/node_modules/picomatch' './docs/api/node_modules/pirates' './docs/api/node_modules/pkg-dir' './docs/api/node_modules/pluralize' './docs/api/node_modules/polished' './docs/api/node_modules/postcss' './docs/api/node_modules/postcss-value-parser' './docs/api/node_modules/prelude-ls' './docs/api/node_modules/prettier' './docs/api/node_modules/prettier-linter-helpers' './docs/api/node_modules/pretty-format' './docs/api/node_modules/prismjs' './docs/api/node_modules/prompts' './docs/api/node_modules/prop-types' './docs/api/node_modules/protobufjs' './docs/api/node_modules/proxy-addr' './docs/api/node_modules/proxy-agent' './docs/api/node_modules/proxy-from-env' './docs/api/node_modules/pstree.remy' './docs/api/node_modules/punycode' './docs/api/node_modules/pure-rand' './docs/api/node_modules/qs' './docs/api/node_modules/queue-microtask' './docs/api/node_modules/randombytes' './docs/api/node_modules/range-parser' './docs/api/node_modules/raw-body' './docs/api/node_modules/react' './docs/api/node_modules/react-dom' './docs/api/node_modules/react-is' './docs/api/node_modules/react-tabs' './docs/api/node_modules/readable-stream' './docs/api/node_modules/readdirp' './docs/api/node_modules/redoc' './docs/api/node_modules/redoc-cli' './docs/api/node_modules/reflect-metadata' './docs/api/node_modules/reftools' './docs/api/node_modules/require-directory' './docs/api/node_modules/require-from-string' './docs/api/node_modules/resolve' './docs/api/node_modules/resolve-cwd' './docs/api/node_modules/resolve-from' './docs/api/node_modules/resolve.exports' './docs/api/node_modules/restore-cursor' './docs/api/node_modules/reusify' './docs/api/node_modules/rimraf' './docs/api/node_modules/run-applescript' './docs/api/node_modules/run-async' './docs/api/node_modules/run-parallel' './docs/api/node_modules/rxjs' './docs/api/node_modules/safe-buffer' './docs/api/node_modules/safer-buffer' './docs/api/node_modules/scheduler' './docs/api/node_modules/semver' './docs/api/node_modules/send' './docs/api/node_modules/serve-static' './docs/api/node_modules/set-cookie-parser' './docs/api/node_modules/setprototypeof' './docs/api/node_modules/shallowequal' './docs/api/node_modules/shebang-command' './docs/api/node_modules/shebang-regex' './docs/api/node_modules/shell-quote' './docs/api/node_modules/should' './docs/api/node_modules/should-equal' './docs/api/node_modules/should-format' './docs/api/node_modules/should-type' './docs/api/node_modules/should-type-adaptors' './docs/api/node_modules/should-util' './docs/api/node_modules/side-channel' './docs/api/node_modules/side-channel-list' './docs/api/node_modules/side-channel-map' './docs/api/node_modules/side-channel-weakmap' './docs/api/node_modules/signal-exit' './docs/api/node_modules/simple-update-notifier' './docs/api/node_modules/simple-websocket' './docs/api/node_modules/sisteransi' './docs/api/node_modules/slash' './docs/api/node_modules/slugify' './docs/api/node_modules/smart-buffer' './docs/api/node_modules/socks' './docs/api/node_modules/socks-proxy-agent' './docs/api/node_modules/source-map' './docs/api/node_modules/source-map-js' './docs/api/node_modules/source-map-support' './docs/api/node_modules/sprintf-js' './docs/api/node_modules/stack-utils' './docs/api/node_modules/statuses' './docs/api/node_modules/stickyfill' './docs/api/node_modules/string-length' './docs/api/node_modules/string-width' './docs/api/node_modules/string-width-cjs' './docs/api/node_modules/string_decoder' './docs/api/node_modules/strip-ansi' './docs/api/node_modules/strip-ansi-cjs' './docs/api/node_modules/strip-bom' './docs/api/node_modules/strip-final-newline' './docs/api/node_modules/strip-json-comments' './docs/api/node_modules/strnum' './docs/api/node_modules/strtok3' './docs/api/node_modules/styled-components' './docs/api/node_modules/stylis' './docs/api/node_modules/superagent' './docs/api/node_modules/supertest' './docs/api/node_modules/supports-color' './docs/api/node_modules/supports-preserve-symlinks-flag' './docs/api/node_modules/swagger-ui-dist' './docs/api/node_modules/swagger2openapi' './docs/api/node_modules/test-exclude' './docs/api/node_modules/text-table' './docs/api/node_modules/through' './docs/api/node_modules/tmpl' './docs/api/node_modules/to-regex-range' './docs/api/node_modules/toidentifier' './docs/api/node_modules/token-types' './docs/api/node_modules/touch' './docs/api/node_modules/tr46' './docs/api/node_modules/tree-kill' './docs/api/node_modules/tslib' './docs/api/node_modules/type-check' './docs/api/node_modules/type-detect' './docs/api/node_modules/type-fest' './docs/api/node_modules/type-is' './docs/api/node_modules/typedarray' './docs/api/node_modules/uglify-js' './docs/api/node_modules/uid' './docs/api/node_modules/uint8array-extras' './docs/api/node_modules/undefsafe' './docs/api/node_modules/undici' './docs/api/node_modules/undici-types' './docs/api/node_modules/universalify' './docs/api/node_modules/unpipe' './docs/api/node_modules/update-browserslist-db' './docs/api/node_modules/uri-js' './docs/api/node_modules/uri-js-replace' './docs/api/node_modules/url-template' './docs/api/node_modules/use-sync-external-store' './docs/api/node_modules/util-deprecate' './docs/api/node_modules/utils-merge' './docs/api/node_modules/v8-to-istanbul' './docs/api/node_modules/vary' './docs/api/node_modules/walker' './docs/api/node_modules/wcwidth' './docs/api/node_modules/webidl-conversions' './docs/api/node_modules/whatwg-url' './docs/api/node_modules/which' './docs/api/node_modules/word-wrap' './docs/api/node_modules/wordwrap' './docs/api/node_modules/wrap-ansi' './docs/api/node_modules/wrap-ansi-cjs' './docs/api/node_modules/wrappy' './docs/api/node_modules/write-file-atomic' './docs/api/node_modules/ws' './docs/api/node_modules/wsl-utils' './docs/api/node_modules/y18n' './docs/api/node_modules/yallist' './docs/api/node_modules/yaml' './docs/api/node_modules/yaml-ast-parser' './docs/api/node_modules/yargs' './docs/api/node_modules/yargs-parser' './docs/api/node_modules/yocto-queue' './docs/api/swagger-ui/admin-interface' './docs/api/swagger-ui/api-gateway' './docs/api/swagger-ui/auth-service' './docs/api/swagger-ui/blockchain-core' './docs/api/swagger-ui/node-management' './docs/api/swagger-ui/rdp-services' './docs/api/swagger-ui/session-management' './docs/api/swagger-ui/tron-payment' './docs/build/logs/edits' './docs/build/logs/file_context' './docs/build/logs/missing' './docs/build/logs/progress' './docs/verification/.verify/.devcontainer' './docs/verification/.verify/02-network-security' './docs/verification/.verify/03-api-gateway' './docs/verification/.verify/06-orchestration-runtime' './payment_systems/tron/api/__pycache__' './payment_systems/tron/models/__pycache__' './payment_systems/tron/repositories/__pycache__' './payment_systems/tron/services/__pycache__' './payment_systems/tron/utils/__pycache__' './payment_systems/tron_relay/api/__pycache__' './payment_systems/tron_relay/services/__pycache__' './rdp/monitoring/grafana/dashboards' './rdp/monitoring/grafana/datasources' './rdp/session_controller/integration/__pycache__' './sessions/api/integration/__pycache__' './sessions/pipeline/integration/__pycache__' './sessions/processor/integration/__pycache__' './sessions/recorder/integration/__pycache__' './03_api_gateway/api/app/database/__pycache__' './03_api_gateway/api/app/db/__pycache__' './03_api_gateway/api/app/db/models' './03_api_gateway/api/app/middleware/__pycache__' './03_api_gateway/api/app/models/__pycache__' './03_api_gateway/api/app/routers/__pycache__' './03_api_gateway/api/app/routes/__pycache__' './03_api_gateway/api/app/schemas/__pycache__' './03_api_gateway/api/app/scripts/__pycache__' './03_api_gateway/api/app/security/__pycache__' './03_api_gateway/api/app/services/__pycache__' './03_api_gateway/api/app/utils/__pycache__' './03_api_gateway/api/tests/integration/__pycache__' './blockchain/api/app/crypto/__pycache__' './blockchain/api/app/database/__pycache__' './blockchain/api/app/database/repositories' './blockchain/api/app/db/__pycache__' './blockchain/api/app/middleware/__pycache__' './blockchain/api/app/models/__pycache__' './blockchain/api/app/repo/__pycache__' './blockchain/api/app/routers/__pycache__' './blockchain/api/app/routes/__pycache__' './blockchain/api/app/schemas/__pycache__' './blockchain/api/app/services/__pycache__' './docs/api/node_modules/@babel/code-frame' './docs/api/node_modules/@babel/compat-data' './docs/api/node_modules/@babel/core' './docs/api/node_modules/@babel/generator' './docs/api/node_modules/@babel/helper-compilation-targets' './docs/api/node_modules/@babel/helper-globals' './docs/api/node_modules/@babel/helper-module-imports' './docs/api/node_modules/@babel/helper-module-transforms' './docs/api/node_modules/@babel/helper-plugin-utils' './docs/api/node_modules/@babel/helper-string-parser' './docs/api/node_modules/@babel/helper-validator-identifier' './docs/api/node_modules/@babel/helper-validator-option' './docs/api/node_modules/@babel/helpers' './docs/api/node_modules/@babel/parser' './docs/api/node_modules/@babel/plugin-syntax-async-generators' './docs/api/node_modules/@babel/plugin-syntax-bigint' './docs/api/node_modules/@babel/plugin-syntax-class-properties' './docs/api/node_modules/@babel/plugin-syntax-class-static-block' './docs/api/node_modules/@babel/plugin-syntax-import-attributes' './docs/api/node_modules/@babel/plugin-syntax-import-meta' './docs/api/node_modules/@babel/plugin-syntax-json-strings' './docs/api/node_modules/@babel/plugin-syntax-jsx' './docs/api/node_modules/@babel/plugin-syntax-logical-assignment-operators' './docs/api/node_modules/@babel/plugin-syntax-nullish-coalescing-operator' './docs/api/node_modules/@babel/plugin-syntax-numeric-separator' './docs/api/node_modules/@babel/plugin-syntax-object-rest-spread' './docs/api/node_modules/@babel/plugin-syntax-optional-catch-binding' './docs/api/node_modules/@babel/plugin-syntax-optional-chaining' './docs/api/node_modules/@babel/plugin-syntax-private-property-in-object' './docs/api/node_modules/@babel/plugin-syntax-top-level-await' './docs/api/node_modules/@babel/plugin-syntax-typescript' './docs/api/node_modules/@babel/runtime' './docs/api/node_modules/@babel/template' './docs/api/node_modules/@babel/traverse' './docs/api/node_modules/@babel/types' './docs/api/node_modules/@bcoe/v8-coverage' './docs/api/node_modules/@borewit/text-codec' './docs/api/node_modules/@emotion/is-prop-valid' './docs/api/node_modules/@emotion/memoize' './docs/api/node_modules/@emotion/unitless' './docs/api/node_modules/@eslint-community/eslint-utils' './docs/api/node_modules/@eslint-community/regexpp' './docs/api/node_modules/@eslint/eslintrc' './docs/api/node_modules/@eslint/js' './docs/api/node_modules/@exodus/schemasafe' './docs/api/node_modules/@faker-js/faker' './docs/api/node_modules/@humanwhocodes/config-array' './docs/api/node_modules/@humanwhocodes/module-importer' './docs/api/node_modules/@humanwhocodes/momoa' './docs/api/node_modules/@humanwhocodes/object-schema' './docs/api/node_modules/@inquirer/external-editor' './docs/api/node_modules/@isaacs/balanced-match' './docs/api/node_modules/@isaacs/brace-expansion' './docs/api/node_modules/@isaacs/cliui' './docs/api/node_modules/@istanbuljs/load-nyc-config' './docs/api/node_modules/@istanbuljs/schema' './docs/api/node_modules/@jest/console' './docs/api/node_modules/@jest/core' './docs/api/node_modules/@jest/environment' './docs/api/node_modules/@jest/expect' './docs/api/node_modules/@jest/expect-utils' './docs/api/node_modules/@jest/fake-timers' './docs/api/node_modules/@jest/globals' './docs/api/node_modules/@jest/reporters' './docs/api/node_modules/@jest/schemas' './docs/api/node_modules/@jest/source-map' './docs/api/node_modules/@jest/test-result' './docs/api/node_modules/@jest/test-sequencer' './docs/api/node_modules/@jest/transform' './docs/api/node_modules/@jest/types' './docs/api/node_modules/@jridgewell/gen-mapping' './docs/api/node_modules/@jridgewell/remapping' './docs/api/node_modules/@jridgewell/resolve-uri' './docs/api/node_modules/@jridgewell/sourcemap-codec' './docs/api/node_modules/@jridgewell/trace-mapping' './docs/api/node_modules/@jsep-plugin/assignment' './docs/api/node_modules/@jsep-plugin/regex' './docs/api/node_modules/@lukeed/csprng' './docs/api/node_modules/@nestjs/axios' './docs/api/node_modules/@nestjs/common' './docs/api/node_modules/@nestjs/core' './docs/api/node_modules/@noble/hashes' './docs/api/node_modules/@nodelib/fs.scandir' './docs/api/node_modules/@nodelib/fs.stat' './docs/api/node_modules/@nodelib/fs.walk' './docs/api/node_modules/@nuxt/opencollective' './docs/api/node_modules/@nuxtjs/opencollective' './docs/api/node_modules/@openapitools/openapi-generator-cli' './docs/api/node_modules/@opentelemetry/api' './docs/api/node_modules/@opentelemetry/api-logs' './docs/api/node_modules/@opentelemetry/context-async-hooks' './docs/api/node_modules/@opentelemetry/core' './docs/api/node_modules/@opentelemetry/exporter-trace-otlp-http' './docs/api/node_modules/@opentelemetry/otlp-exporter-base' './docs/api/node_modules/@opentelemetry/otlp-transformer' './docs/api/node_modules/@opentelemetry/propagator-b3' './docs/api/node_modules/@opentelemetry/propagator-jaeger' './docs/api/node_modules/@opentelemetry/resources' './docs/api/node_modules/@opentelemetry/sdk-logs' './docs/api/node_modules/@opentelemetry/sdk-metrics' './docs/api/node_modules/@opentelemetry/sdk-trace-base' './docs/api/node_modules/@opentelemetry/sdk-trace-node' './docs/api/node_modules/@opentelemetry/semantic-conventions' './docs/api/node_modules/@paralleldrive/cuid2' './docs/api/node_modules/@protobufjs/aspromise' './docs/api/node_modules/@protobufjs/base64' './docs/api/node_modules/@protobufjs/codegen' './docs/api/node_modules/@protobufjs/eventemitter' './docs/api/node_modules/@protobufjs/fetch' './docs/api/node_modules/@protobufjs/float' './docs/api/node_modules/@protobufjs/inquire' './docs/api/node_modules/@protobufjs/path' './docs/api/node_modules/@protobufjs/pool' './docs/api/node_modules/@protobufjs/utf8' './docs/api/node_modules/@redocly/ajv' './docs/api/node_modules/@redocly/cli' './docs/api/node_modules/@redocly/config' './docs/api/node_modules/@redocly/openapi-core' './docs/api/node_modules/@redocly/respect-core' './docs/api/node_modules/@sinclair/typebox' './docs/api/node_modules/@sinonjs/commons' './docs/api/node_modules/@sinonjs/fake-timers' './docs/api/node_modules/@tokenizer/inflate' './docs/api/node_modules/@tokenizer/token' './docs/api/node_modules/@tootallnate/quickjs-emscripten' './docs/api/node_modules/@types/babel__core' './docs/api/node_modules/@types/babel__generator' './docs/api/node_modules/@types/babel__template' './docs/api/node_modules/@types/babel__traverse' './docs/api/node_modules/@types/body-parser' './docs/api/node_modules/@types/compression' './docs/api/node_modules/@types/connect' './docs/api/node_modules/@types/cors' './docs/api/node_modules/@types/express' './docs/api/node_modules/@types/express-serve-static-core' './docs/api/node_modules/@types/graceful-fs' './docs/api/node_modules/@types/http-errors' './docs/api/node_modules/@types/inquirer' './docs/api/node_modules/@types/istanbul-lib-coverage' './docs/api/node_modules/@types/istanbul-lib-report' './docs/api/node_modules/@types/istanbul-reports' './docs/api/node_modules/@types/jest' './docs/api/node_modules/@types/js-yaml' './docs/api/node_modules/@types/json-schema' './docs/api/node_modules/@types/mime' './docs/api/node_modules/@types/morgan' './docs/api/node_modules/@types/node' './docs/api/node_modules/@types/qs' './docs/api/node_modules/@types/range-parser' './docs/api/node_modules/@types/send' './docs/api/node_modules/@types/serve-static' './docs/api/node_modules/@types/stack-utils' './docs/api/node_modules/@types/stylis' './docs/api/node_modules/@types/through' './docs/api/node_modules/@types/trusted-types' './docs/api/node_modules/@types/yargs' './docs/api/node_modules/@types/yargs-parser' './docs/api/node_modules/@ungap/structured-clone' './docs/api/node_modules/abort-controller/dist' './docs/api/node_modules/accepts/node_modules' './docs/api/node_modules/acorn/bin' './docs/api/node_modules/acorn/dist' './docs/api/node_modules/agent-base/dist' './docs/api/node_modules/ajv/dist' './docs/api/node_modules/ajv/lib' './docs/api/node_modules/ansi-escapes/node_modules' './docs/api/node_modules/argparse/lib' './docs/api/node_modules/ast-types/.github' './docs/api/node_modules/ast-types/def' './docs/api/node_modules/ast-types/gen' './docs/api/node_modules/ast-types/lib' './docs/api/node_modules/asynckit/lib' './docs/api/node_modules/axios/dist' './docs/api/node_modules/axios/lib' './docs/api/node_modules/babel-jest/build' './docs/api/node_modules/babel-plugin-istanbul/lib' './docs/api/node_modules/babel-plugin-istanbul/node_modules' './docs/api/node_modules/babel-plugin-jest-hoist/build' './docs/api/node_modules/babel-preset-current-node-syntax/.github' './docs/api/node_modules/babel-preset-current-node-syntax/src' './docs/api/node_modules/balanced-match/.github' './docs/api/node_modules/baseline-browser-mapping/dist' './docs/api/node_modules/basic-auth/node_modules' './docs/api/node_modules/basic-ftp/dist' './docs/api/node_modules/better-ajv-errors/lib' './docs/api/node_modules/bl/test' './docs/api/node_modules/body-parser/lib' './docs/api/node_modules/brace-expansion/.github' './docs/api/node_modules/braces/lib' './docs/api/node_modules/call-bind-apply-helpers/.github' './docs/api/node_modules/call-bind-apply-helpers/test' './docs/api/node_modules/call-bound/.github' './docs/api/node_modules/call-bound/test' './docs/api/node_modules/call-me-maybe/src' './docs/api/node_modules/camelize/.github' './docs/api/node_modules/camelize/example' './docs/api/node_modules/camelize/test' './docs/api/node_modules/caniuse-lite/data' './docs/api/node_modules/caniuse-lite/dist' './docs/api/node_modules/chalk/source' './docs/api/node_modules/chardet/lib' './docs/api/node_modules/chokidar/lib' './docs/api/node_modules/chokidar/types' './docs/api/node_modules/cjs-module-lexer/dist' './docs/api/node_modules/cli-width/.nyc_output' './docs/api/node_modules/cliui/build' './docs/api/node_modules/cliui/node_modules' './docs/api/node_modules/clsx/dist' './docs/api/node_modules/combined-stream/lib' './docs/api/node_modules/commander/lib' './docs/api/node_modules/commander/typings' './docs/api/node_modules/compare-versions/lib' './docs/api/node_modules/compare-versions/src' './docs/api/node_modules/concat-map/example' './docs/api/node_modules/concat-map/test' './docs/api/node_modules/concurrently/dist' './docs/api/node_modules/concurrently/docs' './docs/api/node_modules/concurrently/node_modules' './docs/api/node_modules/consola/dist' './docs/api/node_modules/consola/lib' './docs/api/node_modules/console.table/dist' './docs/api/node_modules/core-js/actual' './docs/api/node_modules/core-js/es' './docs/api/node_modules/core-js/features' './docs/api/node_modules/core-js/full' './docs/api/node_modules/core-js/internals' './docs/api/node_modules/core-js/modules' './docs/api/node_modules/core-js/proposals' './docs/api/node_modules/core-js/stable' './docs/api/node_modules/core-js/stage' './docs/api/node_modules/core-js/web' './docs/api/node_modules/cors/lib' './docs/api/node_modules/create-jest/bin' './docs/api/node_modules/create-jest/build' './docs/api/node_modules/cross-spawn/lib' './docs/api/node_modules/css-to-react-native/src' './docs/api/node_modules/data-uri-to-buffer/dist' './docs/api/node_modules/debug/src' './docs/api/node_modules/decko/dist' './docs/api/node_modules/decko/src' './docs/api/node_modules/dedent/dist' './docs/api/node_modules/deep-is/example' './docs/api/node_modules/deep-is/test' './docs/api/node_modules/deepmerge/dist' './docs/api/node_modules/degenerator/dist' './docs/api/node_modules/delayed-stream/lib' './docs/api/node_modules/depd/lib' './docs/api/node_modules/diff-sequences/build' './docs/api/node_modules/doctrine/lib' './docs/api/node_modules/dompurify/dist' './docs/api/node_modules/dotenv/lib' './docs/api/node_modules/dunder-proto/.github' './docs/api/node_modules/dunder-proto/test' './docs/api/node_modules/emoji-regex/es2015' './docs/api/node_modules/es-define-property/.github' './docs/api/node_modules/es-define-property/test' './docs/api/node_modules/es-errors/.github' './docs/api/node_modules/es-errors/test' './docs/api/node_modules/es-object-atoms/.github' './docs/api/node_modules/es-object-atoms/test' './docs/api/node_modules/es-set-tostringtag/test' './docs/api/node_modules/es6-promise/dist' './docs/api/node_modules/es6-promise/lib' './docs/api/node_modules/escalade/dist' './docs/api/node_modules/escalade/sync' './docs/api/node_modules/escodegen/bin' './docs/api/node_modules/eslint-config-prettier/bin' './docs/api/node_modules/eslint-scope/dist' './docs/api/node_modules/eslint-scope/lib' './docs/api/node_modules/eslint-visitor-keys/dist' './docs/api/node_modules/eslint-visitor-keys/lib' './docs/api/node_modules/eslint/bin' './docs/api/node_modules/eslint/conf' './docs/api/node_modules/eslint/lib' './docs/api/node_modules/eslint/messages' './docs/api/node_modules/eslint/node_modules' './docs/api/node_modules/espree/dist' './docs/api/node_modules/espree/lib' './docs/api/node_modules/esprima/bin' './docs/api/node_modules/esprima/dist' './docs/api/node_modules/esquery/dist' './docs/api/node_modules/esutils/lib' './docs/api/node_modules/event-target-shim/dist' './docs/api/node_modules/eventemitter3/dist' './docs/api/node_modules/execa/lib' './docs/api/node_modules/execa/node_modules' './docs/api/node_modules/exit/lib' './docs/api/node_modules/exit/test' './docs/api/node_modules/expect/build' './docs/api/node_modules/express/lib' './docs/api/node_modules/express/node_modules' './docs/api/node_modules/fast-deep-equal/es6' './docs/api/node_modules/fast-json-stable-stringify/.github' './docs/api/node_modules/fast-json-stable-stringify/benchmark' './docs/api/node_modules/fast-json-stable-stringify/example' './docs/api/node_modules/fast-json-stable-stringify/test' './docs/api/node_modules/fast-uri/.github' './docs/api/node_modules/fast-uri/benchmark' './docs/api/node_modules/fast-uri/lib' './docs/api/node_modules/fast-uri/test' './docs/api/node_modules/fast-uri/types' './docs/api/node_modules/fast-xml-parser/src' './docs/api/node_modules/fastq/.github' './docs/api/node_modules/fastq/test' './docs/api/node_modules/fflate/esm' './docs/api/node_modules/fflate/lib' './docs/api/node_modules/fflate/umd' './docs/api/node_modules/figures/node_modules' './docs/api/node_modules/flat-cache/src' './docs/api/node_modules/flatted/cjs' './docs/api/node_modules/flatted/esm' './docs/api/node_modules/flatted/php' './docs/api/node_modules/flatted/python' './docs/api/node_modules/flatted/types' './docs/api/node_modules/foreground-child/dist' './docs/api/node_modules/form-data/lib' './docs/api/node_modules/formidable/src' './docs/api/node_modules/fs-extra/lib' './docs/api/node_modules/function-bind/.github' './docs/api/node_modules/function-bind/test' './docs/api/node_modules/gensync/test' './docs/api/node_modules/get-intrinsic/.github' './docs/api/node_modules/get-intrinsic/test' './docs/api/node_modules/get-port-please/dist' './docs/api/node_modules/get-proto/.github' './docs/api/node_modules/get-proto/test' './docs/api/node_modules/get-uri/dist' './docs/api/node_modules/get-uri/node_modules' './docs/api/node_modules/glob/dist' './docs/api/node_modules/glob/node_modules' './docs/api/node_modules/gopd/.github' './docs/api/node_modules/gopd/test' './docs/api/node_modules/graphemer/lib' './docs/api/node_modules/handlebars/bin' './docs/api/node_modules/handlebars/dist' './docs/api/node_modules/handlebars/lib' './docs/api/node_modules/handlebars/types' './docs/api/node_modules/has-symbols/.github' './docs/api/node_modules/has-symbols/test' './docs/api/node_modules/has-tostringtag/.github' './docs/api/node_modules/has-tostringtag/test' './docs/api/node_modules/hasown/.github' './docs/api/node_modules/html-escaper/cjs' './docs/api/node_modules/html-escaper/esm' './docs/api/node_modules/html-escaper/test' './docs/api/node_modules/http-proxy-agent/dist' './docs/api/node_modules/http-proxy-agent/node_modules' './docs/api/node_modules/http2-client/examples' './docs/api/node_modules/http2-client/lib' './docs/api/node_modules/http2-client/test' './docs/api/node_modules/https-proxy-agent/dist' './docs/api/node_modules/https-proxy-agent/node_modules' './docs/api/node_modules/human-signals/build' './docs/api/node_modules/iconv-lite/encodings' './docs/api/node_modules/iconv-lite/lib' './docs/api/node_modules/import-local/fixtures' './docs/api/node_modules/inquirer/lib' './docs/api/node_modules/ip-address/dist' './docs/api/node_modules/ip-address/src' './docs/api/node_modules/ipaddr.js/lib' './docs/api/node_modules/is-core-module/test' './docs/api/node_modules/isexe/test' './docs/api/node_modules/istanbul-lib-coverage/lib' './docs/api/node_modules/istanbul-lib-instrument/src' './docs/api/node_modules/istanbul-lib-report/lib' './docs/api/node_modules/istanbul-lib-source-maps/lib' './docs/api/node_modules/istanbul-lib-source-maps/node_modules' './docs/api/node_modules/istanbul-reports/lib' './docs/api/node_modules/iterare/lib' './docs/api/node_modules/jackspeak/dist' './docs/api/node_modules/jest-changed-files/build' './docs/api/node_modules/jest-circus/build' './docs/api/node_modules/jest-cli/bin' './docs/api/node_modules/jest-cli/build' './docs/api/node_modules/jest-cli/node_modules' './docs/api/node_modules/jest-config/build' './docs/api/node_modules/jest-config/node_modules' './docs/api/node_modules/jest-diff/build' './docs/api/node_modules/jest-docblock/build' './docs/api/node_modules/jest-each/build' './docs/api/node_modules/jest-environment-node/build' './docs/api/node_modules/jest-get-type/build' './docs/api/node_modules/jest-haste-map/build' './docs/api/node_modules/jest-leak-detector/build' './docs/api/node_modules/jest-matcher-utils/build' './docs/api/node_modules/jest-message-util/build' './docs/api/node_modules/jest-mock/build' './docs/api/node_modules/jest-regex-util/build' './docs/api/node_modules/jest-resolve-dependencies/build' './docs/api/node_modules/jest-resolve/build' './docs/api/node_modules/jest-runner/build' './docs/api/node_modules/jest-runtime/build' './docs/api/node_modules/jest-runtime/node_modules' './docs/api/node_modules/jest-snapshot/build' './docs/api/node_modules/jest-util/build' './docs/api/node_modules/jest-validate/build' './docs/api/node_modules/jest-validate/node_modules' './docs/api/node_modules/jest-watcher/build' './docs/api/node_modules/jest-worker/build' './docs/api/node_modules/jest-worker/node_modules' './docs/api/node_modules/jest/bin' './docs/api/node_modules/jest/build' './docs/api/node_modules/js-yaml/bin' './docs/api/node_modules/js-yaml/dist' './docs/api/node_modules/js-yaml/lib' './docs/api/node_modules/jsep/dist' './docs/api/node_modules/jsep/typings' './docs/api/node_modules/jsesc/bin' './docs/api/node_modules/jsesc/man' './docs/api/node_modules/json-buffer/test' './docs/api/node_modules/json-pointer/.nyc_output' './docs/api/node_modules/json-pointer/coverage' './docs/api/node_modules/json-pointer/test' './docs/api/node_modules/json-schema-traverse/.github' './docs/api/node_modules/json-schema-traverse/spec' './docs/api/node_modules/json-stable-stringify-without-jsonify/example' './docs/api/node_modules/json-stable-stringify-without-jsonify/test' './docs/api/node_modules/json5/dist' './docs/api/node_modules/json5/lib' './docs/api/node_modules/jsonpath-plus/bin' './docs/api/node_modules/jsonpath-plus/dist' './docs/api/node_modules/jsonpath-plus/src' './docs/api/node_modules/keyv/src' './docs/api/node_modules/levn/lib' './docs/api/node_modules/lines-and-columns/build' './docs/api/node_modules/lodash/fp' './docs/api/node_modules/long/umd' './docs/api/node_modules/lunr/build' './docs/api/node_modules/lunr/lib' './docs/api/node_modules/lunr/perf' './docs/api/node_modules/lunr/test' './docs/api/node_modules/makeerror/lib' './docs/api/node_modules/mark.js/build' './docs/api/node_modules/mark.js/dist' './docs/api/node_modules/mark.js/src' './docs/api/node_modules/mark.js/test' './docs/api/node_modules/marked/bin' './docs/api/node_modules/marked/lib' './docs/api/node_modules/marked/man' './docs/api/node_modules/marked/src' './docs/api/node_modules/math-intrinsics/.github' './docs/api/node_modules/math-intrinsics/constants' './docs/api/node_modules/math-intrinsics/test' './docs/api/node_modules/mime-types/node_modules' './docs/api/node_modules/mime/src' './docs/api/node_modules/minimatch/lib' './docs/api/node_modules/minimist/.github' './docs/api/node_modules/minimist/example' './docs/api/node_modules/minimist/test' './docs/api/node_modules/minipass/dist' './docs/api/node_modules/mobx-react-lite/dist' './docs/api/node_modules/mobx-react-lite/es' './docs/api/node_modules/mobx-react-lite/lib' './docs/api/node_modules/mobx-react-lite/src' './docs/api/node_modules/mobx-react/dist' './docs/api/node_modules/mobx-react/src' './docs/api/node_modules/mobx/dist' './docs/api/node_modules/mobx/src' './docs/api/node_modules/morgan/node_modules' './docs/api/node_modules/nanoid/async' './docs/api/node_modules/nanoid/bin' './docs/api/node_modules/nanoid/non-secure' './docs/api/node_modules/nanoid/url-alphabet' './docs/api/node_modules/negotiator/lib' './docs/api/node_modules/netmask/example' './docs/api/node_modules/netmask/lib' './docs/api/node_modules/netmask/test' './docs/api/node_modules/netmask/tests' './docs/api/node_modules/node-fetch-h2/lib' './docs/api/node_modules/node-fetch/lib' './docs/api/node_modules/node-readfiles/lib' './docs/api/node_modules/node-readfiles/test' './docs/api/node_modules/node-releases/data' './docs/api/node_modules/nodemon/bin' './docs/api/node_modules/nodemon/doc' './docs/api/node_modules/nodemon/lib' './docs/api/node_modules/nodemon/node_modules' './docs/api/node_modules/oas-linter/node_modules' './docs/api/node_modules/oas-resolver/node_modules' './docs/api/node_modules/oas-validator/node_modules' './docs/api/node_modules/object-inspect/.github' './docs/api/node_modules/object-inspect/example' './docs/api/node_modules/object-inspect/test' './docs/api/node_modules/openapi-sampler/dist' './docs/api/node_modules/openapi-sampler/src' './docs/api/node_modules/optionator/lib' './docs/api/node_modules/outdent/lib' './docs/api/node_modules/outdent/lib-module' './docs/api/node_modules/outdent/src' './docs/api/node_modules/pac-proxy-agent/dist' './docs/api/node_modules/pac-proxy-agent/node_modules' './docs/api/node_modules/pac-resolver/dist' './docs/api/node_modules/package-json-from-dist/dist' './docs/api/node_modules/path-browserify/.github' './docs/api/node_modules/path-browserify/test' './docs/api/node_modules/path-scurry/dist' './docs/api/node_modules/path-scurry/node_modules' './docs/api/node_modules/path-to-regexp/dist' './docs/api/node_modules/perfect-scrollbar/css' './docs/api/node_modules/perfect-scrollbar/dist' './docs/api/node_modules/perfect-scrollbar/src' './docs/api/node_modules/perfect-scrollbar/types' './docs/api/node_modules/picomatch/lib' './docs/api/node_modules/pirates/lib' './docs/api/node_modules/pkg-dir/node_modules' './docs/api/node_modules/polished/.husky' './docs/api/node_modules/polished/dist' './docs/api/node_modules/polished/docs' './docs/api/node_modules/polished/lib' './docs/api/node_modules/postcss-value-parser/lib' './docs/api/node_modules/postcss/lib' './docs/api/node_modules/prelude-ls/lib' './docs/api/node_modules/prettier-linter-helpers/.github' './docs/api/node_modules/prettier-linter-helpers/.vscode' './docs/api/node_modules/prettier-linter-helpers/test' './docs/api/node_modules/prettier/esm' './docs/api/node_modules/pretty-format/build' './docs/api/node_modules/pretty-format/node_modules' './docs/api/node_modules/prismjs/components' './docs/api/node_modules/prismjs/plugins' './docs/api/node_modules/prismjs/themes' './docs/api/node_modules/prompts/dist' './docs/api/node_modules/prompts/lib' './docs/api/node_modules/prop-types/lib' './docs/api/node_modules/prop-types/node_modules' './docs/api/node_modules/protobufjs/dist' './docs/api/node_modules/protobufjs/ext' './docs/api/node_modules/protobufjs/google' './docs/api/node_modules/protobufjs/scripts' './docs/api/node_modules/protobufjs/src' './docs/api/node_modules/proxy-agent/dist' './docs/api/node_modules/proxy-agent/node_modules' './docs/api/node_modules/pstree.remy/lib' './docs/api/node_modules/pstree.remy/tests' './docs/api/node_modules/pure-rand/lib' './docs/api/node_modules/qs/.github' './docs/api/node_modules/qs/dist' './docs/api/node_modules/qs/lib' './docs/api/node_modules/qs/test' './docs/api/node_modules/react-dom/cjs' './docs/api/node_modules/react-is/cjs' './docs/api/node_modules/react-is/umd' './docs/api/node_modules/react-tabs/esm' './docs/api/node_modules/react-tabs/lib' './docs/api/node_modules/react-tabs/style' './docs/api/node_modules/react/cjs' './docs/api/node_modules/readable-stream/lib' './docs/api/node_modules/redoc-cli/node_modules' './docs/api/node_modules/redoc/bundles' './docs/api/node_modules/redoc/typings' './docs/api/node_modules/reftools/lib' './docs/api/node_modules/resolve-cwd/node_modules' './docs/api/node_modules/resolve.exports/dist' './docs/api/node_modules/resolve/.github' './docs/api/node_modules/resolve/bin' './docs/api/node_modules/resolve/example' './docs/api/node_modules/resolve/lib' './docs/api/node_modules/resolve/test' './docs/api/node_modules/restore-cursor/node_modules' './docs/api/node_modules/reusify/.github' './docs/api/node_modules/reusify/benchmarks' './docs/api/node_modules/rimraf/node_modules' './docs/api/node_modules/rxjs/ajax' './docs/api/node_modules/rxjs/dist' './docs/api/node_modules/rxjs/fetch' './docs/api/node_modules/rxjs/operators' './docs/api/node_modules/rxjs/src' './docs/api/node_modules/rxjs/testing' './docs/api/node_modules/rxjs/webSocket' './docs/api/node_modules/scheduler/cjs' './docs/api/node_modules/semver/bin' './docs/api/node_modules/semver/classes' './docs/api/node_modules/semver/functions' './docs/api/node_modules/semver/internal' './docs/api/node_modules/semver/ranges' './docs/api/node_modules/send/node_modules' './docs/api/node_modules/set-cookie-parser/lib' './docs/api/node_modules/setprototypeof/test' './docs/api/node_modules/shell-quote/.github' './docs/api/node_modules/shell-quote/__pycache__' './docs/api/node_modules/shell-quote/test' './docs/api/node_modules/should-equal/cjs' './docs/api/node_modules/should-equal/es6' './docs/api/node_modules/should-format/cjs' './docs/api/node_modules/should-format/es6' './docs/api/node_modules/should-type-adaptors/cjs' './docs/api/node_modules/should-type-adaptors/es6' './docs/api/node_modules/should-type/cjs' './docs/api/node_modules/should-type/es6' './docs/api/node_modules/should-util/cjs' './docs/api/node_modules/should-util/es6' './docs/api/node_modules/should/cjs' './docs/api/node_modules/should/es6' './docs/api/node_modules/side-channel-list/.github' './docs/api/node_modules/side-channel-list/test' './docs/api/node_modules/side-channel-map/.github' './docs/api/node_modules/side-channel-map/test' './docs/api/node_modules/side-channel-weakmap/.github' './docs/api/node_modules/side-channel-weakmap/test' './docs/api/node_modules/side-channel/.github' './docs/api/node_modules/side-channel/test' './docs/api/node_modules/signal-exit/dist' './docs/api/node_modules/simple-update-notifier/build' './docs/api/node_modules/simple-update-notifier/node_modules' './docs/api/node_modules/simple-update-notifier/src' './docs/api/node_modules/simple-websocket/node_modules' './docs/api/node_modules/sisteransi/src' './docs/api/node_modules/smart-buffer/build' './docs/api/node_modules/smart-buffer/docs' './docs/api/node_modules/smart-buffer/typings' './docs/api/node_modules/socks-proxy-agent/dist' './docs/api/node_modules/socks-proxy-agent/node_modules' './docs/api/node_modules/socks/build' './docs/api/node_modules/socks/docs' './docs/api/node_modules/socks/typings' './docs/api/node_modules/source-map-js/lib' './docs/api/node_modules/source-map/dist' './docs/api/node_modules/source-map/lib' './docs/api/node_modules/sprintf-js/demo' './docs/api/node_modules/sprintf-js/dist' './docs/api/node_modules/sprintf-js/src' './docs/api/node_modules/sprintf-js/test' './docs/api/node_modules/stack-utils/node_modules' './docs/api/node_modules/string_decoder/lib' './docs/api/node_modules/strnum/.vscode' './docs/api/node_modules/strtok3/lib' './docs/api/node_modules/styled-components/dist' './docs/api/node_modules/styled-components/native' './docs/api/node_modules/styled-components/node_modules' './docs/api/node_modules/styled-components/test-utils' './docs/api/node_modules/stylis/dist' './docs/api/node_modules/stylis/src' './docs/api/node_modules/superagent/dist' './docs/api/node_modules/superagent/lib' './docs/api/node_modules/superagent/node_modules' './docs/api/node_modules/supertest/lib' './docs/api/node_modules/supports-preserve-symlinks-flag/.github' './docs/api/node_modules/supports-preserve-symlinks-flag/test' './docs/api/node_modules/swagger2openapi/lib' './docs/api/node_modules/swagger2openapi/node_modules' './docs/api/node_modules/test-exclude/node_modules' './docs/api/node_modules/text-table/example' './docs/api/node_modules/text-table/test' './docs/api/node_modules/through/test' './docs/api/node_modules/tmpl/lib' './docs/api/node_modules/token-types/lib' './docs/api/node_modules/touch/bin' './docs/api/node_modules/tr46/lib' './docs/api/node_modules/tslib/modules' './docs/api/node_modules/type-check/lib' './docs/api/node_modules/type-fest/source' './docs/api/node_modules/type-fest/ts41' './docs/api/node_modules/typedarray/example' './docs/api/node_modules/typedarray/test' './docs/api/node_modules/uglify-js/bin' './docs/api/node_modules/uglify-js/lib' './docs/api/node_modules/uglify-js/tools' './docs/api/node_modules/uid/dist' './docs/api/node_modules/uid/secure' './docs/api/node_modules/uid/single' './docs/api/node_modules/undefsafe/.github' './docs/api/node_modules/undefsafe/lib' './docs/api/node_modules/undici/docs' './docs/api/node_modules/undici/lib' './docs/api/node_modules/undici/scripts' './docs/api/node_modules/undici/types' './docs/api/node_modules/uri-js-replace/dist' './docs/api/node_modules/uri-js/dist' './docs/api/node_modules/url-template/lib' './docs/api/node_modules/url-template/test' './docs/api/node_modules/url-template/uritemplate-test' './docs/api/node_modules/use-sync-external-store/cjs' './docs/api/node_modules/use-sync-external-store/shim' './docs/api/node_modules/v8-to-istanbul/lib' './docs/api/node_modules/walker/lib' './docs/api/node_modules/wcwidth/docs' './docs/api/node_modules/wcwidth/test' './docs/api/node_modules/webidl-conversions/lib' './docs/api/node_modules/whatwg-url/lib' './docs/api/node_modules/which/bin' './docs/api/node_modules/wordwrap/example' './docs/api/node_modules/wordwrap/test' './docs/api/node_modules/write-file-atomic/lib' './docs/api/node_modules/write-file-atomic/node_modules' './docs/api/node_modules/ws/lib' './docs/api/node_modules/y18n/build' './docs/api/node_modules/yaml-ast-parser/dist' './docs/api/node_modules/yaml-ast-parser/src' './docs/api/node_modules/yaml-ast-parser/test' './docs/api/node_modules/yaml/browser' './docs/api/node_modules/yaml/dist' './docs/api/node_modules/yargs-parser/build' './docs/api/node_modules/yargs/build' './docs/api/node_modules/yargs/helpers' './docs/api/node_modules/yargs/lib' './docs/api/node_modules/yargs/locales' './docs/verification/.verify/02-network-security/tor' './docs/verification/.verify/03-api-gateway/api' './docs/verification/.verify/06-orchestration-runtime/compose'; \
     for d in \
       '.' \
-      './api' \
+      './02_network_security' \
+      './03_api_gateway' \
+      './auth' \
+      './blockchain' \
       './common' \
-      './config' \
       './configs' \
+      './core' \
       './database' \
+      './docs' \
       './endpoints' \
+      './gui' \
       './models' \
+      './node' \
+      './payment_systems' \
+      './rdp' \
       './scripts' \
       './server' \
       './service_configs' \
-      './services' \
-      './tmp' \
-      './utils' \
-      './api/app' \
-      './api/cluster' \
-      './api/lucid_api.egg-info' \
-      './api/tests' \
+      './sessions' \
+      './02_network_security/__pycache__' \
+      './02_network_security/docs' \
+      './02_network_security/tor' \
+      './02_network_security/tunnels' \
+      './03_api_gateway/__pycache__' \
+      './03_api_gateway/api' \
+      './03_api_gateway/certs' \
+      './03_api_gateway/config' \
+      './03_api_gateway/database' \
+      './03_api_gateway/docs' \
+      './03_api_gateway/endpoints' \
+      './03_api_gateway/gateway' \
+      './03_api_gateway/legacy' \
+      './03_api_gateway/logs' \
+      './03_api_gateway/middleware' \
+      './03_api_gateway/models' \
+      './03_api_gateway/repositories' \
+      './03_api_gateway/scripts' \
+      './03_api_gateway/services' \
+      './03_api_gateway/utils' \
+      './auth/__pycache__' \
+      './auth/api' \
+      './auth/config' \
+      './auth/docs' \
+      './auth/middleware' \
+      './auth/models' \
+      './auth/services' \
+      './auth/utils' \
+      './blockchain/__pycache__' \
+      './blockchain/anchoring' \
+      './blockchain/api' \
+      './blockchain/chain_client' \
+      './blockchain/config' \
+      './blockchain/contracts' \
+      './blockchain/core' \
+      './blockchain/data' \
+      './blockchain/deployment' \
+      './blockchain/docs' \
+      './blockchain/evm' \
+      './blockchain/governance' \
+      './blockchain/manager' \
+      './blockchain/on_system_chain' \
+      './blockchain/scripts' \
+      './blockchain/tests' \
+      './blockchain/utils' \
+      './common/__pycache__' \
       './common/governance' \
       './common/security' \
       './common/server-tools' \
+      './common/templates' \
       './common/tor' \
-      './configs/.devcontainer' \
       './configs/.ssh' \
-      './configs/admin' \
-      './configs/auth' \
-      './configs/base' \
-      './configs/blockchain' \
-      './configs/compose' \
       './configs/container' \
       './configs/database' \
       './configs/docker' \
-      './configs/electron_gui' \
-      './configs/environment' \
-      './configs/gui' \
+      './configs/env' \
       './configs/integration' \
+      './configs/kubernetes' \
       './configs/logging' \
-      './configs/network' \
-      './configs/node' \
-      './configs/overlord' \
-      './configs/payment_systems' \
       './configs/pi' \
-      './configs/rdp' \
       './configs/secrets' \
       './configs/security' \
-      './configs/server' \
       './configs/tor' \
-      './configs/user' \
+      './core/__pycache__' \
+      './core/blockchain' \
+      './core/session' \
+      './database/__pycache__' \
       './database/admin' \
       './database/api' \
       './database/config' \
@@ -198,7 +219,84 @@ RUN set -eux; \
       './database/redis' \
       './database/repositories' \
       './database/schema' \
+      './database/schemas' \
       './database/services' \
+      './docs/analysis' \
+      './docs/api' \
+      './docs/architecture' \
+      './docs/build' \
+      './docs/build-docs' \
+      './docs/compliance' \
+      './docs/database' \
+      './docs/deployment' \
+      './docs/development' \
+      './docs/guides' \
+      './docs/implementation' \
+      './docs/organisation' \
+      './docs/project files' \
+      './docs/rules' \
+      './docs/security' \
+      './docs/specs' \
+      './docs/testing' \
+      './docs/user' \
+      './docs/verification' \
+      './endpoints/__pycache__' \
+      './gui/__pycache__' \
+      './gui/admin' \
+      './gui/build' \
+      './gui/config' \
+      './gui/core' \
+      './gui/node' \
+      './gui/requirements' \
+      './gui/shared' \
+      './gui/tests' \
+      './gui/user' \
+      './gui/wallet' \
+      './models/__pycache__' \
+      './node/__pycache__' \
+      './node/api' \
+      './node/config' \
+      './node/consensus' \
+      './node/dht_crdt' \
+      './node/economy' \
+      './node/flags' \
+      './node/governance' \
+      './node/models' \
+      './node/over_lord' \
+      './node/payouts' \
+      './node/pools' \
+      './node/poot' \
+      './node/registration' \
+      './node/repositories' \
+      './node/resources' \
+      './node/service_configs' \
+      './node/shards' \
+      './node/sync' \
+      './node/tor' \
+      './node/validation' \
+      './node/worker' \
+      './payment_systems/__pycache__' \
+      './payment_systems/payment_acceptor' \
+      './payment_systems/tron' \
+      './payment_systems/tron_node' \
+      './payment_systems/tron_relay' \
+      './payment_systems/wallet' \
+      './rdp/__pycache__' \
+      './rdp/client' \
+      './rdp/common' \
+      './rdp/config' \
+      './rdp/database' \
+      './rdp/monitoring' \
+      './rdp/protocol' \
+      './rdp/recorder' \
+      './rdp/resource_monitor' \
+      './rdp/scripts' \
+      './rdp/security' \
+      './rdp/server' \
+      './rdp/server_manager' \
+      './rdp/session_controller' \
+      './rdp/xrdp' \
+      './scripts/__pycache__' \
       './scripts/build' \
       './scripts/compliance' \
       './scripts/config' \
@@ -225,9 +323,9 @@ RUN set -eux; \
       './scripts/testing' \
       './scripts/validation' \
       './scripts/verification' \
+      './server/__pycache__' \
       './service_configs/blockchain' \
       './service_configs/distroless' \
-      './service_configs/kubernetes' \
       './service_configs/logging' \
       './service_configs/multi-stage' \
       './service_configs/node' \
@@ -235,26 +333,67 @@ RUN set -eux; \
       './service_configs/rdp' \
       './service_configs/security' \
       './service_configs/service_mesh' \
+      './service_configs/services' \
       './service_configs/sessions' \
-      './service_configs/storage' \
       './service_configs/tor' \
       './service_configs/x_lucid_cluster_calibration' \
-      './api/app/database' \
-      './api/app/db' \
-      './api/app/middleware' \
-      './api/app/models' \
-      './api/app/routers' \
-      './api/app/routes' \
-      './api/app/schemas' \
-      './api/app/scripts' \
-      './api/app/security' \
-      './api/app/services' \
-      './api/app/utils' \
-      './api/tests/integration' \
-      './configs/admin/admin-system-gateway' \
-      './configs/admin/config' \
-      './configs/blockchain/chain-to-pay' \
-      './configs/blockchain/config' \
+      './sessions/__pycache__' \
+      './sessions/api' \
+      './sessions/config' \
+      './sessions/core' \
+      './sessions/encryption' \
+      './sessions/integration' \
+      './sessions/pipeline' \
+      './sessions/processor' \
+      './sessions/recorder' \
+      './sessions/security' \
+      './sessions/session_systems_control' \
+      './sessions/storage' \
+      './02_network_security/tor/scripts' \
+      './02_network_security/tunnels/__pycache__' \
+      './02_network_security/tunnels/config' \
+      './02_network_security/tunnels/scripts' \
+      './03_api_gateway/api/__pycache__' \
+      './03_api_gateway/api/app' \
+      './03_api_gateway/api/lucid_api.egg-info' \
+      './03_api_gateway/api/tests' \
+      './03_api_gateway/config/__pycache__' \
+      './03_api_gateway/database/__pycache__' \
+      './03_api_gateway/docs/swagger' \
+      './03_api_gateway/endpoints/__pycache__' \
+      './03_api_gateway/legacy/api' \
+      './03_api_gateway/legacy/gateway' \
+      './03_api_gateway/middleware/__pycache__' \
+      './03_api_gateway/models/__pycache__' \
+      './03_api_gateway/repositories/__pycache__' \
+      './03_api_gateway/services/__pycache__' \
+      './03_api_gateway/utils/__pycache__' \
+      './auth/api/__pycache__' \
+      './auth/config/__pycache__' \
+      './auth/middleware/__pycache__' \
+      './auth/models/__pycache__' \
+      './auth/services/__pycache__' \
+      './auth/utils/__pycache__' \
+      './blockchain/anchoring/__pycache__' \
+      './blockchain/api/app' \
+      './blockchain/chain_client/__pycache__' \
+      './blockchain/config/__pycache__' \
+      './blockchain/contracts/__pycache__' \
+      './blockchain/core/__pycache__' \
+      './blockchain/data/__pycache__' \
+      './blockchain/data/api' \
+      './blockchain/deployment/__pycache__' \
+      './blockchain/evm/__pycache__' \
+      './blockchain/governance/__pycache__' \
+      './blockchain/manager/__pycache__' \
+      './blockchain/on_system_chain/__pycache__' \
+      './blockchain/scripts/__pycache__' \
+      './blockchain/tests/__pycache__' \
+      './blockchain/utils/__pycache__' \
+      './common/governance/__pycache__' \
+      './common/security/__pycache__' \
+      './common/server-tools/__pycache__' \
+      './common/tor/__pycache__' \
       './configs/container/admin' \
       './configs/container/auth' \
       './configs/container/base' \
@@ -271,22 +410,99 @@ RUN set -eux; \
       './configs/container/tor' \
       './configs/database/elasticsearch' \
       './configs/database/redis' \
-      './configs/docker/compose' \
       './configs/docker/distroless' \
       './configs/docker/docs' \
       './configs/docker/multi-stage' \
-      './configs/docker/on-system-chain' \
-      './configs/environment/development' \
-      './configs/environment/pi' \
-      './configs/environment/production' \
-      './configs/environment/staging' \
-      './configs/node/config' \
-      './configs/node/node-system-gateway' \
-      './configs/overlord/runtime' \
       './configs/pi/ssh' \
+      './core/blockchain/__pycache__' \
+      './core/session/__pycache__' \
+      './database/admin/__pycache__' \
+      './database/api/__pycache__' \
+      './database/config/__pycache__' \
+      './database/elasticsearch/__pycache__' \
+      './database/models/__pycache__' \
+      './database/mongodb/__pycache__' \
+      './database/redis/__pycache__' \
+      './database/repositories/__pycache__' \
+      './database/schema/__pycache__' \
+      './database/services/__pycache__' \
       './database/services/backup' \
       './database/services/migration' \
       './database/services/monitoring' \
+      './docs/api/generated' \
+      './docs/api/node_modules' \
+      './docs/api/openapi' \
+      './docs/api/postman' \
+      './docs/api/redoc' \
+      './docs/api/sdks' \
+      './docs/api/swagger' \
+      './docs/api/swagger-ui' \
+      './docs/build-docs/Build_guide_docs' \
+      './docs/build/logs' \
+      './docs/organisation/build-order' \
+      './docs/verification/.verify' \
+      './gui/admin/__pycache__' \
+      './gui/build/__pycache__' \
+      './gui/config/__pycache__' \
+      './gui/core/__pycache__' \
+      './gui/node/__pycache__' \
+      './gui/requirements/__pycache__' \
+      './gui/shared/__pycache__' \
+      './gui/tests/__pycache__' \
+      './gui/user/__pycache__' \
+      './gui/wallet/wallet_gui' \
+      './node/api/__pycache__' \
+      './node/consensus/__pycache__' \
+      './node/dht_crdt/__pycache__' \
+      './node/economy/__pycache__' \
+      './node/flags/__pycache__' \
+      './node/governance/__pycache__' \
+      './node/models/__pycache__' \
+      './node/payouts/__pycache__' \
+      './node/pools/__pycache__' \
+      './node/poot/__pycache__' \
+      './node/registration/__pycache__' \
+      './node/repositories/__pycache__' \
+      './node/resources/__pycache__' \
+      './node/service_configs/x_lucid_cluster_calibration' \
+      './node/shards/__pycache__' \
+      './node/sync/__pycache__' \
+      './node/tor/__pycache__' \
+      './node/validation/__pycache__' \
+      './node/worker/__pycache__' \
+      './payment_systems/payment_acceptor/__pycache__' \
+      './payment_systems/tron/__pycache__' \
+      './payment_systems/tron/api' \
+      './payment_systems/tron/config' \
+      './payment_systems/tron/models' \
+      './payment_systems/tron/repositories' \
+      './payment_systems/tron/schemas' \
+      './payment_systems/tron/services' \
+      './payment_systems/tron/utils' \
+      './payment_systems/tron_node/__pycache__' \
+      './payment_systems/tron_relay/__pycache__' \
+      './payment_systems/tron_relay/api' \
+      './payment_systems/tron_relay/config' \
+      './payment_systems/tron_relay/services' \
+      './payment_systems/wallet/__pycache__' \
+      './rdp/client/__pycache__' \
+      './rdp/common/__pycache__' \
+      './rdp/common/governance' \
+      './rdp/monitoring/grafana' \
+      './rdp/protocol/__pycache__' \
+      './rdp/recorder/__pycache__' \
+      './rdp/resource_monitor/__pycache__' \
+      './rdp/resource_monitor/config' \
+      './rdp/security/__pycache__' \
+      './rdp/server/__pycache__' \
+      './rdp/server_manager/__pycache__' \
+      './rdp/server_manager/config' \
+      './rdp/session_controller/__pycache__' \
+      './rdp/session_controller/config' \
+      './rdp/session_controller/integration' \
+      './rdp/xrdp/__pycache__' \
+      './rdp/xrdp/config' \
+      './scripts/build/__pycache__' \
       './scripts/build/components' \
       './scripts/build/core' \
       './scripts/build/distroless' \
@@ -306,30 +522,1389 @@ RUN set -eux; \
       './scripts/testing/integration' \
       './scripts/testing/unit' \
       './scripts/testing/utils' \
-      './service_configs/kubernetes/01_configmaps' \
-      './service_configs/kubernetes/02-secrets' \
-      './service_configs/kubernetes/03-databases' \
-      './service_configs/kubernetes/04-auth' \
-      './service_configs/kubernetes/04-network' \
-      './service_configs/kubernetes/05-core' \
-      './service_configs/kubernetes/06-application' \
-      './service_configs/kubernetes/07-support' \
-      './service_configs/kubernetes/08-ingress' \
-      './service_configs/kubernetes/patches' \
-      './api/app/db/models' \
-      './configs/docker/compose/mongodb' \
-      './configs/docker/compose/nats' \
-      './configs/docker/compose/nginx' \
-      './configs/docker/compose/redis' \
-      './configs/docker/compose/vault' \
-      './configs/docker/distroless/base' \
+      './scripts/validation/__pycache__' \
+      './scripts/verification/__pycache__' \
+      './service_configs/x_lucid_cluster_calibration/__pycache__' \
+      './sessions/api/__pycache__' \
+      './sessions/api/config' \
+      './sessions/api/integration' \
+      './sessions/core/__pycache__' \
+      './sessions/encryption/__pycache__' \
+      './sessions/integration/__pycache__' \
+      './sessions/pipeline/__pycache__' \
+      './sessions/pipeline/integration' \
+      './sessions/processor/__pycache__' \
+      './sessions/processor/config' \
+      './sessions/processor/integration' \
+      './sessions/recorder/__pycache__' \
+      './sessions/recorder/config' \
+      './sessions/recorder/integration' \
+      './sessions/security/__pycache__' \
+      './sessions/session_systems_control/__pycache__' \
+      './sessions/storage/__pycache__' \
+      './sessions/storage/config' \
+      './03_api_gateway/api/app/__pycache__' \
+      './03_api_gateway/api/app/database' \
+      './03_api_gateway/api/app/db' \
+      './03_api_gateway/api/app/middleware' \
+      './03_api_gateway/api/app/models' \
+      './03_api_gateway/api/app/routers' \
+      './03_api_gateway/api/app/routes' \
+      './03_api_gateway/api/app/schemas' \
+      './03_api_gateway/api/app/scripts' \
+      './03_api_gateway/api/app/security' \
+      './03_api_gateway/api/app/services' \
+      './03_api_gateway/api/app/utils' \
+      './03_api_gateway/api/tests/__pycache__' \
+      './03_api_gateway/api/tests/integration' \
+      './03_api_gateway/docs/swagger/dist' \
+      './blockchain/api/app/__pycache__' \
+      './blockchain/api/app/crypto' \
+      './blockchain/api/app/database' \
+      './blockchain/api/app/db' \
+      './blockchain/api/app/middleware' \
+      './blockchain/api/app/models' \
+      './blockchain/api/app/repo' \
+      './blockchain/api/app/routers' \
+      './blockchain/api/app/routes' \
+      './blockchain/api/app/schemas' \
+      './blockchain/api/app/services' \
+      './blockchain/data/api/__pycache__' \
+      './database/services/backup/__pycache__' \
+      './database/services/migration/__pycache__' \
+      './database/services/monitoring/__pycache__' \
+      './docs/api/node_modules/.bin' \
+      './docs/api/node_modules/@babel' \
+      './docs/api/node_modules/@bcoe' \
+      './docs/api/node_modules/@borewit' \
+      './docs/api/node_modules/@emotion' \
+      './docs/api/node_modules/@eslint' \
+      './docs/api/node_modules/@eslint-community' \
+      './docs/api/node_modules/@exodus' \
+      './docs/api/node_modules/@faker-js' \
+      './docs/api/node_modules/@humanwhocodes' \
+      './docs/api/node_modules/@inquirer' \
+      './docs/api/node_modules/@isaacs' \
+      './docs/api/node_modules/@istanbuljs' \
+      './docs/api/node_modules/@jest' \
+      './docs/api/node_modules/@jridgewell' \
+      './docs/api/node_modules/@jsep-plugin' \
+      './docs/api/node_modules/@lukeed' \
+      './docs/api/node_modules/@nestjs' \
+      './docs/api/node_modules/@noble' \
+      './docs/api/node_modules/@nodelib' \
+      './docs/api/node_modules/@nuxt' \
+      './docs/api/node_modules/@nuxtjs' \
+      './docs/api/node_modules/@openapitools' \
+      './docs/api/node_modules/@opentelemetry' \
+      './docs/api/node_modules/@paralleldrive' \
+      './docs/api/node_modules/@protobufjs' \
+      './docs/api/node_modules/@redocly' \
+      './docs/api/node_modules/@sinclair' \
+      './docs/api/node_modules/@sinonjs' \
+      './docs/api/node_modules/@tokenizer' \
+      './docs/api/node_modules/@tootallnate' \
+      './docs/api/node_modules/@types' \
+      './docs/api/node_modules/@ungap' \
+      './docs/api/node_modules/abort-controller' \
+      './docs/api/node_modules/accepts' \
+      './docs/api/node_modules/acorn' \
+      './docs/api/node_modules/acorn-jsx' \
+      './docs/api/node_modules/agent-base' \
+      './docs/api/node_modules/ajv' \
+      './docs/api/node_modules/ansi-escapes' \
+      './docs/api/node_modules/ansi-regex' \
+      './docs/api/node_modules/ansi-styles' \
+      './docs/api/node_modules/anymatch' \
+      './docs/api/node_modules/argparse' \
+      './docs/api/node_modules/array-flatten' \
+      './docs/api/node_modules/asap' \
+      './docs/api/node_modules/ast-types' \
+      './docs/api/node_modules/asynckit' \
+      './docs/api/node_modules/axios' \
+      './docs/api/node_modules/babel-jest' \
+      './docs/api/node_modules/babel-plugin-istanbul' \
+      './docs/api/node_modules/babel-plugin-jest-hoist' \
+      './docs/api/node_modules/babel-preset-current-node-syntax' \
+      './docs/api/node_modules/babel-preset-jest' \
+      './docs/api/node_modules/balanced-match' \
+      './docs/api/node_modules/base64-js' \
+      './docs/api/node_modules/baseline-browser-mapping' \
+      './docs/api/node_modules/basic-auth' \
+      './docs/api/node_modules/basic-ftp' \
+      './docs/api/node_modules/better-ajv-errors' \
+      './docs/api/node_modules/binary-extensions' \
+      './docs/api/node_modules/bl' \
+      './docs/api/node_modules/body-parser' \
+      './docs/api/node_modules/brace-expansion' \
+      './docs/api/node_modules/braces' \
+      './docs/api/node_modules/browserslist' \
+      './docs/api/node_modules/bser' \
+      './docs/api/node_modules/buffer' \
+      './docs/api/node_modules/buffer-from' \
+      './docs/api/node_modules/bundle-name' \
+      './docs/api/node_modules/bytes' \
+      './docs/api/node_modules/call-bind-apply-helpers' \
+      './docs/api/node_modules/call-bound' \
+      './docs/api/node_modules/call-me-maybe' \
+      './docs/api/node_modules/callsites' \
+      './docs/api/node_modules/camelcase' \
+      './docs/api/node_modules/camelize' \
+      './docs/api/node_modules/caniuse-lite' \
+      './docs/api/node_modules/chalk' \
+      './docs/api/node_modules/char-regex' \
+      './docs/api/node_modules/chardet' \
+      './docs/api/node_modules/chokidar' \
+      './docs/api/node_modules/ci-info' \
+      './docs/api/node_modules/cjs-module-lexer' \
+      './docs/api/node_modules/classnames' \
+      './docs/api/node_modules/cli-cursor' \
+      './docs/api/node_modules/cli-spinners' \
+      './docs/api/node_modules/cli-width' \
+      './docs/api/node_modules/cliui' \
+      './docs/api/node_modules/clone' \
+      './docs/api/node_modules/clsx' \
+      './docs/api/node_modules/co' \
+      './docs/api/node_modules/collect-v8-coverage' \
+      './docs/api/node_modules/color-convert' \
+      './docs/api/node_modules/color-name' \
+      './docs/api/node_modules/colorette' \
+      './docs/api/node_modules/combined-stream' \
+      './docs/api/node_modules/commander' \
+      './docs/api/node_modules/compare-versions' \
+      './docs/api/node_modules/component-emitter' \
+      './docs/api/node_modules/compressible' \
+      './docs/api/node_modules/compression' \
+      './docs/api/node_modules/concat-map' \
+      './docs/api/node_modules/concat-stream' \
+      './docs/api/node_modules/concurrently' \
+      './docs/api/node_modules/consola' \
+      './docs/api/node_modules/console.table' \
+      './docs/api/node_modules/content-disposition' \
+      './docs/api/node_modules/content-type' \
+      './docs/api/node_modules/convert-source-map' \
+      './docs/api/node_modules/cookie' \
+      './docs/api/node_modules/cookie-signature' \
+      './docs/api/node_modules/cookiejar' \
+      './docs/api/node_modules/core-js' \
+      './docs/api/node_modules/cors' \
+      './docs/api/node_modules/create-jest' \
+      './docs/api/node_modules/cross-spawn' \
+      './docs/api/node_modules/css-color-keywords' \
+      './docs/api/node_modules/css-to-react-native' \
+      './docs/api/node_modules/csstype' \
+      './docs/api/node_modules/data-uri-to-buffer' \
+      './docs/api/node_modules/debug' \
+      './docs/api/node_modules/decko' \
+      './docs/api/node_modules/dedent' \
+      './docs/api/node_modules/deep-is' \
+      './docs/api/node_modules/deepmerge' \
+      './docs/api/node_modules/default-browser' \
+      './docs/api/node_modules/default-browser-id' \
+      './docs/api/node_modules/defaults' \
+      './docs/api/node_modules/define-lazy-prop' \
+      './docs/api/node_modules/degenerator' \
+      './docs/api/node_modules/delayed-stream' \
+      './docs/api/node_modules/depd' \
+      './docs/api/node_modules/destroy' \
+      './docs/api/node_modules/detect-newline' \
+      './docs/api/node_modules/dezalgo' \
+      './docs/api/node_modules/diff-sequences' \
+      './docs/api/node_modules/doctrine' \
+      './docs/api/node_modules/dompurify' \
+      './docs/api/node_modules/dotenv' \
+      './docs/api/node_modules/dunder-proto' \
+      './docs/api/node_modules/eastasianwidth' \
+      './docs/api/node_modules/easy-table' \
+      './docs/api/node_modules/ee-first' \
+      './docs/api/node_modules/electron-to-chromium' \
+      './docs/api/node_modules/emittery' \
+      './docs/api/node_modules/emoji-regex' \
+      './docs/api/node_modules/encodeurl' \
+      './docs/api/node_modules/error-ex' \
+      './docs/api/node_modules/es-define-property' \
+      './docs/api/node_modules/es-errors' \
+      './docs/api/node_modules/es-object-atoms' \
+      './docs/api/node_modules/es-set-tostringtag' \
+      './docs/api/node_modules/es6-promise' \
+      './docs/api/node_modules/escalade' \
+      './docs/api/node_modules/escape-html' \
+      './docs/api/node_modules/escape-string-regexp' \
+      './docs/api/node_modules/escodegen' \
+      './docs/api/node_modules/eslint' \
+      './docs/api/node_modules/eslint-config-prettier' \
+      './docs/api/node_modules/eslint-plugin-prettier' \
+      './docs/api/node_modules/eslint-scope' \
+      './docs/api/node_modules/eslint-visitor-keys' \
+      './docs/api/node_modules/espree' \
+      './docs/api/node_modules/esprima' \
+      './docs/api/node_modules/esquery' \
+      './docs/api/node_modules/esrecurse' \
+      './docs/api/node_modules/estraverse' \
+      './docs/api/node_modules/esutils' \
+      './docs/api/node_modules/etag' \
+      './docs/api/node_modules/event-target-shim' \
+      './docs/api/node_modules/eventemitter3' \
+      './docs/api/node_modules/execa' \
+      './docs/api/node_modules/exit' \
+      './docs/api/node_modules/expect' \
+      './docs/api/node_modules/express' \
+      './docs/api/node_modules/fast-deep-equal' \
+      './docs/api/node_modules/fast-diff' \
+      './docs/api/node_modules/fast-json-stable-stringify' \
+      './docs/api/node_modules/fast-levenshtein' \
+      './docs/api/node_modules/fast-safe-stringify' \
+      './docs/api/node_modules/fast-uri' \
+      './docs/api/node_modules/fast-xml-parser' \
+      './docs/api/node_modules/fastq' \
+      './docs/api/node_modules/fb-watchman' \
+      './docs/api/node_modules/fflate' \
+      './docs/api/node_modules/figures' \
+      './docs/api/node_modules/file-entry-cache' \
+      './docs/api/node_modules/file-type' \
+      './docs/api/node_modules/fill-range' \
+      './docs/api/node_modules/finalhandler' \
+      './docs/api/node_modules/find-up' \
+      './docs/api/node_modules/flat-cache' \
+      './docs/api/node_modules/flatted' \
+      './docs/api/node_modules/follow-redirects' \
+      './docs/api/node_modules/foreach' \
+      './docs/api/node_modules/foreground-child' \
+      './docs/api/node_modules/form-data' \
+      './docs/api/node_modules/formidable' \
+      './docs/api/node_modules/forwarded' \
+      './docs/api/node_modules/fresh' \
+      './docs/api/node_modules/fs-extra' \
+      './docs/api/node_modules/fs.realpath' \
+      './docs/api/node_modules/function-bind' \
+      './docs/api/node_modules/gensync' \
+      './docs/api/node_modules/get-caller-file' \
+      './docs/api/node_modules/get-intrinsic' \
+      './docs/api/node_modules/get-package-type' \
+      './docs/api/node_modules/get-port-please' \
+      './docs/api/node_modules/get-proto' \
+      './docs/api/node_modules/get-stream' \
+      './docs/api/node_modules/get-uri' \
+      './docs/api/node_modules/glob' \
+      './docs/api/node_modules/glob-parent' \
+      './docs/api/node_modules/globals' \
+      './docs/api/node_modules/gopd' \
+      './docs/api/node_modules/graceful-fs' \
+      './docs/api/node_modules/graphemer' \
+      './docs/api/node_modules/handlebars' \
+      './docs/api/node_modules/has-flag' \
+      './docs/api/node_modules/has-symbols' \
+      './docs/api/node_modules/has-tostringtag' \
+      './docs/api/node_modules/hasown' \
+      './docs/api/node_modules/helmet' \
+      './docs/api/node_modules/html-escaper' \
+      './docs/api/node_modules/http-errors' \
+      './docs/api/node_modules/http-proxy-agent' \
+      './docs/api/node_modules/http2-client' \
+      './docs/api/node_modules/https-proxy-agent' \
+      './docs/api/node_modules/human-signals' \
+      './docs/api/node_modules/iconv-lite' \
+      './docs/api/node_modules/ieee754' \
+      './docs/api/node_modules/ignore' \
+      './docs/api/node_modules/ignore-by-default' \
+      './docs/api/node_modules/import-fresh' \
+      './docs/api/node_modules/import-local' \
+      './docs/api/node_modules/imurmurhash' \
+      './docs/api/node_modules/inflight' \
+      './docs/api/node_modules/inherits' \
+      './docs/api/node_modules/inquirer' \
+      './docs/api/node_modules/ip-address' \
+      './docs/api/node_modules/ipaddr.js' \
+      './docs/api/node_modules/is-arrayish' \
+      './docs/api/node_modules/is-binary-path' \
+      './docs/api/node_modules/is-core-module' \
+      './docs/api/node_modules/is-docker' \
+      './docs/api/node_modules/is-extglob' \
+      './docs/api/node_modules/is-fullwidth-code-point' \
+      './docs/api/node_modules/is-generator-fn' \
+      './docs/api/node_modules/is-glob' \
+      './docs/api/node_modules/is-inside-container' \
+      './docs/api/node_modules/is-interactive' \
+      './docs/api/node_modules/is-number' \
+      './docs/api/node_modules/is-path-inside' \
+      './docs/api/node_modules/is-stream' \
+      './docs/api/node_modules/is-unicode-supported' \
+      './docs/api/node_modules/is-wsl' \
+      './docs/api/node_modules/isexe' \
+      './docs/api/node_modules/istanbul-lib-coverage' \
+      './docs/api/node_modules/istanbul-lib-instrument' \
+      './docs/api/node_modules/istanbul-lib-report' \
+      './docs/api/node_modules/istanbul-lib-source-maps' \
+      './docs/api/node_modules/istanbul-reports' \
+      './docs/api/node_modules/iterare' \
+      './docs/api/node_modules/jackspeak' \
+      './docs/api/node_modules/jest' \
+      './docs/api/node_modules/jest-changed-files' \
+      './docs/api/node_modules/jest-circus' \
+      './docs/api/node_modules/jest-cli' \
+      './docs/api/node_modules/jest-config' \
+      './docs/api/node_modules/jest-diff' \
+      './docs/api/node_modules/jest-docblock' \
+      './docs/api/node_modules/jest-each' \
+      './docs/api/node_modules/jest-environment-node' \
+      './docs/api/node_modules/jest-get-type' \
+      './docs/api/node_modules/jest-haste-map' \
+      './docs/api/node_modules/jest-leak-detector' \
+      './docs/api/node_modules/jest-matcher-utils' \
+      './docs/api/node_modules/jest-message-util' \
+      './docs/api/node_modules/jest-mock' \
+      './docs/api/node_modules/jest-pnp-resolver' \
+      './docs/api/node_modules/jest-regex-util' \
+      './docs/api/node_modules/jest-resolve' \
+      './docs/api/node_modules/jest-resolve-dependencies' \
+      './docs/api/node_modules/jest-runner' \
+      './docs/api/node_modules/jest-runtime' \
+      './docs/api/node_modules/jest-snapshot' \
+      './docs/api/node_modules/jest-util' \
+      './docs/api/node_modules/jest-validate' \
+      './docs/api/node_modules/jest-watcher' \
+      './docs/api/node_modules/jest-worker' \
+      './docs/api/node_modules/js-levenshtein' \
+      './docs/api/node_modules/js-tokens' \
+      './docs/api/node_modules/js-yaml' \
+      './docs/api/node_modules/jsep' \
+      './docs/api/node_modules/jsesc' \
+      './docs/api/node_modules/json-buffer' \
+      './docs/api/node_modules/json-parse-even-better-errors' \
+      './docs/api/node_modules/json-pointer' \
+      './docs/api/node_modules/json-schema-traverse' \
+      './docs/api/node_modules/json-stable-stringify-without-jsonify' \
+      './docs/api/node_modules/json5' \
+      './docs/api/node_modules/jsonfile' \
+      './docs/api/node_modules/jsonpath-plus' \
+      './docs/api/node_modules/jsonpointer' \
+      './docs/api/node_modules/keyv' \
+      './docs/api/node_modules/kleur' \
+      './docs/api/node_modules/leven' \
+      './docs/api/node_modules/levn' \
+      './docs/api/node_modules/lines-and-columns' \
+      './docs/api/node_modules/load-esm' \
+      './docs/api/node_modules/locate-path' \
+      './docs/api/node_modules/lodash' \
+      './docs/api/node_modules/lodash.merge' \
+      './docs/api/node_modules/log-symbols' \
+      './docs/api/node_modules/long' \
+      './docs/api/node_modules/loose-envify' \
+      './docs/api/node_modules/lru-cache' \
+      './docs/api/node_modules/lunr' \
+      './docs/api/node_modules/make-dir' \
+      './docs/api/node_modules/makeerror' \
+      './docs/api/node_modules/mark.js' \
+      './docs/api/node_modules/marked' \
+      './docs/api/node_modules/math-intrinsics' \
+      './docs/api/node_modules/media-typer' \
+      './docs/api/node_modules/merge-descriptors' \
+      './docs/api/node_modules/merge-stream' \
+      './docs/api/node_modules/methods' \
+      './docs/api/node_modules/micromatch' \
+      './docs/api/node_modules/mime' \
+      './docs/api/node_modules/mime-db' \
+      './docs/api/node_modules/mime-types' \
+      './docs/api/node_modules/mimic-fn' \
+      './docs/api/node_modules/minimatch' \
+      './docs/api/node_modules/minimist' \
+      './docs/api/node_modules/minipass' \
+      './docs/api/node_modules/mobx' \
+      './docs/api/node_modules/mobx-react' \
+      './docs/api/node_modules/mobx-react-lite' \
+      './docs/api/node_modules/morgan' \
+      './docs/api/node_modules/ms' \
+      './docs/api/node_modules/mute-stream' \
+      './docs/api/node_modules/nanoid' \
+      './docs/api/node_modules/natural-compare' \
+      './docs/api/node_modules/negotiator' \
+      './docs/api/node_modules/neo-async' \
+      './docs/api/node_modules/netmask' \
+      './docs/api/node_modules/node-fetch' \
+      './docs/api/node_modules/node-fetch-h2' \
+      './docs/api/node_modules/node-int64' \
+      './docs/api/node_modules/node-readfiles' \
+      './docs/api/node_modules/node-releases' \
+      './docs/api/node_modules/nodemon' \
+      './docs/api/node_modules/normalize-path' \
+      './docs/api/node_modules/npm-run-path' \
+      './docs/api/node_modules/oas-kit-common' \
+      './docs/api/node_modules/oas-linter' \
+      './docs/api/node_modules/oas-resolver' \
+      './docs/api/node_modules/oas-schema-walker' \
+      './docs/api/node_modules/oas-validator' \
+      './docs/api/node_modules/object-assign' \
+      './docs/api/node_modules/object-inspect' \
+      './docs/api/node_modules/on-finished' \
+      './docs/api/node_modules/on-headers' \
+      './docs/api/node_modules/once' \
+      './docs/api/node_modules/onetime' \
+      './docs/api/node_modules/open' \
+      './docs/api/node_modules/openapi-sampler' \
+      './docs/api/node_modules/optionator' \
+      './docs/api/node_modules/ora' \
+      './docs/api/node_modules/outdent' \
+      './docs/api/node_modules/p-limit' \
+      './docs/api/node_modules/p-locate' \
+      './docs/api/node_modules/p-try' \
+      './docs/api/node_modules/pac-proxy-agent' \
+      './docs/api/node_modules/pac-resolver' \
+      './docs/api/node_modules/package-json-from-dist' \
+      './docs/api/node_modules/parent-module' \
+      './docs/api/node_modules/parse-json' \
+      './docs/api/node_modules/parseurl' \
+      './docs/api/node_modules/path-browserify' \
+      './docs/api/node_modules/path-exists' \
+      './docs/api/node_modules/path-is-absolute' \
+      './docs/api/node_modules/path-key' \
+      './docs/api/node_modules/path-parse' \
+      './docs/api/node_modules/path-scurry' \
+      './docs/api/node_modules/path-to-regexp' \
+      './docs/api/node_modules/perfect-scrollbar' \
+      './docs/api/node_modules/picocolors' \
+      './docs/api/node_modules/picomatch' \
+      './docs/api/node_modules/pirates' \
+      './docs/api/node_modules/pkg-dir' \
+      './docs/api/node_modules/pluralize' \
+      './docs/api/node_modules/polished' \
+      './docs/api/node_modules/postcss' \
+      './docs/api/node_modules/postcss-value-parser' \
+      './docs/api/node_modules/prelude-ls' \
+      './docs/api/node_modules/prettier' \
+      './docs/api/node_modules/prettier-linter-helpers' \
+      './docs/api/node_modules/pretty-format' \
+      './docs/api/node_modules/prismjs' \
+      './docs/api/node_modules/prompts' \
+      './docs/api/node_modules/prop-types' \
+      './docs/api/node_modules/protobufjs' \
+      './docs/api/node_modules/proxy-addr' \
+      './docs/api/node_modules/proxy-agent' \
+      './docs/api/node_modules/proxy-from-env' \
+      './docs/api/node_modules/pstree.remy' \
+      './docs/api/node_modules/punycode' \
+      './docs/api/node_modules/pure-rand' \
+      './docs/api/node_modules/qs' \
+      './docs/api/node_modules/queue-microtask' \
+      './docs/api/node_modules/randombytes' \
+      './docs/api/node_modules/range-parser' \
+      './docs/api/node_modules/raw-body' \
+      './docs/api/node_modules/react' \
+      './docs/api/node_modules/react-dom' \
+      './docs/api/node_modules/react-is' \
+      './docs/api/node_modules/react-tabs' \
+      './docs/api/node_modules/readable-stream' \
+      './docs/api/node_modules/readdirp' \
+      './docs/api/node_modules/redoc' \
+      './docs/api/node_modules/redoc-cli' \
+      './docs/api/node_modules/reflect-metadata' \
+      './docs/api/node_modules/reftools' \
+      './docs/api/node_modules/require-directory' \
+      './docs/api/node_modules/require-from-string' \
+      './docs/api/node_modules/resolve' \
+      './docs/api/node_modules/resolve-cwd' \
+      './docs/api/node_modules/resolve-from' \
+      './docs/api/node_modules/resolve.exports' \
+      './docs/api/node_modules/restore-cursor' \
+      './docs/api/node_modules/reusify' \
+      './docs/api/node_modules/rimraf' \
+      './docs/api/node_modules/run-applescript' \
+      './docs/api/node_modules/run-async' \
+      './docs/api/node_modules/run-parallel' \
+      './docs/api/node_modules/rxjs' \
+      './docs/api/node_modules/safe-buffer' \
+      './docs/api/node_modules/safer-buffer' \
+      './docs/api/node_modules/scheduler' \
+      './docs/api/node_modules/semver' \
+      './docs/api/node_modules/send' \
+      './docs/api/node_modules/serve-static' \
+      './docs/api/node_modules/set-cookie-parser' \
+      './docs/api/node_modules/setprototypeof' \
+      './docs/api/node_modules/shallowequal' \
+      './docs/api/node_modules/shebang-command' \
+      './docs/api/node_modules/shebang-regex' \
+      './docs/api/node_modules/shell-quote' \
+      './docs/api/node_modules/should' \
+      './docs/api/node_modules/should-equal' \
+      './docs/api/node_modules/should-format' \
+      './docs/api/node_modules/should-type' \
+      './docs/api/node_modules/should-type-adaptors' \
+      './docs/api/node_modules/should-util' \
+      './docs/api/node_modules/side-channel' \
+      './docs/api/node_modules/side-channel-list' \
+      './docs/api/node_modules/side-channel-map' \
+      './docs/api/node_modules/side-channel-weakmap' \
+      './docs/api/node_modules/signal-exit' \
+      './docs/api/node_modules/simple-update-notifier' \
+      './docs/api/node_modules/simple-websocket' \
+      './docs/api/node_modules/sisteransi' \
+      './docs/api/node_modules/slash' \
+      './docs/api/node_modules/slugify' \
+      './docs/api/node_modules/smart-buffer' \
+      './docs/api/node_modules/socks' \
+      './docs/api/node_modules/socks-proxy-agent' \
+      './docs/api/node_modules/source-map' \
+      './docs/api/node_modules/source-map-js' \
+      './docs/api/node_modules/source-map-support' \
+      './docs/api/node_modules/sprintf-js' \
+      './docs/api/node_modules/stack-utils' \
+      './docs/api/node_modules/statuses' \
+      './docs/api/node_modules/stickyfill' \
+      './docs/api/node_modules/string-length' \
+      './docs/api/node_modules/string-width' \
+      './docs/api/node_modules/string-width-cjs' \
+      './docs/api/node_modules/string_decoder' \
+      './docs/api/node_modules/strip-ansi' \
+      './docs/api/node_modules/strip-ansi-cjs' \
+      './docs/api/node_modules/strip-bom' \
+      './docs/api/node_modules/strip-final-newline' \
+      './docs/api/node_modules/strip-json-comments' \
+      './docs/api/node_modules/strnum' \
+      './docs/api/node_modules/strtok3' \
+      './docs/api/node_modules/styled-components' \
+      './docs/api/node_modules/stylis' \
+      './docs/api/node_modules/superagent' \
+      './docs/api/node_modules/supertest' \
+      './docs/api/node_modules/supports-color' \
+      './docs/api/node_modules/supports-preserve-symlinks-flag' \
+      './docs/api/node_modules/swagger-ui-dist' \
+      './docs/api/node_modules/swagger2openapi' \
+      './docs/api/node_modules/test-exclude' \
+      './docs/api/node_modules/text-table' \
+      './docs/api/node_modules/through' \
+      './docs/api/node_modules/tmpl' \
+      './docs/api/node_modules/to-regex-range' \
+      './docs/api/node_modules/toidentifier' \
+      './docs/api/node_modules/token-types' \
+      './docs/api/node_modules/touch' \
+      './docs/api/node_modules/tr46' \
+      './docs/api/node_modules/tree-kill' \
+      './docs/api/node_modules/tslib' \
+      './docs/api/node_modules/type-check' \
+      './docs/api/node_modules/type-detect' \
+      './docs/api/node_modules/type-fest' \
+      './docs/api/node_modules/type-is' \
+      './docs/api/node_modules/typedarray' \
+      './docs/api/node_modules/uglify-js' \
+      './docs/api/node_modules/uid' \
+      './docs/api/node_modules/uint8array-extras' \
+      './docs/api/node_modules/undefsafe' \
+      './docs/api/node_modules/undici' \
+      './docs/api/node_modules/undici-types' \
+      './docs/api/node_modules/universalify' \
+      './docs/api/node_modules/unpipe' \
+      './docs/api/node_modules/update-browserslist-db' \
+      './docs/api/node_modules/uri-js' \
+      './docs/api/node_modules/uri-js-replace' \
+      './docs/api/node_modules/url-template' \
+      './docs/api/node_modules/use-sync-external-store' \
+      './docs/api/node_modules/util-deprecate' \
+      './docs/api/node_modules/utils-merge' \
+      './docs/api/node_modules/v8-to-istanbul' \
+      './docs/api/node_modules/vary' \
+      './docs/api/node_modules/walker' \
+      './docs/api/node_modules/wcwidth' \
+      './docs/api/node_modules/webidl-conversions' \
+      './docs/api/node_modules/whatwg-url' \
+      './docs/api/node_modules/which' \
+      './docs/api/node_modules/word-wrap' \
+      './docs/api/node_modules/wordwrap' \
+      './docs/api/node_modules/wrap-ansi' \
+      './docs/api/node_modules/wrap-ansi-cjs' \
+      './docs/api/node_modules/wrappy' \
+      './docs/api/node_modules/write-file-atomic' \
+      './docs/api/node_modules/ws' \
+      './docs/api/node_modules/wsl-utils' \
+      './docs/api/node_modules/y18n' \
+      './docs/api/node_modules/yallist' \
+      './docs/api/node_modules/yaml' \
+      './docs/api/node_modules/yaml-ast-parser' \
+      './docs/api/node_modules/yargs' \
+      './docs/api/node_modules/yargs-parser' \
+      './docs/api/node_modules/yocto-queue' \
+      './docs/api/swagger-ui/admin-interface' \
+      './docs/api/swagger-ui/api-gateway' \
+      './docs/api/swagger-ui/auth-service' \
+      './docs/api/swagger-ui/blockchain-core' \
+      './docs/api/swagger-ui/node-management' \
+      './docs/api/swagger-ui/rdp-services' \
+      './docs/api/swagger-ui/session-management' \
+      './docs/api/swagger-ui/tron-payment' \
+      './docs/build/logs/edits' \
+      './docs/build/logs/file_context' \
+      './docs/build/logs/missing' \
+      './docs/build/logs/progress' \
+      './docs/verification/.verify/.devcontainer' \
+      './docs/verification/.verify/02-network-security' \
+      './docs/verification/.verify/03-api-gateway' \
+      './docs/verification/.verify/06-orchestration-runtime' \
+      './payment_systems/tron/api/__pycache__' \
+      './payment_systems/tron/models/__pycache__' \
+      './payment_systems/tron/repositories/__pycache__' \
+      './payment_systems/tron/services/__pycache__' \
+      './payment_systems/tron/utils/__pycache__' \
+      './payment_systems/tron_relay/api/__pycache__' \
+      './payment_systems/tron_relay/services/__pycache__' \
+      './rdp/monitoring/grafana/dashboards' \
+      './rdp/monitoring/grafana/datasources' \
+      './rdp/session_controller/integration/__pycache__' \
+      './sessions/api/integration/__pycache__' \
+      './sessions/pipeline/integration/__pycache__' \
+      './sessions/processor/integration/__pycache__' \
+      './sessions/recorder/integration/__pycache__' \
+      './03_api_gateway/api/app/database/__pycache__' \
+      './03_api_gateway/api/app/db/__pycache__' \
+      './03_api_gateway/api/app/db/models' \
+      './03_api_gateway/api/app/middleware/__pycache__' \
+      './03_api_gateway/api/app/models/__pycache__' \
+      './03_api_gateway/api/app/routers/__pycache__' \
+      './03_api_gateway/api/app/routes/__pycache__' \
+      './03_api_gateway/api/app/schemas/__pycache__' \
+      './03_api_gateway/api/app/scripts/__pycache__' \
+      './03_api_gateway/api/app/security/__pycache__' \
+      './03_api_gateway/api/app/services/__pycache__' \
+      './03_api_gateway/api/app/utils/__pycache__' \
+      './03_api_gateway/api/tests/integration/__pycache__' \
+      './blockchain/api/app/crypto/__pycache__' \
+      './blockchain/api/app/database/__pycache__' \
+      './blockchain/api/app/database/repositories' \
+      './blockchain/api/app/db/__pycache__' \
+      './blockchain/api/app/middleware/__pycache__' \
+      './blockchain/api/app/models/__pycache__' \
+      './blockchain/api/app/repo/__pycache__' \
+      './blockchain/api/app/routers/__pycache__' \
+      './blockchain/api/app/routes/__pycache__' \
+      './blockchain/api/app/schemas/__pycache__' \
+      './blockchain/api/app/services/__pycache__' \
+      './docs/api/node_modules/@babel/code-frame' \
+      './docs/api/node_modules/@babel/compat-data' \
+      './docs/api/node_modules/@babel/core' \
+      './docs/api/node_modules/@babel/generator' \
+      './docs/api/node_modules/@babel/helper-compilation-targets' \
+      './docs/api/node_modules/@babel/helper-globals' \
+      './docs/api/node_modules/@babel/helper-module-imports' \
+      './docs/api/node_modules/@babel/helper-module-transforms' \
+      './docs/api/node_modules/@babel/helper-plugin-utils' \
+      './docs/api/node_modules/@babel/helper-string-parser' \
+      './docs/api/node_modules/@babel/helper-validator-identifier' \
+      './docs/api/node_modules/@babel/helper-validator-option' \
+      './docs/api/node_modules/@babel/helpers' \
+      './docs/api/node_modules/@babel/parser' \
+      './docs/api/node_modules/@babel/plugin-syntax-async-generators' \
+      './docs/api/node_modules/@babel/plugin-syntax-bigint' \
+      './docs/api/node_modules/@babel/plugin-syntax-class-properties' \
+      './docs/api/node_modules/@babel/plugin-syntax-class-static-block' \
+      './docs/api/node_modules/@babel/plugin-syntax-import-attributes' \
+      './docs/api/node_modules/@babel/plugin-syntax-import-meta' \
+      './docs/api/node_modules/@babel/plugin-syntax-json-strings' \
+      './docs/api/node_modules/@babel/plugin-syntax-jsx' \
+      './docs/api/node_modules/@babel/plugin-syntax-logical-assignment-operators' \
+      './docs/api/node_modules/@babel/plugin-syntax-nullish-coalescing-operator' \
+      './docs/api/node_modules/@babel/plugin-syntax-numeric-separator' \
+      './docs/api/node_modules/@babel/plugin-syntax-object-rest-spread' \
+      './docs/api/node_modules/@babel/plugin-syntax-optional-catch-binding' \
+      './docs/api/node_modules/@babel/plugin-syntax-optional-chaining' \
+      './docs/api/node_modules/@babel/plugin-syntax-private-property-in-object' \
+      './docs/api/node_modules/@babel/plugin-syntax-top-level-await' \
+      './docs/api/node_modules/@babel/plugin-syntax-typescript' \
+      './docs/api/node_modules/@babel/runtime' \
+      './docs/api/node_modules/@babel/template' \
+      './docs/api/node_modules/@babel/traverse' \
+      './docs/api/node_modules/@babel/types' \
+      './docs/api/node_modules/@bcoe/v8-coverage' \
+      './docs/api/node_modules/@borewit/text-codec' \
+      './docs/api/node_modules/@emotion/is-prop-valid' \
+      './docs/api/node_modules/@emotion/memoize' \
+      './docs/api/node_modules/@emotion/unitless' \
+      './docs/api/node_modules/@eslint-community/eslint-utils' \
+      './docs/api/node_modules/@eslint-community/regexpp' \
+      './docs/api/node_modules/@eslint/eslintrc' \
+      './docs/api/node_modules/@eslint/js' \
+      './docs/api/node_modules/@exodus/schemasafe' \
+      './docs/api/node_modules/@faker-js/faker' \
+      './docs/api/node_modules/@humanwhocodes/config-array' \
+      './docs/api/node_modules/@humanwhocodes/module-importer' \
+      './docs/api/node_modules/@humanwhocodes/momoa' \
+      './docs/api/node_modules/@humanwhocodes/object-schema' \
+      './docs/api/node_modules/@inquirer/external-editor' \
+      './docs/api/node_modules/@isaacs/balanced-match' \
+      './docs/api/node_modules/@isaacs/brace-expansion' \
+      './docs/api/node_modules/@isaacs/cliui' \
+      './docs/api/node_modules/@istanbuljs/load-nyc-config' \
+      './docs/api/node_modules/@istanbuljs/schema' \
+      './docs/api/node_modules/@jest/console' \
+      './docs/api/node_modules/@jest/core' \
+      './docs/api/node_modules/@jest/environment' \
+      './docs/api/node_modules/@jest/expect' \
+      './docs/api/node_modules/@jest/expect-utils' \
+      './docs/api/node_modules/@jest/fake-timers' \
+      './docs/api/node_modules/@jest/globals' \
+      './docs/api/node_modules/@jest/reporters' \
+      './docs/api/node_modules/@jest/schemas' \
+      './docs/api/node_modules/@jest/source-map' \
+      './docs/api/node_modules/@jest/test-result' \
+      './docs/api/node_modules/@jest/test-sequencer' \
+      './docs/api/node_modules/@jest/transform' \
+      './docs/api/node_modules/@jest/types' \
+      './docs/api/node_modules/@jridgewell/gen-mapping' \
+      './docs/api/node_modules/@jridgewell/remapping' \
+      './docs/api/node_modules/@jridgewell/resolve-uri' \
+      './docs/api/node_modules/@jridgewell/sourcemap-codec' \
+      './docs/api/node_modules/@jridgewell/trace-mapping' \
+      './docs/api/node_modules/@jsep-plugin/assignment' \
+      './docs/api/node_modules/@jsep-plugin/regex' \
+      './docs/api/node_modules/@lukeed/csprng' \
+      './docs/api/node_modules/@nestjs/axios' \
+      './docs/api/node_modules/@nestjs/common' \
+      './docs/api/node_modules/@nestjs/core' \
+      './docs/api/node_modules/@noble/hashes' \
+      './docs/api/node_modules/@nodelib/fs.scandir' \
+      './docs/api/node_modules/@nodelib/fs.stat' \
+      './docs/api/node_modules/@nodelib/fs.walk' \
+      './docs/api/node_modules/@nuxt/opencollective' \
+      './docs/api/node_modules/@nuxtjs/opencollective' \
+      './docs/api/node_modules/@openapitools/openapi-generator-cli' \
+      './docs/api/node_modules/@opentelemetry/api' \
+      './docs/api/node_modules/@opentelemetry/api-logs' \
+      './docs/api/node_modules/@opentelemetry/context-async-hooks' \
+      './docs/api/node_modules/@opentelemetry/core' \
+      './docs/api/node_modules/@opentelemetry/exporter-trace-otlp-http' \
+      './docs/api/node_modules/@opentelemetry/otlp-exporter-base' \
+      './docs/api/node_modules/@opentelemetry/otlp-transformer' \
+      './docs/api/node_modules/@opentelemetry/propagator-b3' \
+      './docs/api/node_modules/@opentelemetry/propagator-jaeger' \
+      './docs/api/node_modules/@opentelemetry/resources' \
+      './docs/api/node_modules/@opentelemetry/sdk-logs' \
+      './docs/api/node_modules/@opentelemetry/sdk-metrics' \
+      './docs/api/node_modules/@opentelemetry/sdk-trace-base' \
+      './docs/api/node_modules/@opentelemetry/sdk-trace-node' \
+      './docs/api/node_modules/@opentelemetry/semantic-conventions' \
+      './docs/api/node_modules/@paralleldrive/cuid2' \
+      './docs/api/node_modules/@protobufjs/aspromise' \
+      './docs/api/node_modules/@protobufjs/base64' \
+      './docs/api/node_modules/@protobufjs/codegen' \
+      './docs/api/node_modules/@protobufjs/eventemitter' \
+      './docs/api/node_modules/@protobufjs/fetch' \
+      './docs/api/node_modules/@protobufjs/float' \
+      './docs/api/node_modules/@protobufjs/inquire' \
+      './docs/api/node_modules/@protobufjs/path' \
+      './docs/api/node_modules/@protobufjs/pool' \
+      './docs/api/node_modules/@protobufjs/utf8' \
+      './docs/api/node_modules/@redocly/ajv' \
+      './docs/api/node_modules/@redocly/cli' \
+      './docs/api/node_modules/@redocly/config' \
+      './docs/api/node_modules/@redocly/openapi-core' \
+      './docs/api/node_modules/@redocly/respect-core' \
+      './docs/api/node_modules/@sinclair/typebox' \
+      './docs/api/node_modules/@sinonjs/commons' \
+      './docs/api/node_modules/@sinonjs/fake-timers' \
+      './docs/api/node_modules/@tokenizer/inflate' \
+      './docs/api/node_modules/@tokenizer/token' \
+      './docs/api/node_modules/@tootallnate/quickjs-emscripten' \
+      './docs/api/node_modules/@types/babel__core' \
+      './docs/api/node_modules/@types/babel__generator' \
+      './docs/api/node_modules/@types/babel__template' \
+      './docs/api/node_modules/@types/babel__traverse' \
+      './docs/api/node_modules/@types/body-parser' \
+      './docs/api/node_modules/@types/compression' \
+      './docs/api/node_modules/@types/connect' \
+      './docs/api/node_modules/@types/cors' \
+      './docs/api/node_modules/@types/express' \
+      './docs/api/node_modules/@types/express-serve-static-core' \
+      './docs/api/node_modules/@types/graceful-fs' \
+      './docs/api/node_modules/@types/http-errors' \
+      './docs/api/node_modules/@types/inquirer' \
+      './docs/api/node_modules/@types/istanbul-lib-coverage' \
+      './docs/api/node_modules/@types/istanbul-lib-report' \
+      './docs/api/node_modules/@types/istanbul-reports' \
+      './docs/api/node_modules/@types/jest' \
+      './docs/api/node_modules/@types/js-yaml' \
+      './docs/api/node_modules/@types/json-schema' \
+      './docs/api/node_modules/@types/mime' \
+      './docs/api/node_modules/@types/morgan' \
+      './docs/api/node_modules/@types/node' \
+      './docs/api/node_modules/@types/qs' \
+      './docs/api/node_modules/@types/range-parser' \
+      './docs/api/node_modules/@types/send' \
+      './docs/api/node_modules/@types/serve-static' \
+      './docs/api/node_modules/@types/stack-utils' \
+      './docs/api/node_modules/@types/stylis' \
+      './docs/api/node_modules/@types/through' \
+      './docs/api/node_modules/@types/trusted-types' \
+      './docs/api/node_modules/@types/yargs' \
+      './docs/api/node_modules/@types/yargs-parser' \
+      './docs/api/node_modules/@ungap/structured-clone' \
+      './docs/api/node_modules/abort-controller/dist' \
+      './docs/api/node_modules/accepts/node_modules' \
+      './docs/api/node_modules/acorn/bin' \
+      './docs/api/node_modules/acorn/dist' \
+      './docs/api/node_modules/agent-base/dist' \
+      './docs/api/node_modules/ajv/dist' \
+      './docs/api/node_modules/ajv/lib' \
+      './docs/api/node_modules/ansi-escapes/node_modules' \
+      './docs/api/node_modules/argparse/lib' \
+      './docs/api/node_modules/ast-types/.github' \
+      './docs/api/node_modules/ast-types/def' \
+      './docs/api/node_modules/ast-types/gen' \
+      './docs/api/node_modules/ast-types/lib' \
+      './docs/api/node_modules/asynckit/lib' \
+      './docs/api/node_modules/axios/dist' \
+      './docs/api/node_modules/axios/lib' \
+      './docs/api/node_modules/babel-jest/build' \
+      './docs/api/node_modules/babel-plugin-istanbul/lib' \
+      './docs/api/node_modules/babel-plugin-istanbul/node_modules' \
+      './docs/api/node_modules/babel-plugin-jest-hoist/build' \
+      './docs/api/node_modules/babel-preset-current-node-syntax/.github' \
+      './docs/api/node_modules/babel-preset-current-node-syntax/src' \
+      './docs/api/node_modules/balanced-match/.github' \
+      './docs/api/node_modules/baseline-browser-mapping/dist' \
+      './docs/api/node_modules/basic-auth/node_modules' \
+      './docs/api/node_modules/basic-ftp/dist' \
+      './docs/api/node_modules/better-ajv-errors/lib' \
+      './docs/api/node_modules/bl/test' \
+      './docs/api/node_modules/body-parser/lib' \
+      './docs/api/node_modules/brace-expansion/.github' \
+      './docs/api/node_modules/braces/lib' \
+      './docs/api/node_modules/call-bind-apply-helpers/.github' \
+      './docs/api/node_modules/call-bind-apply-helpers/test' \
+      './docs/api/node_modules/call-bound/.github' \
+      './docs/api/node_modules/call-bound/test' \
+      './docs/api/node_modules/call-me-maybe/src' \
+      './docs/api/node_modules/camelize/.github' \
+      './docs/api/node_modules/camelize/example' \
+      './docs/api/node_modules/camelize/test' \
+      './docs/api/node_modules/caniuse-lite/data' \
+      './docs/api/node_modules/caniuse-lite/dist' \
+      './docs/api/node_modules/chalk/source' \
+      './docs/api/node_modules/chardet/lib' \
+      './docs/api/node_modules/chokidar/lib' \
+      './docs/api/node_modules/chokidar/types' \
+      './docs/api/node_modules/cjs-module-lexer/dist' \
+      './docs/api/node_modules/cli-width/.nyc_output' \
+      './docs/api/node_modules/cliui/build' \
+      './docs/api/node_modules/cliui/node_modules' \
+      './docs/api/node_modules/clsx/dist' \
+      './docs/api/node_modules/combined-stream/lib' \
+      './docs/api/node_modules/commander/lib' \
+      './docs/api/node_modules/commander/typings' \
+      './docs/api/node_modules/compare-versions/lib' \
+      './docs/api/node_modules/compare-versions/src' \
+      './docs/api/node_modules/concat-map/example' \
+      './docs/api/node_modules/concat-map/test' \
+      './docs/api/node_modules/concurrently/dist' \
+      './docs/api/node_modules/concurrently/docs' \
+      './docs/api/node_modules/concurrently/node_modules' \
+      './docs/api/node_modules/consola/dist' \
+      './docs/api/node_modules/consola/lib' \
+      './docs/api/node_modules/console.table/dist' \
+      './docs/api/node_modules/core-js/actual' \
+      './docs/api/node_modules/core-js/es' \
+      './docs/api/node_modules/core-js/features' \
+      './docs/api/node_modules/core-js/full' \
+      './docs/api/node_modules/core-js/internals' \
+      './docs/api/node_modules/core-js/modules' \
+      './docs/api/node_modules/core-js/proposals' \
+      './docs/api/node_modules/core-js/stable' \
+      './docs/api/node_modules/core-js/stage' \
+      './docs/api/node_modules/core-js/web' \
+      './docs/api/node_modules/cors/lib' \
+      './docs/api/node_modules/create-jest/bin' \
+      './docs/api/node_modules/create-jest/build' \
+      './docs/api/node_modules/cross-spawn/lib' \
+      './docs/api/node_modules/css-to-react-native/src' \
+      './docs/api/node_modules/data-uri-to-buffer/dist' \
+      './docs/api/node_modules/debug/src' \
+      './docs/api/node_modules/decko/dist' \
+      './docs/api/node_modules/decko/src' \
+      './docs/api/node_modules/dedent/dist' \
+      './docs/api/node_modules/deep-is/example' \
+      './docs/api/node_modules/deep-is/test' \
+      './docs/api/node_modules/deepmerge/dist' \
+      './docs/api/node_modules/degenerator/dist' \
+      './docs/api/node_modules/delayed-stream/lib' \
+      './docs/api/node_modules/depd/lib' \
+      './docs/api/node_modules/diff-sequences/build' \
+      './docs/api/node_modules/doctrine/lib' \
+      './docs/api/node_modules/dompurify/dist' \
+      './docs/api/node_modules/dotenv/lib' \
+      './docs/api/node_modules/dunder-proto/.github' \
+      './docs/api/node_modules/dunder-proto/test' \
+      './docs/api/node_modules/emoji-regex/es2015' \
+      './docs/api/node_modules/es-define-property/.github' \
+      './docs/api/node_modules/es-define-property/test' \
+      './docs/api/node_modules/es-errors/.github' \
+      './docs/api/node_modules/es-errors/test' \
+      './docs/api/node_modules/es-object-atoms/.github' \
+      './docs/api/node_modules/es-object-atoms/test' \
+      './docs/api/node_modules/es-set-tostringtag/test' \
+      './docs/api/node_modules/es6-promise/dist' \
+      './docs/api/node_modules/es6-promise/lib' \
+      './docs/api/node_modules/escalade/dist' \
+      './docs/api/node_modules/escalade/sync' \
+      './docs/api/node_modules/escodegen/bin' \
+      './docs/api/node_modules/eslint-config-prettier/bin' \
+      './docs/api/node_modules/eslint-scope/dist' \
+      './docs/api/node_modules/eslint-scope/lib' \
+      './docs/api/node_modules/eslint-visitor-keys/dist' \
+      './docs/api/node_modules/eslint-visitor-keys/lib' \
+      './docs/api/node_modules/eslint/bin' \
+      './docs/api/node_modules/eslint/conf' \
+      './docs/api/node_modules/eslint/lib' \
+      './docs/api/node_modules/eslint/messages' \
+      './docs/api/node_modules/eslint/node_modules' \
+      './docs/api/node_modules/espree/dist' \
+      './docs/api/node_modules/espree/lib' \
+      './docs/api/node_modules/esprima/bin' \
+      './docs/api/node_modules/esprima/dist' \
+      './docs/api/node_modules/esquery/dist' \
+      './docs/api/node_modules/esutils/lib' \
+      './docs/api/node_modules/event-target-shim/dist' \
+      './docs/api/node_modules/eventemitter3/dist' \
+      './docs/api/node_modules/execa/lib' \
+      './docs/api/node_modules/execa/node_modules' \
+      './docs/api/node_modules/exit/lib' \
+      './docs/api/node_modules/exit/test' \
+      './docs/api/node_modules/expect/build' \
+      './docs/api/node_modules/express/lib' \
+      './docs/api/node_modules/express/node_modules' \
+      './docs/api/node_modules/fast-deep-equal/es6' \
+      './docs/api/node_modules/fast-json-stable-stringify/.github' \
+      './docs/api/node_modules/fast-json-stable-stringify/benchmark' \
+      './docs/api/node_modules/fast-json-stable-stringify/example' \
+      './docs/api/node_modules/fast-json-stable-stringify/test' \
+      './docs/api/node_modules/fast-uri/.github' \
+      './docs/api/node_modules/fast-uri/benchmark' \
+      './docs/api/node_modules/fast-uri/lib' \
+      './docs/api/node_modules/fast-uri/test' \
+      './docs/api/node_modules/fast-uri/types' \
+      './docs/api/node_modules/fast-xml-parser/src' \
+      './docs/api/node_modules/fastq/.github' \
+      './docs/api/node_modules/fastq/test' \
+      './docs/api/node_modules/fflate/esm' \
+      './docs/api/node_modules/fflate/lib' \
+      './docs/api/node_modules/fflate/umd' \
+      './docs/api/node_modules/figures/node_modules' \
+      './docs/api/node_modules/flat-cache/src' \
+      './docs/api/node_modules/flatted/cjs' \
+      './docs/api/node_modules/flatted/esm' \
+      './docs/api/node_modules/flatted/php' \
+      './docs/api/node_modules/flatted/python' \
+      './docs/api/node_modules/flatted/types' \
+      './docs/api/node_modules/foreground-child/dist' \
+      './docs/api/node_modules/form-data/lib' \
+      './docs/api/node_modules/formidable/src' \
+      './docs/api/node_modules/fs-extra/lib' \
+      './docs/api/node_modules/function-bind/.github' \
+      './docs/api/node_modules/function-bind/test' \
+      './docs/api/node_modules/gensync/test' \
+      './docs/api/node_modules/get-intrinsic/.github' \
+      './docs/api/node_modules/get-intrinsic/test' \
+      './docs/api/node_modules/get-port-please/dist' \
+      './docs/api/node_modules/get-proto/.github' \
+      './docs/api/node_modules/get-proto/test' \
+      './docs/api/node_modules/get-uri/dist' \
+      './docs/api/node_modules/get-uri/node_modules' \
+      './docs/api/node_modules/glob/dist' \
+      './docs/api/node_modules/glob/node_modules' \
+      './docs/api/node_modules/gopd/.github' \
+      './docs/api/node_modules/gopd/test' \
+      './docs/api/node_modules/graphemer/lib' \
+      './docs/api/node_modules/handlebars/bin' \
+      './docs/api/node_modules/handlebars/dist' \
+      './docs/api/node_modules/handlebars/lib' \
+      './docs/api/node_modules/handlebars/types' \
+      './docs/api/node_modules/has-symbols/.github' \
+      './docs/api/node_modules/has-symbols/test' \
+      './docs/api/node_modules/has-tostringtag/.github' \
+      './docs/api/node_modules/has-tostringtag/test' \
+      './docs/api/node_modules/hasown/.github' \
+      './docs/api/node_modules/html-escaper/cjs' \
+      './docs/api/node_modules/html-escaper/esm' \
+      './docs/api/node_modules/html-escaper/test' \
+      './docs/api/node_modules/http-proxy-agent/dist' \
+      './docs/api/node_modules/http-proxy-agent/node_modules' \
+      './docs/api/node_modules/http2-client/examples' \
+      './docs/api/node_modules/http2-client/lib' \
+      './docs/api/node_modules/http2-client/test' \
+      './docs/api/node_modules/https-proxy-agent/dist' \
+      './docs/api/node_modules/https-proxy-agent/node_modules' \
+      './docs/api/node_modules/human-signals/build' \
+      './docs/api/node_modules/iconv-lite/encodings' \
+      './docs/api/node_modules/iconv-lite/lib' \
+      './docs/api/node_modules/import-local/fixtures' \
+      './docs/api/node_modules/inquirer/lib' \
+      './docs/api/node_modules/ip-address/dist' \
+      './docs/api/node_modules/ip-address/src' \
+      './docs/api/node_modules/ipaddr.js/lib' \
+      './docs/api/node_modules/is-core-module/test' \
+      './docs/api/node_modules/isexe/test' \
+      './docs/api/node_modules/istanbul-lib-coverage/lib' \
+      './docs/api/node_modules/istanbul-lib-instrument/src' \
+      './docs/api/node_modules/istanbul-lib-report/lib' \
+      './docs/api/node_modules/istanbul-lib-source-maps/lib' \
+      './docs/api/node_modules/istanbul-lib-source-maps/node_modules' \
+      './docs/api/node_modules/istanbul-reports/lib' \
+      './docs/api/node_modules/iterare/lib' \
+      './docs/api/node_modules/jackspeak/dist' \
+      './docs/api/node_modules/jest-changed-files/build' \
+      './docs/api/node_modules/jest-circus/build' \
+      './docs/api/node_modules/jest-cli/bin' \
+      './docs/api/node_modules/jest-cli/build' \
+      './docs/api/node_modules/jest-cli/node_modules' \
+      './docs/api/node_modules/jest-config/build' \
+      './docs/api/node_modules/jest-config/node_modules' \
+      './docs/api/node_modules/jest-diff/build' \
+      './docs/api/node_modules/jest-docblock/build' \
+      './docs/api/node_modules/jest-each/build' \
+      './docs/api/node_modules/jest-environment-node/build' \
+      './docs/api/node_modules/jest-get-type/build' \
+      './docs/api/node_modules/jest-haste-map/build' \
+      './docs/api/node_modules/jest-leak-detector/build' \
+      './docs/api/node_modules/jest-matcher-utils/build' \
+      './docs/api/node_modules/jest-message-util/build' \
+      './docs/api/node_modules/jest-mock/build' \
+      './docs/api/node_modules/jest-regex-util/build' \
+      './docs/api/node_modules/jest-resolve-dependencies/build' \
+      './docs/api/node_modules/jest-resolve/build' \
+      './docs/api/node_modules/jest-runner/build' \
+      './docs/api/node_modules/jest-runtime/build' \
+      './docs/api/node_modules/jest-runtime/node_modules' \
+      './docs/api/node_modules/jest-snapshot/build' \
+      './docs/api/node_modules/jest-util/build' \
+      './docs/api/node_modules/jest-validate/build' \
+      './docs/api/node_modules/jest-validate/node_modules' \
+      './docs/api/node_modules/jest-watcher/build' \
+      './docs/api/node_modules/jest-worker/build' \
+      './docs/api/node_modules/jest-worker/node_modules' \
+      './docs/api/node_modules/jest/bin' \
+      './docs/api/node_modules/jest/build' \
+      './docs/api/node_modules/js-yaml/bin' \
+      './docs/api/node_modules/js-yaml/dist' \
+      './docs/api/node_modules/js-yaml/lib' \
+      './docs/api/node_modules/jsep/dist' \
+      './docs/api/node_modules/jsep/typings' \
+      './docs/api/node_modules/jsesc/bin' \
+      './docs/api/node_modules/jsesc/man' \
+      './docs/api/node_modules/json-buffer/test' \
+      './docs/api/node_modules/json-pointer/.nyc_output' \
+      './docs/api/node_modules/json-pointer/coverage' \
+      './docs/api/node_modules/json-pointer/test' \
+      './docs/api/node_modules/json-schema-traverse/.github' \
+      './docs/api/node_modules/json-schema-traverse/spec' \
+      './docs/api/node_modules/json-stable-stringify-without-jsonify/example' \
+      './docs/api/node_modules/json-stable-stringify-without-jsonify/test' \
+      './docs/api/node_modules/json5/dist' \
+      './docs/api/node_modules/json5/lib' \
+      './docs/api/node_modules/jsonpath-plus/bin' \
+      './docs/api/node_modules/jsonpath-plus/dist' \
+      './docs/api/node_modules/jsonpath-plus/src' \
+      './docs/api/node_modules/keyv/src' \
+      './docs/api/node_modules/levn/lib' \
+      './docs/api/node_modules/lines-and-columns/build' \
+      './docs/api/node_modules/lodash/fp' \
+      './docs/api/node_modules/long/umd' \
+      './docs/api/node_modules/lunr/build' \
+      './docs/api/node_modules/lunr/lib' \
+      './docs/api/node_modules/lunr/perf' \
+      './docs/api/node_modules/lunr/test' \
+      './docs/api/node_modules/makeerror/lib' \
+      './docs/api/node_modules/mark.js/build' \
+      './docs/api/node_modules/mark.js/dist' \
+      './docs/api/node_modules/mark.js/src' \
+      './docs/api/node_modules/mark.js/test' \
+      './docs/api/node_modules/marked/bin' \
+      './docs/api/node_modules/marked/lib' \
+      './docs/api/node_modules/marked/man' \
+      './docs/api/node_modules/marked/src' \
+      './docs/api/node_modules/math-intrinsics/.github' \
+      './docs/api/node_modules/math-intrinsics/constants' \
+      './docs/api/node_modules/math-intrinsics/test' \
+      './docs/api/node_modules/mime-types/node_modules' \
+      './docs/api/node_modules/mime/src' \
+      './docs/api/node_modules/minimatch/lib' \
+      './docs/api/node_modules/minimist/.github' \
+      './docs/api/node_modules/minimist/example' \
+      './docs/api/node_modules/minimist/test' \
+      './docs/api/node_modules/minipass/dist' \
+      './docs/api/node_modules/mobx-react-lite/dist' \
+      './docs/api/node_modules/mobx-react-lite/es' \
+      './docs/api/node_modules/mobx-react-lite/lib' \
+      './docs/api/node_modules/mobx-react-lite/src' \
+      './docs/api/node_modules/mobx-react/dist' \
+      './docs/api/node_modules/mobx-react/src' \
+      './docs/api/node_modules/mobx/dist' \
+      './docs/api/node_modules/mobx/src' \
+      './docs/api/node_modules/morgan/node_modules' \
+      './docs/api/node_modules/nanoid/async' \
+      './docs/api/node_modules/nanoid/bin' \
+      './docs/api/node_modules/nanoid/non-secure' \
+      './docs/api/node_modules/nanoid/url-alphabet' \
+      './docs/api/node_modules/negotiator/lib' \
+      './docs/api/node_modules/netmask/example' \
+      './docs/api/node_modules/netmask/lib' \
+      './docs/api/node_modules/netmask/test' \
+      './docs/api/node_modules/netmask/tests' \
+      './docs/api/node_modules/node-fetch-h2/lib' \
+      './docs/api/node_modules/node-fetch/lib' \
+      './docs/api/node_modules/node-readfiles/lib' \
+      './docs/api/node_modules/node-readfiles/test' \
+      './docs/api/node_modules/node-releases/data' \
+      './docs/api/node_modules/nodemon/bin' \
+      './docs/api/node_modules/nodemon/doc' \
+      './docs/api/node_modules/nodemon/lib' \
+      './docs/api/node_modules/nodemon/node_modules' \
+      './docs/api/node_modules/oas-linter/node_modules' \
+      './docs/api/node_modules/oas-resolver/node_modules' \
+      './docs/api/node_modules/oas-validator/node_modules' \
+      './docs/api/node_modules/object-inspect/.github' \
+      './docs/api/node_modules/object-inspect/example' \
+      './docs/api/node_modules/object-inspect/test' \
+      './docs/api/node_modules/openapi-sampler/dist' \
+      './docs/api/node_modules/openapi-sampler/src' \
+      './docs/api/node_modules/optionator/lib' \
+      './docs/api/node_modules/outdent/lib' \
+      './docs/api/node_modules/outdent/lib-module' \
+      './docs/api/node_modules/outdent/src' \
+      './docs/api/node_modules/pac-proxy-agent/dist' \
+      './docs/api/node_modules/pac-proxy-agent/node_modules' \
+      './docs/api/node_modules/pac-resolver/dist' \
+      './docs/api/node_modules/package-json-from-dist/dist' \
+      './docs/api/node_modules/path-browserify/.github' \
+      './docs/api/node_modules/path-browserify/test' \
+      './docs/api/node_modules/path-scurry/dist' \
+      './docs/api/node_modules/path-scurry/node_modules' \
+      './docs/api/node_modules/path-to-regexp/dist' \
+      './docs/api/node_modules/perfect-scrollbar/css' \
+      './docs/api/node_modules/perfect-scrollbar/dist' \
+      './docs/api/node_modules/perfect-scrollbar/src' \
+      './docs/api/node_modules/perfect-scrollbar/types' \
+      './docs/api/node_modules/picomatch/lib' \
+      './docs/api/node_modules/pirates/lib' \
+      './docs/api/node_modules/pkg-dir/node_modules' \
+      './docs/api/node_modules/polished/.husky' \
+      './docs/api/node_modules/polished/dist' \
+      './docs/api/node_modules/polished/docs' \
+      './docs/api/node_modules/polished/lib' \
+      './docs/api/node_modules/postcss-value-parser/lib' \
+      './docs/api/node_modules/postcss/lib' \
+      './docs/api/node_modules/prelude-ls/lib' \
+      './docs/api/node_modules/prettier-linter-helpers/.github' \
+      './docs/api/node_modules/prettier-linter-helpers/.vscode' \
+      './docs/api/node_modules/prettier-linter-helpers/test' \
+      './docs/api/node_modules/prettier/esm' \
+      './docs/api/node_modules/pretty-format/build' \
+      './docs/api/node_modules/pretty-format/node_modules' \
+      './docs/api/node_modules/prismjs/components' \
+      './docs/api/node_modules/prismjs/plugins' \
+      './docs/api/node_modules/prismjs/themes' \
+      './docs/api/node_modules/prompts/dist' \
+      './docs/api/node_modules/prompts/lib' \
+      './docs/api/node_modules/prop-types/lib' \
+      './docs/api/node_modules/prop-types/node_modules' \
+      './docs/api/node_modules/protobufjs/dist' \
+      './docs/api/node_modules/protobufjs/ext' \
+      './docs/api/node_modules/protobufjs/google' \
+      './docs/api/node_modules/protobufjs/scripts' \
+      './docs/api/node_modules/protobufjs/src' \
+      './docs/api/node_modules/proxy-agent/dist' \
+      './docs/api/node_modules/proxy-agent/node_modules' \
+      './docs/api/node_modules/pstree.remy/lib' \
+      './docs/api/node_modules/pstree.remy/tests' \
+      './docs/api/node_modules/pure-rand/lib' \
+      './docs/api/node_modules/qs/.github' \
+      './docs/api/node_modules/qs/dist' \
+      './docs/api/node_modules/qs/lib' \
+      './docs/api/node_modules/qs/test' \
+      './docs/api/node_modules/react-dom/cjs' \
+      './docs/api/node_modules/react-is/cjs' \
+      './docs/api/node_modules/react-is/umd' \
+      './docs/api/node_modules/react-tabs/esm' \
+      './docs/api/node_modules/react-tabs/lib' \
+      './docs/api/node_modules/react-tabs/style' \
+      './docs/api/node_modules/react/cjs' \
+      './docs/api/node_modules/readable-stream/lib' \
+      './docs/api/node_modules/redoc-cli/node_modules' \
+      './docs/api/node_modules/redoc/bundles' \
+      './docs/api/node_modules/redoc/typings' \
+      './docs/api/node_modules/reftools/lib' \
+      './docs/api/node_modules/resolve-cwd/node_modules' \
+      './docs/api/node_modules/resolve.exports/dist' \
+      './docs/api/node_modules/resolve/.github' \
+      './docs/api/node_modules/resolve/bin' \
+      './docs/api/node_modules/resolve/example' \
+      './docs/api/node_modules/resolve/lib' \
+      './docs/api/node_modules/resolve/test' \
+      './docs/api/node_modules/restore-cursor/node_modules' \
+      './docs/api/node_modules/reusify/.github' \
+      './docs/api/node_modules/reusify/benchmarks' \
+      './docs/api/node_modules/rimraf/node_modules' \
+      './docs/api/node_modules/rxjs/ajax' \
+      './docs/api/node_modules/rxjs/dist' \
+      './docs/api/node_modules/rxjs/fetch' \
+      './docs/api/node_modules/rxjs/operators' \
+      './docs/api/node_modules/rxjs/src' \
+      './docs/api/node_modules/rxjs/testing' \
+      './docs/api/node_modules/rxjs/webSocket' \
+      './docs/api/node_modules/scheduler/cjs' \
+      './docs/api/node_modules/semver/bin' \
+      './docs/api/node_modules/semver/classes' \
+      './docs/api/node_modules/semver/functions' \
+      './docs/api/node_modules/semver/internal' \
+      './docs/api/node_modules/semver/ranges' \
+      './docs/api/node_modules/send/node_modules' \
+      './docs/api/node_modules/set-cookie-parser/lib' \
+      './docs/api/node_modules/setprototypeof/test' \
+      './docs/api/node_modules/shell-quote/.github' \
+      './docs/api/node_modules/shell-quote/__pycache__' \
+      './docs/api/node_modules/shell-quote/test' \
+      './docs/api/node_modules/should-equal/cjs' \
+      './docs/api/node_modules/should-equal/es6' \
+      './docs/api/node_modules/should-format/cjs' \
+      './docs/api/node_modules/should-format/es6' \
+      './docs/api/node_modules/should-type-adaptors/cjs' \
+      './docs/api/node_modules/should-type-adaptors/es6' \
+      './docs/api/node_modules/should-type/cjs' \
+      './docs/api/node_modules/should-type/es6' \
+      './docs/api/node_modules/should-util/cjs' \
+      './docs/api/node_modules/should-util/es6' \
+      './docs/api/node_modules/should/cjs' \
+      './docs/api/node_modules/should/es6' \
+      './docs/api/node_modules/side-channel-list/.github' \
+      './docs/api/node_modules/side-channel-list/test' \
+      './docs/api/node_modules/side-channel-map/.github' \
+      './docs/api/node_modules/side-channel-map/test' \
+      './docs/api/node_modules/side-channel-weakmap/.github' \
+      './docs/api/node_modules/side-channel-weakmap/test' \
+      './docs/api/node_modules/side-channel/.github' \
+      './docs/api/node_modules/side-channel/test' \
+      './docs/api/node_modules/signal-exit/dist' \
+      './docs/api/node_modules/simple-update-notifier/build' \
+      './docs/api/node_modules/simple-update-notifier/node_modules' \
+      './docs/api/node_modules/simple-update-notifier/src' \
+      './docs/api/node_modules/simple-websocket/node_modules' \
+      './docs/api/node_modules/sisteransi/src' \
+      './docs/api/node_modules/smart-buffer/build' \
+      './docs/api/node_modules/smart-buffer/docs' \
+      './docs/api/node_modules/smart-buffer/typings' \
+      './docs/api/node_modules/socks-proxy-agent/dist' \
+      './docs/api/node_modules/socks-proxy-agent/node_modules' \
+      './docs/api/node_modules/socks/build' \
+      './docs/api/node_modules/socks/docs' \
+      './docs/api/node_modules/socks/typings' \
+      './docs/api/node_modules/source-map-js/lib' \
+      './docs/api/node_modules/source-map/dist' \
+      './docs/api/node_modules/source-map/lib' \
+      './docs/api/node_modules/sprintf-js/demo' \
+      './docs/api/node_modules/sprintf-js/dist' \
+      './docs/api/node_modules/sprintf-js/src' \
+      './docs/api/node_modules/sprintf-js/test' \
+      './docs/api/node_modules/stack-utils/node_modules' \
+      './docs/api/node_modules/string_decoder/lib' \
+      './docs/api/node_modules/strnum/.vscode' \
+      './docs/api/node_modules/strtok3/lib' \
+      './docs/api/node_modules/styled-components/dist' \
+      './docs/api/node_modules/styled-components/native' \
+      './docs/api/node_modules/styled-components/node_modules' \
+      './docs/api/node_modules/styled-components/test-utils' \
+      './docs/api/node_modules/stylis/dist' \
+      './docs/api/node_modules/stylis/src' \
+      './docs/api/node_modules/superagent/dist' \
+      './docs/api/node_modules/superagent/lib' \
+      './docs/api/node_modules/superagent/node_modules' \
+      './docs/api/node_modules/supertest/lib' \
+      './docs/api/node_modules/supports-preserve-symlinks-flag/.github' \
+      './docs/api/node_modules/supports-preserve-symlinks-flag/test' \
+      './docs/api/node_modules/swagger2openapi/lib' \
+      './docs/api/node_modules/swagger2openapi/node_modules' \
+      './docs/api/node_modules/test-exclude/node_modules' \
+      './docs/api/node_modules/text-table/example' \
+      './docs/api/node_modules/text-table/test' \
+      './docs/api/node_modules/through/test' \
+      './docs/api/node_modules/tmpl/lib' \
+      './docs/api/node_modules/token-types/lib' \
+      './docs/api/node_modules/touch/bin' \
+      './docs/api/node_modules/tr46/lib' \
+      './docs/api/node_modules/tslib/modules' \
+      './docs/api/node_modules/type-check/lib' \
+      './docs/api/node_modules/type-fest/source' \
+      './docs/api/node_modules/type-fest/ts41' \
+      './docs/api/node_modules/typedarray/example' \
+      './docs/api/node_modules/typedarray/test' \
+      './docs/api/node_modules/uglify-js/bin' \
+      './docs/api/node_modules/uglify-js/lib' \
+      './docs/api/node_modules/uglify-js/tools' \
+      './docs/api/node_modules/uid/dist' \
+      './docs/api/node_modules/uid/secure' \
+      './docs/api/node_modules/uid/single' \
+      './docs/api/node_modules/undefsafe/.github' \
+      './docs/api/node_modules/undefsafe/lib' \
+      './docs/api/node_modules/undici/docs' \
+      './docs/api/node_modules/undici/lib' \
+      './docs/api/node_modules/undici/scripts' \
+      './docs/api/node_modules/undici/types' \
+      './docs/api/node_modules/uri-js-replace/dist' \
+      './docs/api/node_modules/uri-js/dist' \
+      './docs/api/node_modules/url-template/lib' \
+      './docs/api/node_modules/url-template/test' \
+      './docs/api/node_modules/url-template/uritemplate-test' \
+      './docs/api/node_modules/use-sync-external-store/cjs' \
+      './docs/api/node_modules/use-sync-external-store/shim' \
+      './docs/api/node_modules/v8-to-istanbul/lib' \
+      './docs/api/node_modules/walker/lib' \
+      './docs/api/node_modules/wcwidth/docs' \
+      './docs/api/node_modules/wcwidth/test' \
+      './docs/api/node_modules/webidl-conversions/lib' \
+      './docs/api/node_modules/whatwg-url/lib' \
+      './docs/api/node_modules/which/bin' \
+      './docs/api/node_modules/wordwrap/example' \
+      './docs/api/node_modules/wordwrap/test' \
+      './docs/api/node_modules/write-file-atomic/lib' \
+      './docs/api/node_modules/write-file-atomic/node_modules' \
+      './docs/api/node_modules/ws/lib' \
+      './docs/api/node_modules/y18n/build' \
+      './docs/api/node_modules/yaml-ast-parser/dist' \
+      './docs/api/node_modules/yaml-ast-parser/src' \
+      './docs/api/node_modules/yaml-ast-parser/test' \
+      './docs/api/node_modules/yaml/browser' \
+      './docs/api/node_modules/yaml/dist' \
+      './docs/api/node_modules/yargs-parser/build' \
+      './docs/api/node_modules/yargs/build' \
+      './docs/api/node_modules/yargs/helpers' \
+      './docs/api/node_modules/yargs/lib' \
+      './docs/api/node_modules/yargs/locales' \
+      './docs/verification/.verify/02-network-security/tor' \
+      './docs/verification/.verify/03-api-gateway/api' \
+      './docs/verification/.verify/06-orchestration-runtime/compose' \
     ; do \
       printf 'LUCID_X_FILES_SKELETON_%s' "$(date +%s)" > "$d/.keep"; \
       touch "$d/.keep"; \
     done
 # LUCID_X_FILES_SKELETON_END
-COPY scripts/ ./scripts/
 
+
+COPY scripts/ ./scripts/
+# LUCID_IMAGE_CONFIG: host-config + container services (builder)
+
+RUN rm -rf configs/environment 2>/dev/null || true
+
+
+COPY server/ ./server/
+COPY service_configs/x_lucid_cluster_calibration/core-cluster-host-alignment.yml ./service_configs/x_lucid_cluster_calibration/core-cluster-host-alignment.yml
+COPY RDP/ ./rdp/
+COPY common/ ./common/
+COPY database/ ./database/
+COPY endpoints/ ./endpoints/
+COPY models/ ./models/
+COPY server/ ./server/
+COPY sessions/ ./sessions/
+COPY node/ ./node/
+COPY 02_network_security/ ./02_network_security/
+COPY 03_api_gateway/ ./03_api_gateway/
+COPY auth/ ./auth/
+COPY blockchain/ ./blockchain/
+COPY core/ ./core/
+COPY docs/ ./docs/
+COPY gui/ ./gui/
+COPY payment_systems/ ./payment_systems/
 # Step 2: Install wheels into system Python
 RUN echo "installing wheels into system python" && \
     pip install --no-cache-dir --no-index --find-links /build/wheels -r ./requirements.txt && \
@@ -354,118 +1929,30 @@ RUN echo "=== Verifying pip installation success ===" && \
     ls -la ./usr/local/lib/python3.11/site-packages/ | grep -E "^d" | wc -l && \
     echo "directories found in site-packages" 
 
-# Verify marker files exist with content (critical for distroless COPY)
-    
-# Application source COPY (only directories that exist with content)
-COPY 03_api_gateway/verify_files.py ./tmp/verify_files.py
-RUN echo "=== Checking if verify_files.py was copied ===" && \
-    ls -la ./tmp/* && echo "(ls -la ./tmp/* || echo "./tmp/ directory not found")" && \
-    ls -la /build/tmp/* && echo "(ls -la /build/tmp/* || echo "/build/tmp/ directory not found")" && \
-    echo "verify_files.py was copied"
-COPY 03_api_gateway/verify_runtime.py ./tmp/verify_runtime.py
 
 
-COPY common/__init__.py ./common/__init__.py
-COPY common/load_host_config.py ./common/load_host_config.py
-RUN echo "=== Checking if common/__init__.py was copied ===" && \
-    ls -la ./common/* && echo "(ls -la ./common/* || echo "./common/ directory not found")" && \
-    ls -la /build/common/* && echo "(ls -la /build/common/* || echo "/build/common/ directory not found")" && \
-    echo "common/ was copied"
-
-COPY common/tor/ ./common/tor/
-RUN echo "=== Checking if common/tor/ was copied ===" && \
-    ls -la ./common/tor/* && echo "(ls -la ./common/tor/* || echo "./common/tor/ directory not found")" && \
-    ls -la /build/common/tor/* && echo "(ls -la /build/common/tor/* || echo "/build/common/tor/ directory not found")" && \
-    echo "common/tor/ was copied"
-
-COPY server/ ./server/
-RUN echo "=== Checking if server/ was copied ===" && \
-    ls -la ./server/*.py && \
-    test -f ./server/run_server.py && test -f ./server/build_server.py && \
-    echo "server/ pack was copied"
-
-COPY 03_api_gateway/api/ ./api/
-RUN echo "=== Checking if api/ was copied ===" && \
-    ls -la ./api/* && \
-    ls -la /build/api/* && \
-    echo "api/ was copied"
-COPY 03_api_gateway/utils/ ./utils/
-COPY service_configs/kubernetes/01_configmaps/ ./configs/
-COPY 03_api_gateway/api/app/ ./api/app/
-RUN echo "=== Checking if api/app/ was copied ===" && \
-    ls -la ./api/app/* && \
-    ls -la /build/api/app/* && \
-    echo "api/app/ was copied"
-
-COPY 03_api_gateway/api/app/db/ ./api/app/db/
-RUN echo "=== Checking if api/app/db/ was copied ===" && \
-    ls -la ./api/app/db/*.py && \
-    echo "api/app/db/ was copied"
-
-COPY 03_api_gateway/api/app/db/models/ ./api/app/db/models/
-RUN echo "=== Checking if api/app/db/models/ was copied ===" && \
-    ls -la ./api/app/db/models/*.py && \
-    echo "api/app/db/models/ was copied"
-
-COPY 03_api_gateway/api/app/database/ ./api/app/database/
-COPY 03_api_gateway/api/app/schemas/ ./api/app/schemas/
-COPY 03_api_gateway/api/app/routers/ ./api/app/routers/
-
-RUN echo "=== Checking if api/app/routers/ was copied ===" && \
-    ls -la ./api/app/routers/ && \
-    echo "api/app/routers/ was copied"
-
-COPY 03_api_gateway/api/app/routes/ ./api/app/routes/
-RUN echo "=== Checking if api/app/routes/ was copied ===" && \
-    ls -la ./api/app/routes/ && \
-    echo "api/app/routes/ was copied"
-
-
-COPY 03_api_gateway/api/app/services/ ./api/app/services/
-COPY 03_api_gateway/api/app/utils/ ./api/app/utils/
-RUN echo "=== Checking if api/app/utils/ was copied ===" && \
-    ls -la ./api/app/utils/ && \
-    echo "api/app/utils/ was copied"
-
-COPY 03_api_gateway/api/app/scripts/ ./api/app/scripts/
-COPY 03_api_gateway/api/app/security/ ./api/app/security/
-COPY 03_api_gateway/api/app/middleware/ ./api/app/middleware/
-RUN echo "=== Checking if api/app/middleware/ was copied ===" && \
-    ls -la ./api/app/middleware/ && \
-    echo "api/app/middleware/ was copied"
-# copy .services
-COPY 03_api_gateway/services/ ./services/
-RUN echo "=== Checking if services/ was copied ===" && \
-    ls -la ./services/ && \
-    echo "services/ was copied"
-# copy .database
-COPY 03_api_gateway/database/ ./database/
-COPY 03_api_gateway/models/ ./models/
-COPY 03_api_gateway/utils/ ./utils/
-# copy .endpoints
-COPY 03_api_gateway/endpoints/ ./endpoints/
-COPY 03_api_gateway/config/ ./config/
-  
-RUN echo "## changing permission on verify_files.py ##" && \
-    chmod +x ./tmp/verify_files.py && \
-    echo "verify_files.py permission changed" && \
-    /usr/bin/python3.11 ./tmp/verify_files.py && \
-    echo "All files verified successfully"
-
-# Stage 2 – Runtime (Distroless)
+########################################################################
+# STAGE 2: RUNTIME
+########################################################################
 
 FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12:latest 
-
-WORKDIR /app
 
 
 ARG BUILD_DATE
 ARG VCS_REF
 ARG VERSION=1.0.0
-# Lucid Tor egress / network isolation (PUBLIC_TOR_IP: master-env-config.txt; compose: lucid-tor-egress-network)
+
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION=1.0.0
 ARG PUBLIC_TOR_IP=${PUBLIC_TOR_IP}
 ARG LUCID_INTERNAL_NETWORK_NAME=lucid-pi-network
 ARG LUCID_TOR_EGRESS_NETWORK_NAME=lucid-tor-egress-network
+#####################################################################
+# 17. LABEL
+#####################################################################
+WORKDIR /app
+
 
 LABEL maintainer="Lucid Development Team" \
       com.lucid.network.internal="${LUCID_INTERNAL_NETWORK_NAME}" \
@@ -487,7 +1974,7 @@ LABEL maintainer="Lucid Development Team" \
       com.lucid.expose="8450" \
       com.lucid.cluster="core" \
       com.lucid.tor.compatible="true" \
-      com.lucid.env.config=".env.foundation,.env.secrets" \
+      com.lucid.env.config=".env.foundation" \
       com.lucid.hostconfig.registry_key="main_lucid_gateway" \
       com.lucid.discovery.host_ip=${LUCID_SERVER_HOST_IP} \
       com.lucid.hostconfig.main_gateway.dns="server-gateway" \
@@ -495,7 +1982,9 @@ LABEL maintainer="Lucid Development Team" \
       com.lucid.service_id="com.lucid.dockerfile.v1.43cd9ae831546923.infrastructure.containers.server.Dockerfile.server-gateway" \
       onion.lucid.service_id="lucid-43cd9ae831546923-infrastructure-container" \
       org.lucid.service_id="org.lucid.dockerfile.v1.43cd9ae831546923:infrastructure/containers/server/Dockerfile.server-gateway" \
-
+##########################################
+# 18. DISTROLESS ENV
+##########################################
 ENV PUBLIC_TOR_IP=${PUBLIC_TOR_IP} \
     LUCID_INTERNAL_NETWORK_NAME=${LUCID_INTERNAL_NETWORK_NAME} \
     LUCID_TOR_EGRESS_NETWORK_NAME=${LUCID_TOR_EGRESS_NETWORK_NAME} \
@@ -529,39 +2018,30 @@ COPY --from=builder --chown=65532:65532 /usr/lib/*/ossl-modules/ /app/usr/lib/
 COPY --from=builder --chown=65532:65532 /usr/lib/*/libcurl.so* /app/usr/lib/
 COPY --from=builder --chown=65532:65532 /bin/ /app/bin/
 COPY --from=builder --chown=65532:65532 /etc/ssl/ /app/etc/ssl/
+COPY --from=builder --chown=65532:65532 /root/.cargo/ /app/root/.cargo/
+COPY --from=builder --chown=65532:65532 /root/.rustup/ /app/root/.rustup/
 COPY --from=builder --chown=65532:65532 /usr/ /app/usr/
 COPY --from=builder --chown=65532:65532 /var/lib/ /app/var/lib/
 COPY --from=builder --chown=65532:65532 /var/run/ /app/var/run/
 # LUCID_RUNTIME_COPY_FROM_BUILDER_APT_END
 
-# LUCID_RUNTIME_COPY_FROM_BUILD_BEGIN
-# Generated: same directory set as LUCID_X_FILES_SKELETON (./ under WORKDIR /build).
-COPY --from=builder --chown=65532:65532 /build/api/ /app/api/
-COPY --from=builder --chown=65532:65532 /build/common/ /app/common/
-COPY --from=builder --chown=65532:65532 /build/config/ /app/config/
-COPY --from=builder --chown=65532:65532 /build/configs/ /app/configs/
-COPY --from=builder --chown=65532:65532 /build/database/ /app/database/
-COPY --from=builder --chown=65532:65532 /build/endpoints/ /app/endpoints/
-COPY --from=builder --chown=65532:65532 /build/models/ /app/models/
-COPY --from=builder --chown=65532:65532 /build/scripts/ /app/scripts/
-COPY --from=builder --chown=65532:65532 /build/server/ /app/server/
-COPY --from=builder --chown=65532:65532 /build/service_configs/ /app/service_configs/
-COPY --from=builder --chown=65532:65532 /build/services/ /app/services/
-COPY --from=builder --chown=65532:65532 /build/tmp/ /app/tmp/
-COPY --from=builder --chown=65532:65532 /build/utils/ /app/utils/
-# LUCID_RUNTIME_COPY_FROM_BUILD_END
 
 
 
 
-# System directories & certificates
-# LUCID_IMAGE_CONFIG: .env.secrets + .env.master + host-config + container services (runtime)
-COPY --from=builder --chown=65532:65532 /build/configs/.env.secrets /app/configs/.env.secrets
-COPY --from=builder --chown=65532:65532 /build/configs/.env.master /app/configs/.env.master
-COPY --from=builder --chown=65532:65532 /build/configs/host-config.yml /app/configs/host-config.yml
-COPY --from=builder --chown=65532:65532 /build/service_configs/x_lucid_cluster_calibration/core-cluster-host-alignment.yml /app/service_configs/x_lucid_cluster_calibration/core-cluster-host-alignment.yml
-COPY --from=builder --chown=65532:65532 /build/service_configs /app/service_configs
 
+#####################################################################
+# 19. COPY LIB DIRECTORIES FROM BUILDER
+#####################################################################
+COPY --from=builder --chown=65532:65532 /usr/lib/*/libffi.so* /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /usr/lib/*/libssl.so* /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /usr/lib/*/ossl-modules/ /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /usr/lib/*/libcurl.so* /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /bin/ /app/bin/
+COPY --from=builder --chown=65532:65532 /etc/ssl/ /app/etc/ssl/
+COPY --from=builder --chown=65532:65532 /usr/ /app/usr/
+COPY --from=builder --chown=65532:65532 /var/lib/ /app/var/lib/
+COPY --from=builder --chown=65532:65532 /var/run/ /app/var/run/
 COPY --from=builder /root/.rustup/        /app/rust/
 COPY --from=builder /root/.cargo/        /app/cargo/
 COPY --from=builder /var/run/          /app/var/run/
@@ -571,27 +2051,44 @@ COPY --from=builder /usr/local/lib/python3.11/site-packages/   /app/usr/local/li
 COPY --from=builder /usr/local/bin/              /app/usr/local/bin/
 COPY --from=builder /usr/bin/ /app/usr/bin/
 COPY --from=builder /usr/sbin/ /app/usr/sbin/
+COPY --from=builder /usr/local/bin/tini /app/usr/local/bin/tini
+#############################################################
+# 20 COPY CONTENT FROM BUILDER
+#####################################################################
+COPY --from=builder --chown=65532:65532 /build/02_network_security/ /app/02_network_security/
+COPY --from=builder --chown=65532:65532 /build/03_api_gateway/ /app/03_api_gateway/
+COPY --from=builder --chown=65532:65532 /build/auth/ /app/auth/
+COPY --from=builder --chown=65532:65532 /build/blockchain/ /app/blockchain/
+COPY --from=builder --chown=65532:65532 /build/common/ /app/common/
+
+COPY --from=builder --chown=65532:65532 /build/core/ /app/core/
+COPY --from=builder --chown=65532:65532 /build/database/ /app/database/
+COPY --from=builder --chown=65532:65532 /build/docs/ /app/docs/
+COPY --from=builder --chown=65532:65532 /build/endpoints/ /app/endpoints/
+COPY --from=builder --chown=65532:65532 /build/gui/ /app/gui/
+COPY --from=builder --chown=65532:65532 /build/models/ /app/models/
+COPY --from=builder --chown=65532:65532 /build/node/ /app/node/
+COPY --from=builder --chown=65532:65532 /build/payment_systems/ /app/payment_systems/
+COPY --from=builder --chown=65532:65532 /build/rdp/ /app/rdp/
+COPY --from=builder --chown=65532:65532 /build/scripts/ /app/scripts/
+COPY --from=builder --chown=65532:65532 /build/server/ /app/server/
+COPY --from=builder --chown=65532:65532 /build/sessions/ /app/sessions/
+# LUCID_RUNTIME_COPY_FROM_BUILD_END
 
 
 
+COPY --from=builder --chown=65532:65532 /build/api/ /app/api/
+COPY --from=builder --chown=65532:65532 /build/config/ /app/config/
+COPY --from=builder --chown=65532:65532 /build/services/ /app/services/
+COPY --from=builder --chown=65532:65532 /build/tmp/ /app/tmp/
+COPY --from=builder --chown=65532:65532 /build/utils/ /app/utils/
 
-# Bake Python packages into distroless image - explicit COPY with verification
+
 COPY --from=builder --chown=65532:65532 /build/wheels/         /app/wheels/
 COPY --from=builder --chown=65532:65532 /build/common/__init__.py         /app/common/__init__.py
 COPY --from=builder --chown=65532:65532 /build/common/load_host_config.py /app/common/load_host_config.py
 COPY --from=builder --chown=65532:65532 /build/common/tor/         /app/common/tor/
-#kubernetes configmaps
-COPY --from=builder --chown=65532:65532 /build/configs/api-gateway-config.yaml /app/configs/api-gateway-config.yaml
-COPY --from=builder --chown=65532:65532 /build/api/app/            /app/api/app/
-COPY --from=builder --chown=65532:65532 /build/api/app/middleware/ /app/api/app/middleware/
-COPY --from=builder --chown=65532:65532 /build/api/app/utils/ /app/api/app/utils/
-COPY --from=builder --chown=65532:65532 /build/api/app/schemas/ /app/api/app/schemas/
-COPY --from=builder --chown=65532:65532 /build/api/app/models/ /app/api/app/models/
-COPY --from=builder --chown=65532:65532 /build/api/app/services/ /app/api/app/services/
-COPY --from=builder --chown=65532:65532 /build/api/app/db/ /app/api/app/db/
-COPY --from=builder --chown=65532:65532 /build/api/app/db/models/ /app/api/app/db/models/
-
-
+COPY --from=builder --chown=65532:65532 /build/03_api_gateway/api/         /app/03_api_gateway/api/
 COPY --from=builder --chown=65532:65532 /build/api/app/routers/  /app/api/app/routers/
 COPY --from=builder --chown=65532:65532 /build/api/app/database/ /app/api/app/database/
 COPY --from=builder --chown=65532:65532 /build/api/app/routes/          /app/api/app/routes/
@@ -599,14 +2096,17 @@ COPY --from=builder --chown=65532:65532 /build/api/app/routes/          /app/api
 
 # api level directories
 COPY --from=builder --chown=65532:65532 /build/tmp/verify_runtime.py /app/tmp/verify_runtime.py
-
+###################################
+#
 RUN ["/app/usr/bin/python3.11", "/app/tmp/verify_runtime.py"]
 RUN ["rm", "-f", "/app/tmp/verify_runtime.py"]
 
 
 
 EXPOSE 8450
-
+#####################################################################
+# 24. HEALTHCHECK + CMD
+#####################################################################
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
   CMD ["/app/usr/bin/python3.11", "-c", "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('api-gateway', 8450)); s.close(); exit(0 if result == 0 else 1)"]
 

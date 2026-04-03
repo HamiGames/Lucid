@@ -13,16 +13,10 @@ ARG BUILDPLATFORM=linux/amd64
 ############################
 # Stage 1: ES image + curl/bash for health / startup glue
 ############################
-FROM --platform=$TARGETPLATFORM elasticsearch:8.11.0 AS elasticsearch-builder
-
 ARG BUILDPLATFORM
 ARG TARGETPLATFORM
 
-ENV DEBIAN_FRONTEND=noninteractive \
-    DEBCONF_NONINTERACTIVE_SEEN=true
-
-USER 65532:65532	
-
+FROM --platform=$TARGETPLATFORM elasticsearch:8.11.0 AS elasticsearch-builder
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
@@ -47,10 +41,27 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
         ca-certificates \
         tini \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
+# LUCID_LIB_SKELETON_BEGIN
+# Generated: FHS dirs for builder (from final-stage COPY --from, excluding /build/ sources;
+# ancestor dirs collapsed; overlaps with builder mkdir/.keep removed — see collect_skeleton_paths_from_dockerfile).
+RUN set -eux; \
+  mkdir -p \
+    '/etc/ssl' \
+    '/usr/bin' \
+    '/usr/lib/python3.11'; \
+  for d in \
+    '/etc/ssl' \
+    '/usr/bin' \
+    '/usr/lib/python3.11'; \
+  do \
+    printf 'LUCID_LIB_SKELETON_%s' "$(date +%s)" > "$d/.keep"; \
+    touch "$d/.keep"; \
+  done
+# LUCID_LIB_SKELETON_END
 # LUCID_X_FILES_SKELETON_BEGIN
 # Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
 RUN set -eux; \
-    mkdir -p '.' './configs' './database' './scripts' './service_configs' './storage' './configs/.devcontainer' './configs/.ssh' './configs/admin' './configs/auth' './configs/base' './configs/blockchain' './configs/compose' './configs/container' './configs/database' './configs/docker' './configs/electron_gui' './configs/environment' './configs/gui' './configs/integration' './configs/logging' './configs/network' './configs/node' './configs/overlord' './configs/payment_systems' './configs/pi' './configs/rdp' './configs/secrets' './configs/security' './configs/server' './configs/tor' './configs/user' './database/admin' './database/api' './database/config' './database/elasticsearch' './database/models' './database/mongodb' './database/redis' './database/repositories' './database/schema' './database/schemas' './database/services' './scripts/build' './scripts/compliance' './scripts/config' './scripts/contracts' './scripts/database' './scripts/deployment' './scripts/devcontainer' './scripts/docs' './scripts/foundation' './scripts/gui' './scripts/hardware' './scripts/integration' './scripts/lib' './scripts/load' './scripts/logging' './scripts/maintenance' './scripts/migration' './scripts/monitoring' './scripts/network' './scripts/registry' './scripts/secrets' './scripts/security' './scripts/services' './scripts/testing' './scripts/validation' './scripts/verification' './service_configs/blockchain' './service_configs/distroless' './service_configs/kubernetes' './service_configs/logging' './service_configs/multi-stage' './service_configs/node' './service_configs/payment_services' './service_configs/rdp' './service_configs/security' './service_configs/service_mesh' './service_configs/sessions' './service_configs/storage' './service_configs/tor' './service_configs/x_lucid_cluster_calibration' './storage/backups' './storage/cache' './storage/data' './configs/admin/admin-system-gateway' './configs/admin/config' './configs/blockchain/chain-to-pay' './configs/blockchain/config' './configs/container/admin' './configs/container/auth' './configs/container/base' './configs/container/blockchain' './configs/container/database' './configs/container/electron_gui' './configs/container/gui' './configs/container/node' './configs/container/payment_systems' './configs/container/rdp' './configs/container/server' './configs/container/sessions' './configs/container/storage' './configs/container/tor' './configs/database/elasticsearch' './configs/database/redis' './configs/docker/compose' './configs/docker/distroless' './configs/docker/docs' './configs/docker/multi-stage' './configs/docker/on-system-chain' './configs/environment/development' './configs/environment/pi' './configs/environment/production' './configs/environment/staging' './configs/node/config' './configs/node/node-system-gateway' './configs/overlord/runtime' './configs/pi/ssh' './database/services/backup' './database/services/migration' './database/services/monitoring' './scripts/build/components' './scripts/build/core' './scripts/build/distroless' './scripts/build/utils' './scripts/compliance/distroless' './scripts/compliance/general' './scripts/deployment/devcontainer' './scripts/deployment/distroless' './scripts/deployment/pi' './scripts/deployment/utils' './scripts/maintenance/cleanup' './scripts/maintenance/optimization' './scripts/maintenance/recovery' './scripts/network/diagnostics' './scripts/network/security' './scripts/network/setup' './scripts/testing/integration' './scripts/testing/unit' './scripts/testing/utils' './service_configs/kubernetes/01_configmaps' './service_configs/kubernetes/02-secrets' './service_configs/kubernetes/03-databases' './service_configs/kubernetes/04-auth' './service_configs/kubernetes/04-network' './service_configs/kubernetes/05-core' './service_configs/kubernetes/06-application' './service_configs/kubernetes/07-support' './service_configs/kubernetes/08-ingress' './service_configs/kubernetes/patches' './storage/backups/configs' './storage/backups/database' './storage/backups/user-data' './storage/cache/build' './storage/cache/docker' './storage/cache/temp' './storage/data/blockchain' './storage/data/logs' './storage/data/sessions' './configs/docker/compose/mongodb' './configs/docker/compose/nats' './configs/docker/compose/nginx' './configs/docker/compose/redis' './configs/docker/compose/vault' './configs/docker/distroless/base'; \
+    mkdir -p '.' './configs' './database' './scripts' './service_configs' './storage' './configs/.ssh' './configs/container' './configs/database' './configs/docker' './configs/env' './configs/integration' './configs/kubernetes' './configs/logging' './configs/pi' './configs/secrets' './configs/security' './configs/tor' './database/__pycache__' './database/admin' './database/api' './database/config' './database/elasticsearch' './database/models' './database/mongodb' './database/redis' './database/repositories' './database/schema' './database/schemas' './database/services' './scripts/__pycache__' './scripts/build' './scripts/compliance' './scripts/config' './scripts/contracts' './scripts/database' './scripts/deployment' './scripts/devcontainer' './scripts/docs' './scripts/foundation' './scripts/gui' './scripts/hardware' './scripts/integration' './scripts/lib' './scripts/load' './scripts/logging' './scripts/maintenance' './scripts/migration' './scripts/monitoring' './scripts/network' './scripts/registry' './scripts/secrets' './scripts/security' './scripts/services' './scripts/testing' './scripts/validation' './scripts/verification' './service_configs/blockchain' './service_configs/distroless' './service_configs/logging' './service_configs/multi-stage' './service_configs/node' './service_configs/payment_services' './service_configs/rdp' './service_configs/security' './service_configs/service_mesh' './service_configs/services' './service_configs/sessions' './service_configs/tor' './service_configs/x_lucid_cluster_calibration' './storage/__pycache__' './storage/backups' './storage/cache' './storage/data' './configs/container/admin' './configs/container/auth' './configs/container/base' './configs/container/blockchain' './configs/container/database' './configs/container/electron_gui' './configs/container/gui' './configs/container/node' './configs/container/payment_systems' './configs/container/rdp' './configs/container/server' './configs/container/sessions' './configs/container/storage' './configs/container/tor' './configs/database/elasticsearch' './configs/database/redis' './configs/docker/distroless' './configs/docker/docs' './configs/docker/multi-stage' './configs/pi/ssh' './database/admin/__pycache__' './database/api/__pycache__' './database/config/__pycache__' './database/elasticsearch/__pycache__' './database/models/__pycache__' './database/mongodb/__pycache__' './database/redis/__pycache__' './database/repositories/__pycache__' './database/schema/__pycache__' './database/services/__pycache__' './database/services/backup' './database/services/migration' './database/services/monitoring' './scripts/build/__pycache__' './scripts/build/components' './scripts/build/core' './scripts/build/distroless' './scripts/build/utils' './scripts/compliance/distroless' './scripts/compliance/general' './scripts/deployment/devcontainer' './scripts/deployment/distroless' './scripts/deployment/pi' './scripts/deployment/utils' './scripts/maintenance/cleanup' './scripts/maintenance/optimization' './scripts/maintenance/recovery' './scripts/network/diagnostics' './scripts/network/security' './scripts/network/setup' './scripts/testing/integration' './scripts/testing/unit' './scripts/testing/utils' './scripts/validation/__pycache__' './scripts/verification/__pycache__' './service_configs/x_lucid_cluster_calibration/__pycache__' './storage/backups/configs' './storage/backups/database' './storage/backups/user-data' './storage/cache/build' './storage/cache/docker' './storage/cache/temp' './storage/data/blockchain' './storage/data/logs' './storage/data/sessions' './database/services/backup/__pycache__' './database/services/migration/__pycache__' './database/services/monitoring/__pycache__'; \
     for d in \
       '.' \
       './configs' \
@@ -58,32 +69,19 @@ RUN set -eux; \
       './scripts' \
       './service_configs' \
       './storage' \
-      './configs/.devcontainer' \
       './configs/.ssh' \
-      './configs/admin' \
-      './configs/auth' \
-      './configs/base' \
-      './configs/blockchain' \
-      './configs/compose' \
       './configs/container' \
       './configs/database' \
       './configs/docker' \
-      './configs/electron_gui' \
-      './configs/environment' \
-      './configs/gui' \
+      './configs/env' \
       './configs/integration' \
+      './configs/kubernetes' \
       './configs/logging' \
-      './configs/network' \
-      './configs/node' \
-      './configs/overlord' \
-      './configs/payment_systems' \
       './configs/pi' \
-      './configs/rdp' \
       './configs/secrets' \
       './configs/security' \
-      './configs/server' \
       './configs/tor' \
-      './configs/user' \
+      './database/__pycache__' \
       './database/admin' \
       './database/api' \
       './database/config' \
@@ -95,6 +93,7 @@ RUN set -eux; \
       './database/schema' \
       './database/schemas' \
       './database/services' \
+      './scripts/__pycache__' \
       './scripts/build' \
       './scripts/compliance' \
       './scripts/config' \
@@ -123,7 +122,6 @@ RUN set -eux; \
       './scripts/verification' \
       './service_configs/blockchain' \
       './service_configs/distroless' \
-      './service_configs/kubernetes' \
       './service_configs/logging' \
       './service_configs/multi-stage' \
       './service_configs/node' \
@@ -131,17 +129,14 @@ RUN set -eux; \
       './service_configs/rdp' \
       './service_configs/security' \
       './service_configs/service_mesh' \
+      './service_configs/services' \
       './service_configs/sessions' \
-      './service_configs/storage' \
       './service_configs/tor' \
       './service_configs/x_lucid_cluster_calibration' \
+      './storage/__pycache__' \
       './storage/backups' \
       './storage/cache' \
       './storage/data' \
-      './configs/admin/admin-system-gateway' \
-      './configs/admin/config' \
-      './configs/blockchain/chain-to-pay' \
-      './configs/blockchain/config' \
       './configs/container/admin' \
       './configs/container/auth' \
       './configs/container/base' \
@@ -158,22 +153,24 @@ RUN set -eux; \
       './configs/container/tor' \
       './configs/database/elasticsearch' \
       './configs/database/redis' \
-      './configs/docker/compose' \
       './configs/docker/distroless' \
       './configs/docker/docs' \
       './configs/docker/multi-stage' \
-      './configs/docker/on-system-chain' \
-      './configs/environment/development' \
-      './configs/environment/pi' \
-      './configs/environment/production' \
-      './configs/environment/staging' \
-      './configs/node/config' \
-      './configs/node/node-system-gateway' \
-      './configs/overlord/runtime' \
       './configs/pi/ssh' \
+      './database/admin/__pycache__' \
+      './database/api/__pycache__' \
+      './database/config/__pycache__' \
+      './database/elasticsearch/__pycache__' \
+      './database/models/__pycache__' \
+      './database/mongodb/__pycache__' \
+      './database/redis/__pycache__' \
+      './database/repositories/__pycache__' \
+      './database/schema/__pycache__' \
+      './database/services/__pycache__' \
       './database/services/backup' \
       './database/services/migration' \
       './database/services/monitoring' \
+      './scripts/build/__pycache__' \
       './scripts/build/components' \
       './scripts/build/core' \
       './scripts/build/distroless' \
@@ -193,16 +190,9 @@ RUN set -eux; \
       './scripts/testing/integration' \
       './scripts/testing/unit' \
       './scripts/testing/utils' \
-      './service_configs/kubernetes/01_configmaps' \
-      './service_configs/kubernetes/02-secrets' \
-      './service_configs/kubernetes/03-databases' \
-      './service_configs/kubernetes/04-auth' \
-      './service_configs/kubernetes/04-network' \
-      './service_configs/kubernetes/05-core' \
-      './service_configs/kubernetes/06-application' \
-      './service_configs/kubernetes/07-support' \
-      './service_configs/kubernetes/08-ingress' \
-      './service_configs/kubernetes/patches' \
+      './scripts/validation/__pycache__' \
+      './scripts/verification/__pycache__' \
+      './service_configs/x_lucid_cluster_calibration/__pycache__' \
       './storage/backups/configs' \
       './storage/backups/database' \
       './storage/backups/user-data' \
@@ -212,28 +202,22 @@ RUN set -eux; \
       './storage/data/blockchain' \
       './storage/data/logs' \
       './storage/data/sessions' \
-      './configs/docker/compose/mongodb' \
-      './configs/docker/compose/nats' \
-      './configs/docker/compose/nginx' \
-      './configs/docker/compose/redis' \
-      './configs/docker/compose/vault' \
-      './configs/docker/distroless/base' \
+      './database/services/backup/__pycache__' \
+      './database/services/migration/__pycache__' \
+      './database/services/monitoring/__pycache__' \
     ; do \
       printf 'LUCID_X_FILES_SKELETON_%s' "$(date +%s)" > "$d/.keep"; \
       touch "$d/.keep"; \
     done
 # LUCID_X_FILES_SKELETON_END
 COPY scripts/ ./scripts/
-COPY infrastructure/containers/services/ ./service_configs/
-COPY configs/ ./configs/
-RUN rm -rf ./configs/environment
-COPY configs/environment/.env.secrets ./configs/.env.secrets
-COPY master-env-config.txt ./configs/.env.master
-COPY infrastructure/containers/host-config.yml ./service_configs/host-config.yml
-COPY infrastructure/containers/services/x_lucid_cluster_calibration/storage-cluster-host-alignment.yml ./service_configs/x_lucid_cluster_calibration/storage-cluster-host-alignment.yml
+
+RUN rm -rf configs/environment 2>/dev/null || true
+
+
+
 COPY storage/ ./storage/
 COPY database/ ./database/
-COPY infrastructure/containers/services/ ./service_configs/
 
 ############################
 # Stage 2: distroless Java 17
@@ -243,10 +227,12 @@ FROM --platform=$TARGETPLATFORM gcr.io/distroless/java17-debian12:latest
 ARG BUILD_DATE
 ARG VCS_REF
 ARG VERSION=1.0.0
-# Lucid Tor egress / network isolation (PUBLIC_TOR_IP: master-env-config.txt; compose: lucid-tor-egress-network)
+# Lucid Tor egress / network isolation (PUBLIC_TOR_IP: ../../configs/environment/ ; compose: lucid-tor-egress-network)
 ARG PUBLIC_TOR_IP=${PUBLIC_TOR_IP}
 ARG LUCID_INTERNAL_NETWORK_NAME=lucid-pi-network
 ARG LUCID_TOR_EGRESS_NETWORK_NAME=lucid-tor-egress-network
+
+WORKDIR /app
 
 LABEL maintainer="Lucid Development Team" \
       com.lucid.network.internal="${LUCID_INTERNAL_NETWORK_NAME}" \
@@ -267,7 +253,7 @@ LABEL maintainer="Lucid Development Team" \
       com.lucid.vulnerabilities="zero" \
       com.lucid.expose="9300,9200" \
       com.lucid.tor.compatible="true" \
-      com.lucid.env.config=".env.master,.env.secrets" \
+      com.lucid.env.config=".env.foundation" \
       com.lucid.storage.engine="elasticsearch" \
       com.lucid.elasticsearch.version="8.11.0" \
       com.lucid.service_id="com.lucid.dockerfile.v1.48701e1a21b14772.infrastructure.containers.storage.Dockerfile.elasticsearch" \
@@ -295,53 +281,31 @@ COPY --from=elasticsearch-builder --chown=65532:65532 /usr/bin/ /app/usr/bin/
 COPY --from=elasticsearch-builder --chown=65532:65532 /usr/lib/python3.11/ /app/usr/lib/python3.11/
 # LUCID_RUNTIME_COPY_FROM_BUILDER_APT_END
 
-# LUCID_RUNTIME_COPY_FROM_BUILD_BEGIN
-# Generated: same directory set as LUCID_X_FILES_SKELETON (./ under WORKDIR /build).
+# LUCID_IMAGE_CONFIG: (runtime)
 COPY --from=elasticsearch-builder --chown=65532:65532 /build/configs/ /app/configs/
 COPY --from=elasticsearch-builder --chown=65532:65532 /build/database/ /app/database/
 COPY --from=elasticsearch-builder --chown=65532:65532 /build/scripts/ /app/scripts/
-COPY --from=elasticsearch-builder --chown=65532:65532 /build/service_configs/ /app/service_configs/
 COPY --from=elasticsearch-builder --chown=65532:65532 /build/storage/ /app/storage/
 # LUCID_RUNTIME_COPY_FROM_BUILD_END
-# LUCID_IMAGE_CONFIG: .env.secrets + .env.master (runtime)
-COPY --from=elasticsearch-builder --chown=65532:65532 /build/configs/.env.secrets /app/configs/.env.secrets
-COPY --from=elasticsearch-builder --chown=65532:65532 /build/configs/.env.master /app/configs/.env.master
-COPY --from=elasticsearch-builder --chown=65532:65532 /build/service_configs /app/service_configs
 
-COPY --from=elasticsearch-builder /usr/share/elasticsearch/ /usr/share/elasticsearch/
 
-COPY --from=elasticsearch-builder /usr/bin/curl /usr/bin/curl
-COPY --from=elasticsearch-builder /bin/bash /bin/bash
-COPY --from=elasticsearch-builder /usr/bin/dirname /usr/bin/dirname
-COPY --from=elasticsearch-builder /usr/bin/tini /usr/bin/tini
-COPY --from=elasticsearch-builder /usr/share/elasticsearch/bin/elasticsearch-cli /usr/share/elasticsearch/bin/elasticsearch-cli
 
-COPY --from=elasticsearch-builder /lib/*/libc.so.6 /lib/
-COPY --from=elasticsearch-builder /lib/*/libssl.so.3 /lib/
-COPY --from=elasticsearch-builder /lib/*/libcrypto.so.3 /lib/
-COPY --from=elasticsearch-builder /lib/*/libz.so.1 /lib/
-COPY --from=elasticsearch-builder /lib/*/libtinfo.so.6 /lib/
-COPY --from=elasticsearch-builder /lib/*/libncurses.so.6 /lib/
-COPY --from=elasticsearch-builder /lib*/ld-linux-*.so.2 /lib64/
+EXPOSE 9300 9200
 
-COPY --from=elasticsearch-builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD ["/app/usr/bin/curl", "-f", "http://127.0.0.1:9300/_cluster/health"]
 
+USER 65532:65532
+
+USER 65532:65532	
+
+
+ENTRYPOINT ["/app/usr/bin/tini", "--", "/app/usr/share/elasticsearch/bin/elasticsearch"]
+
+CMD []
 COPY infrastructure/containers/storage/elasticsearch.yml /usr/share/elasticsearch/config/elasticsearch.yml
 
 
 
 
-WORKDIR /app
-
 VOLUME ["/app/data/elasticsearch", "/app/logs/elasticsearch"]
-
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD ["/app/usr/bin/curl", "-f", "http://127.0.0.1:9300/_cluster/health"]
-
-EXPOSE 9300 9200
-
-USER 65532:65532
-
-ENTRYPOINT ["/app/usr/bin/tini", "--", "/app/usr/share/elasticsearch/bin/elasticsearch"]
-
-CMD []

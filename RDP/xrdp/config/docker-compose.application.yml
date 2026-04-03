@@ -14,7 +14,7 @@ rdp-xrdp:
   container_name: rdp-xrdp
   restart: unless-stopped
   env_file:
-    - /app/configs/.env.secrets
+    - ../../configs/environment/.env.secrets
     - /app/configs/.env.core
     - /app/configs/.env.application
     - /app/configs/.env.foundation

@@ -47,7 +47,9 @@ CALIBRATION_DIR = _gen_host.OUT_DIR
 REPO_ROOT = _gen_host.find_repo_root(_CONTAINERS_DIR)
 
 HOST_CONFIG = REPO_ROOT / "infrastructure" / "containers" / "host-config.yml"
+X_FILES_JSON = REPO_ROOT / "x-files.json"
 X_FILES_LISTING = REPO_ROOT / "x-files-listing.txt"
+PORTS_TXT = REPO_ROOT / "ports.txt"
 MANIFEST_YAML = CALIBRATION_DIR / "allocation_manifest.yml"
 MANIFEST_JSON = CALIBRATION_DIR / "allocation_manifest.json"
 
@@ -202,6 +204,74 @@ def calibration_container_path(cluster: str) -> str:
     )
 
 
+def build_gui_token_auth_sm_alignment() -> dict[str, Any]:
+    """Policy block for GUI token path + lucid-auth ↔ lucid-server-manager (plan-aligned)."""
+    return {
+        "plan_references": [
+            "gui_token_auth_realignment (Tier A–E, wallet floor rule, anchors)",
+            "auth_sm_alignment_script (pre_auth_token, registry, credential grant naming)",
+        ],
+        "canonical_anchors": {
+            "ports_authority": "ports.txt (published/container ports; scripts/auth_sm_realignment/step_verify_anchors.py)",
+            "service_registry": str(
+                HOST_CONFIG.relative_to(REPO_ROOT).as_posix()
+            ),
+            "path_index": "x-files.json (section_to_canonical; optional)",
+            "tier_a_mat": "configs/alignment-mats/gui-services.json",
+            "tier_a_json_allowlist": "scripts/gui_auth_realignment/tier_a_json_targets.json",
+            "automation_auth_sm": "scripts/auth_sm_realignment/runtime_auth_sm_apply.py",
+        },
+        "terminology": {
+            "registration_key_store": (
+                "lucid-mongodb user document (user_id + registration_key); "
+                "not session-api / session-pipeline / RDP session plane"
+            ),
+            "auth_issuance": (
+                "auth token lease / credential grant (JWT access+refresh); "
+                "avoid calling lucid-auth-service issuance a desktop session"
+            ),
+            "client_metadata_tier_a": (
+                "Tier A *.json: machine/context metadata + bootstrap URLs only; "
+                "no Bearer, no registration_key, no SM pre_auth_token on disk"
+            ),
+        },
+        "network_call_chain": {
+            "tier_a_login_and_api": (
+                "*-interface → gui-api-bridge (lucid-gui-api-bridge) → "
+                "api-gateway (8080) → lucid-auth-service (never direct Tier A → auth)"
+            ),
+            "auth_verification_sm": (
+                "lucid-auth-service → lucid-server-manager (8081): "
+                "pre_auth verify, registry, registration_key / hash handshake per APIs"
+            ),
+            "wallet_floor_rule": (
+                "GUI wallet: Tier A → bridge → gateway → lucid-auth-service first; "
+                "gateway never reaches payment-systems; SM reaches C10 only after auth wallet-allow"
+            ),
+            "gateway_trust": (
+                "api-gateway validates end-user Bearer via POST /auth/token/introspect "
+                "on lucid-auth-service; JWT_SECRET_KEY on auth signs leases + introspect"
+            ),
+        },
+        "host_config_keys_core": {
+            "B1_api_gateway": "main_lucid_gateway",
+            "B2_lucid_auth_service": "lucid_auth_service",
+            "B3_lucid_server_manager": "lucid_server_manager",
+            "A4_gui_api_bridge": "gui_api_bridge",
+        },
+        "sm_auth_surface": (
+            "RDP/server_manager/main.py: e.g. POST /app/auth/preauth-token, "
+            "/app/auth/verify-preauth, /app/registry/users; extended verify-login"
+        ),
+        "compose_env_pointer": "configs/container/auth/docker-compose.auth.yml (SERVER_MANAGEMENT_* / SM URL)",
+        "non_goals": [
+            "Manifest / mat JSON alignment is for repo CI URLs and ids only, not end-user authentication.",
+            "Do not add Tier A .env* or persist secrets in Tier A *.json.",
+            "Do not edit repo .gitignore from auth_sm script package.",
+        ],
+    }
+
+
 def build_manifest() -> dict[str, Any]:
     host = load_yaml(HOST_CONFIG)
     services = host.get("services") or {}
@@ -285,13 +355,18 @@ def build_manifest() -> dict[str, Any]:
                 "host_config": str(HOST_CONFIG.relative_to(REPO_ROOT)).replace(
                     "\\", "/"
                 ),
+                "ports_txt": str(PORTS_TXT.relative_to(REPO_ROOT)).replace("\\", "/"),
                 "x_files_listing": str(X_FILES_LISTING.relative_to(REPO_ROOT)).replace(
+                    "\\", "/"
+                ),
+                "x_files_json": str(X_FILES_JSON.relative_to(REPO_ROOT)).replace(
                     "\\", "/"
                 ),
                 "prefix_rules": "infrastructure/containers/_gen_x_lucid_cluster_calibration.py CLUSTER_APP_PREFIXES",
             },
             "clusters": clusters_sorted,
         },
+        "gui_token_auth_sm_alignment": build_gui_token_auth_sm_alignment(),
         "dockerfiles": {k: docker_by_cluster[k] for k in sorted(docker_by_cluster)},
         "python_modules": {k: py_by_cluster[k] for k in sorted(py_by_cluster)},
         "dockerfiles_unmatched": docker_unmatched,
@@ -317,7 +392,11 @@ def main() -> int:
 
     with MANIFEST_YAML.open("w", encoding="utf-8") as f:
         f.write(
+            "# File: infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.yml\n"
+            "# x-lucid-file-path: /app/service_configs/x_lucid_cluster_calibration/allocation_manifest.yml\n"
             "# allocation_manifest.yml — generated by allocate_x_lucid_cluster_calibration.py\n"
+            "# Lucid alignment: host_registry = infrastructure/containers/host-config.yml; "
+            "ports = ports.txt; gui_token_auth_sm_alignment documents GUI token + auth↔SM plans.\n"
             "# Merge hints: COPY calibration_repo_path -> calibration_container_path in Dockerfiles;\n"
             "# Python: optional docstring line x-lucid-cluster-calibration: <repo path>\n\n"
         )

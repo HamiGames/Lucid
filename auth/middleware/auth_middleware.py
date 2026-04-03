@@ -39,7 +39,9 @@ class AuthMiddleware(BaseHTTPMiddleware):
         "/openapi.json",
         "/auth/register",
         "/auth/login",
-        "/auth/refresh"
+        "/auth/refresh",
+        # Internal network: lucid-api-gateway validates Bearer tokens here (no gateway .env.secrets JWT).
+        "/auth/token/introspect",
     ]
     
     def __init__(self, app, session_manager: Optional[SessionManager] = None):

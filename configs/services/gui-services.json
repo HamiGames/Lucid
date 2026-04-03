@@ -1,0 +1,117 @@
+{
+  "generated_at": "2026-04-02T22:45:16.489766+00:00",
+  "repo_root": "C:\\Users\\surba\\Desktop\\personal\\THE_FUCKER\\lucid_2\\Lucid",
+  "phase_filter": "gui",
+  "sources": [
+    "configs/docker/docker-compose.gui-integration.yml"
+  ],
+  "service_count": 7,
+  "services": [
+    {
+      "compose_service": "admin-interface",
+      "container_name": "lucid-admin-interface",
+      "lucid_service": "admin-interface",
+      "cluster": "gui-integration",
+      "phase": "gui",
+      "profile": "admin",
+      "image": "pickme/lucid-admin-interface:latest-arm64",
+      "ports": [
+        "8120:8120",
+        "8100:8100"
+      ],
+      "compose_files": [
+        "configs/docker/docker-compose.gui-integration.yml"
+      ]
+    },
+    {
+      "compose_service": "gui-api-bridge",
+      "container_name": "lucid-gui-api-bridge",
+      "lucid_service": "gui-api-bridge",
+      "cluster": "gui-integration",
+      "phase": "gui",
+      "profile": null,
+      "image": "pickme/lucid-gui-api-bridge:latest-arm64",
+      "ports": [
+        "8102:8102"
+      ],
+      "compose_files": [
+        "configs/docker/docker-compose.gui-integration.yml"
+      ]
+    },
+    {
+      "compose_service": "gui-docker-manager",
+      "container_name": "lucid-gui-docker-manager",
+      "lucid_service": "gui-docker-manager",
+      "cluster": "gui-integration",
+      "phase": "gui",
+      "profile": null,
+      "image": "pickme/lucid-gui-docker-manager:latest-arm64",
+      "ports": [
+        "8098:8098"
+      ],
+      "compose_files": [
+        "configs/docker/docker-compose.gui-integration.yml"
+      ]
+    },
+    {
+      "compose_service": "gui-hardware-manager",
+      "container_name": "lucid-gui-hardware-manager",
+      "lucid_service": "gui-hardware-manager",
+      "cluster": "gui-integration",
+      "phase": "gui",
+      "profile": null,
+      "image": "pickme/lucid-gui-hardware-manager:latest-arm64",
+      "ports": [
+        "8099:8099"
+      ],
+      "compose_files": [
+        "configs/docker/docker-compose.gui-integration.yml"
+      ]
+    },
+    {
+      "compose_service": "gui-tor-manager",
+      "container_name": "lucid-gui-tor-manager",
+      "lucid_service": "gui-tor-manager",
+      "cluster": "gui-integration",
+      "phase": "gui",
+      "profile": null,
+      "image": "pickme/lucid-gui-tor-manager:latest-arm64",
+      "ports": [
+        "8097:8097"
+      ],
+      "compose_files": [
+        "configs/docker/docker-compose.gui-integration.yml"
+      ]
+    },
+    {
+      "compose_service": "node-interface",
+      "container_name": "lucid-node-interface",
+      "lucid_service": "node-interface",
+      "cluster": "gui-integration",
+      "phase": "gui",
+      "profile": "node_operator",
+      "image": "pickme/lucid-node-interface:latest-arm64",
+      "ports": [
+        "3002:3002"
+      ],
+      "compose_files": [
+        "configs/docker/docker-compose.gui-integration.yml"
+      ]
+    },
+    {
+      "compose_service": "user-interface",
+      "container_name": "lucid-user-interface",
+      "lucid_service": "user-interface",
+      "cluster": "gui-integration",
+      "phase": "gui",
+      "profile": "user",
+      "image": "pickme/lucid-user-interface:latest-arm64",
+      "ports": [
+        "3001:3001"
+      ],
+      "compose_files": [
+        "configs/docker/docker-compose.gui-integration.yml"
+      ]
+    }
+  ]
+}

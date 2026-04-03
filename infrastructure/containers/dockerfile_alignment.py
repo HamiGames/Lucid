@@ -98,3 +98,117 @@ def validate_alignment(dockerfile_text: str, criteria: DockerfileAlignmentCriter
         if f'{key}="{expected}"' not in dockerfile_text:
             problems.append(f"{key} mismatch or missing")
     return problems
+
+
+def discover_repo_root(script_file: Path) -> Path:
+    """
+    Locate the Lucid repo root from any script path under the tree.
+
+    ``parent.parent.parent`` only works when the tool lives in
+    ``<root>/infrastructure/containers/``. Copies (e.g. under ``/app/configs/``) or alternate checkouts
+    need a walk: first directory containing ``infrastructure/containers`` plus a root marker
+    (``Dockerfile-layout.txt`` or ``x-files-listing.txt``), else the path above ``infrastructure/containers``.
+    """
+    sf = script_file.resolve()
+    start = sf.parent
+    for p in [start, *start.parents]:
+        ic = p / "infrastructure" / "containers"
+        if not ic.is_dir():
+            continue
+        if (p / "Dockerfile-layout.txt").is_file() or (p / "x-files-listing.txt").is_file():
+            return p
+    parts = sf.parts
+    try:
+        idx = parts.index("containers")
+        if idx >= 1 and parts[idx - 1] == "infrastructure":
+            return Path(*parts[: idx - 1])
+    except ValueError:
+        pass
+    legacy = sf.parent.parent.parent
+    if (legacy / "infrastructure" / "containers").is_dir():
+        return legacy
+    return legacy
+
+
+_LUCID_DOCKERFILE_NAME_RE = re.compile(r"^[Dd]ockerfile(?:\..+)?$")
+
+
+def dockerfile_name_looks_like_backup_or_temp(name: str) -> bool:
+    """Skip editor/backup artifacts that still match ``Dockerfile*`` globs (``rglob``)."""
+    n = name.lower()
+    if n.endswith("~"):
+        return True
+    for marker in (".bak", ".orig", ".tmp", ".temp", ".swp", ".layout.bak"):
+        if marker in n:
+            return True
+    return False
+
+
+def is_processable_lucid_dockerfile(path: Path) -> bool:
+    """
+    True for a regular file the Lucid tooling should edit: ``Dockerfile`` or ``Dockerfile.<tag>`` /
+    ``dockerfile.<tag>``, not ``__pycache__``, dotfiles, or common backup names.
+    """
+    if not path.is_file():
+        return False
+    if path.name.startswith("."):
+        return False
+    if "__pycache__" in path.parts:
+        return False
+    if dockerfile_name_looks_like_backup_or_temp(path.name):
+        return False
+    return bool(_LUCID_DOCKERFILE_NAME_RE.fullmatch(path.name))
+
+
+def discover_lucid_dockerfiles_under(root: Path) -> list[Path]:
+    """
+    All ``Dockerfile`` / ``Dockerfile.*`` / ``dockerfile.*`` under ``root`` (recursive).
+
+    Uses two ``rglob`` patterns so lowercase ``dockerfile`` names are found on case-sensitive
+    filesystems. Dedupes by ``resolve()``; skips backup/temp filenames and ``__pycache__``.
+    """
+    out: list[Path] = []
+    seen: set[Path] = set()
+    try:
+        walk_root = root.resolve(strict=False)
+    except OSError:
+        walk_root = root
+    if not walk_root.is_dir():
+        return out
+    for pattern in ("Dockerfile*", "dockerfile*"):
+        for p in walk_root.rglob(pattern):
+            if not is_processable_lucid_dockerfile(p):
+                continue
+            try:
+                key = p.resolve(strict=False)
+            except OSError:
+                key = p
+            if key in seen:
+                continue
+            seen.add(key)
+            out.append(p)
+    return sorted(out, key=lambda x: str(x).lower())
+
+
+def discover_lucid_dockerfiles_under_roots(roots: list[Path]) -> list[Path]:
+    """Merge :func:`discover_lucid_dockerfiles_under` for each existing directory; dedupe; sort."""
+    seen: set[Path] = set()
+    out: list[Path] = []
+    for root in roots:
+        if not root.is_dir():
+            continue
+        for p in discover_lucid_dockerfiles_under(root):
+            try:
+                key = p.resolve(strict=False)
+            except OSError:
+                key = p
+            if key in seen:
+                continue
+            seen.add(key)
+            out.append(p)
+    return sorted(out, key=lambda x: str(x).lower())
+
+
+def read_dockerfile_text(path: Path) -> str:
+    """Read Dockerfile bytes as UTF-8; invalid sequences do not abort the tool."""
+    return path.read_text(encoding="utf-8", errors="replace")

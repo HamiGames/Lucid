@@ -18,6 +18,7 @@ from typing import Optional
 from fastapi import FastAPI, HTTPException, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
+from starlette.middleware.base import BaseHTTPMiddleware
 from datetime import datetime
 
 from sessions.api.session_api import SessionAPI
@@ -140,6 +141,19 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+class CallingServiceAuditMiddleware(BaseHTTPMiddleware):
+    """Log aligned GUI caller id for session-plane policy audits (B3/admin reports)."""
+
+    async def dispatch(self, request, call_next):
+        cs = request.headers.get("X-Lucid-Calling-Service")
+        if cs:
+            logger.info("session-api caller=%s method=%s path=%s", cs, request.method, request.url.path)
+        return await call_next(request)
+
+
+app.add_middleware(CallingServiceAuditMiddleware)
 
 # Include routers
 app.include_router(router)

@@ -27,7 +27,7 @@
 #   - master-env-config.txt  (canonical for Docker COPY -> /app/configs/.env.master)
 #   - infrastructure/containers/host-config.yml AND scripts/  (full checkout marker)
 #
-# In-container paths for host-config + stack compose: parsed from repo x-files-listing.txt (x-lucid-file-path only; see scripts/lib/lucid-x-file-paths.sh).
+# In-container paths for host-config + stack compose: parsed from x-files.json (section_to_canonical) when present, else legacy x-files-listing.txt (see scripts/lib/lucid-x-file-paths.sh).
 
 _LUCID_LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -105,7 +105,7 @@ lucid_resolve_repo_root() {
         fi
     fi
 
-    if [[ -f /app/configs/.env.master ]] || [[ -f /app/configs/host-config.yml ]] || [[ -f /app/service_configs/host-config.yml ]]; then
+    if [[ -f /app/configs/.env.master ]] || [[ -f /app/configs/host-config.yml ]] || [[ -f /app/configs/x-files.json ]] || [[ -f /app/service_configs/host-config.yml ]]; then
         printf '%s' "/app"
         return 0
     fi
@@ -146,12 +146,19 @@ lucid_init_repo_paths() {
 
     export LUCID_MASTER_ENV_SOURCE="$LUCID_REPO_ROOT/master-env-config.txt"
     export LUCID_ENV_CONFIG_DIR="$LUCID_REPO_ROOT/configs/environment"
+    if [[ -f "$LUCID_REPO_ROOT/configs/x-files.json" ]]; then
+        export LUCID_X_FILES_JSON="$LUCID_REPO_ROOT/configs/x-files.json"
+    elif [[ -f "$LUCID_REPO_ROOT/x-files.json" ]]; then
+        export LUCID_X_FILES_JSON="$LUCID_REPO_ROOT/x-files.json"
+    else
+        export LUCID_X_FILES_JSON="$LUCID_REPO_ROOT/configs/x-files.json"
+    fi
     export LUCID_X_FILES_LISTING="$LUCID_REPO_ROOT/x-files-listing.txt"
 
     # shellcheck source=lucid-x-file-paths.sh
     # shellcheck disable=SC1091
     source "${_LUCID_LIB_DIR}/lucid-x-file-paths.sh"
-    lucid_x_file_paths_load_from_listing || return 1
+    lucid_x_file_paths_load || return 1
 
     export LUCID_HOST_CONFIG_SOURCE="$LUCID_REPO_ROOT/$LUCID_HOST_REL_HOST_CONFIG_SOURCE"
     export LUCID_CONTAINER_RUNTIME_LAYOUT_SOURCE="$LUCID_REPO_ROOT/$LUCID_HOST_REL_CONTAINER_RUNTIME_LAYOUT"

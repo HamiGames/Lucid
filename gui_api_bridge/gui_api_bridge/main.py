@@ -18,11 +18,11 @@ from fastapi.exceptions import RequestValidationError
 from gui_api_bridge.gui_api_bridge.config import get_config
 from gui_api_bridge.gui_api_bridge.healthcheck import HealthCheck
 from gui_api_bridge.gui_api_bridge.middleware.logging import LoggingMiddleware
-from gui_api_bridge.gui_api_bridge.middleware.auth import AuthMiddleware
 from gui_api_bridge.gui_api_bridge.middleware.rate_limit import RateLimitMiddleware
+from gui_api_bridge.gui_api_bridge.middleware.gateway_forward import GatewayForwardMiddleware
 from gui_api_bridge.gui_api_bridge.services.routing_service import RoutingService
 from gui_api_bridge.gui_api_bridge.integration.integration_manager import IntegrationManager
-from gui_api_bridge.gui_api_bridge.routers import user, developer, node, admin, websocket
+from gui_api_bridge.gui_api_bridge.routers import websocket
 
 logger = logging.getLogger(__name__)
 
@@ -103,8 +103,8 @@ class GuiAPIBridgeApp:
         
         # Add custom middleware
         self.app.add_middleware(LoggingMiddleware)
-        self.app.add_middleware(AuthMiddleware, config=self.config)
         self.app.add_middleware(RateLimitMiddleware, config=self.config)
+        self.app.add_middleware(GatewayForwardMiddleware, settings=self.config)
         
         # Exception handlers
         @self.app.exception_handler(RequestValidationError)
@@ -172,14 +172,10 @@ class GuiAPIBridgeApp:
             }
         
         # Include routers
-        self.app.include_router(user.router)
-        self.app.include_router(developer.router)
-        self.app.include_router(node.router)
-        self.app.include_router(admin.router)
         self.app.include_router(websocket.router)
         
         logger.info(f"FastAPI application created for {self.config.SERVICE_NAME}")
-        logger.info(f"Included routers: user, developer, node, admin, websocket")
+        logger.info("Included routers: websocket only; API paths forward to api-gateway")
         return self.app
 
 

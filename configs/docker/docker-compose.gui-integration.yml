@@ -1,420 +1,371 @@
-# File: /app/configs/docker/docker-compose.gui-integration.yml
-# x-lucid-file-path: /app/configs/docker/docker-compose.gui-integration.yml
-# x-lucid-file-directory: /app/configs/docker
-# x-lucid-file-type: YAML
-
-# GUI-Docker Integration Configuration
-# Integrates Electron GUI with Docker backend services
-# Step 33: GUI Environment Configuration from lucid-container-build-plan.plan.md
-
-# Lucid — aligned with infrastructure/containers/**/Dockerfile* (build context: repo root),
-# x-files-listing.txt (packaged paths under /app/configs/docker/…),
-# infrastructure/containers/host-config.yml (→ /app/configs/host-config.yml),
-# infrastructure/containers/services/ (→ /app/service_configs/, container-runtime-layout.yml).
-# Host data/logs: ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/…  Override on non-Pi hosts.
-# Image env files: master-env-config.txt → /app/configs/.env.master ; configs/environment/.env.secrets → /app/configs/.env.secrets (bind-mount or image COPY). Do not list master-env-config.txt in env_file (Compose interpolates ${…} and fails on required placeholders).
-
 name: lucid-gui-integration
 services:
-  # ===========================================
-  # GUI BACKEND SERVICES
-  # ===========================================
-
-  # GUI API Bridge Service
   gui-api-bridge:
     image: pickme/lucid-gui-api-bridge:latest-arm64
     container_name: lucid-gui-api-bridge
     restart: unless-stopped
-    env_file:
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.secrets
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.core
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.application
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.foundation
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.gui
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.gui-api-bridge
+    environment:
+      LUCID_GUI_ALIGNMENT_JSON: /app/configs/gui-alignment/gui-api-bridge.json
+      API_GATEWAY_URL: http://api-gateway:8080
+      PORT: '8203'
     ports:
-      - "8102:8102"
+    - 8203:8203
     volumes:
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/gui-api-bridge:/app/logs
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/gui-api-bridge:/app/data
+    - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/gui-alignment/gui-api-bridge.json:/app/configs/gui-alignment/gui-api-bridge.json:ro
+    - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/gui-api-bridge:/app/logs
+    - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/gui-api-bridge:/app/data
     networks:
-      - lucid-pi-network
-      - lucid-tor-egress-network
-      - lucid-gui-network
+    - lucid-pi-network
+    - lucid-tor-egress-network
+    - lucid-gui-network
     depends_on:
       api-gateway:
         condition: service_healthy
     healthcheck:
       test:
-        [
-          "CMD",
-          "python3",
-          "-c",
-          "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', 8102)); s.close(); exit(0 if result == 0 else 1)",
-        ]
+      - CMD
+      - python3
+      - -c
+      - import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', 8203)); s.close(); exit(0
+        if result == 0 else 1)
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 60s
     labels:
-      - "com.lucid.phase=gui"
-      - "com.lucid.service=gui-api-bridge"
-      - "com.lucid.cluster=gui-integration"
-    user: "65532:65532"
+    - com.lucid.phase=gui
+    - com.lucid.service=gui-api-bridge
+    - com.lucid.cluster=gui-integration
+    user: 65532:65532
     security_opt:
-      - no-new-privileges:true
-      - seccomp:unconfined
+    - no-new-privileges:true
+    - seccomp:unconfined
     cap_drop:
-      - ALL
+    - ALL
     cap_add:
-      - NET_BIND_SERVICE # Only for services that bind ports
+    - NET_BIND_SERVICE
     read_only: true
     tmpfs:
-      - /tmp:noexec,nosuid,size=100m
-
-  # GUI Docker Manager Service
+    - /tmp:noexec,nosuid,size=100m
   gui-docker-manager:
     image: pickme/lucid-gui-docker-manager:latest-arm64
     container_name: lucid-gui-docker-manager
     restart: unless-stopped
-    env_file:
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.secrets
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.core
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.application
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.foundation
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.gui
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.gui-docker-manager
+    environment:
+      LUCID_GUI_ALIGNMENT_JSON: /app/configs/gui-alignment/gui-docker-manager.json
+      API_GATEWAY_URL: http://api-gateway:8080
     ports:
-      - "8098:8098"
+    - 8098:8098
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/gui-docker-manager:/app/logs
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/gui-docker-manager:/app/data
+    - /var/run/docker.sock:/var/run/docker.sock:ro
+    - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/gui-alignment/gui-docker-manager.json:/app/configs/gui-alignment/gui-docker-manager.json:ro
+    - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/gui-docker-manager:/app/logs
+    - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/gui-docker-manager:/app/data
     networks:
-      - lucid-pi-network
-      - lucid-tor-egress-network
-      - lucid-gui-network
+    - lucid-pi-network
+    - lucid-tor-egress-network
+    - lucid-gui-network
     depends_on:
-      lucid-mongodb:
-        condition: service_healthy
-      lucid-redis:
-        condition: service_healthy
       api-gateway:
         condition: service_healthy
     healthcheck:
       test:
-        [
-          "CMD",
-          "python3",
-          "-c",
-          "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', 8098)); s.close(); exit(0 if result == 0 else 1)",
-        ]
+      - CMD
+      - python3
+      - -c
+      - import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', 8098)); s.close(); exit(0
+        if result == 0 else 1)
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 60s
     labels:
-      - "com.lucid.phase=gui"
-      - "com.lucid.service=gui-docker-manager"
-      - "com.lucid.cluster=gui-integration"
-    user: "65532:65532"
+    - com.lucid.phase=gui
+    - com.lucid.service=gui-docker-manager
+    - com.lucid.cluster=gui-integration
+    user: 65532:65532
     security_opt:
-      - no-new-privileges:true
-      - seccomp:unconfined
+    - no-new-privileges:true
+    - seccomp:unconfined
     cap_drop:
-      - ALL
+    - ALL
     cap_add:
-      - NET_BIND_SERVICE # Only for services that bind ports
+    - NET_BIND_SERVICE
     read_only: true
     tmpfs:
-      - /tmp:noexec,nosuid,size=100m
-  # GUI Tor Manager Service
+    - /tmp:noexec,nosuid,size=100m
   gui-tor-manager:
     image: pickme/lucid-gui-tor-manager:latest-arm64
     container_name: lucid-gui-tor-manager
     restart: unless-stopped
-    env_file:
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.secrets
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.core
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.application
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.foundation
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.gui
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.gui-tor-manager
+    environment:
+      LUCID_GUI_ALIGNMENT_JSON: /app/configs/gui-alignment/gui-tor-manager.json
+      TOR_PROXY_HOST: tor-socks
+      TOR_PROXY_URL: http://tor-socks:9051
+      TOR_SOCKS_PORT: '9050'
+      TOR_CONTROL_PORT: '9051'
     ports:
-      - "8097:8097"
+    - 8097:8097
     volumes:
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/tor:/app/tor-data:rw
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/gui-tor-manager:/app/logs:rw
-      - onion-state:/app/run/lucid/onion:ro # ADDED: Read onion state from tor-proxy (tor-proxy-02 layout)
+    - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/gui-alignment/gui-tor-manager.json:/app/configs/gui-alignment/gui-tor-manager.json:ro
+    - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/tor:/app/tor-data:rw
+    - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/gui-tor-manager:/app/logs:rw
+    - onion-state:/app/run/lucid/onion:ro
     networks:
-      - lucid-gui-network
-      - lucid-pi-network # ADDED: To connect to tor-proxy
-      - lucid-tor-egress-network
+    - lucid-gui-network
+    - lucid-pi-network
+    - lucid-tor-egress-network
     depends_on:
-      tor-proxy: # ADDED: Dependency on foundation tor-proxy
+      tor-proxy:
         condition: service_started
     healthcheck:
-      test: [
-          "CMD",
-          "python3",
-          "-c",
-          "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', 8097)); s.close(); exit(0 if result == 0 else 1)",
-        ] # FIXED: Python socket check
+      test:
+      - CMD
+      - python3
+      - -c
+      - import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', 8097)); s.close(); exit(0
+        if result == 0 else 1)
       interval: 60s
       timeout: 10s
       retries: 3
       start_period: 60s
     labels:
-      - "com.lucid.phase=gui"
-      - "com.lucid.service=gui-tor-manager"
-      - "com.lucid.cluster=gui-integration"
-    user: "65532:65532"
+    - com.lucid.phase=gui
+    - com.lucid.service=gui-tor-manager
+    - com.lucid.cluster=gui-integration
+    user: 65532:65532
     security_opt:
-      - no-new-privileges:true
-      - seccomp:unconfined
+    - no-new-privileges:true
+    - seccomp:unconfined
     cap_drop:
-      - ALL
+    - ALL
     cap_add:
-      - NET_BIND_SERVICE # Only for services that bind ports
+    - NET_BIND_SERVICE
     read_only: true
     tmpfs:
-      - /tmp:noexec,nosuid,size=100m
-  # GUI Hardware Manager Service
+    - /tmp:noexec,nosuid,size=100m
   gui-hardware-manager:
     image: pickme/lucid-gui-hardware-manager:latest-arm64
     container_name: lucid-gui-hardware-manager
     restart: unless-stopped
-    env_file:
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.secrets
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.core
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.application
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.foundation
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.gui
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.gui-hardware-manager
+    environment:
+      LUCID_GUI_ALIGNMENT_JSON: /app/configs/gui-alignment/gui-hardware-manager.json
+      API_GATEWAY_URL: http://api-gateway:8080
     ports:
-      - "8099:8099"
+    - 8099:8099
     volumes:
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/gui-hardware-manager:/app/logs
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/gui-hardware-manager:/app/data
-      # Writable tmpfs for USB device access (environment-aware path)
-      - /run/usb-devices:/run/usb:rw
+    - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/gui-alignment/gui-hardware-manager.json:/app/configs/gui-alignment/gui-hardware-manager.json:ro
+    - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/gui-hardware-manager:/app/logs
+    - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/gui-hardware-manager:/app/data
+    - /run/usb-devices:/run/usb:rw
     networks:
-      - lucid-pi-network
-      - lucid-tor-egress-network
-      - lucid-gui-network
+    - lucid-pi-network
+    - lucid-tor-egress-network
+    - lucid-gui-network
     depends_on:
       tor-proxy:
         condition: service_started
-      lucid-mongodb:
-        condition: service_healthy
-      lucid-redis:
-        condition: service_healthy
-      lucid-auth-service:
-        condition: service_healthy
       api-gateway:
         condition: service_healthy
       gui-api-bridge:
         condition: service_healthy
     healthcheck:
       test:
-        [
-          "CMD",
-          "python3",
-          "-c",
-          "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', 8099)); s.close(); exit(0 if result == 0 else 1)",
-        ]
+      - CMD
+      - python3
+      - -c
+      - import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', 8099)); s.close(); exit(0
+        if result == 0 else 1)
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 60s
     labels:
-      - "com.lucid.phase=gui"
-      - "com.lucid.service=gui-hardware-manager"
-      - "com.lucid.cluster=gui-integration"
-    user: "65532:65532"
+    - com.lucid.phase=gui
+    - com.lucid.service=gui-hardware-manager
+    - com.lucid.cluster=gui-integration
+    user: 65532:65532
     security_opt:
-      - no-new-privileges:true
-      - seccomp:unconfined
+    - no-new-privileges:true
+    - seccomp:unconfined
     cap_drop:
-      - ALL
+    - ALL
     cap_add:
-      - NET_BIND_SERVICE
+    - NET_BIND_SERVICE
     read_only: true
     tmpfs:
-      - /tmp:noexec,nosuid,size=100m
-
-  # ===========================================
-  # ELECTRON GUI INTERFACES (Distroless)
-  # ===========================================
-
-  # Admin Interface - Distroless Electron GUI
+    - /tmp:noexec,nosuid,size=100m
   admin-interface:
     image: pickme/lucid-admin-interface:latest-arm64
     container_name: lucid-admin-interface
     restart: unless-stopped
-    env_file:
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.secrets
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.core
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.application
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.foundation
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.gui
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.admin-interface
+    environment:
+      LUCID_GUI_ALIGNMENT_JSON: /app/configs/gui-alignment/admin-interface.json
+      GUI_API_BRIDGE_URL: http://gui-api-bridge:8203
     ports:
-      - "8120:8120"
-      - "8100:8100"
+    - 8120:8120
+    - 8100:8100
     volumes:
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/admin-interface:/app/logs
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/admin-interface:/app/data
+    - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/gui-alignment/admin-interface.json:/app/configs/gui-alignment/admin-interface.json:ro
+    - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/admin-interface:/app/logs
+    - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/admin-interface:/app/data
     networks:
-      - lucid-pi-network
-      - lucid-tor-egress-network
-      - lucid-gui-network
+    - lucid-pi-network
+    - lucid-tor-egress-network
+    - lucid-gui-network
     depends_on:
       gui-api-bridge:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://127.0.0.1:8120/health || exit 1"]
+      test:
+      - CMD-SHELL
+      - curl -f http://127.0.0.1:8120/health || exit 1
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
     labels:
-      - "com.lucid.phase=gui"
-      - "com.lucid.service=admin-interface"
-      - "com.lucid.cluster=gui-integration"
-      - "com.lucid.profile=admin"
-    user: "65532:65532"
+    - com.lucid.phase=gui
+    - com.lucid.service=admin-interface
+    - com.lucid.cluster=gui-integration
+    - com.lucid.profile=admin
+    user: 65532:65532
     security_opt:
-      - no-new-privileges:true
+    - no-new-privileges:true
     cap_drop:
-      - ALL
+    - ALL
     cap_add:
-      - NET_BIND_SERVICE
+    - NET_BIND_SERVICE
     read_only: true
     tmpfs:
-      - /tmp:noexec,nosuid,size=100m
-
-  # User Interface - Distroless Electron GUI
+    - /tmp:noexec,nosuid,size=100m
   user-interface:
     image: pickme/lucid-user-interface:latest-arm64
     container_name: lucid-user-interface
     restart: unless-stopped
-    env_file:
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.secrets
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.core
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.application
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.foundation
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.gui
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.user-interface
+    environment:
+      LUCID_GUI_ALIGNMENT_JSON: /app/configs/gui-alignment/user-interface.json
+      GUI_API_BRIDGE_URL: http://gui-api-bridge:8203
     ports:
-      - "3001:3001"
+    - 3001:3001
     volumes:
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/user-interface:/app/logs
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/user-interface:/app/data
+    - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/gui-alignment/user-interface.json:/app/configs/gui-alignment/user-interface.json:ro
+    - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/user-interface:/app/logs
+    - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/user-interface:/app/data
     networks:
-      - lucid-pi-network
-      - lucid-tor-egress-network
-      - lucid-gui-network
+    - lucid-pi-network
+    - lucid-tor-egress-network
+    - lucid-gui-network
     depends_on:
       gui-api-bridge:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://127.0.0.1:3001/health || exit 1"]
+      test:
+      - CMD-SHELL
+      - curl -f http://127.0.0.1:3001/health || exit 1
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
     labels:
-      - "com.lucid.phase=gui"
-      - "com.lucid.service=user-interface"
-      - "com.lucid.cluster=gui-integration"
-      - "com.lucid.profile=user"
-    user: "65532:65532"
+    - com.lucid.phase=gui
+    - com.lucid.service=user-interface
+    - com.lucid.cluster=gui-integration
+    - com.lucid.profile=user
+    user: 65532:65532
     security_opt:
-      - no-new-privileges:true
+    - no-new-privileges:true
     cap_drop:
-      - ALL
+    - ALL
     cap_add:
-      - NET_BIND_SERVICE
+    - NET_BIND_SERVICE
     read_only: true
     tmpfs:
-      - /tmp:noexec,nosuid,size=100m
-
-  # Node Operator Interface - Distroless Electron GUI
+    - /tmp:noexec,nosuid,size=100m
   node-interface:
     image: pickme/lucid-node-interface:latest-arm64
     container_name: lucid-node-interface
     restart: unless-stopped
-    env_file:
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.secrets
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.core
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.application
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.foundation
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.gui
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.node-interface
+    environment:
+      LUCID_GUI_ALIGNMENT_JSON: /app/configs/gui-alignment/node-interface.json
+      GUI_API_BRIDGE_URL: http://gui-api-bridge:8203
     ports:
-      - "3002:3002"
+    - 3002:3002
     volumes:
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/node-interface:/app/logs
-      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/node-interface:/app/data
+    - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/gui-alignment/node-interface.json:/app/configs/gui-alignment/node-interface.json:ro
+    - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/node-interface:/app/logs
+    - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/node-interface:/app/data
     networks:
-      - lucid-pi-network
-      - lucid-tor-egress-network
-      - lucid-gui-network
+    - lucid-pi-network
+    - lucid-tor-egress-network
+    - lucid-gui-network
     depends_on:
       gui-api-bridge:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://127.0.0.1:3002/health || exit 1"]
+      test:
+      - CMD-SHELL
+      - curl -f http://127.0.0.1:3002/health || exit 1
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
     labels:
-      - "com.lucid.phase=gui"
-      - "com.lucid.service=node-interface"
-      - "com.lucid.cluster=gui-integration"
-      - "com.lucid.profile=node_operator"
-    user: "65532:65532"
+    - com.lucid.phase=gui
+    - com.lucid.service=node-interface
+    - com.lucid.cluster=gui-integration
+    - com.lucid.profile=node_operator
+    user: 65532:65532
     security_opt:
-      - no-new-privileges:true
+    - no-new-privileges:true
     cap_drop:
-      - ALL
+    - ALL
     cap_add:
-      - NET_BIND_SERVICE
+    - NET_BIND_SERVICE
     read_only: true
     tmpfs:
-      - /tmp:noexec,nosuid,size=100m
-
-# ===========================================
-# VOLUMES
-# ===========================================
+    - /tmp:noexec,nosuid,size=100m
 volumes:
-  # Onion state shared between tor-proxy and gui-tor-manager
   onion-state:
     name: onion-state
     external: true
-
-# ===========================================
-# NETWORKS
-# ===========================================
 networks:
-  # Main Pi network (external)
   lucid-pi-network:
     name: lucid-pi-network
     external: true
-
   lucid-tor-egress-network:
     name: lucid-tor-egress-network
     external: true
-
-  # GUI-specific network for secure communication
   lucid-gui-network:
     name: lucid-gui-network
     driver: bridge
     attachable: true
     ipam:
       config:
-        - subnet: 172.27.0.0/16
-          gateway: 172.27.0.1
-# ===========================================
+      - subnet: 172.27.0.0/16
+        gateway: 172.27.0.1
+secrets:
+  MONGODB_PASSWORD:
+    file: ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/secrets/runtime/compose/MONGODB_PASSWORD.secret
+  REDIS_PASSWORD:
+    file: ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/secrets/runtime/compose/REDIS_PASSWORD.secret
+  JWT_SECRET_KEY:
+    file: ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/secrets/runtime/compose/JWT_SECRET_KEY.secret
+  ENCRYPTION_KEY:
+    file: ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/secrets/runtime/compose/ENCRYPTION_KEY.secret
+  SESSION_SECRET:
+    file: ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/secrets/runtime/compose/SESSION_SECRET.secret
+  TRON_PRIVATE_KEY:
+    file: ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/secrets/runtime/compose/TRON_PRIVATE_KEY.secret
+  TRON_API_KEY:
+    file: ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/secrets/runtime/compose/TRON_API_KEY.secret
+  API_GATEWAY_SECRET:
+    file: ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/secrets/runtime/compose/API_GATEWAY_SECRET.secret
+  ELASTICSEARCH_PASSWORD:
+    file: ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/secrets/runtime/compose/ELASTICSEARCH_PASSWORD.secret
+  TOR_PASSWORD:
+    file: ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/secrets/runtime/compose/TOR_PASSWORD.secret
+  TOR_CONTROL_PASSWORD:
+    file: ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/secrets/runtime/compose/TOR_CONTROL_PASSWORD.secret
+  WALLET_ENCRYPTION_KEY:
+    file: ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/secrets/runtime/compose/WALLET_ENCRYPTION_KEY.secret

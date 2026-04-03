@@ -105,6 +105,10 @@ services:
       - no-new-privileges:true
     read_only: false  # Allow writes for development
     volumes:
+      - ../../../../configs/environment/.env.master:/app/configs/.env.master:ro
+      - ../../../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
+      - ..:/app/service_configs:ro
+      - ../../host-config.yml:/app/configs/host-config.yml:ro
       - lucid-ms-runtime-src:/app/src
       - lucid-ms-runtime-logs:/app/logs
       - lucid-ms-runtime-cache:/app/cache
@@ -165,6 +169,10 @@ services:
     user: "1000:1000"
     working_dir: /app
     volumes:
+      - ../../../../configs/environment/.env.master:/app/configs/.env.master:ro
+      - ../../../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
+      - ..:/app/service_configs:ro
+      - ../../host-config.yml:/app/configs/host-config.yml:ro
       - ${LUCID_DOCKER_SOCK:-/var/run/docker.sock}:/app/var/run/docker.sock:ro
       - monitoring-logs:/logs
     healthcheck:

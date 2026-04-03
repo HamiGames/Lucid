@@ -19,38 +19,23 @@ from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict  # pyright: ignore[reportMissingImports]
 from functools import lru_cache
 import json
-import importlib
-import secrets
 
-config_path = importlib.import_module("app.infrastructure.kubernetes.01_configmaps.api-gateway-config.yaml")
-CONFIG = os.getenv("CONFIG", config_path())
-SETTINGS = os.getenv("SETTINGS")
-if os.path.exists(SETTINGS):
-    with open(SETTINGS, 'r') as f:
-        SETTINGS = json.load(f)
-else:
-    SETTINGS = {}
-if os.path.exists(CONFIG):
-    with open(CONFIG, config_path()) as f:
-        CONFIG = json.load(f)
-else:
-    CONFIG = {}
-
-
-
+# Legacy placeholders (avoid import errors in api.app package init)
+CONFIG: dict = {}
+SETTINGS: dict = {}
 
 class Settings(BaseSettings):
     """Application settings"""
    
     # Service Configuration
-    API_GATEWAY_SERVICE_NAME: str = Field(env="API_GATEWAY_SERVICE_NAME")
+    API_GATEWAY_SERVICE_NAME: str = Field(default="lucid-api-gateway", env="API_GATEWAY_SERVICE_NAME")
     API_VERSION: str = Field(default="v1", env="API_VERSION")
     DEBUG: bool = Field(default=False, env="DEBUG")
-    ENVIRONMENT: str = Field( env="ENVIRONMENT")
+    ENVIRONMENT: str = Field(default="production", env="ENVIRONMENT")
     
     # Port Configuration
-    HTTP_GATEWAY_PORT: int = Field(env="HTTP_GATEWAY_PORT")
-    HTTPS_GATEWAY_PORT: int = Field( env="HTTPS_GATEWAY_PORT")
+    HTTP_GATEWAY_PORT: int = Field(default=8080, env="HTTP_GATEWAY_PORT")
+    HTTPS_GATEWAY_PORT: int = Field(default=8081, env="HTTPS_GATEWAY_PORT")
     
     # Security Configuration
     JWT_SECRET_KEY: str = Field(env="JWT_SECRET_KEY")
@@ -77,6 +62,22 @@ class Settings(BaseSettings):
     BLOCKCHAIN_CORE_URL: str = Field( env="BLOCKCHAIN_CORE_URL")
     SESSION_MANAGEMENT_URL: str = Field( env="SESSION_MANAGEMENT_URL")
     AUTH_SERVICE_URL: str = Field(env="AUTH_SERVICE_URL")
+    AUTH_SERVICE_INTROSPECT_PATH: str = Field(
+        default="/auth/token/introspect", env="AUTH_SERVICE_INTROSPECT_PATH"
+    )
+    SERVER_MANAGEMENT_URL: str = Field(
+        default="http://lucid-server-manager:8081", env="SERVER_MANAGEMENT_URL"
+    )
+    SERVER_MANAGEMENT_ACCESS_PATH: str = Field(
+        default="/app/access/register-check", env="SERVER_MANAGEMENT_ACCESS_PATH"
+    )
+    SERVER_MANAGEMENT_ENABLED: bool = Field(default=True, env="SERVER_MANAGEMENT_ENABLED")
+    SERVER_MANAGEMENT_IGNORE_404: bool = Field(default=False, env="SERVER_MANAGEMENT_IGNORE_404")
+    SERVER_MANAGEMENT_GATEWAY_TOKEN: Optional[str] = Field(default=None, env="SERVER_MANAGEMENT_GATEWAY_TOKEN")
+    GUI_SERVICES_ALIGNMENT_PATH: Optional[str] = Field(default=None, env="GUI_SERVICES_ALIGNMENT_PATH")
+    LUCID_INTERNAL_SERVICE_TOKEN: Optional[str] = Field(default=None, env="LUCID_INTERNAL_SERVICE_TOKEN")
+    GUI_TRUST_REQUIRE_INTERNAL_TOKEN: bool = Field(default=False, env="GUI_TRUST_REQUIRE_INTERNAL_TOKEN")
+    ACCESS_HTTP_TIMEOUT_SECONDS: float = Field(default=15.0, env="ACCESS_HTTP_TIMEOUT_SECONDS")
     # TRON = isolated payment service (NOT part of lucid_blocks)
     TRON_PAYMENT_URL: str = Field( env="TRON_PAYMENT_URL")
     # GUI Services
@@ -110,7 +111,30 @@ class Settings(BaseSettings):
     # Monitoring Configuration
     METRICS_ENABLED: bool = Field(default=True)
     HEALTH_CHECK_INTERVAL: str = Field(default="30")
-   
+
+    @property
+    def SERVICE_NAME(self) -> str:
+        """Alias used by logging and meta routers."""
+        return self.API_GATEWAY_SERVICE_NAME
+
+    @property
+    def HTTP_PORT(self) -> int:
+        """Alias for uvicorn / CLI entrypoints."""
+        return self.HTTP_GATEWAY_PORT
+
+    def auth_introspect_url(self) -> str:
+        base = (self.AUTH_SERVICE_URL or "").rstrip("/")
+        path = self.AUTH_SERVICE_INTROSPECT_PATH or "/auth/token/introspect"
+        if not path.startswith("/"):
+            path = "/" + path
+        return f"{base}{path}"
+
+    def server_management_access_url(self) -> str:
+        base = (self.SERVER_MANAGEMENT_URL or "").rstrip("/")
+        path = self.SERVER_MANAGEMENT_ACCESS_PATH or "/app/access/register-check"
+        if not path.startswith("/"):
+            path = "/" + path
+        return f"{base}{path}"
     
     @model_validator(mode="before")
     @classmethod
@@ -307,8 +331,8 @@ class Settings(BaseSettings):
         return v or ""
     
     model_config = SettingsConfigDict(
-        env_file=['.env.secrets', '.env.api-gateway'],
-        case_sensitive=True
+        env_file=(".env.api-gateway", ".env"),
+        case_sensitive=True,
     )
 
 

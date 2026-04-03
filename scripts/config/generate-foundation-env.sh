@@ -37,7 +37,7 @@ validate_pi_mounts() {
         echo "WARNING: master-env-config.txt missing at $LUCID_MASTER_ENV_SOURCE (required for Docker COPY -> ${LUCID_IMAGE_MASTER_ENV})"
     fi
     if [[ ! -f "$LUCID_HOST_CONFIG_SOURCE" ]]; then
-        echo "WARNING: host-config missing at $LUCID_HOST_CONFIG_SOURCE (x-files-listing canonical in-image ${LUCID_IMAGE_HOST_CONFIG}; alt ${LUCID_IMAGE_HOST_CONFIG_ALT})"
+        echo "WARNING: host-config missing at $LUCID_HOST_CONFIG_SOURCE (x-files.json canonical in-image ${LUCID_IMAGE_HOST_CONFIG}; alt ${LUCID_IMAGE_HOST_CONFIG_ALT})"
     fi
 }
 

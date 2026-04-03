@@ -65,6 +65,9 @@ RUN printf "LUCID_SERVICE_MESH_CONTROLLER_RUNTIME_DIRECTORY" > /var/run/.keep &&
     chown -R 65532:65532 /var/run /var/lib || (echo "ERROR: Failed to chown runtime directories" && exit 1)
 
 # Upgrade pip tooling to latest versions so binary wheels resolve properly
+RUN apt-get remove -y rustc cargo && rm -rf /root/.cargo /root/.rustup && \
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
+
 RUN --mount=type=cache,target=/root/.cache/pip \
     python -m pip install --upgrade pip wheel setuptools || (echo "ERROR: pip upgrade failed" && exit 1)
 
@@ -191,12 +194,11 @@ COPY gui_tor_manager/ ./gui_tor_manager/
 COPY gui_hardware_manager/ ./gui_hardware_manager/
 COPY electron_gui/ ./electron_gui/
 COPY 03_api_gateway/ ./03_api_gateway/
-COPY configs/ ./configs/
-RUN rm -rf ./configs/environment && \
-    echo ".env.* files removed"
-COPY configs/environment/.env.secrets ./configs/.env.secrets
-COPY master-env-config.txt ./configs/.env.master
-COPY infrastructure/containers/services/x_lucid_cluster_calibration/foundation-cluster-host-alignment.yml ./service_configs/x_lucid_cluster_calibration/foundation-cluster-host-alignment.yml
+
+RUN rm -rf configs/environment 2>/dev/null || true
+
+
+
 
 # Verify source code directories were copied (per Dockerfile-copy-pattern: verify after COPY)
 # CRITICAL: This prevents silent COPY failures for source code
@@ -268,7 +270,7 @@ LABEL maintainer="Lucid Development Team" \
       com.lucid.cluster="10-cross-cluster-integration" \
       com.lucid.expose="8550" \
       com.lucid.tor.compatible="true" \
-      com.lucid.env.config=".env.master,.env.secrets"
+      com.lucid.env.config=".env.foundation"
 # Set working directory
 ENV PYTHONPATH=/app:/usr/local/lib/python3.11/site-packages \
     PATH=/usr/local/bin:/usr/local/bin:/usr/bin:/bin \

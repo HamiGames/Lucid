@@ -10,14 +10,8 @@
 # Pi-native implementation with no placeholders or blanks
 
 set -euo pipefail
+_lucid_container_here="/app/scripts/config"
 
-_lucid_here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-_lucid_scripts="$_lucid_here"
-while [[ "$_lucid_scripts" != "/" && "$(basename "$_lucid_scripts")" != "scripts" ]]; do
-    _lucid_scripts="$(dirname "$_lucid_scripts")"
-done
-# shellcheck source=../lib/lucid-repo-paths.sh
-source "$_lucid_scripts/lib/lucid-repo-paths.sh"
 
 # Colors for output
 RED='\033[0;31m'

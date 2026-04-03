@@ -12,7 +12,7 @@
 
 # Container-baked env (see Dockerfile.tor-proxy-02 / app images):
 config_files:
-  secrets: /app/configs/.env.secrets
+  secrets: ../../configs/environment/.env.secrets
   master: /app/configs/.env.master
 
 beta_sidecar:

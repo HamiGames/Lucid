@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "description": "Allowlisted JSON manifest paths per compose_service (repo-root relative)",
+  "targets": {
+    "gui-api-bridge": ["configs/gui-alignment/gui-api-bridge.json"],
+    "gui-docker-manager": ["configs/gui-alignment/gui-docker-manager.json"],
+    "gui-tor-manager": ["configs/gui-alignment/gui-tor-manager.json"],
+    "gui-hardware-manager": ["configs/gui-alignment/gui-hardware-manager.json"],
+    "admin-interface": ["configs/gui-alignment/admin-interface.json"],
+    "user-interface": ["configs/gui-alignment/user-interface.json"],
+    "node-interface": ["configs/gui-alignment/node-interface.json"]
+  }
+}

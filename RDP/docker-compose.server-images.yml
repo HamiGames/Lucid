@@ -14,7 +14,7 @@ services:
     env_file:
       - /app/configs/.env.master
       - /app/configs/.env.support
-      - /app/configs/.env.secrets
+      - ../../configs/environment/.env.secrets
       - /app/configs/.env.rdp-server-manager
     networks:
       - lucid-pi-network

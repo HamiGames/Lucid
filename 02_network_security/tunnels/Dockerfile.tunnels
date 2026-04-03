@@ -245,7 +245,7 @@ CMD ["/usr/bin/python3.11", "/app/tunnel/entrypoint.py"]
 #
 #   Configuration files are expected at (via docker-compose env_file):
 #     - /app/configs/.env.tunnel-tools
-#     - /app/configs/.env.secrets
+#     - ../../configs/environment/.env.secrets
 #     - /app/configs/.env.foundation
 #
 #   Alignment with Dockerfile.tor-proxy:
