@@ -25,6 +25,12 @@ Usage (repo root):
       --source-map scripts/gui_auth_realignment/gui_service_source_map.json
   python scripts/gui_auth_realignment/list_service_files_by_name.py \\
       --service my-worker --omit-gui-alignment-convention --format json
+
+  Names from a file (one per line), merged with any ``--service``:
+  python scripts/gui_auth_realignment/list_service_files_by_name.py \\
+      --services-from configs/alignment-mats/service_names.txt \\
+      --omit-gui-alignment-convention --manifest-dir configs/alignment-mats \\
+      --manifest-suffix _manifest.json
 """
 
 from __future__ import annotations
@@ -71,6 +77,24 @@ def _sanitize_cli_token(s: str | None) -> str:
     if s is None:
         return ""
     return str(s).replace("\r", "").replace("\n", "").strip()
+
+
+def _load_service_names_from_file(path: Path) -> List[str]:
+    """One service name per line; strip; skip empties and ``#`` comments."""
+    raw_b = path.read_bytes()
+    if raw_b.startswith((b"\xff\xfe", b"\xfe\xff")):
+        raw = raw_b.decode("utf-16", errors="replace")
+    else:
+        raw = raw_b.decode("utf-8-sig", errors="replace")
+    out: List[str] = []
+    for line in raw.splitlines():
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        t = _sanitize_cli_token(line)
+        if t:
+            out.append(t)
+    return out
 
 
 def _repo_root(arg: str | None) -> Path:
@@ -284,8 +308,15 @@ def main() -> int:
         action="append",
         dest="services",
         metavar="NAME",
-        required=True,
-        help="Logical / compose service name (repeat for multiple)",
+        default=[],
+        help="Logical / compose service name (repeat for multiple). Use with --services-from or pass at least one source.",
+    )
+    ap.add_argument(
+        "--services-from",
+        dest="services_from",
+        default=None,
+        metavar="PATH",
+        help="Text file: one service name per line (# comments OK). Repo-relative unless absolute. Merged with --service.",
     )
     ap.add_argument(
         "--source-map",
@@ -334,11 +365,6 @@ def main() -> int:
     )
     args = ap.parse_args()
 
-    args.services = [_sanitize_cli_token(s) for s in (args.services or []) if _sanitize_cli_token(s)]
-    if not args.services:
-        print("error: no non-empty --service values (after stripping CR/LF)", file=sys.stderr)
-        return 2
-
     ms = _sanitize_cli_token(args.manifest_suffix)
     args.manifest_suffix = ms if ms else ".service-files.json"
 
@@ -354,6 +380,35 @@ def main() -> int:
     args.extra_needle = [_sanitize_cli_token(n) for n in (args.extra_needle or []) if _sanitize_cli_token(n)]
 
     repo = _repo_root(args.repo_root)
+
+    cli_services = [_sanitize_cli_token(s) for s in (args.services or []) if _sanitize_cli_token(s)]
+    sf_raw = _sanitize_cli_token(getattr(args, "services_from", None))
+    merged: List[str] = []
+    seen_merge: Set[str] = set()
+    for s in cli_services:
+        k = s.casefold()
+        if k not in seen_merge:
+            seen_merge.add(k)
+            merged.append(s)
+    if sf_raw:
+        fp = Path(sf_raw)
+        if not fp.is_absolute():
+            fp = repo / fp
+        if not fp.is_file():
+            print(f"error: --services-from not found: {fp}", file=sys.stderr)
+            return 2
+        for s in _load_service_names_from_file(fp):
+            k = s.casefold()
+            if k not in seen_merge:
+                seen_merge.add(k)
+                merged.append(s)
+    args.services = merged
+    if not args.services:
+        print(
+            "error: no service names (use --service and/or --services-from)",
+            file=sys.stderr,
+        )
+        return 2
 
     mat: Dict[str, Any] | None = None
     mat_display = ""

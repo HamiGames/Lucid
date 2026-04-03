@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "tool": "scripts/gui_auth_realignment/list_service_files_by_name.py",
+  "compose_service": "data-chain",
+  "yml": [
+    "configs/container/blockchain/docker-compose.chain.yml",
+    "configs/container/blockchain/docker-compose.manager.yml",
+    "configs/container/gui/docker-compose.node-gui.yml",
+    "configs/container/node/docker-compose.node-data-system.yml",
+    "configs/container/node/docker-compose.node-gui.yml",
+    "configs/container/server/docker-compose.server-external.yml",
+    "configs/docker/docker-compose.all.yml",
+    "configs/docker/docker-compose.core.yml",
+    "configs/services/blockchain-core.yml",
+    "configs/services/gui-docker-manager-service-groups.yml",
+    "configs/services/gui-docker-manager.yml",
+    "infrastructure/containers/blockchain/config/blockchain-endpoints.yml",
+    "infrastructure/containers/blockchain/docker-compose.chain.yml",
+    "infrastructure/containers/blockchain/docker-compose.manager.yml",
+    "infrastructure/containers/gui/docker-compose.node-gui.yml",
+    "infrastructure/containers/host-config.yml",
+    "infrastructure/containers/node/docker-compose.node-data-system.yml",
+    "infrastructure/containers/node/docker-compose.node-gui.yml",
+    "infrastructure/containers/server/docker-compose.server-external.yml",
+    "infrastructure/containers/services/blockchain-core.yml",
+    "infrastructure/containers/services/gui-docker-manager-service-groups.yml",
+    "infrastructure/containers/services/gui-docker-manager.yml",
+    "infrastructure/containers/services/master-endpoint.yml",
+    "infrastructure/containers/services/service_mesh/services.yaml",
+    "infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.yml",
+    "infrastructure/containers/services/x_lucid_cluster_calibration/core-cluster-host-alignment.yml",
+    "infrastructure/service_mesh/config/service-mesh.yaml"
+  ],
+  "py": [
+    "common/load_host_config.py"
+  ],
+  "json": [
+    "configs/x-files.json",
+    "infrastructure/containers/blockchain/config/chain-to-pay.connections.json",
+    "infrastructure/containers/config-listings.json",
+    "infrastructure/containers/dockerfile_recalibration_map.json",
+    "infrastructure/containers/dockerfile_recalibration_map_REPAIRED.json",
+    "infrastructure/containers/services/service_mesh/health-checks.json",
+    "infrastructure/containers/services/service_mesh/network.json",
+    "infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.json"
+  ],
+  "associated_needles": [
+    "data_chain",
+    "data-chain"
+  ],
+  "missing_yml": [],
+  "missing_python_dirs": [],
+  "missing_global_py": [],
+  "missing_expected": [
+    "infrastructure/containers/services/data-chain.yml"
+  ],
+  "missing_tier_a_json": [],
+  "source_map_path": "scripts/gui_auth_realignment/gui_service_source_map.json",
+  "mat_path": "configs/services/gui-services.json",
+  "mat_row_matched": false,
+  "alignment_json": []
+}

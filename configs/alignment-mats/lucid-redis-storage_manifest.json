@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "tool": "scripts/gui_auth_realignment/list_service_files_by_name.py",
+  "compose_service": "lucid-redis-storage",
+  "yml": [
+    "infrastructure/containers/host-config.yml",
+    "infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.yml"
+  ],
+  "py": [
+    "common/load_host_config.py"
+  ],
+  "json": [
+    "infrastructure/containers/config-listings.json"
+  ],
+  "associated_needles": [
+    "lucid-redis-storage",
+    "lucid_redis_storage"
+  ],
+  "missing_yml": [],
+  "missing_python_dirs": [],
+  "missing_global_py": [],
+  "missing_expected": [
+    "infrastructure/containers/services/lucid-redis-storage.yml"
+  ],
+  "missing_tier_a_json": [],
+  "source_map_path": "scripts/gui_auth_realignment/gui_service_source_map.json",
+  "mat_path": "configs/services/gui-services.json",
+  "mat_row_matched": false,
+  "alignment_json": []
+}

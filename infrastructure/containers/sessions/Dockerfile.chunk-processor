@@ -51,16 +51,18 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 
 # LUCID_LIB_SKELETON_BEGIN
 # Generated: FHS dirs for builder (from final-stage COPY --from, excluding /build/ sources;
-# ancestor dirs collapsed; overlaps with builder mkdir/.keep removed — see collect_skeleton_paths_from_dockerfile).
+# ancestor dirs collapsed; see collect_skeleton_paths_from_dockerfile).
 RUN set -eux; \
   mkdir -p \
     '/bin' \
+    '/usr' \
     '/etc/ssl' \
     '/usr/lib' \
     '/var/lib' \
     '/var/run'; \
   for d in \
     '/bin' \
+    '/usr' \
     '/etc/ssl' \
     '/usr/lib' \
     '/var/lib' \
@@ -100,10 +102,11 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 # LUCID_X_FILES_SKELETON_BEGIN
 # Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
 RUN set -eux; \
-    mkdir -p '.' './apps' './configs' './service_configs' './sessions' './apps/__pycache__' './apps/admin_ui' './apps/chain_client' './apps/chunker' './apps/dht_node' './apps/encryptor' './apps/exporter' './apps/gui-user' './apps/gui_admin' './apps/gui_node' './apps/merkle' './apps/recorder' './apps/tron-node' './apps/walletd' './configs/.ssh' './configs/container' './configs/database' './configs/docker' './configs/env' './configs/integration' './configs/kubernetes' './configs/logging' './configs/pi' './configs/secrets' './configs/security' './configs/tor' './service_configs/blockchain' './service_configs/distroless' './service_configs/logging' './service_configs/multi-stage' './service_configs/node' './service_configs/payment_services' './service_configs/rdp' './service_configs/security' './service_configs/service_mesh' './service_configs/services' './service_configs/sessions' './service_configs/tor' './service_configs/x_lucid_cluster_calibration' './sessions/__pycache__' './sessions/api' './sessions/config' './sessions/core' './sessions/encryption' './sessions/integration' './sessions/pipeline' './sessions/processor' './sessions/recorder' './sessions/security' './sessions/session_systems_control' './sessions/storage' './apps/admin_ui/__pycache__' './apps/admin_ui/src' './apps/chain_client/__pycache__' './apps/chain_client/src' './apps/chunker/__pycache__' './apps/chunker/src' './apps/dht_node/__pycache__' './apps/encryptor/__pycache__' './apps/encryptor/src' './apps/exporter/__pycache__' './apps/gui-user/__pycache__' './apps/gui-user/src' './apps/gui_admin/__pycache__' './apps/gui_admin/src' './apps/gui_node/__pycache__' './apps/gui_node/src' './apps/merkle/__pycache__' './apps/recorder/__pycache__' './apps/tron-node/__pycache__' './apps/tron-node/src' './apps/walletd/__pycache__' './configs/container/admin' './configs/container/auth' './configs/container/base' './configs/container/blockchain' './configs/container/database' './configs/container/electron_gui' './configs/container/gui' './configs/container/node' './configs/container/payment_systems' './configs/container/rdp' './configs/container/server' './configs/container/sessions' './configs/container/storage' './configs/container/tor' './configs/database/elasticsearch' './configs/database/redis' './configs/docker/distroless' './configs/docker/docs' './configs/docker/multi-stage' './configs/pi/ssh' './service_configs/x_lucid_cluster_calibration/__pycache__' './sessions/api/__pycache__' './sessions/api/config' './sessions/api/integration' './sessions/core/__pycache__' './sessions/encryption/__pycache__' './sessions/integration/__pycache__' './sessions/pipeline/__pycache__' './sessions/pipeline/integration' './sessions/processor/__pycache__' './sessions/processor/config' './sessions/processor/integration' './sessions/recorder/__pycache__' './sessions/recorder/config' './sessions/recorder/integration' './sessions/security/__pycache__' './sessions/session_systems_control/__pycache__' './sessions/storage/__pycache__' './sessions/storage/config' './apps/admin_ui/src/app' './apps/admin_ui/src/components' './apps/admin_ui/src/hooks' './apps/admin_ui/src/lib' './apps/admin_ui/src/types' './apps/chain_client/src/__pycache__' './apps/chain_client/src/services' './apps/chunker/src/__pycache__' './apps/encryptor/src/__pycache__' './apps/gui-user/src/app' './apps/gui-user/src/components' './apps/gui-user/src/services' './apps/gui-user/src/stores' './apps/gui_admin/src/app' './apps/gui_node/src/app' './apps/tron-node/src/__pycache__' './sessions/api/integration/__pycache__' './sessions/pipeline/integration/__pycache__' './sessions/processor/integration/__pycache__' './sessions/recorder/integration/__pycache__' './apps/admin_ui/src/components/dashboard' './apps/admin_ui/src/components/ui' './apps/chain_client/src/services/__pycache__'; \
+    mkdir -p '.' './apps' './common' './configs' './service_configs' './sessions' './apps/__pycache__' './apps/admin_ui' './apps/chain_client' './apps/chunker' './apps/dht_node' './apps/encryptor' './apps/exporter' './apps/gui-user' './apps/gui_admin' './apps/gui_node' './apps/merkle' './apps/recorder' './apps/tron-node' './apps/walletd' './common/__pycache__' './common/governance' './common/security' './common/server-tools' './common/templates' './common/tor' './configs/.ssh' './configs/container' './configs/database' './configs/docker' './configs/env' './configs/environment' './configs/integration' './configs/kubernetes' './configs/logging' './configs/pi' './configs/secrets' './configs/security' './configs/tor' './service_configs/distroless' './service_configs/logging' './service_configs/multi-stage' './service_configs/node' './service_configs/payment_services' './service_configs/rdp' './service_configs/security' './service_configs/service_mesh' './service_configs/services' './service_configs/sessions' './service_configs/tor' './service_configs/x_lucid_cluster_calibration' './sessions/__pycache__' './sessions/api' './sessions/config' './sessions/core' './sessions/encryption' './sessions/integration' './sessions/pipeline' './sessions/processor' './sessions/recorder' './sessions/security' './sessions/session_systems_control' './sessions/storage' './apps/admin_ui/__pycache__' './apps/admin_ui/src' './apps/chain_client/__pycache__' './apps/chain_client/src' './apps/chunker/__pycache__' './apps/chunker/src' './apps/dht_node/__pycache__' './apps/encryptor/__pycache__' './apps/encryptor/src' './apps/exporter/__pycache__' './apps/gui-user/__pycache__' './apps/gui-user/src' './apps/gui_admin/__pycache__' './apps/gui_admin/src' './apps/gui_node/__pycache__' './apps/gui_node/src' './apps/merkle/__pycache__' './apps/recorder/__pycache__' './apps/tron-node/__pycache__' './apps/tron-node/src' './apps/walletd/__pycache__' './common/governance/__pycache__' './common/security/__pycache__' './common/server-tools/__pycache__' './common/tor/__pycache__' './configs/container/admin' './configs/container/auth' './configs/container/base' './configs/container/blockchain' './configs/container/database' './configs/container/electron_gui' './configs/container/gui' './configs/container/node' './configs/container/payment_systems' './configs/container/rdp' './configs/container/server' './configs/container/sessions' './configs/container/storage' './configs/container/tor' './configs/database/elasticsearch' './configs/database/redis' './configs/docker/distroless' './configs/docker/docs' './configs/docker/multi-stage' './configs/pi/ssh' './service_configs/x_lucid_cluster_calibration/__pycache__' './sessions/api/__pycache__' './sessions/api/config' './sessions/api/integration' './sessions/core/__pycache__' './sessions/encryption/__pycache__' './sessions/integration/__pycache__' './sessions/pipeline/__pycache__' './sessions/pipeline/integration' './sessions/processor/__pycache__' './sessions/processor/config' './sessions/processor/integration' './sessions/recorder/__pycache__' './sessions/recorder/config' './sessions/recorder/integration' './sessions/security/__pycache__' './sessions/session_systems_control/__pycache__' './sessions/storage/__pycache__' './sessions/storage/config' './apps/admin_ui/src/app' './apps/admin_ui/src/components' './apps/admin_ui/src/hooks' './apps/admin_ui/src/lib' './apps/admin_ui/src/types' './apps/chain_client/src/__pycache__' './apps/chain_client/src/services' './apps/chunker/src/__pycache__' './apps/encryptor/src/__pycache__' './apps/gui-user/src/app' './apps/gui-user/src/components' './apps/gui-user/src/services' './apps/gui-user/src/stores' './apps/gui_admin/src/app' './apps/gui_node/src/app' './apps/tron-node/src/__pycache__' './sessions/api/integration/__pycache__' './sessions/pipeline/integration/__pycache__' './sessions/processor/integration/__pycache__' './sessions/recorder/integration/__pycache__' './apps/admin_ui/src/components/dashboard' './apps/admin_ui/src/components/ui' './apps/chain_client/src/services/__pycache__'; \
     for d in \
       '.' \
       './apps' \
+      './common' \
       './configs' \
       './service_configs' \
       './sessions' \
@@ -121,11 +124,18 @@ RUN set -eux; \
       './apps/recorder' \
       './apps/tron-node' \
       './apps/walletd' \
+      './common/__pycache__' \
+      './common/governance' \
+      './common/security' \
+      './common/server-tools' \
+      './common/templates' \
+      './common/tor' \
       './configs/.ssh' \
       './configs/container' \
       './configs/database' \
       './configs/docker' \
       './configs/env' \
+      './configs/environment' \
       './configs/integration' \
       './configs/kubernetes' \
       './configs/logging' \
@@ -133,7 +143,6 @@ RUN set -eux; \
       './configs/secrets' \
       './configs/security' \
       './configs/tor' \
-      './service_configs/blockchain' \
       './service_configs/distroless' \
       './service_configs/logging' \
       './service_configs/multi-stage' \
@@ -179,6 +188,10 @@ RUN set -eux; \
       './apps/tron-node/__pycache__' \
       './apps/tron-node/src' \
       './apps/walletd/__pycache__' \
+      './common/governance/__pycache__' \
+      './common/security/__pycache__' \
+      './common/server-tools/__pycache__' \
+      './common/tor/__pycache__' \
       './configs/container/admin' \
       './configs/container/auth' \
       './configs/container/base' \
@@ -246,6 +259,14 @@ RUN set -eux; \
       touch "$d/.keep"; \
     done
 # LUCID_X_FILES_SKELETON_END
+# LUCID_ALIGNMENT_MAT_COPY_DIRECTORIES_BEGIN
+# alignment-mat session-chunk-processor_manifest.json: compose_service='session-chunk-processor' — manifest py/yml/yaml/json → builder COPY (#10).
+COPY common/ ./common/
+COPY configs/container/node/ ./configs/container/node/
+COPY configs/container/sessions/ ./configs/container/sessions/
+COPY service_configs/ ./service_configs/
+COPY infrastructure/containers/ ./infrastructure/containers/
+# LUCID_ALIGNMENT_MAT_COPY_DIRECTORIES_END
 # LUCID_X_FILES_SKELETON_BEGIN
 # Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
 
@@ -392,6 +413,15 @@ ENV     PUBLIC_TOR_IP="${PUBLIC_TOR_IP}" \
     LUCID_SERVICE_HOST_IP=172.20.10.9 \
     LUCID_SERVICE_HTTP_PATH=http://session-chunk-processor:8010/app \
     CHUNK_PROCESSOR_PORT=8010
+# LUCID_RUNTIME_COPY_FROM_BUILD_BEGIN
+# Generated: same directory set as LUCID_X_FILES_SKELETON (./ under WORKDIR /build).
+COPY --from=builder --chown=65532:65532 /build/apps/ /app/apps/
+COPY --from=builder --chown=65532:65532 /build/common/ /app/common/
+COPY --from=builder --chown=65532:65532 /build/configs/ /app/configs/
+COPY --from=builder --chown=65532:65532 /build/service_configs/ /app/service_configs/
+COPY --from=builder --chown=65532:65532 /build/sessions/ /app/sessions/
+# LUCID_RUNTIME_COPY_FROM_BUILD_END
+
 # LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
 # Generated: apt + RUN scaffold (mkdir/printf/touch/chown) -> FHS (not ./ or /build/; lib_search_and_inject.py).
 COPY --from=builder --chown=65532:65532 /usr/lib/*/libffi.so* /app/usr/lib/
@@ -404,11 +434,8 @@ COPY --from=builder --chown=65532:65532 /usr/ /app/usr/
 COPY --from=builder --chown=65532:65532 /var/lib/ /app/var/lib/
 COPY --from=builder --chown=65532:65532 /var/run/ /app/var/run/
 # LUCID_RUNTIME_COPY_FROM_BUILDER_APT_END
-
 # LUCID_IMAGE_CONFIG: (runtime)
-COPY --from=builder --chown=65532:65532 /build/apps/ /app/apps/
 
-COPY --from=builder --chown=65532:65532 /build/sessions/ /app/sessions/
 # LUCID_RUNTIME_COPY_FROM_BUILD_END
 
 

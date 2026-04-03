@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "tool": "scripts/gui_auth_realignment/list_service_files_by_name.py",
+  "compose_service": "server-common",
+  "yml": [
+    "infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.yml"
+  ],
+  "py": [
+    "common/load_host_config.py"
+  ],
+  "json": [],
+  "associated_needles": [
+    "server-common",
+    "server_common"
+  ],
+  "missing_yml": [],
+  "missing_python_dirs": [],
+  "missing_global_py": [],
+  "missing_expected": [
+    "infrastructure/containers/services/server-common.yml"
+  ],
+  "missing_tier_a_json": [],
+  "source_map_path": "scripts/gui_auth_realignment/gui_service_source_map.json",
+  "mat_path": "configs/services/gui-services.json",
+  "mat_row_matched": false,
+  "alignment_json": []
+}

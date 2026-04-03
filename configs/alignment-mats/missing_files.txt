@@ -1,0 +1,230 @@
+# admin-governance-client_manifest.json
+infrastructure/containers/services/admin-governance-client.yml
+
+# admin-interface_manifest.json
+
+# admin-key-rotation_manifest.json
+infrastructure/containers/services/admin-key-rotation.yml
+
+# admin-overlord_manifest.json
+infrastructure/containers/services/admin-overlord.yml
+
+# admin-params-registry_manifest.json
+infrastructure/containers/services/admin-params-registry.yml
+
+# admin-system-gateway_manifest.json
+infrastructure/containers/services/admin-system-gateway.yml
+
+# admin-ui-backend_manifest.json
+infrastructure/containers/services/admin-ui-backend.yml
+
+# api-gateway_manifest.json
+
+# base-runtime_manifest.json
+infrastructure/containers/services/base-runtime.yml
+
+# base_manifest.json
+infrastructure/containers/services/base.yml
+
+# block-manager_manifest.json
+infrastructure/containers/services/block-manager.yml
+
+# blockchain-engine_manifest.json
+infrastructure/containers/services/blockchain-engine.yml
+
+# chain-to-pay_manifest.json
+infrastructure/containers/services/chain-to-pay.yml
+
+# common_manifest.json
+infrastructure/containers/services/common.yml
+
+# consensus-engine_manifest.json
+infrastructure/containers/services/consensus-engine.yml
+
+# data-chain_manifest.json
+infrastructure/containers/services/data-chain.yml
+
+# database-backup_manifest.json
+infrastructure/containers/services/database-backup.yml
+
+# database-monitoring_manifest.json
+infrastructure/containers/services/database-monitoring.yml
+
+# database-overlord_manifest.json
+infrastructure/containers/services/database-overlord.yml
+
+# elasticsearch-storage_manifest.json
+infrastructure/containers/services/elasticsearch-storage.yml
+
+# electron-gui-node_manifest.json
+infrastructure/containers/services/electron-gui-node.yml
+
+# electron-gui-user_manifest.json
+infrastructure/containers/services/electron-gui-user.yml
+
+# gui-api-bridge_manifest.json
+
+# gui-docker-manager_manifest.json
+
+# gui-hardware-manager_manifest.json
+
+# gui-strap_manifest.json
+infrastructure/containers/services/gui-strap.yml
+
+# gui-tor-manager_manifest.json
+infrastructure/containers/services/gui-tor-manager.yml
+
+# java-base_manifest.json
+infrastructure/containers/services/java-base.yml
+
+# lucid-auth-service_manifest.json
+infrastructure/containers/services/lucid-auth-service.yml
+
+# lucid-elasticsearch_manifest.json
+infrastructure/containers/services/lucid-elasticsearch.yml
+
+# lucid-gov_manifest.json
+infrastructure/containers/services/lucid-gov.yml
+
+# lucid-mongodb_manifest.json
+infrastructure/containers/services/lucid-mongodb.yml
+
+# lucid-rdp-server-manager_manifest.json
+infrastructure/containers/services/lucid-rdp-server-manager.yml
+
+# lucid-redis-storage_manifest.json
+infrastructure/containers/services/lucid-redis-storage.yml
+
+# lucid-redis_manifest.json
+infrastructure/containers/services/lucid-redis.yml
+
+# lucid-server-core_manifest.json
+infrastructure/containers/services/lucid-server-core.yml
+
+# lucid-server-manager_manifest.json
+infrastructure/containers/services/lucid-server-manager.yml
+
+# lucid-service-mesh-controller_manifest.json
+infrastructure/containers/services/lucid-service-mesh-controller.yml
+
+# lucid-system-storage_manifest.json
+infrastructure/containers/services/lucid-system-storage.yml
+
+# merkle-tree-builder_manifest.json
+infrastructure/containers/services/merkle-tree-builder.yml
+
+# mongodb-monitoring_manifest.json
+infrastructure/containers/services/mongodb-monitoring.yml
+
+# node-gov_manifest.json
+infrastructure/containers/services/node-gov.yml
+
+# node-interface_manifest.json
+infrastructure/containers/services/node-interface.yml
+
+# node-management_manifest.json
+
+# node-overlord_manifest.json
+infrastructure/containers/services/node-overlord.yml
+
+# node-registry_manifest.json
+infrastructure/containers/services/node-registry.yml
+
+# node-system-gateway_manifest.json
+infrastructure/containers/services/node-system-gateway.yml
+
+# node-utils_manifest.json
+infrastructure/containers/services/node-utils.yml
+
+# node-worker_manifest.json
+infrastructure/containers/services/node-worker.yml
+
+# on-system-chain-client_manifest.json
+infrastructure/containers/services/on-system-chain-client.yml
+
+# payment-system-gateway_manifest.json
+infrastructure/containers/services/payment-system-gateway.yml
+
+# python-base_manifest.json
+infrastructure/containers/services/python-base.yml
+
+# rdp-controller_manifest.json
+infrastructure/containers/services/rdp-controller.yml
+
+# rdp_manifest.json
+infrastructure/containers/services/rdp.yml
+
+# role-manager_manifest.json
+infrastructure/containers/services/role-manager.yml
+
+# server-common_manifest.json
+infrastructure/containers/services/server-common.yml
+
+# server-gateway_manifest.json
+infrastructure/containers/services/server-gateway.yml
+
+# session-anchoring_manifest.json
+infrastructure/containers/services/session-anchoring.yml
+
+# session-api_manifest.json
+infrastructure/containers/services/session-api.yml
+
+# session-chunk-processor_manifest.json
+infrastructure/containers/services/session-chunk-processor.yml
+
+# session-overlord_manifest.json
+infrastructure/containers/services/session-overlord.yml
+
+# session-pipeline-manager_manifest.json
+infrastructure/containers/services/session-pipeline-manager.yml
+
+# session-pipeline_manifest.json
+infrastructure/containers/services/session-pipeline.yml
+
+# session-storage-service_manifest.json
+infrastructure/containers/services/session-storage-service.yml
+
+# session-system-control_manifest.json
+infrastructure/containers/services/session-system-control.yml
+
+# software-vault_manifest.json
+infrastructure/containers/services/software-vault.yml
+
+# timelock_manifest.json
+infrastructure/containers/services/timelock.yml
+
+# tor-socks_manifest.json
+infrastructure/containers/services/tor-socks.yml
+
+# tron-node-client_manifest.json
+infrastructure/containers/services/tron-node-client.yml
+
+# tron-payment-service_manifest.json
+infrastructure/containers/services/tron-payment-service.yml
+
+# tunnel-tools_manifest.json
+infrastructure/containers/services/tunnel-tools.yml
+
+# user-interface_manifest.json
+infrastructure/containers/services/user-interface.yml
+
+# vault_manifest.json
+infrastructure/containers/services/vault.yml
+
+# vm-manager_manifest.json
+infrastructure/containers/services/vm-manager.yml
+
+# vm-orchestrator_manifest.json
+infrastructure/containers/services/vm-orchestrator.yml
+
+# vm-resource-monitor_manifest.json
+infrastructure/containers/services/vm-resource-monitor.yml
+
+# vm-service_manifest.json
+infrastructure/containers/services/vm-service.yml
+
+# wallet-key-rotation_manifest.json
+infrastructure/containers/services/wallet-key-rotation.yml
+
+# wallet-manager_manifest.json
+infrastructure/containers/services/wallet-manager.yml

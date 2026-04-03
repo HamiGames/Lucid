@@ -63,8 +63,8 @@
   ],
   "associated_needles": [
     "lucid-gui-hardware-manager",
-    "gui-hardware-manager",
-    "gui_hardware_manager"
+    "gui_hardware_manager",
+    "gui-hardware-manager"
   ],
   "missing_yml": [],
   "missing_python_dirs": [],

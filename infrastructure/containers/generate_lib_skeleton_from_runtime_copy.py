@@ -13,6 +13,10 @@ stage-1 (builder) so library/runtime paths exist before population.
 
 Usage (repo root)::
 
+  # Default tree (``infrastructure/containers``); ``--dry-run`` implies ``--apply`` preview::
+
+  python infrastructure/containers/generate_lib_skeleton_from_runtime_copy.py --dry-run
+
   python infrastructure/containers/generate_lib_skeleton_from_runtime_copy.py \\
     infrastructure/containers/admin/dockerfile.admin-overlord
 
@@ -659,11 +663,12 @@ def main() -> int:
     )
     ap.add_argument(
         "targets",
-        nargs="+",
+        nargs="*",
         type=Path,
         metavar="PATH",
         help=(
-            "One or more Dockerfiles and/or directories. Each directory is scanned recursively "
+            "Dockerfiles and/or directories (default: infrastructure/containers from repo root). "
+            "Each directory is scanned recursively "
             "(same rules as dockerfile_alignment.discover_lucid_dockerfiles_under). "
             "Duplicate paths are skipped."
         ),
@@ -691,7 +696,10 @@ def main() -> int:
     ap.add_argument(
         "--dry-run",
         action="store_true",
-        help="With --apply, show what would happen without writing files.",
+        help=(
+            "Preview writes only. Implies --apply when used alone (dry-run without a target is useless). "
+            "Combine with explicit --apply for the same effect."
+        ),
     )
     ap.add_argument(
         "--verbose",
@@ -700,6 +708,11 @@ def main() -> int:
     )
     args = ap.parse_args()
     repo_root = discover_repo_root(Path(__file__))
+
+    if not args.targets:
+        args.targets = [Path("infrastructure/containers")]
+    if args.dry_run and not args.apply and not args.paths_only:
+        args.apply = True
 
     def _resolve_cli_path(raw: Path) -> Path:
         p = raw.expanduser()

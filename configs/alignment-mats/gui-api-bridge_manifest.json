@@ -105,8 +105,8 @@
   ],
   "associated_needles": [
     "lucid-gui-api-bridge",
-    "gui-api-bridge",
-    "gui_api_bridge"
+    "gui_api_bridge",
+    "gui-api-bridge"
   ],
   "missing_yml": [],
   "missing_python_dirs": [],

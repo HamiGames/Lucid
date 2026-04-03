@@ -38,6 +38,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 RUN set -eux; \
   mkdir -p \
     '/bin' \
+    '/dev' \
     '/etc/ssl' \
     '/usr/bin' \
     '/usr/lib' \
@@ -47,6 +48,7 @@ RUN set -eux; \
     '/usr/local/lib/python3.11/site-packages'; \
   for d in \
     '/bin' \
+    '/dev' \
     '/etc/ssl' \
     '/usr/bin' \
     '/usr/lib' \
@@ -71,7 +73,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 # LUCID_X_FILES_SKELETON_BEGIN
 # Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
 RUN set -eux; \
-    mkdir -p '.' './common' './configs' './gui_tor_manager' './scripts' './service_configs' './common/__pycache__' './common/governance' './common/security' './common/server-tools' './common/templates' './common/tor' './configs/.ssh' './configs/container' './configs/database' './configs/docker' './configs/env' './configs/environment' './configs/gui-alignment' './configs/integration' './configs/kubernetes' './configs/logging' './configs/pi' './configs/secrets' './configs/security' './configs/tor' './gui_tor_manager/gui_tor_manager' './scripts/__pycache__' './scripts/auth_sm_realignment' './scripts/build' './scripts/compliance' './scripts/config' './scripts/contracts' './scripts/database' './scripts/deployment' './scripts/devcontainer' './scripts/docs' './scripts/foundation' './scripts/gui' './scripts/gui_auth_realignment' './scripts/hardware' './scripts/integration' './scripts/lib' './scripts/load' './scripts/logging' './scripts/maintenance' './scripts/migration' './scripts/monitoring' './scripts/network' './scripts/re-build' './scripts/registry' './scripts/secrets' './scripts/security' './scripts/services' './scripts/testing' './scripts/validation' './scripts/verification' './service_configs/distroless' './service_configs/logging' './service_configs/multi-stage' './service_configs/node' './service_configs/payment_services' './service_configs/rdp' './service_configs/security' './service_configs/service_mesh' './service_configs/services' './service_configs/sessions' './service_configs/tor' './service_configs/x_lucid_cluster_calibration' './common/governance/__pycache__' './common/security/__pycache__' './common/server-tools/__pycache__' './common/tor/__pycache__' './configs/container/admin' './configs/container/auth' './configs/container/base' './configs/container/blockchain' './configs/container/database' './configs/container/electron_gui' './configs/container/gui' './configs/container/node' './configs/container/payment_systems' './configs/container/rdp' './configs/container/server' './configs/container/sessions' './configs/container/storage' './configs/container/tor' './configs/database/elasticsearch' './configs/database/redis' './configs/docker/distroless' './configs/docker/docs' './configs/docker/multi-stage' './configs/kubernetes/01_configmaps' './configs/pi/ssh' './gui_tor_manager/gui_tor_manager/__pycache__' './gui_tor_manager/gui_tor_manager/config' './gui_tor_manager/gui_tor_manager/integration' './gui_tor_manager/gui_tor_manager/middleware' './gui_tor_manager/gui_tor_manager/models' './gui_tor_manager/gui_tor_manager/routers' './gui_tor_manager/gui_tor_manager/services' './gui_tor_manager/gui_tor_manager/utils' './scripts/auth_sm_realignment/.cache' './scripts/auth_sm_realignment/lib' './scripts/build/__pycache__' './scripts/build/components' './scripts/build/core' './scripts/build/distroless' './scripts/build/utils' './scripts/compliance/distroless' './scripts/compliance/general' './scripts/deployment/devcontainer' './scripts/deployment/distroless' './scripts/deployment/pi' './scripts/deployment/utils' './scripts/gui_auth_realignment/.cache' './scripts/gui_auth_realignment/lib' './scripts/maintenance/cleanup' './scripts/maintenance/optimization' './scripts/maintenance/recovery' './scripts/network/diagnostics' './scripts/network/security' './scripts/network/setup' './scripts/testing/integration' './scripts/testing/unit' './scripts/testing/utils' './scripts/validation/__pycache__' './scripts/verification/__pycache__' './service_configs/x_lucid_cluster_calibration/__pycache__' './gui_tor_manager/gui_tor_manager/config/__pycache__' './gui_tor_manager/gui_tor_manager/integration/__pycache__' './gui_tor_manager/gui_tor_manager/middleware/__pycache__' './gui_tor_manager/gui_tor_manager/models/__pycache__' './gui_tor_manager/gui_tor_manager/routers/__pycache__' './gui_tor_manager/gui_tor_manager/services/__pycache__' './gui_tor_manager/gui_tor_manager/utils/__pycache__'; \
+    mkdir -p '.' './common' './configs' './gui_tor_manager' './scripts' './service_configs' './common/__pycache__' './common/governance' './common/security' './common/server-tools' './common/templates' './common/tor' './configs/.ssh' './configs/alignment-mats' './configs/container' './configs/database' './configs/docker' './configs/env' './configs/environment' './configs/gui-alignment' './configs/integration' './configs/kubernetes' './configs/logging' './configs/pi' './configs/secrets' './configs/security' './configs/tor' './gui_tor_manager/config' './gui_tor_manager/gui_tor_manager' './gui_tor_manager/integration' './gui_tor_manager/middleware' './gui_tor_manager/models' './gui_tor_manager/routers' './gui_tor_manager/services' './gui_tor_manager/utils' './scripts/__pycache__' './scripts/auth_sm_realignment' './scripts/build' './scripts/compliance' './scripts/config' './scripts/contracts' './scripts/database' './scripts/deployment' './scripts/devcontainer' './scripts/docs' './scripts/foundation' './scripts/gui' './scripts/gui_auth_realignment' './scripts/hardware' './scripts/integration' './scripts/lib' './scripts/load' './scripts/logging' './scripts/maintenance' './scripts/migration' './scripts/monitoring' './scripts/network' './scripts/re-build' './scripts/registry' './scripts/secrets' './scripts/security' './scripts/services' './scripts/testing' './scripts/validation' './scripts/verification' './service_configs/distroless' './service_configs/logging' './service_configs/multi-stage' './service_configs/node' './service_configs/payment_services' './service_configs/rdp' './service_configs/security' './service_configs/service_mesh' './service_configs/services' './service_configs/sessions' './service_configs/tor' './service_configs/x_lucid_cluster_calibration' './common/governance/__pycache__' './common/security/__pycache__' './common/server-tools/__pycache__' './common/tor/__pycache__' './configs/container/admin' './configs/container/auth' './configs/container/base' './configs/container/blockchain' './configs/container/database' './configs/container/electron_gui' './configs/container/gui' './configs/container/node' './configs/container/payment_systems' './configs/container/rdp' './configs/container/server' './configs/container/sessions' './configs/container/storage' './configs/container/tor' './configs/database/elasticsearch' './configs/database/redis' './configs/docker/distroless' './configs/docker/docs' './configs/docker/multi-stage' './configs/environment/development' './configs/environment/pi' './configs/environment/production' './configs/environment/staging' './configs/kubernetes/01_configmaps' './configs/pi/ssh' './configs/secrets/runtime' './gui_tor_manager/gui_tor_manager/__pycache__' './gui_tor_manager/gui_tor_manager/config' './gui_tor_manager/gui_tor_manager/integration' './gui_tor_manager/gui_tor_manager/middleware' './gui_tor_manager/gui_tor_manager/models' './gui_tor_manager/gui_tor_manager/routers' './gui_tor_manager/gui_tor_manager/services' './gui_tor_manager/gui_tor_manager/utils' './scripts/auth_sm_realignment/.cache' './scripts/auth_sm_realignment/lib' './scripts/build/__pycache__' './scripts/build/components' './scripts/build/core' './scripts/build/distroless' './scripts/build/utils' './scripts/compliance/distroless' './scripts/compliance/general' './scripts/deployment/devcontainer' './scripts/deployment/distroless' './scripts/deployment/pi' './scripts/deployment/utils' './scripts/gui_auth_realignment/.cache' './scripts/gui_auth_realignment/lib' './scripts/maintenance/cleanup' './scripts/maintenance/optimization' './scripts/maintenance/recovery' './scripts/network/diagnostics' './scripts/network/security' './scripts/network/setup' './scripts/testing/integration' './scripts/testing/unit' './scripts/testing/utils' './scripts/validation/__pycache__' './scripts/verification/__pycache__' './service_configs/x_lucid_cluster_calibration/__pycache__' './configs/secrets/runtime/compose' './gui_tor_manager/gui_tor_manager/config/__pycache__' './gui_tor_manager/gui_tor_manager/integration/__pycache__' './gui_tor_manager/gui_tor_manager/middleware/__pycache__' './gui_tor_manager/gui_tor_manager/models/__pycache__' './gui_tor_manager/gui_tor_manager/routers/__pycache__' './gui_tor_manager/gui_tor_manager/services/__pycache__' './gui_tor_manager/gui_tor_manager/utils/__pycache__'; \
     for d in \
       '.' \
       './common' \
@@ -86,6 +88,7 @@ RUN set -eux; \
       './common/templates' \
       './common/tor' \
       './configs/.ssh' \
+      './configs/alignment-mats' \
       './configs/container' \
       './configs/database' \
       './configs/docker' \
@@ -99,7 +102,14 @@ RUN set -eux; \
       './configs/secrets' \
       './configs/security' \
       './configs/tor' \
+      './gui_tor_manager/config' \
       './gui_tor_manager/gui_tor_manager' \
+      './gui_tor_manager/integration' \
+      './gui_tor_manager/middleware' \
+      './gui_tor_manager/models' \
+      './gui_tor_manager/routers' \
+      './gui_tor_manager/services' \
+      './gui_tor_manager/utils' \
       './scripts/__pycache__' \
       './scripts/auth_sm_realignment' \
       './scripts/build' \
@@ -165,8 +175,13 @@ RUN set -eux; \
       './configs/docker/distroless' \
       './configs/docker/docs' \
       './configs/docker/multi-stage' \
+      './configs/environment/development' \
+      './configs/environment/pi' \
+      './configs/environment/production' \
+      './configs/environment/staging' \
       './configs/kubernetes/01_configmaps' \
       './configs/pi/ssh' \
+      './configs/secrets/runtime' \
       './gui_tor_manager/gui_tor_manager/__pycache__' \
       './gui_tor_manager/gui_tor_manager/config' \
       './gui_tor_manager/gui_tor_manager/integration' \
@@ -202,6 +217,7 @@ RUN set -eux; \
       './scripts/validation/__pycache__' \
       './scripts/verification/__pycache__' \
       './service_configs/x_lucid_cluster_calibration/__pycache__' \
+      './configs/secrets/runtime/compose' \
       './gui_tor_manager/gui_tor_manager/config/__pycache__' \
       './gui_tor_manager/gui_tor_manager/integration/__pycache__' \
       './gui_tor_manager/gui_tor_manager/middleware/__pycache__' \
@@ -219,73 +235,12 @@ RUN set -eux; \
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --no-cache-dir --no-index --find-links /build/wheels -r requirements.txt
 # LUCID_ALIGNMENT_MAT_COPY_DIRECTORIES_BEGIN
-# alignment-mat gui-tor-manager_manifest.json: compose_service='gui-tor-manager' — explicit manifest paths → 66 builder COPY line(s).
-COPY common/load_host_config.py ./common/load_host_config.py
-COPY configs/container/gui/docker-compose.user-gui.yml ./configs/container/gui/docker-compose.user-gui.yml
-COPY configs/container/tor/docker-compose.proxy-systems.yml ./configs/container/tor/docker-compose.proxy-systems.yml
-COPY configs/docker/docker-compose.gui-integration.yml ./configs/docker/docker-compose.gui-integration.yml
-COPY configs/gui-alignment/gui-services.json ./configs/gui-alignment/gui-services.json
-COPY configs/gui-alignment/gui-tor-manager.json ./configs/gui-alignment/gui-tor-manager.json
-COPY configs/integration/master-integration-config.yml ./configs/integration/master-integration-config.yml
-COPY service_configs/beta-sidecar.yml ./service_configs/beta-sidecar.yml
-COPY service_configs/gui-docker-manager-service-groups.yml ./service_configs/gui-docker-manager-service-groups.yml
-COPY service_configs/gui-docker-manager.yml ./service_configs/gui-docker-manager.yml
-COPY service_configs/gui-services.json ./service_configs/gui-services.json
-COPY service_configs/service-discovery.yml ./service_configs/service-discovery.yml
-COPY service_configs/service-registry.json ./service_configs/service-registry.json
-COPY configs/x-files.json ./configs/x-files.json
-COPY gui_tor_manager/gui_tor_manager/__init__.py ./gui_tor_manager/gui_tor_manager/__init__.py
-COPY gui_tor_manager/gui_tor_manager/config.py ./gui_tor_manager/gui_tor_manager/config.py
-COPY gui_tor_manager/gui_tor_manager/config/__init__.py ./gui_tor_manager/gui_tor_manager/config/__init__.py
-COPY gui_tor_manager/gui_tor_manager/config/load_host_config.py ./gui_tor_manager/gui_tor_manager/config/load_host_config.py
-COPY gui_tor_manager/gui_tor_manager/entrypoint.py ./gui_tor_manager/gui_tor_manager/entrypoint.py
-COPY gui_tor_manager/gui_tor_manager/gui_tor_manager_service.py ./gui_tor_manager/gui_tor_manager/gui_tor_manager_service.py
-COPY gui_tor_manager/gui_tor_manager/healthcheck.py ./gui_tor_manager/gui_tor_manager/healthcheck.py
-COPY gui_tor_manager/gui_tor_manager/integration/__init__.py ./gui_tor_manager/gui_tor_manager/integration/__init__.py
-COPY gui_tor_manager/gui_tor_manager/integration/service_base.py ./gui_tor_manager/gui_tor_manager/integration/service_base.py
-COPY gui_tor_manager/gui_tor_manager/integration/tor_proxy_client.py ./gui_tor_manager/gui_tor_manager/integration/tor_proxy_client.py
-COPY gui_tor_manager/gui_tor_manager/main.py ./gui_tor_manager/gui_tor_manager/main.py
-COPY gui_tor_manager/gui_tor_manager/middleware/__init__.py ./gui_tor_manager/gui_tor_manager/middleware/__init__.py
-COPY gui_tor_manager/gui_tor_manager/middleware/auth.py ./gui_tor_manager/gui_tor_manager/middleware/auth.py
-COPY gui_tor_manager/gui_tor_manager/middleware/cors.py ./gui_tor_manager/gui_tor_manager/middleware/cors.py
-COPY gui_tor_manager/gui_tor_manager/middleware/logging.py ./gui_tor_manager/gui_tor_manager/middleware/logging.py
-COPY gui_tor_manager/gui_tor_manager/middleware/rate_limit.py ./gui_tor_manager/gui_tor_manager/middleware/rate_limit.py
-COPY gui_tor_manager/gui_tor_manager/models/__init__.py ./gui_tor_manager/gui_tor_manager/models/__init__.py
-COPY gui_tor_manager/gui_tor_manager/models/common.py ./gui_tor_manager/gui_tor_manager/models/common.py
-COPY gui_tor_manager/gui_tor_manager/models/onion.py ./gui_tor_manager/gui_tor_manager/models/onion.py
-COPY gui_tor_manager/gui_tor_manager/models/tor.py ./gui_tor_manager/gui_tor_manager/models/tor.py
-COPY gui_tor_manager/gui_tor_manager/routers/__init__.py ./gui_tor_manager/gui_tor_manager/routers/__init__.py
-COPY gui_tor_manager/gui_tor_manager/routers/health.py ./gui_tor_manager/gui_tor_manager/routers/health.py
-COPY gui_tor_manager/gui_tor_manager/routers/onion.py ./gui_tor_manager/gui_tor_manager/routers/onion.py
-COPY gui_tor_manager/gui_tor_manager/routers/proxy.py ./gui_tor_manager/gui_tor_manager/routers/proxy.py
-COPY gui_tor_manager/gui_tor_manager/routers/tor.py ./gui_tor_manager/gui_tor_manager/routers/tor.py
-COPY gui_tor_manager/gui_tor_manager/services/__init__.py ./gui_tor_manager/gui_tor_manager/services/__init__.py
-COPY gui_tor_manager/gui_tor_manager/services/onion_service.py ./gui_tor_manager/gui_tor_manager/services/onion_service.py
-COPY gui_tor_manager/gui_tor_manager/services/proxy_service.py ./gui_tor_manager/gui_tor_manager/services/proxy_service.py
-COPY gui_tor_manager/gui_tor_manager/services/tor_service.py ./gui_tor_manager/gui_tor_manager/services/tor_service.py
-COPY gui_tor_manager/gui_tor_manager/utils/__init__.py ./gui_tor_manager/gui_tor_manager/utils/__init__.py
-COPY gui_tor_manager/gui_tor_manager/utils/errors.py ./gui_tor_manager/gui_tor_manager/utils/errors.py
-COPY gui_tor_manager/gui_tor_manager/utils/logging.py ./gui_tor_manager/gui_tor_manager/utils/logging.py
-COPY gui_tor_manager/gui_tor_manager/utils/validation.py ./gui_tor_manager/gui_tor_manager/utils/validation.py
-COPY infrastructure/containers/config-listings.json ./infrastructure/containers/config-listings.json
-COPY infrastructure/containers/dockerfile_layout_run_report.json ./infrastructure/containers/dockerfile_layout_run_report.json
-COPY infrastructure/containers/dockerfile_recalibration_map.json ./infrastructure/containers/dockerfile_recalibration_map.json
-COPY infrastructure/containers/dockerfile_recalibration_map_REPAIRED.json ./infrastructure/containers/dockerfile_recalibration_map_REPAIRED.json
-COPY infrastructure/containers/gui/docker-compose.user-gui.yml ./infrastructure/containers/gui/docker-compose.user-gui.yml
-COPY infrastructure/containers/host-config.yml ./infrastructure/containers/host-config.yml
-COPY infrastructure/containers/services/beta-sidecar.yml ./infrastructure/containers/services/beta-sidecar.yml
-COPY infrastructure/containers/services/gui-docker-manager-service-groups.yml ./infrastructure/containers/services/gui-docker-manager-service-groups.yml
-COPY infrastructure/containers/services/gui-docker-manager.yml ./infrastructure/containers/services/gui-docker-manager.yml
-COPY infrastructure/containers/services/master-endpoint.yml ./infrastructure/containers/services/master-endpoint.yml
-COPY infrastructure/containers/services/service-discovery.yml ./infrastructure/containers/services/service-discovery.yml
-COPY infrastructure/containers/services/service-registry.json ./infrastructure/containers/services/service-registry.json
-COPY infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.json ./infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.json
-COPY infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.yml ./infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.yml
-COPY infrastructure/containers/services/x_lucid_cluster_calibration/core-cluster-host-alignment.yml ./infrastructure/containers/services/x_lucid_cluster_calibration/core-cluster-host-alignment.yml
-COPY infrastructure/containers/services/x_lucid_cluster_calibration/foundation-cluster-host-alignment.yml ./infrastructure/containers/services/x_lucid_cluster_calibration/foundation-cluster-host-alignment.yml
-COPY infrastructure/containers/services/x_lucid_cluster_calibration/gui-integration-cluster-host-alignment.yml ./infrastructure/containers/services/x_lucid_cluster_calibration/gui-integration-cluster-host-alignment.yml
-COPY infrastructure/containers/services/x_lucid_cluster_calibration/processing-cluster-host-alignment.yml ./infrastructure/containers/services/x_lucid_cluster_calibration/processing-cluster-host-alignment.yml
-COPY infrastructure/service_mesh/config/service-mesh.yaml ./infrastructure/service_mesh/config/service-mesh.yaml
+# alignment-mat gui-tor-manager_manifest.json: compose_service='gui-tor-manager' — manifest py/yml/yaml/json → builder COPY (#10).
+COPY common/ ./common/
+COPY configs/ ./configs/
+COPY gui_tor_manager/gui_tor_manager/ ./gui_tor_manager/
+COPY infrastructure/containers/ ./infrastructure/containers/
+COPY infrastructure/service_mesh/config/ ./infrastructure/service_mesh/config/
 # LUCID_ALIGNMENT_MAT_COPY_DIRECTORIES_END
 RUN rm -rf configs/environment 2>/dev/null || true
 

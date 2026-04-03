@@ -72,8 +72,8 @@
   ],
   "associated_needles": [
     "lucid-admin-interface",
-    "admin_interface",
-    "admin-interface"
+    "admin-interface",
+    "admin_interface"
   ],
   "missing_yml": [],
   "missing_python_dirs": [],

@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "tool": "scripts/gui_auth_realignment/list_service_files_by_name.py",
+  "compose_service": "mongodb-monitoring",
+  "yml": [
+    "configs/container/database/docker-compose.database-system.yml",
+    "infrastructure/containers/database/docker-compose.database-system.yml",
+    "infrastructure/containers/host-config.yml",
+    "infrastructure/containers/services/master-endpoint.yml",
+    "infrastructure/containers/services/multi-stage/multi-stage-build-config.yml",
+    "infrastructure/containers/services/multi-stage/multi-stage-config.yml",
+    "infrastructure/containers/services/multi-stage/multi-stage-runtime-config.yml",
+    "infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.yml",
+    "infrastructure/containers/services/x_lucid_cluster_calibration/foundation-cluster-host-alignment.yml"
+  ],
+  "py": [
+    "common/load_host_config.py"
+  ],
+  "json": [
+    "infrastructure/containers/config-listings.json",
+    "infrastructure/containers/dockerfile_recalibration_map.json",
+    "infrastructure/containers/dockerfile_recalibration_map_REPAIRED.json",
+    "infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.json"
+  ],
+  "associated_needles": [
+    "mongodb_monitoring",
+    "mongodb-monitoring"
+  ],
+  "missing_yml": [],
+  "missing_python_dirs": [],
+  "missing_global_py": [],
+  "missing_expected": [
+    "infrastructure/containers/services/mongodb-monitoring.yml"
+  ],
+  "missing_tier_a_json": [],
+  "source_map_path": "scripts/gui_auth_realignment/gui_service_source_map.json",
+  "mat_path": "configs/services/gui-services.json",
+  "mat_row_matched": false,
+  "alignment_json": []
+}

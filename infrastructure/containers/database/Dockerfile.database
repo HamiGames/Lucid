@@ -67,16 +67,26 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 # LUCID_X_FILES_SKELETON_BEGIN
 # Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
 RUN set -eux; \
-    mkdir -p '.' './configs' './service_configs' './configs/.ssh' './configs/container' './configs/database' './configs/docker' './configs/env' './configs/integration' './configs/kubernetes' './configs/logging' './configs/pi' './configs/secrets' './configs/security' './configs/tor' './configs/container/admin' './configs/container/auth' './configs/container/base' './configs/container/blockchain' './configs/container/database' './configs/container/electron_gui' './configs/container/gui' './configs/container/node' './configs/container/payment_systems' './configs/container/rdp' './configs/container/server' './configs/container/sessions' './configs/container/storage' './configs/container/tor' './configs/database/elasticsearch' './configs/database/redis' './configs/docker/distroless' './configs/docker/docs' './configs/docker/multi-stage' './configs/pi/ssh'; \
+    mkdir -p '.' './common' './configs' './service_configs' './common/__pycache__' './common/governance' './common/security' './common/server-tools' './common/templates' './common/tor' './configs/.ssh' './configs/alignment-mats' './configs/container' './configs/database' './configs/docker' './configs/env' './configs/environment' './configs/gui-alignment' './configs/integration' './configs/kubernetes' './configs/logging' './configs/pi' './configs/secrets' './configs/security' './configs/tor' './common/governance/__pycache__' './common/security/__pycache__' './common/server-tools/__pycache__' './common/tor/__pycache__' './configs/container/admin' './configs/container/auth' './configs/container/base' './configs/container/blockchain' './configs/container/database' './configs/container/electron_gui' './configs/container/gui' './configs/container/node' './configs/container/payment_systems' './configs/container/rdp' './configs/container/server' './configs/container/sessions' './configs/container/storage' './configs/container/tor' './configs/database/elasticsearch' './configs/database/redis' './configs/docker/distroless' './configs/docker/docs' './configs/docker/multi-stage' './configs/environment/development' './configs/environment/pi' './configs/environment/production' './configs/environment/staging' './configs/pi/ssh' './configs/secrets/runtime' './configs/secrets/runtime/compose'; \
     for d in \
       '.' \
+      './common' \
       './configs' \
       './service_configs' \
+      './common/__pycache__' \
+      './common/governance' \
+      './common/security' \
+      './common/server-tools' \
+      './common/templates' \
+      './common/tor' \
       './configs/.ssh' \
+      './configs/alignment-mats' \
       './configs/container' \
       './configs/database' \
       './configs/docker' \
       './configs/env' \
+      './configs/environment' \
+      './configs/gui-alignment' \
       './configs/integration' \
       './configs/kubernetes' \
       './configs/logging' \
@@ -84,6 +94,10 @@ RUN set -eux; \
       './configs/secrets' \
       './configs/security' \
       './configs/tor' \
+      './common/governance/__pycache__' \
+      './common/security/__pycache__' \
+      './common/server-tools/__pycache__' \
+      './common/tor/__pycache__' \
       './configs/container/admin' \
       './configs/container/auth' \
       './configs/container/base' \
@@ -103,12 +117,24 @@ RUN set -eux; \
       './configs/docker/distroless' \
       './configs/docker/docs' \
       './configs/docker/multi-stage' \
+      './configs/environment/development' \
+      './configs/environment/pi' \
+      './configs/environment/production' \
+      './configs/environment/staging' \
       './configs/pi/ssh' \
+      './configs/secrets/runtime' \
+      './configs/secrets/runtime/compose' \
     ; do \
       printf 'LUCID_X_FILES_SKELETON_%s' "$(date +%s)" > "$d/.keep"; \
       touch "$d/.keep"; \
     done
 # LUCID_X_FILES_SKELETON_END
+# LUCID_ALIGNMENT_MAT_COPY_DIRECTORIES_BEGIN
+# alignment-mat mongodb-monitoring_manifest.json: compose_service='mongodb-monitoring' — manifest py/yml/yaml/json → builder COPY (#10).
+COPY common/ ./common/
+COPY configs/container/database/ ./configs/container/database/
+COPY infrastructure/containers/ ./infrastructure/containers/
+# LUCID_ALIGNMENT_MAT_COPY_DIRECTORIES_END
 import subprocess
 import sys
 COPY configs/ ./configs/
@@ -195,7 +221,7 @@ LABEL maintainer="Lucid Development Team" \
       com.lucid.architecture="linux/arm64" \
       com.lucid.security="distroless" \
       com.lucid.vulnerabilities="zero" \
-      com.lucid.expose="" \
+      com.lucid.expose="27018" \
       com.lucid.cluster="database" \
       com.lucid.tor.compatible="true" \
       com.lucid.env.config=".env.foundation" \
@@ -214,13 +240,20 @@ ENV     PUBLIC_TOR_IP="${PUBLIC_TOR_IP}" \
     LANG="C.UTF-8" \
     LC_ALL="C.UTF-8" \
     LUCID_ENV="production" \
-    LUCID_HOST_CONFIG_SERVICE_NAME="mongodb_monitoring" \
+    LUCID_HOST_CONFIG_SERVICE_NAME=mongodb_monitoring \
     LUCID_PLATFORM="arm64" \
-    LUCID_SERVICE_HOST_IP="172.20.10.71" \
-    LUCID_SERVICE_HTTP_PATH="http://mongodb-monitoring:27018/app" \
+    LUCID_SERVICE_HOST_IP=172.20.10.71 \
+    LUCID_SERVICE_HTTP_PATH=http://mongodb-monitoring:27018/app \
     MONGODB_URI=${MONGODB_URI:-mongodb://lucid:lucid@lucid-mongodb:27017/lucid?authSource=admin} \
     MONITORING_SERVICE_PORT="27018" \
     PROMETHEUS_ENABLED="true"
+# LUCID_RUNTIME_COPY_FROM_BUILD_BEGIN
+# Generated: same directory set as LUCID_X_FILES_SKELETON (./ under WORKDIR /build).
+COPY --from=builder --chown=65532:65532 /build/common/ /app/common/
+COPY --from=builder --chown=65532:65532 /build/configs/ /app/configs/
+COPY --from=builder --chown=65532:65532 /build/service_configs/ /app/service_configs/
+# LUCID_RUNTIME_COPY_FROM_BUILD_END
+
 # LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
 # Generated: apt + RUN scaffold (mkdir/printf/touch/chown) -> FHS (not ./ or /build/; lib_search_and_inject.py).
 COPY --from=builder --chown=65532:65532 /usr/lib/*/libffi.so* /app/usr/lib/
@@ -234,35 +267,6 @@ COPY --from=builder --chown=65532:65532 /usr/ /app/usr/
 COPY --from=builder --chown=65532:65532 /var/lib/ /app/var/lib/
 COPY --from=builder --chown=65532:65532 /var/run/ /app/var/run/
 # LUCID_RUNTIME_COPY_FROM_BUILDER_APT_END
-
-# LUCID_RUNTIME_COPY_FROM_BUILD_BEGIN
-# Generated: same directory set as LUCID_X_FILES_SKELETON (./ under WORKDIR /build).
-COPY --from=builder --chown=65532:65532 /usr/lib/*/libffi.so* /app/usr/lib/
-COPY --from=builder --chown=65532:65532 /usr/lib/*/libssl.so* /app/usr/lib/
-COPY --from=builder --chown=65532:65532 /usr/lib/*/ossl-modules/ /app/usr/lib/
-COPY --from=builder --chown=65532:65532 /usr/lib/*/libpq.so.5 /app/usr/lib/
-COPY --from=builder --chown=65532:65532 /usr/lib/*/libcurl.so* /app/usr/lib/
-COPY --from=builder --chown=65532:65532 /usr/bin/bash /app/usr/bin/bash
-COPY --from=builder --chown=65532:65532 /bin/bash /app/bin/bash
-COPY --from=builder --chown=65532:65532 /usr/bin/openssl /app/usr/bin/openssl
-COPY --from=builder --chown=65532:65532 /etc/ssl/openssl.cnf /app/etc/ssl/openssl.cnf
-COPY --from=builder --chown=65532:65532 /usr/bin/curl /app/usr/bin/curl
-COPY --from=builder --chown=65532:65532 /etc/ssl/certs/ca-certificates.crt /app/etc/ssl/certs/ca-certificates.crt
-COPY --from=builder --chown=65532:65532 /etc/ssl/certs/ /app/etc/ssl/certs/
-COPY --from=builder --chown=65532:65532 /usr/bin/tini /app/usr/bin/tini
-COPY --from=builder --chown=65532:65532 /usr/lib/python3/dist-packages/ /app/usr/lib/python3/dist-packages/
-COPY --from=builder --chown=65532:65532 /usr/ /app/usr/
-COPY --from=builder --chown=65532:65532 /usr/local/ /app/usr/local/
-COPY --from=builder --chown=65532:65532 /usr/local/lib/ /app/usr/local/lib/
-COPY --from=builder --chown=65532:65532 /usr/local/bin/ /app/usr/local/bin/
-COPY --from=builder --chown=65532:65532 /usr/local/lib/python3.11/ /app/usr/local/lib/python3.11/
-COPY --from=builder --chown=65532:65532 /usr/local/lib/python3.11/site-packages/ /app/usr/local/lib/python3.11/site-packages/
-COPY --from=builder --chown=65532:65532 /var/run/ /app/var/run/
-COPY --from=builder --chown=65532:65532 /var/lib/ /app/var/lib/
-# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_END
-# LUCID_IMAGE_CONFIG: (runtime)
-
-# LUCID_RUNTIME_COPY_FROM_BUILD_END
 # LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
 # Generated: apt + RUN scaffold (mkdir/printf/touch/chown) -> FHS (not ./ or /build/; lib_search_and_inject.py).
 
@@ -270,7 +274,6 @@ COPY --from=builder --chown=65532:65532 /var/lib/ /app/var/lib/
 
 COPY --from=builder --chown=65532:65532 /build/wheels/         /app/wheels/
 COPY --from=builder --chown=65532:65532 /build/database/       /app/database/
-COPY --from=builder --chown=65532:65532 /build/common/ /app/common/
 
 RUN echo "=== Verifying pip installation (database stack) ===" && \
     python3.11 -c "import pymongo, redis, elasticsearch, psycopg2, prometheus_client, zstandard, psutil, uvicorn, fastapi, pydantic, pydantic-settings, cryptography, python-jose, passlib, httpx, requests, asyncio-mqtt, aiofiles, apscheduler, pandas, numpy, pytest, pytest-asyncio, black, ruff, mypy, zstandard, psutil; print('✅ Core database/monitoring imports OK')" && \
@@ -296,7 +299,6 @@ CMD ["/app/usr/bin/python3.11", "-m", "database.services.monitoring.main"]ENV PY
 
 COPY scripts/ ./scripts/
 COPY database/ ./database/
-COPY common/ ./common/
 COPY common/governance/ ./common/governance/
 COPY common/tor/ ./common/tor/
 COPY database/schemas/ ./database/schemas/

@@ -2,18 +2,20 @@
 """
 File: scripts/gui_auth_realignment/rewrite_dockerfiles_from_alignment_mats.py
 
-Only Dockerfiles listed in ``infrastructure/containers/host-config.yml`` as ``source_dockerfile``
-for each mapped service are modified. Duplicate or legacy paths (e.g. ``electron_gui/distroless/Dockerfile.*``)
-are **not** targets unless host-config points there—open the path the script prints when using ``-v``.
+Each manifest resolves to one authoritative Dockerfile: typically ``host-config.yml`` ``source_dockerfile``,
+else optional manifest ``source_dockerfile``, else the built-in fallback map for unhosted base images.
+Duplicate or legacy paths are **not** targets unless resolution points there—use ``-v`` to print paths.
 
 **Canonical entry point:** apply ``configs/alignment-mats/*_manifest.json`` (and related
 ``mapping_compose_to_service_id.json`` + ``infrastructure/containers/host-config.yml``) to each
-GUI-backed service's **authoritative** ``source_dockerfile``. When docs say alignment-mats should
-update GUI Dockerfiles, this file is the script to run (not ``inject_dockerfile_x_files_skeleton.py``
-alone unless you only need a generic layout pass). To **generate** manifest JSON from the tree, use
-``list_gui_service_files.py``; to **apply** mats to Dockerfiles, use this script.
+service's **authoritative** ``source_dockerfile``. Compose names in manifests are resolved to
+host-config keys by the mapping file (GUI aliases), then by ``service_name``, YAML key, or ``tags``
+so all manifests under ``configs/alignment-mats/`` can be applied—not only the few rows in the
+mapping JSON. A small built-in fallback table covers compose services whose Dockerfiles exist but
+have no ``host-config.yml`` block (e.g. ``java-base``, ``python-base``). To **generate** manifest JSON
+from the tree, use ``list_gui_service_files.py``; to **apply** mats to Dockerfiles, use this script.
 
-Uses JSON under configs/alignment-mats/ (manifests with compose_service), plus
+Uses JSON under configs/alignment-mats/ (``*_manifest.json`` with compose_service), plus
 mapping_compose_to_service_id.json and infrastructure/containers/host-config.yml,
 to rewrite the authoritative Dockerfile (source_dockerfile) for each service:
 
@@ -24,8 +26,9 @@ to rewrite the authoritative Dockerfile (source_dockerfile) for each service:
 
 Optional: merge image string from configs/services/gui-services.json when compose_service matches.
 
-If two manifests resolve to the same Dockerfile, the second is skipped with a warning (avoids
-clobbering shared Dockerfiles).
+If several manifests resolve to the same ``source_dockerfile``, their mat file lists are **merged**
+(unique paths), metadata (LABEL/ENV) is taken from the ``host-config.yml`` block for that Dockerfile
+(best match on ``service_name`` / compose names), and one write updates the shared image once.
 
 Layout sections (see infrastructure/containers/dockerfile_layout_structure.json):
   #10 COPY (builder plain COPY): from each manifest's ``py``, ``yml``/``yaml``, ``json``, and
@@ -59,6 +62,7 @@ import re
 import shutil
 import subprocess
 import sys
+from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
@@ -76,6 +80,40 @@ MAPPING = _HERE / "mapping_compose_to_service_id.json"
 GUI_SERVICES = Path("configs/services/gui-services.json")
 DEFAULT_X_FILES = Path("x-files.json")
 INJECT_SCRIPT = Path("infrastructure/containers/inject_dockerfile_x_files_skeleton.py")
+
+# Compose names with no host-config.yml entry but a single authoritative Dockerfile (repo-relative).
+MAT_COMPOSE_TO_DOCKERFILE_FALLBACK: Dict[str, str] = {
+    "base-runtime": "infrastructure/containers/base/Dockerfile.base",
+    "gui-strap": "infrastructure/docker/distroless/gui/Dockerfile.gui",
+    "java-base": "infrastructure/containers/base/Dockerfile.java-base",
+    "python-base": "infrastructure/containers/base/Dockerfile.python-base",
+    "server-common": "infrastructure/docker/common/Dockerfile",
+}
+
+
+def _compose_alias_strings(compose_service: str, manifest_doc: Optional[Dict[str, Any]]) -> List[str]:
+    """Strings to match against host-config ``service_name``, YAML keys, and ``tags``."""
+    out: List[str] = []
+    cs = compose_service.strip()
+    if cs:
+        out.extend((cs, cs.replace("-", "_")))
+    if manifest_doc:
+        for n in manifest_doc.get("associated_needles") or []:
+            if not isinstance(n, str):
+                continue
+            s = n.strip()
+            if not s:
+                continue
+            out.append(s)
+            if "-" in s:
+                out.append(s.replace("-", "_"))
+    seen: set[str] = set()
+    uniq: List[str] = []
+    for a in out:
+        if a not in seen:
+            seen.add(a)
+            uniq.append(a)
+    return uniq
 
 RUNTIME_COPY_BEGIN = "# LUCID_RUNTIME_COPY_FROM_BUILD_BEGIN"
 RUNTIME_COPY_END = "# LUCID_RUNTIME_COPY_FROM_BUILD_END"
@@ -533,7 +571,7 @@ def _iter_manifests(mat_dir: Path) -> List[Path]:
     if not mat_dir.is_dir():
         return []
     out: List[Path] = []
-    for p in sorted(mat_dir.glob("*.json")):
+    for p in sorted(mat_dir.glob("*_manifest.json")):
         if p.name.startswith("."):
             continue
         try:
@@ -543,6 +581,77 @@ def _iter_manifests(mat_dir: Path) -> List[Path]:
         if isinstance(doc, dict) and doc.get("compose_service"):
             out.append(p)
     return out
+
+
+def merge_manifest_mat_docs(docs: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """Union ``py``/``yml``/``yaml``/``json``/``alignment_json`` paths from several mats (deduped, stable)."""
+    keys = ("py", "yml", "yaml", "json", "alignment_json")
+    merged: Dict[str, Any] = {}
+    for k in keys:
+        bucket: List[str] = []
+        seen_norm: set[str] = set()
+        for d in docs:
+            for item in d.get(k) or []:
+                if not isinstance(item, str):
+                    continue
+                n = _normalize_mat_relpath(item)
+                if not n or n in seen_norm:
+                    continue
+                seen_norm.add(n)
+                bucket.append(n)
+        merged[k] = bucket
+    return merged
+
+
+def _host_blocks_by_source_dockerfile(
+    services: Dict[str, Any],
+) -> Dict[str, List[Tuple[str, Dict[str, Any]]]]:
+    """Normalized ``source_dockerfile`` path → [(host key, block), ...]."""
+    by_dfp: Dict[str, List[Tuple[str, Dict[str, Any]]]] = {}
+    for sid, block in services.items():
+        if not isinstance(block, dict):
+            continue
+        sdf = str(block.get("source_dockerfile") or "").replace("\\", "/").strip()
+        if not sdf:
+            continue
+        by_dfp.setdefault(sdf, []).append((str(sid), block))
+    return by_dfp
+
+
+def _pick_host_meta_for_dfp(
+    dfp: str,
+    host_by_dfp: Dict[str, List[Tuple[str, Dict[str, Any]]]],
+    compose_services_in_group: List[str],
+) -> Optional[Tuple[str, Dict[str, Any]]]:
+    rows = host_by_dfp.get(dfp)
+    if not rows:
+        return None
+    if len(rows) == 1:
+        return rows[0]
+    want = set(compose_services_in_group)
+    for sid, block in rows:
+        sn = str(block.get("service_name") or "")
+        if sn in want:
+            return (sid, block)
+    for sid, block in rows:
+        tags = block.get("tags") or []
+        if isinstance(tags, list) and want.intersection(str(t) for t in tags):
+            return (sid, block)
+    return rows[0]
+
+
+def _gui_image_for(
+    gui_by: Dict[str, Dict[str, Any]],
+    service_name: str,
+    compose_candidates: List[str],
+) -> Optional[str]:
+    for key in [service_name, *compose_candidates]:
+        if not key:
+            continue
+        row = gui_by.get(key)
+        if isinstance(row, dict) and row.get("image"):
+            return str(row["image"])
+    return None
 
 
 def patch_dockerfile_text(
@@ -600,40 +709,144 @@ def patch_dockerfile_text(
     return s
 
 
+def resolve_host_config_service_id(
+    services: Dict[str, Any],
+    compose_service: str,
+    mapping: Dict[str, str],
+    manifest_doc: Optional[Dict[str, Any]] = None,
+) -> Optional[str]:
+    """
+    Map manifest ``compose_service`` to a ``host-config.yml`` services key.
+
+    Order: explicit ``mapping_compose_to_service_id.json`` entry, then best match in host-config
+    (``service_name``, YAML key, hyphen→underscore key, ``tags`` exact match, then tag prefix match
+    for manifest ``associated_needles`` e.g. ``lucid_elasticsearch`` vs ``lucid_elasticsearch_http``).
+    Returns ``None`` if no block exists (caller may use manifest / fallback Dockerfile path).
+    """
+    cs = compose_service.strip()
+    if not cs:
+        return None
+
+    if cs in mapping:
+        sid = mapping[cs]
+        if not isinstance(services.get(sid), dict):
+            raise KeyError(
+                f"mapping maps compose_service {cs!r} to host-config key {sid!r}, "
+                f"but services.{sid} is missing or not a mapping"
+            )
+        return str(sid)
+
+    aliases = _compose_alias_strings(cs, manifest_doc)
+    alias_set = set(aliases)
+    by_sid: Dict[str, int] = {}
+
+    for sid, block in services.items():
+        if not isinstance(block, dict):
+            continue
+        sid_s = str(sid)
+        ranks: List[int] = []
+        sn = str(block.get("service_name") or "")
+        if sn in alias_set:
+            ranks.append(0)
+        if sid_s in alias_set:
+            ranks.append(1)
+        tags = block.get("tags") or []
+        tags_str = [str(t) for t in tags] if isinstance(tags, list) else []
+        if alias_set.intersection(tags_str):
+            ranks.append(3)
+        else:
+            for a in aliases:
+                if not a or len(a) < 3:
+                    continue
+                for t in tags_str:
+                    if t == a or t.startswith(a + "_") or t.startswith(a + "-"):
+                        ranks.append(4)
+                        break
+                if any(x == 4 for x in ranks):
+                    break
+        if not ranks:
+            continue
+        rmin = min(ranks)
+        prev = by_sid.get(sid_s)
+        if prev is None or rmin < prev:
+            by_sid[sid_s] = rmin
+
+    if not by_sid:
+        return None
+    best_rank = min(by_sid.values())
+    best_sids = sorted(sid for sid, r in by_sid.items() if r == best_rank)
+    if len(best_sids) > 1:
+        raise ValueError(
+            f"compose_service {cs!r} is ambiguous in host-config (multiple entries tie at "
+            f"rank {best_rank}): {best_sids!r}"
+        )
+    return best_sids[0]
+
+
 def resolve_meta(
     repo: Path,
     compose_service: str,
     mapping: Dict[str, str],
     services: Dict[str, Any],
     gui_row: Optional[Dict[str, Any]],
+    manifest_doc: Optional[Dict[str, Any]] = None,
 ) -> Tuple[str, Dict[str, Any]]:
-    sid = mapping.get(compose_service)
-    if not sid:
-        raise KeyError(f"compose_service {compose_service!r} not in mapping_compose_to_service_id.json")
-    block = services.get(sid)
-    if not isinstance(block, dict):
-        raise KeyError(f"host-config services.{sid} missing")
-    service_name = str(block.get("service_name") or compose_service)
-    port = int(block.get("port") or 0)
-    http_path = str(block.get("http_path") or f"http://{service_name}:{port}/app")
-    host_ip = str(block.get("host_ip") or "")
-    dockerfile_rel = str(block.get("source_dockerfile") or "")
-    if not dockerfile_rel:
-        raise ValueError(f"host-config {sid} has no source_dockerfile")
+    sid = resolve_host_config_service_id(services, compose_service, mapping, manifest_doc)
 
     image: Optional[str] = None
     if gui_row and gui_row.get("image"):
         image = str(gui_row["image"])
 
+    if sid is not None:
+        block = services.get(sid)
+        if not isinstance(block, dict):
+            raise KeyError(f"host-config services.{sid} missing")
+        service_name = str(block.get("service_name") or compose_service)
+        port = int(block.get("port") or 0)
+        http_path = str(block.get("http_path") or f"http://{service_name}:{port}/app")
+        host_ip = str(block.get("host_ip") or "")
+        dockerfile_rel = str(block.get("source_dockerfile") or "").replace("\\", "/")
+        if not dockerfile_rel:
+            raise ValueError(f"host-config {sid} has no source_dockerfile")
+
+        meta = {
+            "compose_service": compose_service,
+            "host_config_service_id": sid,
+            "service_name": service_name,
+            "service_id": sid,
+            "port": port,
+            "http_path": http_path,
+            "host_ip": host_ip,
+            "dockerfile_rel": dockerfile_rel,
+            "image": image,
+        }
+        return meta["dockerfile_rel"], meta
+
+    dockerfile_rel = ""
+    if manifest_doc and isinstance(manifest_doc.get("source_dockerfile"), str):
+        dockerfile_rel = manifest_doc["source_dockerfile"].strip().replace("\\", "/")
+    if not dockerfile_rel:
+        dockerfile_rel = MAT_COMPOSE_TO_DOCKERFILE_FALLBACK.get(compose_service, "").replace("\\", "/")
+    if not dockerfile_rel:
+        raise KeyError(
+            f"compose_service {compose_service!r} has no host-config entry, no manifest "
+            f'"source_dockerfile", and no built-in MAT_COMPOSE_TO_DOCKERFILE_FALLBACK path'
+        )
+    full = repo / dockerfile_rel
+    if not full.is_file():
+        raise ValueError(f"resolved Dockerfile missing for {compose_service!r}: {full}")
+
+    synthetic_id = compose_service.replace("-", "_")
+    port = 0
     meta = {
         "compose_service": compose_service,
-        "host_config_service_id": sid,
-        "service_name": service_name,
-        "service_id": sid,
+        "host_config_service_id": synthetic_id,
+        "service_name": compose_service,
+        "service_id": synthetic_id,
         "port": port,
-        "http_path": http_path,
-        "host_ip": host_ip,
-        "dockerfile_rel": dockerfile_rel.replace("\\", "/"),
+        "http_path": f"http://{compose_service}:{port}/app",
+        "host_ip": "",
+        "dockerfile_rel": dockerfile_rel,
         "image": image,
     }
     return meta["dockerfile_rel"], meta
@@ -745,13 +958,13 @@ def run_inject_copy_layout(
 def main() -> int:
     ap = argparse.ArgumentParser(
         description=(
-            "GUI alignment mats → Dockerfiles: apply configs/alignment-mats manifests + host-config "
-            "to each service source_dockerfile (metadata, mat py/yml COPY block #10, optional inject "
-            "for layout #7-9/#20). This is the intended script for mat-driven GUI service images."
+            "Alignment mats → Dockerfiles: apply configs/alignment-mats manifests + host-config "
+            "(and built-in Dockerfile fallbacks when unset) to each service source_dockerfile "
+            "(metadata, mat py/yml COPY block #10, optional inject for layout #7-9/#20)."
         )
     )
     ap.add_argument("--repo-root", default=None)
-    ap.add_argument("--mat-dir", default=str(DEFAULT_MAT_DIR), help="Dir of *manifest*.json")
+    ap.add_argument("--mat-dir", default=str(DEFAULT_MAT_DIR), help="Dir of *_manifest.json")
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--backup", action="store_true")
     ap.add_argument(
@@ -866,15 +1079,14 @@ def main() -> int:
         print(f"No manifests with compose_service under {mat_dir}", file=sys.stderr)
         return 2
 
-    dockerfile_claim: Dict[str, str] = {}
-    plan: List[Tuple[Path, str, Dict[str, Any]]] = []
+    resolved: List[Tuple[Path, Dict[str, Any], str, Dict[str, Any]]] = []
     manifests_skipped = 0
 
     for mf in manifests:
         doc = _load_json(mf)
         cs = str(doc.get("compose_service"))
         try:
-            dfp, meta = resolve_meta(repo, cs, cmap, services, gui_by.get(cs))
+            dfp, meta = resolve_meta(repo, cs, cmap, services, gui_by.get(cs), doc)
         except (KeyError, ValueError) as e:
             manifests_skipped += 1
             print(f"SKIP {mf.name}: {e}", file=sys.stderr)
@@ -884,26 +1096,77 @@ def main() -> int:
             manifests_skipped += 1
             print(f"SKIP {cs}: Dockerfile missing {full}", file=sys.stderr)
             continue
-        if dfp in dockerfile_claim and dockerfile_claim[dfp] != cs:
-            manifests_skipped += 1
+        resolved.append((mf, doc, dfp, meta))
+
+    host_by_dfp = _host_blocks_by_source_dockerfile(services)
+    by_dfp: Dict[str, List[Tuple[Path, Dict[str, Any], Dict[str, Any]]]] = defaultdict(list)
+    for mf, doc, dfp, meta in resolved:
+        by_dfp[dfp].append((mf, doc, meta))
+
+    plan: List[Tuple[Path, str, Dict[str, Any]]] = []
+    for dfp in sorted(by_dfp.keys()):
+        grp = by_dfp[dfp]
+        mfs = [t[0] for t in grp]
+        docs = [t[1] for t in grp]
+        metas = [t[2] for t in grp]
+        compose_ss = sorted({str(d.get("compose_service")) for d in docs})
+        merged_doc = merge_manifest_mat_docs(docs)
+        merged_doc["compose_service"] = "+".join(compose_ss)
+
+        picked = _pick_host_meta_for_dfp(dfp, host_by_dfp, compose_ss)
+        alignment_mats_posix = [
+            p.resolve().relative_to(repo.resolve()).as_posix() for p in mfs
+        ]
+        if picked:
+            sid, block = picked
+            sn = str(block.get("service_name") or compose_ss[0])
+            port = int(block.get("port") or 0)
+            http_path = str(block.get("http_path") or f"http://{sn}:{port}/app")
+            plan_meta: Dict[str, Any] = {
+                "compose_service": "+".join(compose_ss),
+                "merged_compose_services": compose_ss,
+                "host_config_service_id": sid,
+                "service_name": sn,
+                "service_id": sid,
+                "port": port,
+                "http_path": http_path,
+                "host_ip": str(block.get("host_ip") or ""),
+                "dockerfile_rel": dfp,
+                "image": _gui_image_for(gui_by, sn, compose_ss),
+                "alignment_mats": alignment_mats_posix,
+                "alignment_mat": alignment_mats_posix[0],
+                "_merged_mat_document": merged_doc,
+            }
+        else:
+            stable = sorted(zip(mfs, docs, metas), key=lambda x: str(x[1].get("compose_service")))
+            _, _, m0 = stable[0]
+            plan_meta = {
+                **m0,
+                "compose_service": "+".join(compose_ss),
+                "merged_compose_services": compose_ss,
+                "image": _gui_image_for(gui_by, str(m0.get("service_name") or ""), compose_ss)
+                or m0.get("image"),
+                "alignment_mats": alignment_mats_posix,
+                "alignment_mat": alignment_mats_posix[0],
+                "_merged_mat_document": merged_doc,
+            }
+        plan.append((repo / Path(dfp), dfp, plan_meta))
+        if len(grp) > 1:
             print(
-                f"SKIP {cs}: Dockerfile {dfp} already claimed by {dockerfile_claim[dfp]}",
-                file=sys.stderr,
+                f"MERGED {len(grp)} alignment mats -> {dfp}: {' + '.join(compose_ss)}",
+                flush=True,
             )
-            continue
-        dockerfile_claim[dfp] = cs
-        mat_posix = mf.resolve().relative_to(repo.resolve()).as_posix()
-        plan.append((full, dfp, {**meta, "alignment_mat": mat_posix}))
 
     if not plan:
         print("Nothing to rewrite.", file=sys.stderr)
         return 1
 
-    services_line = ", ".join(sorted(m["compose_service"] for _, _, m in plan))
+    all_compose = sorted({c for _, _, m in plan for c in m.get("merged_compose_services") or []})
+    services_line = ", ".join(all_compose)
     skip_frag = f", {manifests_skipped} manifest(s) skipped" if manifests_skipped else ""
     print(
-        f"Plan: {len(plan)} Dockerfile(s) from {len(manifests)} manifest(s){skip_frag}; "
-        f"services: {services_line}",
+        f"Plan: {len(plan)} Dockerfile(s); {len(resolved)} manifest row(s) resolved"
+        f"{skip_frag}; services: {services_line}",
         flush=True,
     )
 
@@ -919,6 +1182,7 @@ def main() -> int:
     for path, dfp, meta in plan:
         mat_rel = str(meta.get("alignment_mat") or "")
         mat_path = repo / mat_rel if mat_rel else repo
+        merged_doc = meta.get("_merged_mat_document")
         raw = path.read_text(encoding="utf-8")
         patched = patch_dockerfile_text(
             raw,
@@ -930,13 +1194,15 @@ def main() -> int:
             image=meta.get("image"),
         )
         if args.apply_mat_copy_directories:
+            if not isinstance(merged_doc, dict):
+                print(f"ERROR: internal: missing merged mat document for {dfp}", file=sys.stderr)
+                return 2
             if not mat_rel or not mat_path.is_file():
                 print(f"ERROR: alignment mat not found for {dfp}: {mat_path}", file=sys.stderr)
                 return 2
-            doc = _load_json(mat_path)
             new = patch_alignment_mat_copies(
                 patched,
-                doc,
+                merged_doc,
                 repo,
                 mat_path,
                 warn_missing=True,
@@ -953,13 +1219,15 @@ def main() -> int:
             print(f"UNCHANGED {dfp} ({meta['compose_service']})", flush=True)
             if args.verbose:
                 print(f"  Dockerfile (absolute): {path.resolve()}", flush=True)
-                print(f"  alignment mat (absolute): {mat_path.resolve()}", flush=True)
+                for am in meta.get("alignment_mats") or []:
+                    print(f"  alignment mat (absolute): {(repo / am).resolve()}", flush=True)
             continue
         if args.dry_run:
             print(f"[dry-run] would rewrite {dfp} ({meta['compose_service']})", flush=True)
             if args.verbose:
                 print(f"  Dockerfile (absolute): {path.resolve()}", flush=True)
-                print(f"  alignment mat (absolute): {mat_path.resolve()}", flush=True)
+                for am in meta.get("alignment_mats") or []:
+                    print(f"  alignment mat (absolute): {(repo / am).resolve()}", flush=True)
             continue
         if args.backup:
             bak = path.with_suffix(path.suffix + f".bak.{_utc()}")
@@ -968,7 +1236,8 @@ def main() -> int:
         print(f"WROTE {dfp} ({meta['compose_service']} -> {meta['service_name']})", flush=True)
         if args.verbose:
             print(f"  Dockerfile (absolute): {path.resolve()}", flush=True)
-            print(f"  alignment mat (absolute): {mat_path.resolve()}", flush=True)
+            for am in meta.get("alignment_mats") or []:
+                print(f"  alignment mat (absolute): {(repo / am).resolve()}", flush=True)
 
     x_canon: Optional[Dict[str, str]] = None
     if (args.validate_x_files_copy or args.strict_x_files_copy) and not args.dry_run:

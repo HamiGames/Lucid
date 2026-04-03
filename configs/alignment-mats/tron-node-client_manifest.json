@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "tool": "scripts/gui_auth_realignment/list_service_files_by_name.py",
+  "compose_service": "tron-node-client",
+  "yml": [
+    "configs/container/payment_systems/docker-compose.payment-externals.yml",
+    "configs/container/payment_systems/docker-compose.payment-internal.yml",
+    "infrastructure/containers/blockchain/config/block-pay-endpoints.yml",
+    "infrastructure/containers/host-config.yml",
+    "infrastructure/containers/payment_systems/docker-compose.payment-externals.yml",
+    "infrastructure/containers/payment_systems/docker-compose.payment-internal.yml",
+    "infrastructure/containers/services/master-endpoint.yml",
+    "infrastructure/containers/services/payment_services/payment-services-host-alignment.yml",
+    "infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.yml",
+    "infrastructure/containers/services/x_lucid_cluster_calibration/payment-cluster-host-alignment.yml"
+  ],
+  "py": [
+    "common/load_host_config.py"
+  ],
+  "json": [
+    "infrastructure/containers/config-listings.json",
+    "infrastructure/containers/dockerfile_layout_run_report.json",
+    "infrastructure/containers/dockerfile_recalibration_map.json",
+    "infrastructure/containers/dockerfile_recalibration_map_REPAIRED.json",
+    "infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.json"
+  ],
+  "associated_needles": [
+    "tron_node_client",
+    "tron-node-client"
+  ],
+  "missing_yml": [],
+  "missing_python_dirs": [],
+  "missing_global_py": [],
+  "missing_expected": [
+    "infrastructure/containers/services/tron-node-client.yml"
+  ],
+  "missing_tier_a_json": [],
+  "source_map_path": "scripts/gui_auth_realignment/gui_service_source_map.json",
+  "mat_path": "configs/services/gui-services.json",
+  "mat_row_matched": false,
+  "alignment_json": []
+}
