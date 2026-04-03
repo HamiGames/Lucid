@@ -432,7 +432,7 @@ COPY --from=tunnel-builder --chown=65532:65532 /usr/bin/ /app/usr/bin/
 COPY --from=tunnel-builder --chown=65532:65532 /usr/lib/python3/dist-packages/ /app/usr/lib/python3/dist-packages/
 
 
-RUN ["/usr/bin/python3.11", "-c", "import os, sys; \
+RUN ["/app/usr/bin/python3.11", "-c", "import os, sys; \
 sys.path.insert(0, '/app/tunnels'); \
 entrypoint_path = '/app/tunnels/entrypoint.py'; \
 assert os.path.isfile(entrypoint_path), 'CRITICAL: /app/tunnels/entrypoint.py missing'; \
@@ -442,9 +442,8 @@ print('✅ All tunnel-tools modules verified')"]
 
 EXPOSE 7000
 
-# Run as non-root (distroless default)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=45s --retries=3 \
-    CMD ["/usr/bin/python3.11", "-c", "import os, socket; \
+    CMD ["/app/usr/bin/python3.11", "-c", "import os, socket; \
 host = os.getenv('CONTROL_HOST', 'tor-proxy'); \
 port = int(os.getenv('CONTROL_PORT', '9051')); \
 s = socket.socket(); \
@@ -456,9 +455,5 @@ exit(0 if result == 0 else 1)"]
 USER 65532:65532
 
 
-# Use tini for correct signal handling; run Python entrypoint directly (no shell)
-# Clear ENTRYPOINT pattern per dockerfile-design.md: tini in ENTRYPOINT, Python in CMD
 ENTRYPOINT ["/app/usr/bin/tini", "--"]
-CMD ["/usr/bin/python3.11", "/app/tunnels/entrypoint.py"]
-
-# NOTES: provide .env.* on the host (compose env_file / bind mounts); no secrets baked into the image.
+CMD ["/app/usr/bin/python3.11", "/app/tunnels/entrypoint.py"]
