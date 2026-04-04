@@ -19,7 +19,7 @@ ARG TARGETPLATFORM
 ARG VERSION
 ARG PYTHON_VERSION=3.11
 
-FROM --platform=$BUILDPLATFORM python:3.11-slim-bookworm AS tunnel-builder
+FROM python:3.11-slim-bookworm AS tunnel-builder
 
 WORKDIR /build
 # LUCID_IMAGE_CONFIG: (builder)
