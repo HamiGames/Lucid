@@ -16,7 +16,7 @@ if [[ -f "${_LUCID_TOR_SCRIPTS_DIR}/set_host_config.sh" ]]; then
   lucid_load_host_config
 fi
 
-# Configuration — target/control defaults from /app/service_configs/host-config.yml (set_host_config.sh).
+# Configuration — target/control defaults from /app/infrastructure/containers/services/host-config.yml (set_host_config.sh).
 TOR_CONTROL_HOST="${TOR_CONTROL_HOST:-127.0.0.1}"
 TOR_CONTROL_PORT="${TOR_CONTROL_PORT:-9051}"
 TOR_COOKIE_PATH="${TOR_COOKIE_PATH:-/app/run/lucid/tor/control_auth_cookie}"

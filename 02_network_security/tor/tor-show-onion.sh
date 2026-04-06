@@ -13,11 +13,14 @@
 
 set -euo pipefail
 
-if [[ -d /app/usr/bin ]]; then
-  [[ ":${PATH:-}:" != *":/app/usr/bin:"* ]] && PATH="/app/usr/bin:${PATH:-}"
-fi
 if [[ -d /app/bin ]]; then
   [[ ":${PATH:-}:" != *":/app/bin:"* ]] && PATH="/app/bin:${PATH:-}"
+fi
+if [[ -d /app/sbin ]]; then
+  [[ ":${PATH:-}:" != *":/app/sbin:"* ]] && PATH="/app/sbin:${PATH:-}"
+fi
+if [[ -d /app/usr/bin ]]; then
+  [[ ":${PATH:-}:" != *":/app/usr/bin:"* ]] && PATH="/app/usr/bin:${PATH:-}"
 fi
 export PATH
 

@@ -5,12 +5,6 @@
 # Fully aligned with plan/constants/ directory requirements
 
 # Stage 1: Builder (use TARGETPLATFORM for cross-platform ARM64 builds with QEMU emulation)
-FROM --platform=$TARGETPLATFORM python:3.11-slim-bookworm AS builder
-
-# Set shell to bash for Linux compatibility (standard Linux syntax)
-SHELL ["/bin/bash", "-c"]
-
-# Set build arguments (aligned with path_plan.md)
 ARG BUILDPLATFORM
 ARG TARGETPLATFORM=linux/arm64
 ARG BUILD_DATE
@@ -20,15 +14,12 @@ ARG GIT_COMMIT=unknown
 ARG PYTHON_VERSION=3.11
 
 # Set environment variables for pip optimization (aligned with path_plan.md)
-ENV DEBIAN_FRONTEND=noninteractive \
-    PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1 \
-    PIP_DEFAULT_TIMEOUT=100 \
-    PIP_PREFER_BINARY=1
+FROM --platform=$TARGETPLATFORM python:3.11-slim-bookworm AS builder
 
-# Install build dependencies with apt cache mount (BuildKit optimization)
+# Set shell to bash for Linux compatibility (standard Linux syntax)
+WORKDIR /build
+
+# Create placeholder files in system directories with actual content (ensures they're baked into image)
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
     (apt-get update || (echo "ERROR: apt-get update failed" && exit 1)) && \
@@ -55,9 +46,16 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     rm -rf /var/lib/apt/lists/* && \
 
 # Set working directory
-WORKDIR /build
+RUN apt-get remove -y rustc cargo && rm -rf /root/.cargo /root/.rustup && \
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
 
-# Create placeholder files in system directories with actual content (ensures they're baked into image)
+COPY infrastructure/service_mesh/requirements.txt ./requirements.txt
+
+# Verify requirements.txt was copied (per Dockerfile-copy-pattern: verify before use)
+RUN --mount=type=cache,target=/root/.cache/pip \
+    python -m pip install --upgrade pip wheel setuptools || (echo "ERROR: pip upgrade failed" && exit 1)
+
+# Copy requirements and install dependencies
 RUN printf "LUCID_SERVICE_MESH_CONTROLLER_RUNTIME_DIRECTORY" > /var/run/.keep && \
     printf "LUCID_SERVICE_MESH_CONTROLLER_LIB_DIRECTORY" > /var/lib/.keep && \
     test -f /var/run/.keep || (echo "ERROR: Failed to create /var/run/.keep" && exit 1) && \
@@ -65,16 +63,6 @@ RUN printf "LUCID_SERVICE_MESH_CONTROLLER_RUNTIME_DIRECTORY" > /var/run/.keep &&
     chown -R 65532:65532 /var/run /var/lib || (echo "ERROR: Failed to chown runtime directories" && exit 1)
 
 # Upgrade pip tooling to latest versions so binary wheels resolve properly
-RUN apt-get remove -y rustc cargo && rm -rf /root/.cargo /root/.rustup && \
-    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
-
-RUN --mount=type=cache,target=/root/.cache/pip \
-    python -m pip install --upgrade pip wheel setuptools || (echo "ERROR: pip upgrade failed" && exit 1)
-
-# Copy requirements and install dependencies
-COPY infrastructure/service_mesh/requirements.txt ./requirements.txt
-
-# Verify requirements.txt was copied (per Dockerfile-copy-pattern: verify before use)
 RUN test -f ./requirements.txt || (echo "ERROR: requirements.txt not found" && exit 1) && \
     echo "✅ requirements.txt verified in builder stage"
 
@@ -144,6 +132,18 @@ RUN test -d /root/.local/lib/python3.11/site-packages || (echo "ERROR: site-pack
     test "$package_count" -gt 0 || (echo "ERROR: No packages found in site-packages" && exit 1) && \
     echo "Package count: $package_count" && \
     PYTHONPATH=/root/.local/lib/python3.11/site-packages:$PYTHONPATH python3 - << 'PY'
+SHELL ["/bin/bash", "-c"]
+
+# Set build arguments (aligned with path_plan.md)
+ENV DEBIAN_FRONTEND=noninteractive \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_DEFAULT_TIMEOUT=100 \
+    PIP_PREFER_BINARY=1
+
+# Install build dependencies with apt cache mount (BuildKit optimization)
 from importlib import import_module
 import sys
 import os
@@ -176,25 +176,88 @@ print("✅ critical packages installed and importable: all directories exist and
 
 # Copy service mesh controller source code to builder stage
 # CRITICAL: Use full path from build context root (build context is .)
-COPY infrastructure/service_mesh/ ./service_mesh/
-COPY scripts/ ./scripts/
-COPY common/ ./common/
-COPY node/ ./node/
-COPY server/ ./server/
-COPY wallet/ ./wallet/
-COPY auth/ ./auth/
-COPY admin/ ./admin/
-COPY blockchain/ ./blockchain/
-COPY sessions/ ./sessions/
-COPY RDP/ ./rdp/
-COPY contracts/ ./contracts/
-COPY payment_systems/ ./payment_systems/
-COPY gui_api_bridge/ ./gui_api_bridge/
-COPY gui_tor_manager/ ./gui_tor_manager/
-COPY gui_hardware_manager/ ./gui_hardware_manager/
-COPY electron_gui/ ./electron_gui/
-COPY 03_api_gateway/ ./03_api_gateway/
+FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12
 
+# Set build arguments for labels
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION=1.0.0
+ARG TARGETPLATFORM=linux/arm64
+
+# Set metadata labels (aligned with essentials.md)
+WORKDIR /app
+
+
+LABEL maintainer="Lucid Development Team" \
+      org.opencontainers.image.title="Lucid Service Mesh Controller" \
+      org.opencontainers.image.description="Distroless service mesh controller for Lucid platform" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.created="${BUILD_DATE}" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.vendor="Lucid" \
+      org.opencontainers.image.licenses="MIT" \
+      com.lucid.service="service_mesh-controller" \
+      com.lucid.type="distroless" \
+      com.lucid.platform="arm64" \
+      com.lucid.security="hardened" \
+      com.lucid.phase="2" \
+      com.lucid.cluster="10-cross-cluster-integration" \
+      com.lucid.expose="8550" \
+      com.lucid.tor.compatible="true" \
+      com.lucid.env.config=".env.foundation"
+# Set working directory
+ENV PYTHONPATH=/app:/usr/local/lib/python3.11/site-packages \
+    PATH=/usr/local/bin:/usr/local/bin:/usr/bin:/bin \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    LUCID_ENV=production \
+    LUCID_PLATFORM=arm64 \
+    LUCID_ARCHITECTURE=linux/arm64
+    SERVICE_NAME=service-mesh-controller \
+    LUCID_SERVICE_MESH_CONTROLLER_PORT=8550 \
+    HTTP_PORT=8088 \
+    LUCID_SERVICE_MESH_CONTROLLER_HOST=0.0.0.0 \
+    SERVICE_DISCOVERY_URL=http://service-mesh-controller:8550 \
+    SERVICE_MESH_ENABLED=true
+    CONSUL_HOST=consul-server \
+    REDIS_URL=redis://lucid-redis:6379/0
+
+COPY --from=builder --chown=65532:65532 /root/.local/lib/python3.11/site-packages /app/usr/local/lib/python3.11/site-packages
+COPY --from=builder --chown=65532:65532 /root/.local/bin /app/usr/local/bin
+
+COPY --from=builder /lib/ld-linux-aarch64.so.1 /app/lib/ld-linux-aarch64.so.1
+COPY --from=builder /lib/aarch64-linux-gnu /app/lib/aarch64-linux-gnu
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /app/etc/ssl/certs/ca-certificates.crt
+COPY --from=builder --chown=65532:65532 /build/entrypoint.py    /app/entrypoint.py
+COPY --from=builder --chown=65532:65532 /build/test/test_basic.py /app/test/test_basic.py
+COPY --from=builder --chown=65532:65532 /build/test/test_imports.py /app/test/test_imports.py
+COPY --from=builder --chown=65532:65532 /build/test/test_controller.py /app/test/test_controller.py
+
+COPY --from=builder --chown=65532:65532 /build/controller/      /app/controller/
+COPY --from=builder --chown=65532:65532 /build/security/        /app/security/
+COPY --from=builder --chown=65532:65532 /build/wallet/          /app/wallet/
+COPY --from=builder --chown=65532:65532 /build/tools/           /app/tools/
+COPY --from=builder --chown=65532:65532 /build/utils/           /app/utils/
+COPY --from=builder --chown=65532:65532 /build/common/          /app/common/
+COPY --from=builder --chown=65532:65532 /build/node/            /app/node/
+COPY --from=builder --chown=65532:65532 /build/rdp/             /app/rdp/
+COPY --from=builder --chown=65532:65532 /build/entrypoint.py    /app/entrypoint.py
+
+COPY --from=builder --chown=65532:65532 /build/admin/   /app/admin/
+COPY --from=builder --chown=65532:65532 /build/auth/ /app/auth/
+COPY --from=builder --chown=65532:65532 /build/api/ /app/api/
+COPY --from=builder --chown=65532:65532 /build/config/ /app/config/
+COPY --from=builder --chown=65532:65532 /build/sessions/ /app/sessions/
+COPY --from=builder --chown=65532:65532 /build/infrastructure/service_mesh/ /app/infrastructure/service_mesh
+COPY --from=builder --chown=65532:65532 /build/service_configs/kubernetes/ /app/infrastructure/containers/services/kubernetes/
+COPY --from=builder --chown=65532:65532 /build/src/gui/ /app/src/gui/
+COPY --from=builder --chown=65532:65532 /build/electron_gui/ /app/electron_gui/
+COPY --from=builder --chown=65532:65532 /build/gui/ /app/gui/
+COPY --from=builder --chown=65532:65532 /build/gui_api_bridge/ /app/gui_api_bridge/
+COPY --from=builder --chown=65532:65532 /build/payment_systems/ /app/payment_systems/
+COPY --from=builder --chown=65532:65532 /build/contracts/ /app/contracts/
+
+# Use nonroot user (distroless default)
 RUN rm -rf configs/environment 2>/dev/null || true
 
 
@@ -245,102 +308,39 @@ RUN test -f /lib/ld-linux-aarch64.so.1 || (echo "ERROR: /lib/ld-linux-aarch64.so
     echo "✅ System libraries verified in builder stage: dynamic linker, arch-specific libs, CA certificates"
 
 # Stage 2: Runtime (Distroless) - use TARGETPLATFORM for final image
-FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12
-
-# Set build arguments for labels
-ARG BUILD_DATE
-ARG VCS_REF
-ARG VERSION=1.0.0
-ARG TARGETPLATFORM=linux/arm64
-
-# Set metadata labels (aligned with essentials.md)
-LABEL maintainer="Lucid Development Team" \
-      org.opencontainers.image.title="Lucid Service Mesh Controller" \
-      org.opencontainers.image.description="Distroless service mesh controller for Lucid platform" \
-      org.opencontainers.image.version="${VERSION}" \
-      org.opencontainers.image.created="${BUILD_DATE}" \
-      org.opencontainers.image.revision="${VCS_REF}" \
-      org.opencontainers.image.vendor="Lucid" \
-      org.opencontainers.image.licenses="MIT" \
-      com.lucid.service="service_mesh-controller" \
-      com.lucid.type="distroless" \
-      com.lucid.platform="arm64" \
-      com.lucid.security="hardened" \
-      com.lucid.phase="2" \
-      com.lucid.cluster="10-cross-cluster-integration" \
-      com.lucid.expose="8550" \
-      com.lucid.tor.compatible="true" \
-      com.lucid.env.config=".env.foundation"
-# Set working directory
-ENV PYTHONPATH=/app:/usr/local/lib/python3.11/site-packages \
-    PATH=/usr/local/bin:/usr/local/bin:/usr/bin:/bin \
-    PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    LUCID_ENV=production \
-    LUCID_PLATFORM=arm64 \
-    LUCID_ARCHITECTURE=linux/arm64
-    SERVICE_NAME=service-mesh-controller \
-    LUCID_SERVICE_MESH_CONTROLLER_PORT=8550 \
-    HTTP_PORT=8088 \
-    LUCID_SERVICE_MESH_CONTROLLER_HOST=0.0.0.0 \
-    SERVICE_DISCOVERY_URL=http://service-mesh-controller:8550 \
-    SERVICE_MESH_ENABLED=true
-    CONSUL_HOST=consul-server \
-    REDIS_URL=redis://lucid-redis:6379/0
-
-WORKDIR /app
-
-
-COPY --from=builder --chown=65532:65532 /root/.local/lib/python3.11/site-packages /app/usr/local/lib/python3.11/site-packages
-COPY --from=builder --chown=65532:65532 /root/.local/bin /app/usr/local/bin
-
-COPY --from=builder /lib/ld-linux-aarch64.so.1 /app/lib/ld-linux-aarch64.so.1
-COPY --from=builder /lib/aarch64-linux-gnu /app/lib/aarch64-linux-gnu
-COPY --from=builder /etc/ssl/certs/ca-certificates.crt /app/etc/ssl/certs/ca-certificates.crt
-COPY --from=builder --chown=65532:65532 /build/entrypoint.py    /app/entrypoint.py
-COPY --from=builder --chown=65532:65532 /build/test/test_basic.py /app/test/test_basic.py
-COPY --from=builder --chown=65532:65532 /build/test/test_imports.py /app/test/test_imports.py
-COPY --from=builder --chown=65532:65532 /build/test/test_controller.py /app/test/test_controller.py
-
-COPY --from=builder --chown=65532:65532 /build/controller/      /app/controller/
-COPY --from=builder --chown=65532:65532 /build/security/        /app/security/
-COPY --from=builder --chown=65532:65532 /build/wallet/          /app/wallet/
-COPY --from=builder --chown=65532:65532 /build/tools/           /app/tools/
-COPY --from=builder --chown=65532:65532 /build/utils/           /app/utils/
-COPY --from=builder --chown=65532:65532 /build/common/          /app/common/
-COPY --from=builder --chown=65532:65532 /build/node/            /app/node/
-COPY --from=builder --chown=65532:65532 /build/rdp/             /app/rdp/
-COPY --from=builder --chown=65532:65532 /build/entrypoint.py    /app/entrypoint.py
-
-COPY --from=builder --chown=65532:65532 /build/admin/   /app/admin/
-COPY --from=builder --chown=65532:65532 /build/auth/ /app/auth/
-COPY --from=builder --chown=65532:65532 /build/api/ /app/api/
-COPY --from=builder --chown=65532:65532 /build/config/ /app/config/
-COPY --from=builder --chown=65532:65532 /build/sessions/ /app/sessions/
-COPY --from=builder --chown=65532:65532 /build/infrastructure/service_mesh/ /app/infrastructure/service_mesh
-COPY --from=builder --chown=65532:65532 /build/service_configs/kubernetes/ /app/service_configs/kubernetes/
-COPY --from=builder --chown=65532:65532 /build/src/gui/ /app/src/gui/
-COPY --from=builder --chown=65532:65532 /build/electron_gui/ /app/electron_gui/
-COPY --from=builder --chown=65532:65532 /build/gui/ /app/gui/
-COPY --from=builder --chown=65532:65532 /build/gui_api_bridge/ /app/gui_api_bridge/
-COPY --from=builder --chown=65532:65532 /build/payment_systems/ /app/payment_systems/
-COPY --from=builder --chown=65532:65532 /build/contracts/ /app/contracts/
-
-# Use nonroot user (distroless default)
-USER 65532:65532
 RUN ["/app/usr/bin/python3.11", "-c", "import os, importlib.util, sys; site_packages = '/app/usr/local/lib/python3.11/site-packages'; sys.path.insert(0, site_packages); assert os.path.exists('/app/controller'), 'ERROR: /app/controller missing'; assert os.path.isdir('/app/controller'), 'ERROR: /app/controller is not a directory'; assert os.path.exists('/app/sidecar'), 'ERROR: /app/sidecar missing'; assert os.path.exists('/app/discovery'), 'ERROR: /app/discovery missing'; assert os.path.exists('/app/communication'), 'ERROR: /app/communication missing'; assert os.path.exists('/app/security'), 'ERROR: /app/security missing'; assert os.path.exists('/app/entrypoint.py'), 'ERROR: /app/entrypoint.py missing'; assert os.path.isfile('/app/entrypoint.py'), 'ERROR: /app/entrypoint.py is not a file'; assert os.path.exists('/app/controller/.lucid-source-marker'), 'ERROR: controller marker missing'; assert os.path.exists('/app/sidecar/.lucid-sidecar-marker'), 'ERROR: sidecar marker missing'; assert os.path.exists('/app/discovery/.lucid-discovery-marker'), 'ERROR: discovery marker missing'; assert os.path.exists('/app/communication/.lucid-communication-marker'), 'ERROR: communication marker missing'; assert os.path.exists('/app/security/.lucid-security-marker'), 'ERROR: security marker missing'; spec = importlib.util.find_spec('controller.main', package=None); assert spec is not None, 'ERROR: controller.main module not found'; print('✅ controller package and entrypoint verified in runtime stage: all directories, markers, and module imports verified')"]
 
 # Health check (aligned with HTTP endpoint on port 8088)
 # CRITICAL: Uses HTTP endpoint /health for Docker healthcheck
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD ["/usr/bin/python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8088/health').read(); exit(0)"]
-
-# Expose ports (aligned with essentials.md and Network_conig_requirements.md: 8500,8501,8502,8600,8088)
 EXPOSE 8550 8551 8552 8553 8088
 
 # Start application using entrypoint script (more reliable than inline CMD)
 # CRITICAL: Use ENTRYPOINT + CMD pattern (same as auth/Dockerfile) for distroless compatibility
 # CRITICAL: Entrypoint script handles Python path setup and yaml verification
 # CRITICAL: PYTHONPATH is already set in ENV (line 287), entrypoint ensures sys.path is correct
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD ["/usr/bin/python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8088/health').read(); exit(0)"]
+
+# Expose ports (aligned with essentials.md and Network_conig_requirements.md: 8500,8501,8502,8600,8088)
+USER 65532:65532
 ENTRYPOINT ["/app/usr/bin/tini", "--"]
 CMD ["/app/usr/bin/python3.11", "-m", "service_mesh.controller.main"]
+COPY infrastructure/service_mesh/ ./service_mesh/
+COPY scripts/ ./scripts/
+COPY common/ ./common/
+COPY node/ ./node/
+COPY server/ ./server/
+COPY wallet/ ./wallet/
+COPY auth/ ./auth/
+COPY admin/ ./admin/
+COPY blockchain/ ./blockchain/
+COPY sessions/ ./sessions/
+COPY RDP/ ./rdp/
+COPY contracts/ ./contracts/
+COPY payment_systems/ ./payment_systems/
+COPY gui_api_bridge/ ./gui_api_bridge/
+COPY gui_tor_manager/ ./gui_tor_manager/
+COPY gui_hardware_manager/ ./gui_hardware_manager/
+COPY electron_gui/ ./electron_gui/
+COPY 03_api_gateway/ ./03_api_gateway/
+

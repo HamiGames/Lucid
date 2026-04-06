@@ -16,8 +16,8 @@
 #
 # Application: uvicorn xrdp_integration:app (RDP/server/xrdp_integration.py); PYTHONPATH includes /app/rdp/server.
 
-ARG BUILD_DATE
-ARG VCS_REF
+ARG BUILD_DATE=
+ARG VCS_REF=
 ARG VERSION=1.0.0
 ARG TARGETPLATFORM=linux/arm64
 ARG BUILDPLATFORM=linux/amd64
@@ -28,7 +28,7 @@ ARG PYTHON_VERSION=3.11
 ############################
 ARG BUILDPLATFORM
 ARG TARGETPLATFORM
-ARG PYTHON_VERSION
+ARG PYTHON_VERSION=3.12-slim
 
 FROM --platform=$TARGETPLATFORM python:3.11-slim-bookworm AS builder
 
@@ -94,13 +94,12 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 # LUCID_X_FILES_SKELETON_BEGIN
 # Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
 RUN set -eux; \
-    mkdir -p '.' './common' './configs' './rdp' './scripts' './service_configs' './common/__pycache__' './common/governance' './common/security' './common/server-tools' './common/templates' './common/tor' './configs/.ssh' './configs/container' './configs/database' './configs/docker' './configs/env' './configs/environment' './configs/integration' './configs/kubernetes' './configs/logging' './configs/pi' './configs/secrets' './configs/security' './configs/tor' './rdp/__pycache__' './rdp/client' './rdp/common' './rdp/config' './rdp/database' './rdp/monitoring' './rdp/protocol' './rdp/recorder' './rdp/resource_monitor' './rdp/scripts' './rdp/security' './rdp/server' './rdp/server_manager' './rdp/session_controller' './rdp/xrdp' './scripts/__pycache__' './scripts/auth_sm_realignment' './scripts/build' './scripts/compliance' './scripts/config' './scripts/contracts' './scripts/database' './scripts/deployment' './scripts/devcontainer' './scripts/docs' './scripts/foundation' './scripts/gui' './scripts/gui_auth_realignment' './scripts/hardware' './scripts/integration' './scripts/lib' './scripts/load' './scripts/logging' './scripts/maintenance' './scripts/migration' './scripts/monitoring' './scripts/network' './scripts/re-build' './scripts/registry' './scripts/secrets' './scripts/security' './scripts/services' './scripts/testing' './scripts/validation' './scripts/verification' './service_configs/distroless' './service_configs/logging' './service_configs/multi-stage' './service_configs/node' './service_configs/payment_services' './service_configs/rdp' './service_configs/security' './service_configs/service_mesh' './service_configs/services' './service_configs/sessions' './service_configs/tor' './service_configs/x_lucid_cluster_calibration' './common/governance/__pycache__' './common/security/__pycache__' './common/server-tools/__pycache__' './common/tor/__pycache__' './configs/container/admin' './configs/container/auth' './configs/container/base' './configs/container/blockchain' './configs/container/database' './configs/container/electron_gui' './configs/container/gui' './configs/container/node' './configs/container/payment_systems' './configs/container/rdp' './configs/container/server' './configs/container/sessions' './configs/container/storage' './configs/container/tor' './configs/database/elasticsearch' './configs/database/redis' './configs/docker/distroless' './configs/docker/docs' './configs/docker/multi-stage' './configs/pi/ssh' './rdp/client/__pycache__' './rdp/common/__pycache__' './rdp/common/governance' './rdp/monitoring/grafana' './rdp/protocol/__pycache__' './rdp/recorder/__pycache__' './rdp/resource_monitor/__pycache__' './rdp/resource_monitor/config' './rdp/security/__pycache__' './rdp/server/__pycache__' './rdp/server_manager/__pycache__' './rdp/server_manager/config' './rdp/session_controller/__pycache__' './rdp/session_controller/config' './rdp/session_controller/integration' './rdp/xrdp/__pycache__' './rdp/xrdp/config' './scripts/auth_sm_realignment/.cache' './scripts/auth_sm_realignment/lib' './scripts/build/__pycache__' './scripts/build/components' './scripts/build/core' './scripts/build/distroless' './scripts/build/utils' './scripts/compliance/distroless' './scripts/compliance/general' './scripts/deployment/devcontainer' './scripts/deployment/distroless' './scripts/deployment/pi' './scripts/deployment/utils' './scripts/gui_auth_realignment/.cache' './scripts/gui_auth_realignment/lib' './scripts/maintenance/cleanup' './scripts/maintenance/optimization' './scripts/maintenance/recovery' './scripts/network/diagnostics' './scripts/network/security' './scripts/network/setup' './scripts/testing/integration' './scripts/testing/unit' './scripts/testing/utils' './scripts/validation/__pycache__' './scripts/verification/__pycache__' './service_configs/x_lucid_cluster_calibration/__pycache__' './rdp/monitoring/grafana/dashboards' './rdp/monitoring/grafana/datasources' './rdp/session_controller/integration/__pycache__'; \
+    mkdir -p '.' './common' './configs' './rdp' './service_configs' './common/__pycache__' './common/governance' './common/security' './common/server-tools' './common/templates' './common/tor' './configs/.ssh' './configs/container' './configs/database' './configs/docker' './configs/env' './configs/environment' './configs/integration' './configs/kubernetes' './configs/logging' './configs/pi' './configs/secrets' './configs/security' './configs/tor' './rdp/__pycache__' './rdp/client' './rdp/common' './rdp/config' './rdp/database' './rdp/monitoring' './rdp/protocol' './rdp/recorder' './rdp/resource_monitor' './rdp/scripts' './rdp/security' './rdp/server' './rdp/server_manager' './rdp/session_controller' './rdp/xrdp' './tests/validation' './common/governance/__pycache__' './common/security/__pycache__' './common/server-tools/__pycache__' './common/tor/__pycache__' './configs/container/admin' './configs/container/auth' './configs/container/base' './configs/container/blockchain' './configs/container/database' './configs/container/electron_gui' './configs/container/gui' './configs/container/node' './configs/container/payment_systems' './configs/container/rdp' './configs/container/server' './configs/container/sessions' './configs/container/storage' './configs/container/tor' './configs/database/elasticsearch' './configs/database/redis' './configs/docker/distroless' './configs/docker/docs' './configs/docker/multi-stage' './configs/pi/ssh' './rdp/client/__pycache__' './rdp/common/__pycache__' './rdp/common/governance' './rdp/monitoring/grafana' './rdp/protocol/__pycache__' './rdp/recorder/__pycache__' './rdp/resource_monitor/__pycache__' './rdp/resource_monitor/config' './rdp/security/__pycache__' './rdp/server/__pycache__' './rdp/server_manager/__pycache__' './rdp/server_manager/config' './rdp/session_controller/__pycache__' './rdp/session_controller/config' './rdp/session_controller/integration' './rdp/xrdp/__pycache__' './rdp/xrdp/config' './rdp/monitoring/grafana/dashboards' './rdp/monitoring/grafana/datasources' './rdp/session_controller/integration/__pycache__'; \
     for d in \
       '.' \
       './common' \
       './configs' \
       './rdp' \
-      './scripts' \
       './service_configs' \
       './common/__pycache__' \
       './common/governance' \
@@ -136,48 +135,7 @@ RUN set -eux; \
       './rdp/server_manager' \
       './rdp/session_controller' \
       './rdp/xrdp' \
-      './scripts/__pycache__' \
-      './scripts/auth_sm_realignment' \
-      './scripts/build' \
-      './scripts/compliance' \
-      './scripts/config' \
-      './scripts/contracts' \
-      './scripts/database' \
-      './scripts/deployment' \
-      './scripts/devcontainer' \
-      './scripts/docs' \
-      './scripts/foundation' \
-      './scripts/gui' \
-      './scripts/gui_auth_realignment' \
-      './scripts/hardware' \
-      './scripts/integration' \
-      './scripts/lib' \
-      './scripts/load' \
-      './scripts/logging' \
-      './scripts/maintenance' \
-      './scripts/migration' \
-      './scripts/monitoring' \
-      './scripts/network' \
-      './scripts/re-build' \
-      './scripts/registry' \
-      './scripts/secrets' \
-      './scripts/security' \
-      './scripts/services' \
-      './scripts/testing' \
-      './scripts/validation' \
-      './scripts/verification' \
-      './service_configs/distroless' \
-      './service_configs/logging' \
-      './service_configs/multi-stage' \
-      './service_configs/node' \
-      './service_configs/payment_services' \
-      './service_configs/rdp' \
-      './service_configs/security' \
-      './service_configs/service_mesh' \
-      './service_configs/services' \
-      './service_configs/sessions' \
-      './service_configs/tor' \
-      './service_configs/x_lucid_cluster_calibration' \
+      './tests/validation' \
       './common/governance/__pycache__' \
       './common/security/__pycache__' \
       './common/server-tools/__pycache__' \
@@ -219,33 +177,6 @@ RUN set -eux; \
       './rdp/session_controller/integration' \
       './rdp/xrdp/__pycache__' \
       './rdp/xrdp/config' \
-      './scripts/auth_sm_realignment/.cache' \
-      './scripts/auth_sm_realignment/lib' \
-      './scripts/build/__pycache__' \
-      './scripts/build/components' \
-      './scripts/build/core' \
-      './scripts/build/distroless' \
-      './scripts/build/utils' \
-      './scripts/compliance/distroless' \
-      './scripts/compliance/general' \
-      './scripts/deployment/devcontainer' \
-      './scripts/deployment/distroless' \
-      './scripts/deployment/pi' \
-      './scripts/deployment/utils' \
-      './scripts/gui_auth_realignment/.cache' \
-      './scripts/gui_auth_realignment/lib' \
-      './scripts/maintenance/cleanup' \
-      './scripts/maintenance/optimization' \
-      './scripts/maintenance/recovery' \
-      './scripts/network/diagnostics' \
-      './scripts/network/security' \
-      './scripts/network/setup' \
-      './scripts/testing/integration' \
-      './scripts/testing/unit' \
-      './scripts/testing/utils' \
-      './scripts/validation/__pycache__' \
-      './scripts/verification/__pycache__' \
-      './service_configs/x_lucid_cluster_calibration/__pycache__' \
       './rdp/monitoring/grafana/dashboards' \
       './rdp/monitoring/grafana/datasources' \
       './rdp/session_controller/integration/__pycache__' \
@@ -255,25 +186,45 @@ RUN set -eux; \
     done
 # LUCID_X_FILES_SKELETON_END
 # LUCID_ALIGNMENT_MAT_COPY_DIRECTORIES_BEGIN
-# alignment-mat lucid-rdp-server-manager_manifest.json: compose_service='lucid-rdp-server-manager' — manifest py/yml/yaml/json → builder COPY (#10).
-COPY common/ ./common/
-COPY configs/container/rdp/ ./configs/container/rdp/
-COPY configs/docker/ ./configs/docker/
-COPY service_configs/ ./service_configs/
-COPY infrastructure/containers/ ./infrastructure/containers/
+# alignment-mat lucid-rdp-server-manager_manifest.json: compose_service='lucid-rdp-server-manager' — explicit manifest paths → 32 builder COPY line(s) (dockerfile_layout_structure.json section #10 COPY_DIRECTORIES).
+COPY common/__init__.py ./common/__init__.py
+COPY common/contact_profile_env.py ./common/contact_profile_env.py
+COPY common/governance/__init__.py ./common/governance/__init__.py
+COPY common/governance/lucid_governor.py ./common/governance/lucid_governor.py
+COPY common/governance/param_registry.py ./common/governance/param_registry.py
+COPY common/governance/timelock.py ./common/governance/timelock.py
+COPY common/load_host_config.py ./common/load_host_config.py
+COPY common/security/__init__.py ./common/security/__init__.py
+COPY common/security/input_controller.py ./common/security/input_controller.py
+COPY common/security/policy_validator.py ./common/security/policy_validator.py
+COPY common/security/privacy_shield.py ./common/security/privacy_shield.py
+COPY common/security/session_validator.py ./common/security/session_validator.py
+COPY common/security/trust_nothing_engine.py ./common/security/trust_nothing_engine.py
+COPY common/server-tools/__init__.py ./common/server-tools/__init__.py
+COPY common/tor/__init__.py ./common/tor/__init__.py
+COPY common/tor/onion_service.py ./common/tor/onion_service.py
+COPY common/tor/socks_proxy.py ./common/tor/socks_proxy.py
+COPY common/tor/tor_manager.py ./common/tor/tor_manager.py
+COPY configs/container/rdp/docker-compose.rdp-system.yml ./configs/container/rdp/docker-compose.rdp-system.yml
+COPY configs/docker/docker-compose.all.yml ./configs/docker/docker-compose.all.yml
+COPY configs/docker/docker-compose.application.yml ./configs/docker/docker-compose.application.yml
+COPY service_configs/rdp-services.yml ./service_configs/rdp-services.yml
+COPY infrastructure/containers/config-listings.json ./infrastructure/containers/config-listings.json
+COPY infrastructure/containers/host-config.yml ./infrastructure/containers/host-config.yml
+COPY infrastructure/containers/rdp/docker-compose.rdp-system.yml ./infrastructure/containers/rdp/docker-compose.rdp-system.yml
+COPY infrastructure/containers/services/middle-ware/master-endpoint.yml ./infrastructure/containers/services/middle-ware/master-endpoint.yml
+COPY infrastructure/containers/services/rdp/rdp-services.yml ./infrastructure/containers/services/rdp/rdp-services.yml
+COPY infrastructure/containers/services/server/lucid-rdp-server-manager.yml ./infrastructure/containers/services/server/lucid-rdp-server-manager.yml
+COPY infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.yml ./infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.yml
+COPY infrastructure/containers/user/docker-compose.user-services.yml ./infrastructure/containers/user/docker-compose.user-services.yml
+COPY RDP/resource_monitor/config.py ./RDP/resource_monitor/config.py
+COPY tests/validation/test_all_containers_running.py ./tests/validation/test_all_containers_running.py
 # LUCID_ALIGNMENT_MAT_COPY_DIRECTORIES_END
 # LUCID_X_FILES_SKELETON_BEGIN
 # Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
 
-RUN rm -rf configs/environment 2>/dev/null || true
+COPY rdp/docker-compose.rdp-system.yml /build/configs/docker-compose.rdp-system.yml
 
-
-# Compose mirrors — RDP system + server plane images (cross-plane interaction)
-COPY infrastructure/containers/rdp/docker-compose.rdp-system.yml /build/configs/docker-compose.rdp-system.yml
-COPY infrastructure/containers/server/docker-compose.server-external.yml /build/configs/docker-compose.server-external.yml
-COPY infrastructure/containers/server/docker-compose.server-images.yml /build/configs/docker-compose.server-images.yml
-
-COPY scripts/ ./scripts/
 
 COPY RDP/ /build/rdp/
 
@@ -313,6 +264,10 @@ PY
 ############################
 # Stage 2 – Runtime (Distroless)
 ############################
+RUN rm -rf configs/environment 2>/dev/null || true
+
+
+# Compose mirrors — RDP system + server plane images (cross-plane interaction)
 RUN printf "LUCID_RDP_SERVER_MANAGER_RUNTIME_DIRECTORY" > /var/run/.keep && \
     touch /var/run/.keep && \
     printf "LUCID_RDP_SERVER_MANAGER_LIB_DIRECTORY" > /var/lib/.keep && \
@@ -353,8 +308,8 @@ RUN test -f /build/rdp/server/xrdp_integration.py && \
 
 FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12:latest
 
-ARG BUILD_DATE
-ARG VCS_REF
+ARG BUILD_DATE=
+ARG VCS_REF=
 ARG VERSION=1.0.0
 # Lucid Tor egress / network isolation (PUBLIC_TOR_IP: ../../configs/environment/ ; compose: lucid-tor-egress-network)
 ARG PUBLIC_TOR_IP=109.70.100.1
@@ -421,8 +376,8 @@ ENV PUBLIC_TOR_IP="${PUBLIC_TOR_IP}" \
 COPY --from=builder --chown=65532:65532 /build/common/ /app/common/
 COPY --from=builder --chown=65532:65532 /build/configs/ /app/configs/
 COPY --from=builder --chown=65532:65532 /build/rdp/ /app/rdp/
-COPY --from=builder --chown=65532:65532 /build/scripts/ /app/scripts/
 COPY --from=builder --chown=65532:65532 /build/service_configs/ /app/service_configs/
+COPY --from=builder --chown=65532:65532 /build/tests/validation/ /app/tests/validation/
 # LUCID_RUNTIME_COPY_FROM_BUILD_END
 
 # LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
@@ -432,16 +387,18 @@ COPY --from=builder --chown=65532:65532 /usr/lib/*/libssl.so* /app/usr/lib/
 COPY --from=builder --chown=65532:65532 /usr/lib/*/ossl-modules/ /app/usr/lib/
 COPY --from=builder --chown=65532:65532 /usr/lib/*/libcurl.so* /app/usr/lib/
 COPY --from=builder --chown=65532:65532 /bin/ /app/bin/
+COPY --from=builder --chown=65532:65532 /dev/null/ /app/dev/null/
 COPY --from=builder --chown=65532:65532 /etc/ssl/ /app/etc/ssl/
 COPY --from=builder --chown=65532:65532 /usr/ /app/usr/
 COPY --from=builder --chown=65532:65532 /var/lib/ /app/var/lib/
 COPY --from=builder --chown=65532:65532 /var/run/ /app/var/run/
 # LUCID_RUNTIME_COPY_FROM_BUILDER_APT_END
+
+
 # LUCID_RUNTIME_COPY_FROM_BUILD_END
-
-
+# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
+# Generated: apt + RUN scaffold (mkdir/printf/touch/chown) -> FHS (not ./ or /build/; lib_search_and_inject.py).
 COPY --from=builder --chown=65532:65532 /build/wheels/ /app/wheels/
-COPY --from=builder --chown=65532:65532 /build/tmp/verify_runtime.py /app/tmp/verify_runtime.py
 
 RUN ["/app/usr/bin/python3.11", "-c", \
     "import os, sys; \

@@ -1,631 +1,329 @@
 # syntax=docker/dockerfile:1.5
-# LUCID TOR PROXY — pickme/lucid-tor-proxy:latest-arm64 (SPEC-4 / distroless)
-# Build context: repository root (aligned with infrastructure/containers/tor/Dockerfile tunnel-tools + infrastructure/containers/user/Dockerfile).
+# File: infrastructure/containers/tor/Dockerfile.tor-proxy-02
 #
-# Registry: infrastructure/containers/host-config.yml → tor_socks (service_name tor-socks, port 9050, http_path template).
-# Runtime layout: infrastructure/containers/services/container-runtime-layout.yml → lucid_services_config_root: /app/service_configs
-# Tor/tunnel shell alignment: infrastructure/containers/services/tor/tor-operational-layout.yml (packaged under /app/service_configs/tor/)
-# Canonical host registry file in-image: /app/configs/host-config.yml (x-lucid-file-path in host-config.yml); mirror at /app/configs/host-config.yml.
-
-ARG BUILD_DATE
-ARG VCS_REF
+# Distroless Tor proxy: runtime root is /app (WORKDIR /app). Canonical source tree:
+#   /app/02_network_security/tor/**     — full repo tor directory (paths match script headers)
+#   /app/run/lucid/tor/**              — operational torrc, logs, bin helpers
+#   /app/run/lucid/tor/scripts/**      — all 02_network_security/tor/scripts/*.sh
+#   /app/scripts/lib/**                — repo scripts/lib support (host-config / x-files helpers)
+#   /app/opt/share/tor                 — GeoIP (+ tor-geoipdb), referenced by torrc
+#
+# Final base: Google distroless Debian 12 userspace is published as:
+#   gcr.io/distroless/base-debian12:latest
+# (There is no gcr.io/distroless/debian-12 image; base-debian12 is Bookworm / Debian 12.)
+#
+# Build (repository root = context):
+#   docker build -f infrastructure/containers/tor/Dockerfile.tor-proxy-02 -t lucid/tor-proxy-02:latest .
+#
+ARG BUILD_DATE=
+ARG VCS_REF=
 ARG VERSION=2.0.0
 ARG TARGETPLATFORM=linux/arm64
 ARG BUILDPLATFORM=linux/amd64
-
-# =============================================================================
-# STAGE 1: Tor System Builder (Debian 12 with full Tor installation)
-# =============================================================================
-ARG BUILDPLATFORM
-ARG TARGETPLATFORM
-
-FROM --platform=$TARGETPLATFORM debian:12-slim AS tor-builder
-
-WORKDIR /build
-
-RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
-    --mount=type=cache,target=/var/lib/apt,sharing=locked \
-    rm -rf /var/lib/apt/lists/* && \
-    apt-get update && apt-get install -y --no-install-recommends \
-      consul \
-      build-essential \
-      tor \
-      tor-geoipdb \
-      obfs4proxy \
-      tini \
-      bash \
-      busybox \
-      coreutils \
-      netcat-openbsd \
-      xxd \
-      python3.11 \
-      python3.11-dev \
-      python3.11-pip \
-      python3.11-setuptools \
-      python3.11-venv \
-      gosu \
-      ca-certificates \
-      dnsutils \
-      curl \
-      jq \
-      adduser \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* 
-# LUCID_X_FILES_SKELETON_BEGIN
-# Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
-RUN set -eux; \
-    mkdir -p '.' './02_network_security' './03_api_gateway' './admin' './common' './configs' './database' './node' './scripts' './server' './service_configs' './service_mesh' './sessions' './storage' './02_network_security/__pycache__' './02_network_security/docs' './02_network_security/tor' './02_network_security/tunnels' './03_api_gateway/__pycache__' './03_api_gateway/api' './03_api_gateway/certs' './03_api_gateway/config' './03_api_gateway/database' './03_api_gateway/docs' './03_api_gateway/endpoints' './03_api_gateway/gateway' './03_api_gateway/legacy' './03_api_gateway/logs' './03_api_gateway/middleware' './03_api_gateway/models' './03_api_gateway/repositories' './03_api_gateway/scripts' './03_api_gateway/services' './03_api_gateway/utils' './admin/__pycache__' './admin/admin_ui' './admin/api' './admin/audit' './admin/config' './admin/emergency' './admin/governance' './admin/key_rotation' './admin/over_lord' './admin/rbac' './admin/services' './admin/system' './admin/ui' './admin/utils' './common/__pycache__' './common/governance' './common/security' './common/server-tools' './common/templates' './common/tor' './configs/.ssh' './configs/compose' './configs/container' './configs/database' './configs/docker' './configs/env' './configs/environment' './configs/gui-alignment' './configs/integration' './configs/kubernetes' './configs/logging' './configs/pi' './configs/secrets' './configs/security' './configs/tor' './database/__pycache__' './database/admin' './database/api' './database/config' './database/elasticsearch' './database/models' './database/mongodb' './database/redis' './database/repositories' './database/schema' './database/schemas' './database/services' './node/__pycache__' './node/api' './node/config' './node/consensus' './node/dht_crdt' './node/economy' './node/flags' './node/governance' './node/models' './node/over_lord' './node/payouts' './node/pools' './node/poot' './node/registration' './node/repositories' './node/resources' './node/service_configs' './node/shards' './node/sync' './node/tor' './node/validation' './node/worker' './scripts/__pycache__' './scripts/auth_sm_realignment' './scripts/build' './scripts/compliance' './scripts/config' './scripts/contracts' './scripts/database' './scripts/deployment' './scripts/devcontainer' './scripts/docs' './scripts/foundation' './scripts/gui' './scripts/gui_auth_realignment' './scripts/hardware' './scripts/integration' './scripts/lib' './scripts/load' './scripts/logging' './scripts/maintenance' './scripts/migration' './scripts/monitoring' './scripts/network' './scripts/re-build' './scripts/registry' './scripts/secrets' './scripts/security' './scripts/services' './scripts/testing' './scripts/validation' './scripts/verification' './server/__pycache__' './service_configs/distroless' './service_configs/docker' './service_configs/logging' './service_configs/multi-stage' './service_configs/node' './service_configs/payment_services' './service_configs/rdp' './service_configs/security' './service_configs/service_mesh' './service_configs/services' './service_configs/sessions' './service_configs/tor' './service_configs/x_lucid_cluster_calibration' './service_mesh/__pycache__' './service_mesh/communication' './service_mesh/config' './service_mesh/controller' './service_mesh/discovery' './service_mesh/docs' './service_mesh/security' './service_mesh/sidecar' './sessions/__pycache__' './sessions/api' './sessions/config' './sessions/core' './sessions/encryption' './sessions/integration' './sessions/pipeline' './sessions/processor' './sessions/recorder' './sessions/security' './sessions/session_systems_control' './sessions/storage' './storage/__pycache__' './storage/backups' './storage/cache' './storage/data' './02_network_security/tor/scripts' './02_network_security/tunnels/__pycache__' './02_network_security/tunnels/config' './02_network_security/tunnels/scripts' './03_api_gateway/api/__pycache__' './03_api_gateway/api/app' './03_api_gateway/api/lucid_api.egg-info' './03_api_gateway/api/tests' './03_api_gateway/config/__pycache__' './03_api_gateway/database/__pycache__' './03_api_gateway/docs/swagger' './03_api_gateway/endpoints/__pycache__' './03_api_gateway/legacy/api' './03_api_gateway/legacy/gateway' './03_api_gateway/middleware/__pycache__' './03_api_gateway/models/__pycache__' './03_api_gateway/repositories/__pycache__' './03_api_gateway/services/__pycache__' './03_api_gateway/utils/__pycache__' './admin/admin_ui/__pycache__' './admin/api/__pycache__' './admin/audit/__pycache__' './admin/config/__pycache__' './admin/emergency/__pycache__' './admin/governance/__pycache__' './admin/key_rotation/__pycache__' './admin/rbac/__pycache__' './admin/services/__pycache__' './admin/system/__pycache__' './admin/ui/__pycache__' './admin/ui/static' './admin/ui/templates' './admin/utils/__pycache__' './common/governance/__pycache__' './common/security/__pycache__' './common/server-tools/__pycache__' './common/tor/__pycache__' './configs/container/admin' './configs/container/auth' './configs/container/base' './configs/container/blockchain' './configs/container/database' './configs/container/electron_gui' './configs/container/gui' './configs/container/node' './configs/container/payment_systems' './configs/container/rdp' './configs/container/server' './configs/container/sessions' './configs/container/storage' './configs/container/tor' './configs/database/elasticsearch' './configs/database/redis' './configs/docker/distroless' './configs/docker/docs' './configs/docker/multi-stage' './configs/pi/ssh' './database/admin/__pycache__' './database/api/__pycache__' './database/config/__pycache__' './database/elasticsearch/__pycache__' './database/models/__pycache__' './database/mongodb/__pycache__' './database/redis/__pycache__' './database/repositories/__pycache__' './database/schema/__pycache__' './database/services/__pycache__' './database/services/backup' './database/services/migration' './database/services/monitoring' './node/api/__pycache__' './node/consensus/__pycache__' './node/dht_crdt/__pycache__' './node/economy/__pycache__' './node/flags/__pycache__' './node/governance/__pycache__' './node/models/__pycache__' './node/payouts/__pycache__' './node/pools/__pycache__' './node/poot/__pycache__' './node/registration/__pycache__' './node/repositories/__pycache__' './node/resources/__pycache__' './node/service_configs/x_lucid_cluster_calibration' './node/shards/__pycache__' './node/sync/__pycache__' './node/tor/__pycache__' './node/validation/__pycache__' './node/worker/__pycache__' './scripts/auth_sm_realignment/.cache' './scripts/auth_sm_realignment/lib' './scripts/build/__pycache__' './scripts/build/components' './scripts/build/core' './scripts/build/distroless' './scripts/build/utils' './scripts/compliance/distroless' './scripts/compliance/general' './scripts/deployment/devcontainer' './scripts/deployment/distroless' './scripts/deployment/pi' './scripts/deployment/utils' './scripts/gui_auth_realignment/.cache' './scripts/gui_auth_realignment/lib' './scripts/maintenance/cleanup' './scripts/maintenance/optimization' './scripts/maintenance/recovery' './scripts/network/diagnostics' './scripts/network/security' './scripts/network/setup' './scripts/testing/integration' './scripts/testing/unit' './scripts/testing/utils' './scripts/validation/__pycache__' './scripts/verification/__pycache__' './service_configs/docker/distroless' './service_configs/docker/docs' './service_configs/docker/multi-stage' './service_configs/x_lucid_cluster_calibration/__pycache__' './service_mesh/communication/__pycache__' './service_mesh/config/policies' './service_mesh/config/services' './service_mesh/controller/__pycache__' './service_mesh/discovery/__pycache__' './service_mesh/security/__pycache__' './service_mesh/sidecar/envoy' './service_mesh/sidecar/proxy' './sessions/api/__pycache__' './sessions/api/config' './sessions/api/integration' './sessions/core/__pycache__' './sessions/encryption/__pycache__' './sessions/integration/__pycache__' './sessions/pipeline/__pycache__' './sessions/pipeline/integration' './sessions/processor/__pycache__' './sessions/processor/config' './sessions/processor/integration' './sessions/recorder/__pycache__' './sessions/recorder/config' './sessions/recorder/integration' './sessions/security/__pycache__' './sessions/session_systems_control/__pycache__' './sessions/storage/__pycache__' './sessions/storage/config' './storage/backups/configs' './storage/backups/database' './storage/backups/user-data' './storage/cache/build' './storage/cache/docker' './storage/cache/temp' './storage/data/blockchain' './storage/data/logs' './storage/data/sessions' './03_api_gateway/api/app/__pycache__' './03_api_gateway/api/app/database' './03_api_gateway/api/app/db' './03_api_gateway/api/app/middleware' './03_api_gateway/api/app/models' './03_api_gateway/api/app/routers' './03_api_gateway/api/app/routes' './03_api_gateway/api/app/schemas' './03_api_gateway/api/app/scripts' './03_api_gateway/api/app/security' './03_api_gateway/api/app/services' './03_api_gateway/api/app/utils' './03_api_gateway/api/tests/__pycache__' './03_api_gateway/api/tests/integration' './03_api_gateway/docs/swagger/dist' './admin/ui/static/css' './admin/ui/static/js' './database/services/backup/__pycache__' './database/services/migration/__pycache__' './database/services/monitoring/__pycache__' './service_mesh/sidecar/envoy/__pycache__' './service_mesh/sidecar/envoy/config' './service_mesh/sidecar/proxy/__pycache__' './sessions/api/integration/__pycache__' './sessions/pipeline/integration/__pycache__' './sessions/processor/integration/__pycache__' './sessions/recorder/integration/__pycache__' './03_api_gateway/api/app/database/__pycache__' './03_api_gateway/api/app/db/__pycache__' './03_api_gateway/api/app/db/models' './03_api_gateway/api/app/middleware/__pycache__' './03_api_gateway/api/app/models/__pycache__' './03_api_gateway/api/app/routers/__pycache__' './03_api_gateway/api/app/routes/__pycache__' './03_api_gateway/api/app/schemas/__pycache__' './03_api_gateway/api/app/scripts/__pycache__' './03_api_gateway/api/app/security/__pycache__' './03_api_gateway/api/app/services/__pycache__' './03_api_gateway/api/app/utils/__pycache__' './03_api_gateway/api/tests/integration/__pycache__'; \
-    for d in \
-      '.' \
-      './02_network_security' \
-      './03_api_gateway' \
-      './admin' \
-      './common' \
-      './configs' \
-      './database' \
-      './node' \
-      './scripts' \
-      './server' \
-      './service_configs' \
-      './service_mesh' \
-      './sessions' \
-      './storage' \
-      './02_network_security/__pycache__' \
-      './02_network_security/docs' \
-      './02_network_security/tor' \
-      './02_network_security/tunnels' \
-      './03_api_gateway/__pycache__' \
-      './03_api_gateway/api' \
-      './03_api_gateway/certs' \
-      './03_api_gateway/config' \
-      './03_api_gateway/database' \
-      './03_api_gateway/docs' \
-      './03_api_gateway/endpoints' \
-      './03_api_gateway/gateway' \
-      './03_api_gateway/legacy' \
-      './03_api_gateway/logs' \
-      './03_api_gateway/middleware' \
-      './03_api_gateway/models' \
-      './03_api_gateway/repositories' \
-      './03_api_gateway/scripts' \
-      './03_api_gateway/services' \
-      './03_api_gateway/utils' \
-      './admin/__pycache__' \
-      './admin/admin_ui' \
-      './admin/api' \
-      './admin/audit' \
-      './admin/config' \
-      './admin/emergency' \
-      './admin/governance' \
-      './admin/key_rotation' \
-      './admin/over_lord' \
-      './admin/rbac' \
-      './admin/services' \
-      './admin/system' \
-      './admin/ui' \
-      './admin/utils' \
-      './common/__pycache__' \
-      './common/governance' \
-      './common/security' \
-      './common/server-tools' \
-      './common/templates' \
-      './common/tor' \
-      './configs/.ssh' \
-      './configs/compose' \
-      './configs/container' \
-      './configs/database' \
-      './configs/docker' \
-      './configs/env' \
-      './configs/environment' \
-      './configs/gui-alignment' \
-      './configs/integration' \
-      './configs/kubernetes' \
-      './configs/logging' \
-      './configs/pi' \
-      './configs/secrets' \
-      './configs/security' \
-      './configs/tor' \
-      './database/__pycache__' \
-      './database/admin' \
-      './database/api' \
-      './database/config' \
-      './database/elasticsearch' \
-      './database/models' \
-      './database/mongodb' \
-      './database/redis' \
-      './database/repositories' \
-      './database/schema' \
-      './database/schemas' \
-      './database/services' \
-      './node/__pycache__' \
-      './node/api' \
-      './node/config' \
-      './node/consensus' \
-      './node/dht_crdt' \
-      './node/economy' \
-      './node/flags' \
-      './node/governance' \
-      './node/models' \
-      './node/over_lord' \
-      './node/payouts' \
-      './node/pools' \
-      './node/poot' \
-      './node/registration' \
-      './node/repositories' \
-      './node/resources' \
-      './node/service_configs' \
-      './node/shards' \
-      './node/sync' \
-      './node/tor' \
-      './node/validation' \
-      './node/worker' \
-      './scripts/__pycache__' \
-      './scripts/auth_sm_realignment' \
-      './scripts/build' \
-      './scripts/compliance' \
-      './scripts/config' \
-      './scripts/contracts' \
-      './scripts/database' \
-      './scripts/deployment' \
-      './scripts/devcontainer' \
-      './scripts/docs' \
-      './scripts/foundation' \
-      './scripts/gui' \
-      './scripts/gui_auth_realignment' \
-      './scripts/hardware' \
-      './scripts/integration' \
-      './scripts/lib' \
-      './scripts/load' \
-      './scripts/logging' \
-      './scripts/maintenance' \
-      './scripts/migration' \
-      './scripts/monitoring' \
-      './scripts/network' \
-      './scripts/re-build' \
-      './scripts/registry' \
-      './scripts/secrets' \
-      './scripts/security' \
-      './scripts/services' \
-      './scripts/testing' \
-      './scripts/validation' \
-      './scripts/verification' \
-      './server/__pycache__' \
-      './service_configs/distroless' \
-      './service_configs/docker' \
-      './service_configs/logging' \
-      './service_configs/multi-stage' \
-      './service_configs/node' \
-      './service_configs/payment_services' \
-      './service_configs/rdp' \
-      './service_configs/security' \
-      './service_configs/service_mesh' \
-      './service_configs/services' \
-      './service_configs/sessions' \
-      './service_configs/tor' \
-      './service_configs/x_lucid_cluster_calibration' \
-      './service_mesh/__pycache__' \
-      './service_mesh/communication' \
-      './service_mesh/config' \
-      './service_mesh/controller' \
-      './service_mesh/discovery' \
-      './service_mesh/docs' \
-      './service_mesh/security' \
-      './service_mesh/sidecar' \
-      './sessions/__pycache__' \
-      './sessions/api' \
-      './sessions/config' \
-      './sessions/core' \
-      './sessions/encryption' \
-      './sessions/integration' \
-      './sessions/pipeline' \
-      './sessions/processor' \
-      './sessions/recorder' \
-      './sessions/security' \
-      './sessions/session_systems_control' \
-      './sessions/storage' \
-      './storage/__pycache__' \
-      './storage/backups' \
-      './storage/cache' \
-      './storage/data' \
-      './02_network_security/tor/scripts' \
-      './02_network_security/tunnels/__pycache__' \
-      './02_network_security/tunnels/config' \
-      './02_network_security/tunnels/scripts' \
-      './03_api_gateway/api/__pycache__' \
-      './03_api_gateway/api/app' \
-      './03_api_gateway/api/lucid_api.egg-info' \
-      './03_api_gateway/api/tests' \
-      './03_api_gateway/config/__pycache__' \
-      './03_api_gateway/database/__pycache__' \
-      './03_api_gateway/docs/swagger' \
-      './03_api_gateway/endpoints/__pycache__' \
-      './03_api_gateway/legacy/api' \
-      './03_api_gateway/legacy/gateway' \
-      './03_api_gateway/middleware/__pycache__' \
-      './03_api_gateway/models/__pycache__' \
-      './03_api_gateway/repositories/__pycache__' \
-      './03_api_gateway/services/__pycache__' \
-      './03_api_gateway/utils/__pycache__' \
-      './admin/admin_ui/__pycache__' \
-      './admin/api/__pycache__' \
-      './admin/audit/__pycache__' \
-      './admin/config/__pycache__' \
-      './admin/emergency/__pycache__' \
-      './admin/governance/__pycache__' \
-      './admin/key_rotation/__pycache__' \
-      './admin/rbac/__pycache__' \
-      './admin/services/__pycache__' \
-      './admin/system/__pycache__' \
-      './admin/ui/__pycache__' \
-      './admin/ui/static' \
-      './admin/ui/templates' \
-      './admin/utils/__pycache__' \
-      './common/governance/__pycache__' \
-      './common/security/__pycache__' \
-      './common/server-tools/__pycache__' \
-      './common/tor/__pycache__' \
-      './configs/container/admin' \
-      './configs/container/auth' \
-      './configs/container/base' \
-      './configs/container/blockchain' \
-      './configs/container/database' \
-      './configs/container/electron_gui' \
-      './configs/container/gui' \
-      './configs/container/node' \
-      './configs/container/payment_systems' \
-      './configs/container/rdp' \
-      './configs/container/server' \
-      './configs/container/sessions' \
-      './configs/container/storage' \
-      './configs/container/tor' \
-      './configs/database/elasticsearch' \
-      './configs/database/redis' \
-      './configs/docker/distroless' \
-      './configs/docker/docs' \
-      './configs/docker/multi-stage' \
-      './configs/pi/ssh' \
-      './database/admin/__pycache__' \
-      './database/api/__pycache__' \
-      './database/config/__pycache__' \
-      './database/elasticsearch/__pycache__' \
-      './database/models/__pycache__' \
-      './database/mongodb/__pycache__' \
-      './database/redis/__pycache__' \
-      './database/repositories/__pycache__' \
-      './database/schema/__pycache__' \
-      './database/services/__pycache__' \
-      './database/services/backup' \
-      './database/services/migration' \
-      './database/services/monitoring' \
-      './node/api/__pycache__' \
-      './node/consensus/__pycache__' \
-      './node/dht_crdt/__pycache__' \
-      './node/economy/__pycache__' \
-      './node/flags/__pycache__' \
-      './node/governance/__pycache__' \
-      './node/models/__pycache__' \
-      './node/payouts/__pycache__' \
-      './node/pools/__pycache__' \
-      './node/poot/__pycache__' \
-      './node/registration/__pycache__' \
-      './node/repositories/__pycache__' \
-      './node/resources/__pycache__' \
-      './node/service_configs/x_lucid_cluster_calibration' \
-      './node/shards/__pycache__' \
-      './node/sync/__pycache__' \
-      './node/tor/__pycache__' \
-      './node/validation/__pycache__' \
-      './node/worker/__pycache__' \
-      './scripts/auth_sm_realignment/.cache' \
-      './scripts/auth_sm_realignment/lib' \
-      './scripts/build/__pycache__' \
-      './scripts/build/components' \
-      './scripts/build/core' \
-      './scripts/build/distroless' \
-      './scripts/build/utils' \
-      './scripts/compliance/distroless' \
-      './scripts/compliance/general' \
-      './scripts/deployment/devcontainer' \
-      './scripts/deployment/distroless' \
-      './scripts/deployment/pi' \
-      './scripts/deployment/utils' \
-      './scripts/gui_auth_realignment/.cache' \
-      './scripts/gui_auth_realignment/lib' \
-      './scripts/maintenance/cleanup' \
-      './scripts/maintenance/optimization' \
-      './scripts/maintenance/recovery' \
-      './scripts/network/diagnostics' \
-      './scripts/network/security' \
-      './scripts/network/setup' \
-      './scripts/testing/integration' \
-      './scripts/testing/unit' \
-      './scripts/testing/utils' \
-      './scripts/validation/__pycache__' \
-      './scripts/verification/__pycache__' \
-      './service_configs/docker/distroless' \
-      './service_configs/docker/docs' \
-      './service_configs/docker/multi-stage' \
-      './service_configs/x_lucid_cluster_calibration/__pycache__' \
-      './service_mesh/communication/__pycache__' \
-      './service_mesh/config/policies' \
-      './service_mesh/config/services' \
-      './service_mesh/controller/__pycache__' \
-      './service_mesh/discovery/__pycache__' \
-      './service_mesh/security/__pycache__' \
-      './service_mesh/sidecar/envoy' \
-      './service_mesh/sidecar/proxy' \
-      './sessions/api/__pycache__' \
-      './sessions/api/config' \
-      './sessions/api/integration' \
-      './sessions/core/__pycache__' \
-      './sessions/encryption/__pycache__' \
-      './sessions/integration/__pycache__' \
-      './sessions/pipeline/__pycache__' \
-      './sessions/pipeline/integration' \
-      './sessions/processor/__pycache__' \
-      './sessions/processor/config' \
-      './sessions/processor/integration' \
-      './sessions/recorder/__pycache__' \
-      './sessions/recorder/config' \
-      './sessions/recorder/integration' \
-      './sessions/security/__pycache__' \
-      './sessions/session_systems_control/__pycache__' \
-      './sessions/storage/__pycache__' \
-      './sessions/storage/config' \
-      './storage/backups/configs' \
-      './storage/backups/database' \
-      './storage/backups/user-data' \
-      './storage/cache/build' \
-      './storage/cache/docker' \
-      './storage/cache/temp' \
-      './storage/data/blockchain' \
-      './storage/data/logs' \
-      './storage/data/sessions' \
-      './03_api_gateway/api/app/__pycache__' \
-      './03_api_gateway/api/app/database' \
-      './03_api_gateway/api/app/db' \
-      './03_api_gateway/api/app/middleware' \
-      './03_api_gateway/api/app/models' \
-      './03_api_gateway/api/app/routers' \
-      './03_api_gateway/api/app/routes' \
-      './03_api_gateway/api/app/schemas' \
-      './03_api_gateway/api/app/scripts' \
-      './03_api_gateway/api/app/security' \
-      './03_api_gateway/api/app/services' \
-      './03_api_gateway/api/app/utils' \
-      './03_api_gateway/api/tests/__pycache__' \
-      './03_api_gateway/api/tests/integration' \
-      './03_api_gateway/docs/swagger/dist' \
-      './admin/ui/static/css' \
-      './admin/ui/static/js' \
-      './database/services/backup/__pycache__' \
-      './database/services/migration/__pycache__' \
-      './database/services/monitoring/__pycache__' \
-      './service_mesh/sidecar/envoy/__pycache__' \
-      './service_mesh/sidecar/envoy/config' \
-      './service_mesh/sidecar/proxy/__pycache__' \
-      './sessions/api/integration/__pycache__' \
-      './sessions/pipeline/integration/__pycache__' \
-      './sessions/processor/integration/__pycache__' \
-      './sessions/recorder/integration/__pycache__' \
-      './03_api_gateway/api/app/database/__pycache__' \
-      './03_api_gateway/api/app/db/__pycache__' \
-      './03_api_gateway/api/app/db/models' \
-      './03_api_gateway/api/app/middleware/__pycache__' \
-      './03_api_gateway/api/app/models/__pycache__' \
-      './03_api_gateway/api/app/routers/__pycache__' \
-      './03_api_gateway/api/app/routes/__pycache__' \
-      './03_api_gateway/api/app/schemas/__pycache__' \
-      './03_api_gateway/api/app/scripts/__pycache__' \
-      './03_api_gateway/api/app/security/__pycache__' \
-      './03_api_gateway/api/app/services/__pycache__' \
-      './03_api_gateway/api/app/utils/__pycache__' \
-      './03_api_gateway/api/tests/integration/__pycache__' \
-    ; do \
-      printf 'LUCID_X_FILES_SKELETON_%s' "$(date +%s)" > "$d/.keep"; \
-      touch "$d/.keep"; \
-    done
-# LUCID_X_FILES_SKELETON_END
-# Dynamic linker + libc triplet + healthcheck helpers for distroless runtime (multi-arch; builder matches TARGETPLATFORM).
-RUN python3.11 -c "import os; assert os.path.exists('/usr/local/lib/python3.11/site-packages'), 'CRITICAL: /usr/local/lib/python3.11/site-packages not found in distroless image'; assert os.path.exists('/usr/local/bin'), 'CRITICAL: /usr/local/bin not found in distroless image'; print('✅ Python executable verified: /usr/local/bin/python3.11')"
-
-# LUCID_LIB_SKELETON_BEGIN
-# Generated: FHS dirs for builder (from final-stage COPY --from, excluding /build/ sources;
-# ancestor dirs collapsed; see collect_skeleton_paths_from_dockerfile).
-RUN set -eux; \
-  mkdir -p \
-    '/bin' \
-    '/etc/ssl' \
-    '/etc/tor' \
-    '/usr/bin' \
-    '/usr/lib' \
-    '/usr/lib/python3.11' \
-    '/usr/local/bin' \
-    '/var/lib/tor' \
-    '/usr/local/lib/python3.11/site-packages'; \
-  for d in \
-    '/bin' \
-    '/etc/ssl' \
-    '/etc/tor' \
-    '/usr/bin' \
-    '/usr/lib' \
-    '/usr/lib/python3.11' \
-    '/usr/local/bin' \
-    '/var/lib/tor' \
-    '/usr/local/lib/python3.11/site-packages'; \
-  do \
-    printf 'LUCID_LIB_SKELETON_%s' "$(date +%s)" > "$d/.keep"; \
-    touch "$d/.keep"; \
-  done
-# LUCID_LIB_SKELETON_END
-# LUCID_ALIGNMENT_MAT_COPY_DIRECTORIES_BEGIN
-# alignment-mat tor-socks_manifest.json: compose_service='tor-socks' — manifest py/yml/yaml/json → builder COPY (#10).
-COPY common/ ./common/
-COPY configs/container/tor/ ./configs/container/tor/
-COPY configs/docker/ ./configs/docker/
-COPY configs/gui-alignment/ ./configs/gui-alignment/
-COPY infrastructure/containers/ ./infrastructure/containers/
-# LUCID_ALIGNMENT_MAT_COPY_DIRECTORIES_END
-RUN rm -rf configs/environment 2>/dev/null || true
-
-COPY infrastructure/containers/tor/docker-compose.proxy-systems.yml ./service_configs/tor/docker-compose.proxy-systems.yml
-COPY x-files-listing.txt ./x-files-listing.txt
-
-
-
-COPY server/ ./server/
-COPY 02_network_security/ ./02_network_security/
-COPY 03_api_gateway/ ./03_api_gateway/
-COPY admin/ ./admin/
-COPY sessions/ ./sessions/
-COPY storage/ ./storage/
-COPY database/ ./database/
-COPY node/ ./node/
-COPY scripts/ ./scripts/
-COPY infrastructure/compose/ ./configs/compose/
-
-COPY configs/docker/ ./service_configs/docker/
-COPY infrastructure/service_mesh/ ./service_mesh/
-
-
-# Builder stage: WORKDIR is /build (line above in this stage). Do not RUN scripts/lib/lucid-repo-paths.sh
-# as an executable — it is host-side (source with . only); layout here is COPY + this WORKDIR.
-
-# =============================================================================
-# STAGE 2: Distroless Runtime with Inherent Tor System
-# =============================================================================
-RUN mkdir -p /tor-export/dynamic /tor-export/bin && \
-    set -eux; \
-    for f in /lib/ld-linux-*.so.*; do [ -f "$f" ] && cp -a "$f" /tor-export/dynamic/ || true; done; \
-    for f in /lib64/ld-linux*.so.*; do [ -f "$f" ] && cp -a "$f" /tor-export/dynamic/ || true; done; \
-    for triplet in aarch64-linux-gnu x86_64-linux-gnu arm-linux-gnueabihf i386-linux-gnu; do \
-      if [ -d "/lib/$triplet" ]; then cp -a "/lib/$triplet" /tor-export/dynamic/; fi; \
-    done; \
-    cp -a /bin/busybox /tor-export/bin/; \
-    if [ -x /bin/nc ]; then cp -a /bin/nc /tor-export/bin/nc; \
-    elif [ -x /usr/bin/nc ]; then cp -a /usr/bin/nc /tor-export/bin/nc; \
-    elif nc_path="$(command -v nc 2>/dev/null)" && [ -n "$nc_path" ] && [ -x "$nc_path" ]; then cp -a "$nc_path" /tor-export/bin/nc; \
-    else echo "tor-export: nc not found (install netcat-openbsd)" >&2; exit 1; fi
-
-# =============================================================================
-# Directory scaffold — /run/lucid (scripts, torrc, logs) + /var/lib/tor (Tor DataDirectory & HS dirs)
-# Tor authoritative state lives under /var/lib/tor (image: /app/var/lib/tor) per torrc DataDirectory.
-# Optional hidden-service dir names match typical Pi deployments (lucid_*, myservice).
-# =============================================================================
-RUN install -d -o debian-tor -g debian-tor -m 700 /var/lib/tor \
-   install  -d -o debian-tor -g debian-tor -m 755 /run \
-   install  -d -o debian-tor -g debian-tor -m 755 /run/lucid \
-   install  -d -o debian-tor -g debian-tor -m 755 /run/lucid/tor \
-   install  -d -o debian-tor -g debian-tor -m 755 /run/lucid/tor/data \
-   install  -d -o debian-tor -g debian-tor -m 755 /run/lucid/tor/bin \
-   install  -d -o debian-tor -g debian-tor -m 755 /run/lucid/tor/log \
-   install  -d -o debian-tor -g debian-tor -m 755 /run/lucid/tor/pid \
-   install  -d -o debian-tor -g debian-tor -m 755 /run/lucid/ssl \
-   install  -d -o debian-tor -g debian-tor -m 755 /run/lucid/onion \
-   install  -d -o debian-tor -g debian-tor -m 700 /run/lucid/onion/lucid_admin \
-   install  -d -o debian-tor -g debian-tor -m 700 /run/lucid/onion/lucid_api \
-   install  -d -o debian-tor -g debian-tor -m 700 /run/lucid/onion/lucid_auth \
-   install  -d -o debian-tor -g debian-tor -m 700 /run/lucid/onion/lucid_config \
-   install  -d -o debian-tor -g debian-tor -m 700 /run/lucid/onion/lucid_dev \
-   install  -d -o debian-tor -g debian-tor -m 700 /run/lucid/onion/lucid_health \
-   install  -d -o debian-tor -g debian-tor -m 700 /run/lucid/onion/lucid_lb \
-   install  -d -o debian-tor -g debian-tor -m 700 /run/lucid/onion/lucid_metrics \
-   install  -d -o debian-tor -g debian-tor -m 700 /run/lucid/onion/lucid_mgmt \
-   install  -d -o debian-tor -g debian-tor -m 700 /run/lucid/onion/lucid_onion \
-   install  -d -o debian-tor -g debian-tor -m 700 /run/lucid/onion/lucid_relay \
-   install  -d -o debian-tor -g debian-tor -m 700 /run/lucid/onion/lucid_resolver \
-   install  -d -o debian-tor -g debian-tor -m 700 /run/lucid/onion/lucid_rpc \
-   install  -d -o debian-tor -g debian-tor -m 700 /run/lucid/onion/lucid_ui \
-   install  -d -o debian-tor -g debian-tor -m 700 /run/lucid/onion/lucid_vm \
-   install -d -o debian-tor -g debian-tor -m 700 /run/lucid/onion/lucid_ws \
-   install -d -o debian-tor -g debian-tor -m 700 /run/lucid/tunnels && \
-   install -d -o debian-tor -g debian-tor -m 700 /run/lucid/tunnels/scripts && \
-   install -d -o debian-tor -g debian-tor -m 700 /run/lucid/tunnels/config && \
-   install -d -o debian-tor -g debian-tor -m 700 /var/lib/tor/lucid_admin && \
-   install -d -o debian-tor -g debian-tor -m 700 /var/lib/tor/lucid_blockchain && \
-   install -d -o debian-tor -g debian-tor -m 700 /var/lib/tor/lucid_dev && \
-   install -d -o debian-tor -g debian-tor -m 700 /var/lib/tor/lucid_node && \
-   install -d -o debian-tor -g debian-tor -m 700 /var/lib/tor/lucid_portal && \
-   install -d -o debian-tor -g debian-tor -m 700 /var/lib/tor/lucid_server && \
-   install -d -o debian-tor -g debian-tor -m 700 /var/lib/tor/lucid_vm && \
-   install -d -o debian-tor -g debian-tor -m 700 /var/lib/tor/myservice && \
-   install -d -o debian-tor -g debian-tor -m 700 /var/lib/tor/hidden_service && \
-   install -d -o debian-tor -g debian-tor -m 755 /var/lib/tor/seed && \
-   install -d -o root -g root -m 755 /build/service_configs && \
-   install -d -o root -g root -m 755 /build/configs && \
-   install -d -o root -g root -m 755 /usr/local/bin && \
-   install -d -o root -g root -m 755 /etc/tor && \
-   printf 'dir=run/lucid\nplatform=lucid-tor-proxy\n'                    > /run/lucid/.keep && \
-   printf 'dir=run/lucid/tor\nplatform=lucid-tor-proxy\n'                > /run/lucid/tor/.keep && \
-   printf 'dir=run/lucid/tor/data\nplatform=lucid-tor-proxy\n'           > /run/lucid/tor/data/.keep && \
-   printf 'dir=run/lucid/tor/bin\nplatform=lucid-tor-proxy\n'            > /run/lucid/tor/bin/.keep && \
-   printf 'dir=run/lucid/tor/log\nplatform=lucid-tor-proxy\n'            > /run/lucid/tor/log/.keep && \
-   printf 'dir=run/lucid/tor/pid\nplatform=lucid-tor-proxy\n'            > /run/lucid/tor/pid/.keep && \
-   printf 'dir=run/lucid/ssl\nplatform=lucid-tor-proxy\n'                > /run/lucid/ssl/.keep && \
-   printf 'dir=run/lucid/onion\nplatform=lucid-tor-proxy\n'              > /run/lucid/onion/.keep && \
-   printf 'dir=run/lucid/onion/lucid_admin\nplatform=lucid-tor-proxy\n'    > /run/lucid/onion/lucid_admin/.keep && \
-   printf 'dir=run/lucid/onion/lucid_api\nplatform=lucid-tor-proxy\n'      > /run/lucid/onion/lucid_api/.keep && \
-   printf 'dir=run/lucid/onion/lucid_auth\nplatform=lucid-tor-proxy\n'     > /run/lucid/onion/lucid_auth/.keep && \
-   printf 'dir=run/lucid/onion/lucid_config\nplatform=lucid-tor-proxy\n'   > /run/lucid/onion/lucid_config/.keep && \
-   printf 'dir=run/lucid/onion/lucid_dev\nplatform=lucid-tor-proxy\n'      > /run/lucid/onion/lucid_dev/.keep && \
-   printf 'dir=run/lucid/onion/lucid_health\nplatform=lucid-tor-proxy\n'   > /run/lucid/onion/lucid_health/.keep && \
-   printf 'dir=run/lucid/onion/lucid_lb\nplatform=lucid-tor-proxy\n'       > /run/lucid/onion/lucid_lb/.keep && \
-   printf 'dir=run/lucid/onion/lucid_metrics\nplatform=lucid-tor-proxy\n'  > /run/lucid/onion/lucid_metrics/.keep && \
-   printf 'dir=run/lucid/onion/lucid_mgmt\nplatform=lucid-tor-proxy\n'     > /run/lucid/onion/lucid_mgmt/.keep && \
-   printf 'dir=run/lucid/onion/lucid_onion\nplatform=lucid-tor-proxy\n'    > /run/lucid/onion/lucid_onion/.keep && \
-   printf 'dir=run/lucid/onion/lucid_relay\nplatform=lucid-tor-proxy\n'    > /run/lucid/onion/lucid_relay/.keep && \
-   printf 'dir=run/lucid/onion/lucid_resolver\nplatform=lucid-tor-proxy\n' > /run/lucid/onion/lucid_resolver/.keep && \
-   printf 'dir=run/lucid/onion/lucid_rpc\nplatform=lucid-tor-proxy\n'      > /run/lucid/onion/lucid_rpc/.keep && \
-   printf 'dir=run/lucid/onion/lucid_ui\nplatform=lucid-tor-proxy\n'       > /run/lucid/onion/lucid_ui/.keep && \
-   printf 'dir=run/lucid/onion/lucid_vm\nplatform=lucid-tor-proxy\n'       > /run/lucid/onion/lucid_vm/.keep && \
-   printf 'dir=run/lucid/onion/lucid_ws\nplatform=lucid-tor-proxy\n'       > /run/lucid/onion/lucid_ws/.keep && \
-   printf 'dir=var/lib/tor\nplatform=lucid-tor-proxy\n'                  > /var/lib/tor/.keep && \
-   printf 'dir=var/lib/tor/lucid_admin\nplatform=lucid-tor-proxy\n'      > /var/lib/tor/lucid_admin/.keep && \
-   printf 'dir=var/lib/tor/lucid_blockchain\nplatform=lucid-tor-proxy\n' > /var/lib/tor/lucid_blockchain/.keep && \
-   printf 'dir=var/lib/tor/lucid_dev\nplatform=lucid-tor-proxy\n'        > /var/lib/tor/lucid_dev/.keep && \
-   printf 'dir=var/lib/tor/lucid_node\nplatform=lucid-tor-proxy\n'       > /var/lib/tor/lucid_node/.keep && \
-   printf 'dir=var/lib/tor/lucid_portal\nplatform=lucid-tor-proxy\n'     > /var/lib/tor/lucid_portal/.keep && \
-   printf 'dir=var/lib/tor/lucid_server\nplatform=lucid-tor-proxy\n'     > /var/lib/tor/lucid_server/.keep && \
-   printf 'dir=var/lib/tor/lucid_vm\nplatform=lucid-tor-proxy\n'         > /var/lib/tor/lucid_vm/.keep && \
-   printf 'dir=var/lib/tor/myservice\nplatform=lucid-tor-proxy\n'        > /var/lib/tor/myservice/.keep && \
-   printf 'dir=var/lib/tor/hidden_service\nplatform=lucid-tor-proxy\n'   > /var/lib/tor/hidden_service/.keep && \
-   printf 'dir=var/lib/tor/seed\nplatform=lucid-tor-proxy\n'             > /var/lib/tor/seed/.keep && \
-   printf 'dir=run/lucid/tunnels\nplatform=lucid-tor-proxy\n'            > /run/lucid/tunnels/.keep && \
-   printf 'dir=run/lucid/tunnels/scripts\nplatform=lucid-tor-proxy\n'    > /run/lucid/tunnels/scripts/.keep && \
-   printf 'dir=run/lucid/tunnels/config\nplatform=lucid-tor-proxy\n'     > /run/lucid/tunnels/config/.keep && \
-   printf 'dir=build/configs\nplatform=lucid-tor-proxy\n'                > /build/configs/.keep && \
-   printf 'dir=build/service_configs\nplatform=lucid-tor-proxy\n'        > /build/service_configs/.keep
-
-
-RUN mkdir -p /usr/local/lib/python3.11/site-packages && \
-    printf "LUCID_PYTHON_SITE_PACKAGES_%s" "$(date +%s)" > /usr/local/lib/python3.11/site-packages/.keep && \
-    touch /usr/local/lib/python3.11/site-packages/.keep && \
-    chown -R 65532:65532 /usr/local/lib/python3.11/site-packages
-RUN mkdir -p /usr/local/bin && \
-    printf "LUCID_PYTHON_BINARIES_%s" "$(date +%s)" > /usr/local/bin/.keep && \
-    touch /usr/local/bin/.keep && \
-    chown -R 65532:65532 /usr/local/bin
-
-FROM --platform=$TARGETPLATFORM gcr.io/distroless/base-debian12:latest
-
-ARG BUILD_DATE
-ARG VCS_REF
-ARG VERSION=2.0.0
-# Lucid Tor egress / network isolation (PUBLIC_TOR_IP: ../../configs/environment/ ; compose: lucid-tor-egress-network)
 ARG PUBLIC_TOR_IP=109.70.100.1
 ARG LUCID_INTERNAL_NETWORK_NAME=lucid-pi-network
 ARG LUCID_TOR_EGRESS_NETWORK_NAME=lucid-tor-egress-network
 
-WORKDIR /app
+# =============================================================================
+# STAGE 1 — tor-builder
+# =============================================================================
+FROM --platform=$TARGETPLATFORM debian:12-slim AS tor-builder
+
+ARG BUILDPLATFORM
+ARG TARGETPLATFORM
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION
+ARG PUBLIC_TOR_IP
+ARG LUCID_INTERNAL_NETWORK_NAME
+ARG LUCID_TOR_EGRESS_NETWORK_NAME
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    rm -rf /var/lib/apt/lists/* && \
+    apt-get update --allow-releaseinfo-change && \
+    apt-get install -y --no-install-recommends \
+      adduser \
+      bash \
+      busybox \
+      ca-certificates \
+      coreutils \
+      curl \
+      dnsutils \
+      gosu \
+      jq \
+      mawk \
+      netcat-openbsd \
+      obfs4proxy \
+      tini \
+      tor \
+      tor-geoipdb \
+      xxd \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
+    && adduser --disabled-password --shell /bin/bash --gecos "" lucid
+
+RUN set -eux; \
+    for bin in /usr/bin/tor /usr/bin/tini; do \
+      missing=$(ldd "$bin" 2>&1 | grep "not found" || true); \
+      if [ -n "$missing" ]; then echo "MISSING in $bin:"; echo "$missing"; exit 1; fi; \
+    done; \
+    if ldd /usr/bin/obfs4proxy 2>&1 | grep -q "not a dynamic"; then :; \
+    else \
+      missing=$(ldd /usr/bin/obfs4proxy 2>&1 | grep "not found" || true); \
+      if [ -n "$missing" ]; then echo "MISSING in obfs4proxy:"; echo "$missing"; exit 1; fi; \
+    fi
+
+WORKDIR /build
+
+# LUCID_X_FILES_SKELETON_BEGIN
+RUN set -eux; \
+  for d in \
+    02_network_security/tor/scripts \
+    scripts/lib \
+    configs \
+    infrastructure/containers/services \
+    service_configs/tor \
+    run/lucid/tor/bin \
+    run/lucid/tor/scripts \
+    run/lucid/tor/log \
+    run/lucid/tunnels/scripts \
+    run/lucid/onion \
+    run/lucid/ssl/certs; do \
+    mkdir -p "$d"; printf 'LUCID_X_FILES_%s\n' "$(date +%s)" > "$d/.keep"; \
+  done
+# LUCID_X_FILES_SKELETON_END
+
+RUN set -eux; \
+    install -d -o debian-tor -g debian-tor -m 0755 run/lucid \
+    && install -d -o debian-tor -g debian-tor -m 0755 run/lucid/onion \
+    && install -d -o debian-tor -g debian-tor -m 0700 run/lucid/tor \
+    && install -d -o root       -g root       -m 0755 run/lucid/tor/bin \
+    && install -d -o root       -g root       -m 0755 run/lucid/tor/scripts \
+    && printf 'dir=run/lucid/tor/bin\nplatform=lucid-tor-proxy\n' > run/lucid/tor/bin/.keep \
+    && printf 'dir=run/lucid/tor\nplatform=lucid-tor-proxy\n' > run/lucid/tor/.keep \
+    && printf 'dir=run/lucid/onion\nplatform=lucid-tor-proxy\n' > run/lucid/onion/.keep \
+    && printf 'dir=run/lucid\nplatform=lucid-tor-proxy\n' > run/lucid/.keep \
+    && install -d -o root -g root -m 0755 run/lucid/tor/lucid_admin \
+    && install -d -o root -g root -m 0700 run/lucid/tor/lucid_admin/authorized_clients \
+    && printf 'service=lucid_admin\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > run/lucid/tor/lucid_admin/.keep \
+    && printf 'service=lucid_admin\ntype=authorized_clients\nplatform=lucid-tor-proxy\n' > run/lucid/tor/lucid_admin/authorized_clients/.keep \
+    && install -d -o root -g root -m 0755 run/lucid/tor/lucid_vm \
+    && install -d -o root -g root -m 0700 run/lucid/tor/lucid_vm/authorized_clients \
+    && printf 'service=lucid_vm\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > run/lucid/tor/lucid_vm/.keep \
+    && printf 'service=lucid_vm\ntype=authorized_clients\nplatform=lucid-tor-proxy\n' > run/lucid/tor/lucid_vm/authorized_clients/.keep \
+    && install -d -o root -g root -m 0755 run/lucid/tor/lucid_node \
+    && install -d -o root -g root -m 0700 run/lucid/tor/lucid_node/authorized_clients \
+    && printf 'service=lucid_node\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > run/lucid/tor/lucid_node/.keep \
+    && printf 'service=lucid_node\ntype=authorized_clients\nplatform=lucid-tor-proxy\n' > run/lucid/tor/lucid_node/authorized_clients/.keep \
+    && install -d -o root -g root -m 0755 run/lucid/tor/lucid_blockchain \
+    && install -d -o root -g root -m 0700 run/lucid/tor/lucid_blockchain/authorized_clients \
+    && printf 'service=lucid_blockchain\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > run/lucid/tor/lucid_blockchain/.keep \
+    && printf 'service=lucid_blockchain\ntype=authorized_clients\nplatform=lucid-tor-proxy\n' > run/lucid/tor/lucid_blockchain/authorized_clients/.keep \
+    && install -d -o root -g root -m 0755 run/lucid/tor/lucid_governance \
+    && install -d -o root -g root -m 0700 run/lucid/tor/lucid_governance/authorized_clients \
+    && printf 'service=lucid_governance\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > run/lucid/tor/lucid_governance/.keep \
+    && printf 'service=lucid_governance\ntype=authorized_clients\nplatform=lucid-tor-proxy\n' > run/lucid/tor/lucid_governance/authorized_clients/.keep \
+    && install -d -o root -g root -m 0755 run/lucid/tor/lucid_payment \
+    && install -d -o root -g root -m 0700 run/lucid/tor/lucid_payment/authorized_clients \
+    && printf 'service=lucid_payment\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > run/lucid/tor/lucid_payment/.keep \
+    && printf 'service=lucid_payment\ntype=authorized_clients\nplatform=lucid-tor-proxy\n' > run/lucid/tor/lucid_payment/authorized_clients/.keep \
+    && install -d -o root -g root -m 0755 run/lucid/tor/lucid_session \
+    && install -d -o root -g root -m 0700 run/lucid/tor/lucid_session/authorized_clients \
+    && printf 'service=lucid_session\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > run/lucid/tor/lucid_session/.keep \
+    && printf 'service=lucid_session\ntype=authorized_clients\nplatform=lucid-tor-proxy\n' > run/lucid/tor/lucid_session/authorized_clients/.keep \
+    && install -d -o root -g root -m 0755 run/lucid/tor/lucid_rdp \
+    && install -d -o root -g root -m 0700 run/lucid/tor/lucid_rdp/authorized_clients \
+    && printf 'service=lucid_rdp\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > run/lucid/tor/lucid_rdp/.keep \
+    && printf 'service=lucid_rdp\ntype=authorized_clients\nplatform=lucid-tor-proxy\n' > run/lucid/tor/lucid_rdp/authorized_clients/.keep \
+    && install -d -o root -g root -m 0755 run/lucid/tor/lucid_wallet \
+    && install -d -o root -g root -m 0700 run/lucid/tor/lucid_wallet/authorized_clients \
+    && printf 'service=lucid_wallet\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > run/lucid/tor/lucid_wallet/.keep \
+    && printf 'service=lucid_wallet\ntype=authorized_clients\nplatform=lucid-tor-proxy\n' > run/lucid/tor/lucid_wallet/authorized_clients/.keep \
+    && install -d -o root -g root -m 0755 run/lucid/tor/lucid_voting \
+    && install -d -o root -g root -m 0700 run/lucid/tor/lucid_voting/authorized_clients \
+    && printf 'service=lucid_voting\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > run/lucid/tor/lucid_voting/.keep \
+    && printf 'service=lucid_voting\ntype=authorized_clients\nplatform=lucid-tor-proxy\n' > run/lucid/tor/lucid_voting/authorized_clients/.keep \
+    && install -d -o root -g root -m 0755 run/lucid/tor/lucid_voting_system \
+    && install -d -o root -g root -m 0700 run/lucid/tor/lucid_voting_system/authorized_clients \
+    && printf 'service=lucid_voting_system\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > run/lucid/tor/lucid_voting_system/.keep \
+    && printf 'service=lucid_voting_system\ntype=authorized_clients\nplatform=lucid-tor-proxy\n' > run/lucid/tor/lucid_voting_system/authorized_clients/.keep \
+    && install -d -o root -g root -m 0755 run/lucid/tor/lucid_voting_system_admin \
+    && install -d -o root -g root -m 0700 run/lucid/tor/lucid_voting_system_admin/authorized_clients \
+    && printf 'service=lucid_voting_system_admin\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > run/lucid/tor/lucid_voting_system_admin/.keep \
+    && printf 'service=lucid_voting_system_admin\ntype=authorized_clients\nplatform=lucid-tor-proxy\n' > run/lucid/tor/lucid_voting_system_admin/authorized_clients/.keep \
+    && install -d -o root -g root -m 0755 run/lucid/tor/lucid_voting_system_admin_admin \
+    && install -d -o root -g root -m 0700 run/lucid/tor/lucid_voting_system_admin_admin/authorized_clients \
+    && printf 'service=lucid_voting_system_admin_admin\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > run/lucid/tor/lucid_voting_system_admin_admin/.keep \
+    && printf 'service=lucid_voting_system_admin_admin\ntype=authorized_clients\nplatform=lucid-tor-proxy\n' > run/lucid/tor/lucid_voting_system_admin_admin/authorized_clients/.keep \
+    && install -d -o root -g root -m 0755 run/lucid/tor/lucid_server \
+    && install -d -o root -g root -m 0700 run/lucid/tor/lucid_server/authorized_clients \
+    && printf 'service=lucid_server\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > run/lucid/tor/lucid_server/.keep \
+    && printf 'service=lucid_server\ntype=authorized_clients\nplatform=lucid-tor-proxy\n' > run/lucid/tor/lucid_server/authorized_clients/.keep \
+    && install -d -o root -g root -m 0755 run/lucid/tor/myservice \
+    && install -d -o root -g root -m 0700 run/lucid/tor/myservice/authorized_clients \
+    && printf 'service=myservice\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > run/lucid/tor/myservice/.keep \
+    && printf 'service=myservice\ntype=authorized_clients\nplatform=lucid-tor-proxy\n' > run/lucid/tor/myservice/authorized_clients/.keep \
+    && install -d -o root -g root -m 0755 run/lucid/tor/lucid_portal \
+    && install -d -o root -g root -m 0700 run/lucid/tor/lucid_portal/authorized_clients \
+    && printf 'service=lucid_portal\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > run/lucid/tor/lucid_portal/.keep \
+    && printf 'service=lucid_portal\ntype=authorized_clients\nplatform=lucid-tor-proxy\n' > run/lucid/tor/lucid_portal/authorized_clients/.keep \
+    && install -d -o debian-tor -g debian-tor -m 0700 /tmp/lucid/tor \
+    && install -d -o root       -g root       -m 0755 /tmp/lucid/tor/lucid_admin \
+    && printf 'service=lucid_admin\ntype=tmp-scratch\nplatform=lucid-tor-proxy\n' > /tmp/lucid/tor/lucid_admin/.keep \
+    && install -d -o root       -g root       -m 0755 /tmp/lucid/tor/tunnels \
+    && install -d -o debian-tor -g debian-tor -m 0755 tor \
+    && install -d -o debian-tor -g debian-tor -m 0700 var/lib/tor var/lib/tor/hidden_service \
+    && install -d -o debian-tor -g debian-tor -m 0755 var/lib/tor/seed \
+    && install -d -o root       -g root       -m 0755 etc/tor etc/tor/tunnels \
+    && printf 'LUCID_TOR_PROXY_VAR_LIB_TOR\n' > var/lib/tor/.keep \
+    && printf 'LUCID_TOR_PROXY_APP_TOR\n' > tor/.keep \
+    && printf 'LUCID_TOR_PROXY_ETC_TOR\n' > etc/tor/.keep \
+    && install -d -o root -g root -m 0755 opt opt/bin opt/sbin opt/lib opt/share opt/share/tor \
+    && printf 'dir=opt\nplatform=lucid-tor-proxy\n' > opt/.keep \
+    && printf 'dir=opt/bin\nplatform=lucid-tor-proxy\n' > opt/bin/.keep \
+    && printf 'dir=opt/sbin\nplatform=lucid-tor-proxy\n' > opt/sbin/.keep \
+    && printf 'dir=opt/lib\nplatform=lucid-tor-proxy\n' > opt/lib/.keep \
+    && printf 'dir=opt/share/tor\nplatform=lucid-tor-proxy\n' > opt/share/tor/.keep \
+    && chown debian-tor:debian-tor var/lib/tor/.keep tor/.keep run/lucid/.keep run/lucid/onion/.keep run/lucid/tor/.keep run/lucid/tor/bin/.keep
+
+COPY 02_network_security/tor/ /build/02_network_security/tor/
+COPY 02_network_security/tunnels/ /build/run/lucid/tor/tunnels/
+COPY scripts/lib/lucid-host-config-path.sh /build/scripts/lib/lucid-host-config-path.sh
+COPY scripts/lib/lucid-x-file-paths.sh /build/scripts/lib/lucid-x-file-paths.sh
+COPY configs/x-files.json /build/configs/x-files.json
+COPY infrastructure/containers/host-config.yml /build/infrastructure/containers/services/host-config.yml
+COPY infrastructure/containers/host-config.yml /build/configs/host-config.yml
+COPY infrastructure/containers/tor/docker-compose.proxy-systems.yml /build/service_configs/tor/docker-compose.proxy-systems.yml
+COPY infrastructure/containers/services/tor/tor-operational-layout.yml /build/service_configs/tor/tor-operational-layout.yml
+COPY infrastructure/containers/services/tor/tunnel-tools.yml /build/service_configs/tor/tunnel-tools.yml
+COPY infrastructure/containers/services/tor/tor-socks.yml /build/service_configs/tor/tor-socks.yml
+
+# GeoIP under /app/opt/share/tor (single COPY /build → /app brings this tree)
+RUN set -eux; cp -a /usr/share/tor/. /build/opt/share/tor/
+
+# Dynamic linker + arch lib dir for TARGETPLATFORM (uname -m inside this stage matches target arch)
+RUN set -eux; \
+    mkdir -p /export-dynlink/root/lib /export-dynlink/root/lib64; \
+    arch="$(uname -m)"; \
+    case "$arch" in \
+      aarch64) \
+        cp -a /lib/ld-linux-aarch64.so.1 /export-dynlink/root/lib/; \
+        cp -a /lib/aarch64-linux-gnu /export-dynlink/root/lib/; \
+        ;; \
+      x86_64) \
+        if [ -f /lib64/ld-linux-x86-64.so.2 ]; then \
+          cp -a /lib64/ld-linux-x86-64.so.2 /export-dynlink/root/lib64/; \
+        else \
+          cp -a /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /export-dynlink/root/lib64/; \
+        fi; \
+        cp -a /lib/x86_64-linux-gnu /export-dynlink/root/lib/; \
+        ;; \
+      *) echo "unsupported uname -m=$arch"; exit 1 ;; \
+    esac
+
+# torrc, GeoIP paths, entrypoints, scripts; populate /build/bin + /build/sbin
+RUN set -eux; \
+  install -m 0644 02_network_security/tor/torrc run/lucid/tor/torrc; \
+  { printf '\n# Distroless image: GeoIP from tor-geoipdb\n'; \
+    printf 'GeoIPFile /app/opt/share/tor/geoip\n'; \
+    printf 'GeoIPv6File /app/opt/share/tor/geoip6\n'; \
+  } >> run/lucid/tor/torrc; \
+  install -d -m 0755 run/lucid/tor/configs; \
+  install -m 0644 run/lucid/tor/torrc run/lucid/tor/configs/torrc; \
+  for f in tor_entrypoint.sh tor-health.sh bootstrap-helper.sh t_entrypoint.sh entrypoint.sh tor-show-onion.sh; do \
+    install -m 0755 "02_network_security/tor/${f}" "run/lucid/tor/bin/${f}"; \
+  done; \
+  install -m 0755 02_network_security/tor/scripts/create_ephemeral_onion.sh run/lucid/tunnels/scripts/create-ephemeral-onion.sh; \
+  install -m 0755 02_network_security/tor/bootstrap-helper.sh run/lucid/tunnels/scripts/bootstrap-helper.sh; \
+  for s in check_tor_bootstrap.sh create_dynamic_onion.sh create_ephemeral_onion.sh demo_onion_usage.sh set_host_config.sh start_tor.sh tor_env.sh; do \
+    install -m 0755 "02_network_security/tor/scripts/${s}" "run/lucid/tor/scripts/${s}"; \
+  done; \
+  install -m 0755 run/lucid/tor/scripts/create_dynamic_onion.sh run/lucid/tor/bin/create-dynamic-onion.sh; \
+  install -m 0755 run/lucid/tor/scripts/check_tor_bootstrap.sh run/lucid/tor/bin/check-tor-bootstrap.sh; \
+  install -m 0755 run/lucid/tor/scripts/start_tor.sh run/lucid/tor/bin/start-tor.sh; \
+  install -m 0755 run/lucid/tor/scripts/create_ephemeral_onion.sh run/lucid/tor/bin/create-ephemeral-onion.sh; \
+  find 02_network_security/tor/scripts -type f -name '*.sh' -exec chmod 0755 {} +; \
+  find 02_network_security/tor -maxdepth 1 -type f -name '*.sh' -exec chmod 0755 {} +; \
+  chmod 0755 scripts/lib/*.sh; \
+  install -d -m 0755 bin sbin; \
+  install -m 0755 /usr/bin/tor /build/bin/tor; \
+  install -m 0755 /usr/bin/obfs4proxy /build/bin/obfs4proxy; \
+  install -m 0755 /usr/bin/tini /build/bin/tini; \
+  install -m 0755 /usr/sbin/gosu /build/sbin/gosu; \
+  install -m 0755 /bin/bash /build/bin/bash; \
+  install -m 0755 /bin/busybox /build/bin/busybox; \
+  install -m 0755 /bin/cat /build/bin/cat; \
+  install -m 0755 /bin/chmod /build/bin/chmod; \
+  install -m 0755 /bin/chown /build/bin/chown; \
+  install -m 0755 /bin/mkdir /build/bin/mkdir; \
+  install -m 0755 /bin/rm /build/bin/rm; \
+  install -m 0755 /bin/sleep /build/bin/sleep; \
+  install -m 0755 /bin/tail /build/bin/tail; \
+  install -m 0755 /usr/bin/curl /build/bin/curl; \
+  install -m 0755 /usr/bin/jq /build/bin/jq; \
+  install -m 0755 /bin/nc /build/bin/nc; \
+  install -m 0755 /usr/bin/timeout /build/bin/timeout; \
+  install -m 0755 /usr/bin/xxd /build/bin/xxd; \
+  install -m 0755 /usr/bin/mawk /build/bin/awk; \
+  install -m 0755 /bin/grep /build/bin/grep; \
+  install -m 0755 /bin/sed /build/bin/sed; \
+  install -m 0755 /usr/bin/head /build/bin/head; \
+  install -m 0755 /usr/bin/cut /build/bin/cut; \
+  install -m 0755 /usr/bin/tr /build/bin/tr; \
+  install -m 0755 /usr/bin/seq /build/bin/seq; \
+  for op in dig host tor-gencert tor-resolve tor-print-ed-signing-cert; do \
+    if [ -x "/usr/bin/${op}" ]; then install -m 0755 "/usr/bin/${op}" "/build/bin/${op}"; fi; \
+  done; \
+  install -d -o debian-tor -g debian-tor -m 0755 run/lucid/tor/log run/lucid/tunnels/scripts run/lucid/onion; \
+  chown -R debian-tor:debian-tor run/lucid var/lib/tor tor 02_network_security/tor; \
+  chown -R debian-tor:debian-tor scripts/lib configs infrastructure service_configs; \
+  chown -R debian-tor:debian-tor /tmp/lucid
+
+RUN set -eux; \
+    test -f 02_network_security/tor/keep.txt; \
+    test -x bin/tor && test -x bin/bash && test -x bin/tini && test -x bin/busybox; \
+    test -x bin/awk && test -x bin/grep && test -x bin/sed; \
+    for dir in \
+      var/lib/tor \
+      run/lucid \
+      run/lucid/tor \
+      run/lucid/tor/scripts \
+      run/lucid/tor/tunnels \
+      02_network_security/tor/scripts \
+      02_network_security/tor; do \
+      test -d "/build/${dir}" || exit 1; \
+    done; \
+    test -f configs/x-files.json; \
+    test -f infrastructure/containers/services/host-config.yml; \
+    test -f scripts/lib/lucid-host-config-path.sh; \
+    grep -q "LUCID_TOR_PROXY" var/lib/tor/.keep; \
+    test -r /build/opt/share/tor/geoip || test -r /build/opt/share/tor/geoip6; \
+    test -x run/lucid/tor/bin/tor_entrypoint.sh; \
+    test -x run/lucid/tor/scripts/set_host_config.sh; \
+    grep -q "GeoIPFile /app/opt/share/tor/geoip" run/lucid/tor/torrc; \
+    echo "tor-builder OK."
+
+# =============================================================================
+# STAGE 2 — distroless (Debian 12 bookworm == base-debian12)
+# =============================================================================
+FROM --platform=$TARGETPLATFORM gcr.io/distroless/base-debian12:latest
+
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION
+ARG PUBLIC_TOR_IP
+ARG LUCID_INTERNAL_NETWORK_NAME
+ARG LUCID_TOR_EGRESS_NETWORK_NAME
 
 LABEL maintainer="Lucid Development Team" \
       com.lucid.network.internal="${LUCID_INTERNAL_NETWORK_NAME}" \
       com.lucid.network.tor_egress="${LUCID_TOR_EGRESS_NETWORK_NAME}" \
       com.lucid.tor.public_egress_ip="${PUBLIC_TOR_IP}" \
-      version="${VERSION}" \
-      description="Distroless Tor proxy for Lucid project" \
-      org.opencontainers.image.title="Lucid Tor SOCKS proxy" \
-      org.opencontainers.image.description="Distroless Tor proxy for Lucid (host-config.yml: tor_socks → tor-socks)" \
+      org.opencontainers.image.title="Lucid Tor SOCKS proxy (distroless)" \
+      org.opencontainers.image.description="Tor proxy: /app layout, 02_network_security/tor + scripts/lib, distroless Debian 12 (base-debian12)" \
       org.opencontainers.image.version="${VERSION}" \
       org.opencontainers.image.revision="${VCS_REF}" \
       org.opencontainers.image.created="${BUILD_DATE}" \
@@ -637,97 +335,83 @@ LABEL maintainer="Lucid Development Team" \
       com.lucid.architecture="linux/arm64" \
       com.lucid.security="distroless" \
       com.lucid.vulnerabilities="zero" \
-      com.lucid.expose="9050" \
+      com.lucid.expose="9050,9051,8888" \
       com.lucid.cluster="foundation" \
       com.lucid.tor.compatible="true" \
       com.lucid.env.config=".env.tunnel-tools,.env.foundation" \
       com.lucid.tor.inherent="true" \
-      com.lucid.tor.system="built-in" \
-      com.lucid.service_id="com.lucid.dockerfile.v1.2143ae84c81ed42f.infrastructure.containers.tor.Dockerfile.tor-proxy-02" \
-      onion.lucid.service_id="lucid-2143ae84c81ed42f-infrastructure-container" \
-      org.lucid.service_id="org.lucid.dockerfile.v1.2143ae84c81ed42f:infrastructure/containers/tor/Dockerfile.tor-proxy-02" \
+      com.lucid.tor.system="gcr-distroless-base-debian12" \
+      com.lucid.distroless.debian="12-bookworm" \
+      com.lucid.service_id="com.lucid.dockerfile.v1.tor-proxy-02.infrastructure.containers.tor" \
+      org.lucid.service_id="org.lucid.dockerfile.v1:infrastructure/containers/tor/Dockerfile.tor-proxy-02"
+
 ENV PUBLIC_TOR_IP="${PUBLIC_TOR_IP}" \
     LUCID_INTERNAL_NETWORK_NAME="${LUCID_INTERNAL_NETWORK_NAME}" \
     LUCID_TOR_EGRESS_NETWORK_NAME="${LUCID_TOR_EGRESS_NETWORK_NAME}" \
-    PATH="/app/run/lucid/tor/bin:/app/usr/bin:/usr/local/bin:/usr/bin:/bin" \
+    PATH="/app/run/lucid/tor/bin:/app/run/lucid/tor/scripts:/app/bin:/app/sbin:/app/lib:/app/share/tor:/app/bin" \
+    LD_LIBRARY_PATH="/app/lib" \
+    SSL_CERT_FILE="/app/run/lucid/ssl/certs/ca-certificates.crt" \
+    CURL_CA_BUNDLE="/app/run/lucid/ssl/certs/ca-certificates.crt" \
     LANG="C.UTF-8" \
     LC_ALL="C.UTF-8" \
-    LD_LIBRARY_PATH="/app/lib" \
     LUCID_HOST_CONFIG_PATH="/app/configs/host-config.yml" \
-    LUCID_HOST_CONFIG_SERVICE_NAME=tor_socks \
+    LUCID_HOST_CONFIG_SERVICE_NAME="tor_socks" \
     LUCID_HOST_CONFIG_STABLE_ID="tor_socks" \
     LUCID_SERVICES_CONFIG_DIR="/app/service_configs" \
     LUCID_SERVICES_CONFIG_ROOT="/app/service_configs" \
-    LUCID_SERVICE_HOST_IP=172.20.10.64 \
-    LUCID_SERVICE_HTTP_PATH=http://tor-socks:9050/app \
     LUCID_SERVICE_NAME="tor-socks" \
     LUCID_SERVICE_PORT="9050" \
-    PUBLIC_GATEWAY_IP="124.170.49.249" \
-    PUBLIC_TOR_IP="109.70.100.1" \
     TOR_CONTROL_HOST="127.0.0.1" \
-    TOR_CONTROL_PORT="9050" \
-    TOR_COOKIE_DISTRIBUTE_STRICT="1" \
-    TOR_COOKIE_TARGETS="/app/run/lucid/onion/control_auth_cookie" \
+    TOR_CONTROL_PORT="9051" \
     TOR_DATA_DIR="/app/var/lib/tor" \
     TOR_ONION_SERVICE_DIR="/app/run/lucid/onion" \
     TOR_SOCKS_PORT="9050"
-# LUCID_RUNTIME_COPY_FROM_BUILD_BEGIN
-# Generated: same directory set as LUCID_X_FILES_SKELETON (./ under WORKDIR /build).
-COPY --from=tor-builder --chown=65532:65532 /build/02_network_security/ /app/02_network_security/
-COPY --from=tor-builder --chown=65532:65532 /build/03_api_gateway/ /app/03_api_gateway/
-COPY --from=tor-builder --chown=65532:65532 /build/admin/ /app/admin/
-COPY --from=tor-builder --chown=65532:65532 /build/common/ /app/common/
-COPY --from=tor-builder --chown=65532:65532 /build/configs/ /app/configs/
-COPY --from=tor-builder --chown=65532:65532 /build/database/ /app/database/
-COPY --from=tor-builder --chown=65532:65532 /build/node/ /app/node/
-COPY --from=tor-builder --chown=65532:65532 /build/scripts/ /app/scripts/
-COPY --from=tor-builder --chown=65532:65532 /build/server/ /app/server/
-COPY --from=tor-builder --chown=65532:65532 /build/service_configs/ /app/service_configs/
-COPY --from=tor-builder --chown=65532:65532 /build/service_mesh/ /app/service_mesh/
-COPY --from=tor-builder --chown=65532:65532 /build/sessions/ /app/sessions/
-COPY --from=tor-builder --chown=65532:65532 /build/storage/ /app/storage/
-# LUCID_RUNTIME_COPY_FROM_BUILD_END
 
-# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
-# Generated: apt + RUN scaffold (mkdir/printf/touch/chown) -> FHS (not ./ or /build/; lib_search_and_inject.py).
-COPY --from=tor-builder --chown=debian-tor:debian-tor /usr/lib/*/libcurl.so* /app/usr/lib/
-COPY --from=tor-builder --chown=debian-tor:debian-tor /bin/ /app/bin/
-COPY --from=tor-builder --chown=debian-tor:debian-tor /etc/ssl/ /app/etc/ssl/
-COPY --from=tor-builder --chown=debian-tor:debian-tor /etc/tor/ /app/etc/tor/
-COPY --from=tor-builder --chown=debian-tor:debian-tor /run/lucid/ /app/run/lucid/
-COPY --from=tor-builder --chown=debian-tor:debian-tor /t/bin/ /app/bin/
-COPY --from=tor-builder --chown=debian-tor:debian-tor /dynamic/ /app/dynamic/
-COPY --from=tor-builder --chown=debian-tor:debian-tor /usr/bin/ /app/usr/bin/
-COPY --from=tor-builder --chown=debian-tor:debian-tor /usr/lib/python3.11/ /app/usr/lib/python3.11/
-COPY --from=tor-builder --chown=debian-tor:debian-tor /usr/local/bin/ /app/usr/local/bin/
-COPY --from=tor-builder --chown=debian-tor:debian-tor /usr/local/lib/python3.11/site-packages/ /app/usr/local/lib/python3.11/site-packages/
-COPY --from=tor-builder --chown=debian-tor:debian-tor /var/lib/tor/ /app/var/lib/tor/
-# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_END
-COPY --chmod=644 02_network_security/tor/torrc /app/run/lucid/tor/torrc
-COPY --chmod=755 02_network_security/tor/entrypoint.sh /app/run/lucid/tor/bin/entrypoint.sh
-COPY --chmod=755 02_network_security/tor/bootstrap-helper.sh /app/run/lucid/tor/bin/bootstrap-helper.sh
-COPY --chmod=755 02_network_security/tor/tor_entrypoint.sh /app/run/lucid/tor/bin/tor_entrypoint.sh
-COPY --chmod=755 02_network_security/tor/t_entrypoint.sh /app/run/lucid/tor/bin/t_entrypoint.sh
-COPY --chmod=755 02_network_security/tor/tor-health.sh /app/run/lucid/tor/bin/tor-health.sh
-COPY --chmod=755 02_network_security/tor/tor-show-onion.sh /app/run/lucid/tor/bin/tor-show-onion.sh
-COPY --chmod=755 02_network_security/tor/scripts/create_ephemeral_onion.sh /app/run/lucid/tor/bin/create-ephemeral-onion.sh
-# Mirror authoritative tor scripts for /run/lucid/tunnels volume parity (tunnel-tools + _lib.sh; see tor-operational-layout.yml)
-COPY --chmod=755 02_network_security/tor/bootstrap-helper.sh /app/run/lucid/tunnels/scripts/bootstrap-helper.sh
-COPY --chmod=755 02_network_security/tor/scripts/create_ephemeral_onion.sh /app/run/lucid/tunnels/scripts/create_ephemeral_onion.sh
+WORKDIR /app
 
-# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
-# Generated: apt + RUN scaffold (mkdir/printf/touch/chown) -> FHS (not ./ or /build/; lib_search_and_inject.py).
-COPY --from=tor-builder /build/configs/.env.tunnel-tools /app/configs/.env.tunnel-tools
+COPY --from=tor-builder /export-dynlink/root/ /
+COPY --from=tor-builder /usr/lib /app/lib
+COPY --from=tor-builder /etc/passwd /etc/passwd
+COPY --from=tor-builder /etc/group /etc/group
 
-# Tor layout: COPY above (tor/bin + tunnels/scripts); not /app/02_network_security/tor (builder-only tree).
+# -----------------------------------------------------------------------------
+# STAGE 2 — application tree (/app): every line below is a COPY into the distroless image.
+# Runtime shell paths (all under these trees):
+#   /app/run/lucid/tor/bin/*.sh           tor_entrypoint.sh, tor-health.sh, bootstrap-helper.sh,
+#                                         t_entrypoint.sh, entrypoint.sh, tor-show-onion.sh, dashed helpers
+#   /app/run/lucid/tor/scripts/*.sh       check_tor_bootstrap, create_dynamic_onion, create_ephemeral_onion,
+#                                         demo_onion_usage, set_host_config, start_tor, tor_env
+#   /app/run/lucid/tunnels/scripts/*.sh   bootstrap-helper.sh, create-ephemeral-onion.sh
+#   /app/run/lucid/tor/torrc, configs/torrc, log/, lucid_* hidden-service dirs, tor/tunnels/
+COPY --from=tor-builder --chown=debian-tor:debian-tor /build/run/lucid/onion/ /app/run/lucid/onion/
+COPY --from=tor-builder --chown=debian-tor:debian-tor /build/run/lucid/ssl/ /app/run/lucid/ssl/
+# CA bundle after ssl/ tree so certs/ is not overwritten by the directory COPY above
+COPY --from=tor-builder --chown=debian-tor:debian-tor /etc/ssl/certs/ca-certificates.crt /app/run/lucid/ssl/certs/ca-certificates.crt
+COPY --from=tor-builder --chown=debian-tor:debian-tor /build/run/lucid/tunnels/ /app/run/lucid/tunnels/
+COPY --from=tor-builder --chown=debian-tor:debian-tor /build/run/lucid/tor/ /app/run/lucid/tor/
+# Canonical repo tor tree (same scripts as above; paths in file headers = /app/02_network_security/tor/...)
+COPY --from=tor-builder --chown=debian-tor:debian-tor /build/02_network_security/tor/ /app/02_network_security/tor/
+# Repo scripts/lib (host-config + x-files; optional sourcing from operational scripts)
+COPY --from=tor-builder --chown=debian-tor:debian-tor /build/scripts/lib/ /app/scripts/lib/
+# Binaries, GeoIP, state scaffold, compose YAML fragments
+COPY --from=tor-builder --chown=debian-tor:debian-tor /build/bin/ /app/bin/
+COPY --from=tor-builder --chown=debian-tor:debian-tor /build/sbin/ /app/sbin/
+COPY --from=tor-builder --chown=debian-tor:debian-tor /build/opt/ /app/opt/
+COPY --from=tor-builder --chown=debian-tor:debian-tor /build/configs/ /app/configs/
+COPY --from=tor-builder --chown=debian-tor:debian-tor /build/infrastructure/ /app/infrastructure/
+COPY --from=tor-builder --chown=debian-tor:debian-tor /build/service_configs/ /app/service_configs/
+COPY --from=tor-builder --chown=debian-tor:debian-tor /build/tor/ /app/tor/
+COPY --from=tor-builder --chown=debian-tor:debian-tor /build/var/ /app/var/
+COPY --from=tor-builder --chown=debian-tor:debian-tor /build/etc/ /app/etc/
+
+COPY --from=tor-builder --chown=debian-tor:debian-tor /tmp/lucid /tmp/lucid
+
 EXPOSE 9050 9051 8888
 
-HEALTHCHECK --interval=30s --timeout=10s --start-period=45s --retries=5 \
-  CMD ["/app/usr/bin/bash", "/app/run/lucid/tor/bin/tor-health.sh"]
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=5 \
+  CMD ["/app/bin/bash", "/app/run/lucid/tor/bin/tor-health.sh"]
 
-# tini + bash paths match Debian (/usr/bin); same ENTRYPOINT pattern as user/Dockerfile + tor/Dockerfile (tunnel-tools)
-USER debian-tor:debian-tor
+USER debian-tor
 
-# Expose ports (SOCKS, control, optional HTTP) — ports match host-config.yml tor_socks / tor_control
-ENTRYPOINT ["/app/usr/bin/tini", "--"]
-CMD ["/app/usr/bin/bash", "/app/run/lucid/tor/bin/tor_entrypoint.sh"]
+ENTRYPOINT ["/app/bin/tini", "--"]
+CMD ["/app/bin/bash", "/app/run/lucid/tor/bin/tor_entrypoint.sh"]

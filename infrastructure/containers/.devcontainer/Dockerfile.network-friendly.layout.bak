@@ -206,7 +206,7 @@ RUN mkdir -p \
 
 # Set proper permissions for Tor and runtime directories
 RUN chown -R root:root /run/lucid /var/lib/tor /tmp/lucid && \
-    chmod 700 /run/lucid/onion /var/lib/tor
+    chmod 700 /app/run/lucid/onion /var/lib/tor
 
 # Stage 7: Tor configuration (per R-MUST-014, R-MUST-020)
 RUN echo "# Lucid Development Tor Configuration" > /etc/tor/torrc && \

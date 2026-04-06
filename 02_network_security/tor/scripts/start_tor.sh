@@ -13,18 +13,25 @@ set -euo pipefail
 log() { printf '[start_tor] %s\n' "$*"; }
 die() { printf '[start_tor] ERROR: %s\n' "$*" >&2; exit 1; }
 
-if [[ -d /app/usr/bin ]]; then
-  [[ ":${PATH:-}:" != *":/app/usr/bin:"* ]] && PATH="/app/usr/bin:${PATH:-}"
-fi
 if [[ -d /app/bin ]]; then
   [[ ":${PATH:-}:" != *":/app/bin:"* ]] && PATH="/app/bin:${PATH:-}"
+fi
+if [[ -d /app/sbin ]]; then
+  [[ ":${PATH:-}:" != *":/app/sbin:"* ]] && PATH="/app/sbin:${PATH:-}"
+fi
+if [[ -d /app/usr/bin ]]; then
+  [[ ":${PATH:-}:" != *":/app/usr/bin:"* ]] && PATH="/app/usr/bin:${PATH:-}"
 fi
 export PATH
 
 TORRC="${TORRC:-/app/run/lucid/tor/torrc}"
-TOR_BIN="tor"
-command -v tor >/dev/null 2>&1 || TOR_BIN="/app/usr/bin/tor"
-[[ -x "$TOR_BIN" ]] || die "tor binary not found (expected PATH or /app/usr/bin/tor)"
+TOR_BIN="$(command -v tor 2>/dev/null || true)"
+if [[ -z "$TOR_BIN" ]]; then
+  if [[ -x /app/bin/tor ]]; then TOR_BIN="/app/bin/tor"
+  elif [[ -x /app/usr/bin/tor ]]; then TOR_BIN="/app/usr/bin/tor"
+  fi
+fi
+[[ -n "$TOR_BIN" && -x "$TOR_BIN" ]] || die "tor binary not found (expected PATH or /app/bin/tor)"
 
 BB="${BUSYBOX:-}"
 [[ -z "$BB" && -x /app/bin/busybox ]] && BB="/app/bin/busybox"

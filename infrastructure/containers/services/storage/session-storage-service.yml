@@ -1,0 +1,54 @@
+# File: /app/service_configs/storage/session-storage-service.yml
+# x-lucid-file-path: /app/service_configs/storage/session-storage-service.yml
+# x-lucid-file-directory: /app/service_configs/storage
+# x-lucid-file-type: YAML
+# Lucid alignment: host_registry=infrastructure/containers/host-config.yml (container /app/configs/host-config.yml); path_index=x-files.json section_to_canonical
+#
+# compose_service=session-storage-service; YAML/JSON/Python lists from alignment manifest (list_service_files_by_name.py).
+
+version: '1.0'
+description: >
+  Conventional service bundle index for session-storage-service. Refs below mirror the alignment
+  manifest for this compose service. Cross-check infrastructure/containers/host-config.yml and x-files.json.
+
+x-lucid-calibration:
+  source_host_config: infrastructure/containers/host-config.yml
+  source_x_files: x-files.json
+  bundle_repo_path: infrastructure/containers/services/storage/session-storage-service.yml
+  bundle_container_path: /app/service_configs/storage/session-storage-service.yml
+  alignment_manifest_tool: scripts/gui_auth_realignment/list_service_files_by_name.py
+
+compose_service: "session-storage-service"
+associated_needles:
+  - "session-storage-service"
+  - "session_storage_service"
+
+manifest_alignment:
+  yml_refs:
+    - "configs/container/node/docker-compose.node-sessions.yml"
+    - "configs/container/sessions/docker-compose.session-images.yml"
+    - "configs/docker/docker-compose.all.yml"
+    - "configs/docker/docker-compose.application.yml"
+    - "configs/services/session-management.yml"
+    - "infrastructure/containers/host-config.yml"
+    - "infrastructure/containers/node/docker-compose.node-sessions.yml"
+    - "infrastructure/containers/services/middle-ware/master-endpoint.yml"
+    - "infrastructure/containers/services/sessions/session-management.yml"
+    - "infrastructure/containers/services/sessions/api-config.yaml"
+    - "infrastructure/containers/services/sessions/pipeline-config.yaml"
+    - "infrastructure/containers/services/sessions/storage-config.yaml"
+    - "infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.yml"
+    - "infrastructure/containers/services/x_lucid_cluster_calibration/core-cluster-host-alignment.yml"
+    - "infrastructure/containers/services/x_lucid_cluster_calibration/processing-cluster-host-alignment.yml"
+    - "infrastructure/containers/services/x_lucid_cluster_calibration/storage-cluster-host-alignment.yml"
+    - "infrastructure/containers/sessions/docker-compose.session-images.yml"
+    - "infrastructure/containers/user/docker-compose.user-services.yml"
+  json_refs:
+    - "configs/x-files.json"
+    - "infrastructure/containers/config-listings.json"
+    - "infrastructure/containers/dockerfile_layout_run_report.json"
+    - "infrastructure/containers/dockerfile_recalibration_map.json"
+    - "infrastructure/containers/dockerfile_recalibration_map_REPAIRED.json"
+    - "infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.json"
+  py_refs:
+    - "common/load_host_config.py"

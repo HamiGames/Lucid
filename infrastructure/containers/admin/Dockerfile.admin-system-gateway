@@ -8,8 +8,8 @@
 # x-lucid-file-name: Dockerfile.admin-system-gateway
 
 
-ARG BUILD_DATE
-ARG VCS_REF
+ARG BUILD_DATE=
+ARG VCS_REF=
 ARG VERSION=1.0.0
 ARG TARGETPLATFORM=linux/arm64
 ARG BUILDPLATFORM=linux/amd64
@@ -20,7 +20,7 @@ ARG PYTHON_VERSION=3.11
 ############################
 ARG BUILDPLATFORM
 ARG TARGETPLATFORM
-ARG PYTHON_VERSION
+ARG PYTHON_VERSION=3.12-slim
 
 FROM --platform=$TARGETPLATFORM python:3.11-slim-bookworm AS builder
 
@@ -96,7 +96,7 @@ RUN apt-get remove -y rustc cargo && \
     rm -rf /root/.cargo /root/.rustup && \
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
 
-COPY infrastructure/containers/admin/requirements.txt ./requirements.txt
+COPY admin/requirements.txt ./requirements.txt
 
 RUN --mount=type=cache,target=/root/.cache/pip \
     mkdir -p /build/wheels && \
@@ -113,18 +113,14 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 # LUCID_X_FILES_SKELETON_BEGIN
 # Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
 RUN set -eux; \
-    mkdir -p '.' './admin' './blockchain' './common' './configs' './node' './scripts' './server' './service_configs' './sessions' './tmp' './admin/__pycache__' './admin/admin_ui' './admin/api' './admin/audit' './admin/config' './admin/emergency' './admin/governance' './admin/key_rotation' './admin/over_lord' './admin/rbac' './admin/services' './admin/system' './admin/ui' './admin/utils' './blockchain/__pycache__' './blockchain/anchoring' './blockchain/api' './blockchain/chain_client' './blockchain/config' './blockchain/contracts' './blockchain/core' './blockchain/data' './blockchain/deployment' './blockchain/docs' './blockchain/evm' './blockchain/governance' './blockchain/manager' './blockchain/on_system_chain' './blockchain/scripts' './blockchain/tests' './blockchain/utils' './common/__pycache__' './common/governance' './common/security' './common/server-tools' './common/templates' './common/tor' './configs/.ssh' './configs/alignment-mats' './configs/container' './configs/database' './configs/docker' './configs/env' './configs/environment' './configs/gui-alignment' './configs/integration' './configs/kubernetes' './configs/logging' './configs/pi' './configs/secrets' './configs/security' './configs/tor' './node/__pycache__' './node/api' './node/config' './node/consensus' './node/dht_crdt' './node/economy' './node/flags' './node/governance' './node/models' './node/over_lord' './node/payouts' './node/pools' './node/poot' './node/registration' './node/repositories' './node/resources' './node/service_configs' './node/shards' './node/sync' './node/tor' './node/validation' './node/worker' './scripts/__pycache__' './scripts/auth_sm_realignment' './scripts/build' './scripts/compliance' './scripts/config' './scripts/contracts' './scripts/database' './scripts/deployment' './scripts/devcontainer' './scripts/docs' './scripts/foundation' './scripts/gui' './scripts/gui_auth_realignment' './scripts/hardware' './scripts/integration' './scripts/lib' './scripts/load' './scripts/logging' './scripts/maintenance' './scripts/migration' './scripts/monitoring' './scripts/network' './scripts/re-build' './scripts/registry' './scripts/secrets' './scripts/security' './scripts/services' './scripts/testing' './scripts/validation' './scripts/verification' './server/__pycache__' './service_configs/distroless' './service_configs/logging' './service_configs/multi-stage' './service_configs/node' './service_configs/payment_services' './service_configs/rdp' './service_configs/security' './service_configs/service_mesh' './service_configs/services' './service_configs/sessions' './service_configs/tor' './service_configs/x_lucid_cluster_calibration' './sessions/__pycache__' './sessions/api' './sessions/config' './sessions/core' './sessions/encryption' './sessions/integration' './sessions/pipeline' './sessions/processor' './sessions/recorder' './sessions/security' './sessions/session_systems_control' './sessions/storage' './admin/admin_ui/__pycache__' './admin/api/__pycache__' './admin/audit/__pycache__' './admin/config/__pycache__' './admin/emergency/__pycache__' './admin/governance/__pycache__' './admin/key_rotation/__pycache__' './admin/rbac/__pycache__' './admin/services/__pycache__' './admin/system/__pycache__' './admin/ui/__pycache__' './admin/ui/static' './admin/ui/templates' './admin/utils/__pycache__' './blockchain/anchoring/__pycache__' './blockchain/api/app' './blockchain/chain_client/__pycache__' './blockchain/config/__pycache__' './blockchain/contracts/__pycache__' './blockchain/core/__pycache__' './blockchain/data/__pycache__' './blockchain/data/api' './blockchain/deployment/__pycache__' './blockchain/evm/__pycache__' './blockchain/governance/__pycache__' './blockchain/manager/__pycache__' './blockchain/on_system_chain/__pycache__' './blockchain/scripts/__pycache__' './blockchain/tests/__pycache__' './blockchain/utils/__pycache__' './common/governance/__pycache__' './common/security/__pycache__' './common/server-tools/__pycache__' './common/tor/__pycache__' './configs/container/admin' './configs/container/auth' './configs/container/base' './configs/container/blockchain' './configs/container/database' './configs/container/electron_gui' './configs/container/gui' './configs/container/node' './configs/container/payment_systems' './configs/container/rdp' './configs/container/server' './configs/container/sessions' './configs/container/storage' './configs/container/tor' './configs/database/elasticsearch' './configs/database/redis' './configs/docker/distroless' './configs/docker/docs' './configs/docker/multi-stage' './configs/environment/development' './configs/environment/pi' './configs/environment/production' './configs/environment/staging' './configs/pi/ssh' './configs/secrets/runtime' './node/api/__pycache__' './node/consensus/__pycache__' './node/dht_crdt/__pycache__' './node/economy/__pycache__' './node/flags/__pycache__' './node/governance/__pycache__' './node/models/__pycache__' './node/payouts/__pycache__' './node/pools/__pycache__' './node/poot/__pycache__' './node/registration/__pycache__' './node/repositories/__pycache__' './node/resources/__pycache__' './node/service_configs/x_lucid_cluster_calibration' './node/shards/__pycache__' './node/sync/__pycache__' './node/tor/__pycache__' './node/validation/__pycache__' './node/worker/__pycache__' './scripts/auth_sm_realignment/.cache' './scripts/auth_sm_realignment/lib' './scripts/build/__pycache__' './scripts/build/components' './scripts/build/core' './scripts/build/distroless' './scripts/build/utils' './scripts/compliance/distroless' './scripts/compliance/general' './scripts/deployment/devcontainer' './scripts/deployment/distroless' './scripts/deployment/pi' './scripts/deployment/utils' './scripts/gui_auth_realignment/.cache' './scripts/gui_auth_realignment/lib' './scripts/maintenance/cleanup' './scripts/maintenance/optimization' './scripts/maintenance/recovery' './scripts/network/diagnostics' './scripts/network/security' './scripts/network/setup' './scripts/testing/integration' './scripts/testing/unit' './scripts/testing/utils' './scripts/validation/__pycache__' './scripts/verification/__pycache__' './service_configs/x_lucid_cluster_calibration/__pycache__' './sessions/api/__pycache__' './sessions/api/config' './sessions/api/integration' './sessions/core/__pycache__' './sessions/encryption/__pycache__' './sessions/integration/__pycache__' './sessions/pipeline/__pycache__' './sessions/pipeline/integration' './sessions/processor/__pycache__' './sessions/processor/config' './sessions/processor/integration' './sessions/recorder/__pycache__' './sessions/recorder/config' './sessions/recorder/integration' './sessions/security/__pycache__' './sessions/session_systems_control/__pycache__' './sessions/storage/__pycache__' './sessions/storage/config' './admin/ui/static/css' './admin/ui/static/js' './blockchain/api/app/__pycache__' './blockchain/api/app/crypto' './blockchain/api/app/database' './blockchain/api/app/db' './blockchain/api/app/middleware' './blockchain/api/app/models' './blockchain/api/app/repo' './blockchain/api/app/routers' './blockchain/api/app/routes' './blockchain/api/app/schemas' './blockchain/api/app/services' './blockchain/data/api/__pycache__' './configs/secrets/runtime/compose' './sessions/api/integration/__pycache__' './sessions/pipeline/integration/__pycache__' './sessions/processor/integration/__pycache__' './sessions/recorder/integration/__pycache__' './blockchain/api/app/crypto/__pycache__' './blockchain/api/app/database/__pycache__' './blockchain/api/app/database/repositories' './blockchain/api/app/db/__pycache__' './blockchain/api/app/middleware/__pycache__' './blockchain/api/app/models/__pycache__' './blockchain/api/app/repo/__pycache__' './blockchain/api/app/routers/__pycache__' './blockchain/api/app/routes/__pycache__' './blockchain/api/app/schemas/__pycache__' './blockchain/api/app/services/__pycache__'; \
+    mkdir -p '.' './admin' './common' './configs' './node' './service_configs' './tmp' './admin/__pycache__' './admin/admin_ui' './admin/api' './admin/audit' './admin/config' './admin/emergency' './admin/governance' './admin/key_rotation' './admin/over_lord' './admin/rbac' './admin/services' './admin/system' './admin/ui' './admin/utils' './common/__pycache__' './common/governance' './common/security' './common/server-tools' './common/templates' './common/tor' './configs/.ssh' './configs/container' './configs/database' './configs/docker' './configs/env' './configs/environment' './configs/integration' './configs/kubernetes' './configs/logging' './configs/pi' './configs/secrets' './configs/security' './configs/tor' './node/__pycache__' './node/api' './node/config' './node/consensus' './node/dht_crdt' './node/economy' './node/flags' './node/governance' './node/models' './node/over_lord' './node/payouts' './node/pools' './node/poot' './node/registration' './node/repositories' './node/resources' './node/service_configs' './node/shards' './node/sync' './node/tor' './node/validation' './node/worker' './admin/admin_ui/__pycache__' './admin/api/__pycache__' './admin/audit/__pycache__' './admin/config/__pycache__' './admin/emergency/__pycache__' './admin/governance/__pycache__' './admin/key_rotation/__pycache__' './admin/rbac/__pycache__' './admin/services/__pycache__' './admin/system/__pycache__' './admin/ui/__pycache__' './admin/ui/static' './admin/ui/templates' './admin/utils/__pycache__' './common/governance/__pycache__' './common/security/__pycache__' './common/server-tools/__pycache__' './common/tor/__pycache__' './configs/container/admin' './configs/container/auth' './configs/container/base' './configs/container/blockchain' './configs/container/database' './configs/container/electron_gui' './configs/container/gui' './configs/container/node' './configs/container/payment_systems' './configs/container/rdp' './configs/container/server' './configs/container/sessions' './configs/container/storage' './configs/container/tor' './configs/database/elasticsearch' './configs/database/redis' './configs/docker/distroless' './configs/docker/docs' './configs/docker/multi-stage' './configs/pi/ssh' './node/api/__pycache__' './node/consensus/__pycache__' './node/dht_crdt/__pycache__' './node/economy/__pycache__' './node/flags/__pycache__' './node/governance/__pycache__' './node/models/__pycache__' './node/payouts/__pycache__' './node/pools/__pycache__' './node/poot/__pycache__' './node/registration/__pycache__' './node/repositories/__pycache__' './node/resources/__pycache__' './node/service_configs/x_lucid_cluster_calibration' './node/shards/__pycache__' './node/sync/__pycache__' './node/tor/__pycache__' './node/validation/__pycache__' './node/worker/__pycache__' './admin/ui/static/css' './admin/ui/static/js'; \
     for d in \
       '.' \
       './admin' \
-      './blockchain' \
       './common' \
       './configs' \
       './node' \
-      './scripts' \
-      './server' \
       './service_configs' \
-      './sessions' \
       './tmp' \
       './admin/__pycache__' \
       './admin/admin_ui' \
@@ -140,23 +136,6 @@ RUN set -eux; \
       './admin/system' \
       './admin/ui' \
       './admin/utils' \
-      './blockchain/__pycache__' \
-      './blockchain/anchoring' \
-      './blockchain/api' \
-      './blockchain/chain_client' \
-      './blockchain/config' \
-      './blockchain/contracts' \
-      './blockchain/core' \
-      './blockchain/data' \
-      './blockchain/deployment' \
-      './blockchain/docs' \
-      './blockchain/evm' \
-      './blockchain/governance' \
-      './blockchain/manager' \
-      './blockchain/on_system_chain' \
-      './blockchain/scripts' \
-      './blockchain/tests' \
-      './blockchain/utils' \
       './common/__pycache__' \
       './common/governance' \
       './common/security' \
@@ -164,13 +143,11 @@ RUN set -eux; \
       './common/templates' \
       './common/tor' \
       './configs/.ssh' \
-      './configs/alignment-mats' \
       './configs/container' \
       './configs/database' \
       './configs/docker' \
       './configs/env' \
       './configs/environment' \
-      './configs/gui-alignment' \
       './configs/integration' \
       './configs/kubernetes' \
       './configs/logging' \
@@ -200,61 +177,6 @@ RUN set -eux; \
       './node/tor' \
       './node/validation' \
       './node/worker' \
-      './scripts/__pycache__' \
-      './scripts/auth_sm_realignment' \
-      './scripts/build' \
-      './scripts/compliance' \
-      './scripts/config' \
-      './scripts/contracts' \
-      './scripts/database' \
-      './scripts/deployment' \
-      './scripts/devcontainer' \
-      './scripts/docs' \
-      './scripts/foundation' \
-      './scripts/gui' \
-      './scripts/gui_auth_realignment' \
-      './scripts/hardware' \
-      './scripts/integration' \
-      './scripts/lib' \
-      './scripts/load' \
-      './scripts/logging' \
-      './scripts/maintenance' \
-      './scripts/migration' \
-      './scripts/monitoring' \
-      './scripts/network' \
-      './scripts/re-build' \
-      './scripts/registry' \
-      './scripts/secrets' \
-      './scripts/security' \
-      './scripts/services' \
-      './scripts/testing' \
-      './scripts/validation' \
-      './scripts/verification' \
-      './server/__pycache__' \
-      './service_configs/distroless' \
-      './service_configs/logging' \
-      './service_configs/multi-stage' \
-      './service_configs/node' \
-      './service_configs/payment_services' \
-      './service_configs/rdp' \
-      './service_configs/security' \
-      './service_configs/service_mesh' \
-      './service_configs/services' \
-      './service_configs/sessions' \
-      './service_configs/tor' \
-      './service_configs/x_lucid_cluster_calibration' \
-      './sessions/__pycache__' \
-      './sessions/api' \
-      './sessions/config' \
-      './sessions/core' \
-      './sessions/encryption' \
-      './sessions/integration' \
-      './sessions/pipeline' \
-      './sessions/processor' \
-      './sessions/recorder' \
-      './sessions/security' \
-      './sessions/session_systems_control' \
-      './sessions/storage' \
       './admin/admin_ui/__pycache__' \
       './admin/api/__pycache__' \
       './admin/audit/__pycache__' \
@@ -269,22 +191,6 @@ RUN set -eux; \
       './admin/ui/static' \
       './admin/ui/templates' \
       './admin/utils/__pycache__' \
-      './blockchain/anchoring/__pycache__' \
-      './blockchain/api/app' \
-      './blockchain/chain_client/__pycache__' \
-      './blockchain/config/__pycache__' \
-      './blockchain/contracts/__pycache__' \
-      './blockchain/core/__pycache__' \
-      './blockchain/data/__pycache__' \
-      './blockchain/data/api' \
-      './blockchain/deployment/__pycache__' \
-      './blockchain/evm/__pycache__' \
-      './blockchain/governance/__pycache__' \
-      './blockchain/manager/__pycache__' \
-      './blockchain/on_system_chain/__pycache__' \
-      './blockchain/scripts/__pycache__' \
-      './blockchain/tests/__pycache__' \
-      './blockchain/utils/__pycache__' \
       './common/governance/__pycache__' \
       './common/security/__pycache__' \
       './common/server-tools/__pycache__' \
@@ -308,12 +214,7 @@ RUN set -eux; \
       './configs/docker/distroless' \
       './configs/docker/docs' \
       './configs/docker/multi-stage' \
-      './configs/environment/development' \
-      './configs/environment/pi' \
-      './configs/environment/production' \
-      './configs/environment/staging' \
       './configs/pi/ssh' \
-      './configs/secrets/runtime' \
       './node/api/__pycache__' \
       './node/consensus/__pycache__' \
       './node/dht_crdt/__pycache__' \
@@ -333,115 +234,77 @@ RUN set -eux; \
       './node/tor/__pycache__' \
       './node/validation/__pycache__' \
       './node/worker/__pycache__' \
-      './scripts/auth_sm_realignment/.cache' \
-      './scripts/auth_sm_realignment/lib' \
-      './scripts/build/__pycache__' \
-      './scripts/build/components' \
-      './scripts/build/core' \
-      './scripts/build/distroless' \
-      './scripts/build/utils' \
-      './scripts/compliance/distroless' \
-      './scripts/compliance/general' \
-      './scripts/deployment/devcontainer' \
-      './scripts/deployment/distroless' \
-      './scripts/deployment/pi' \
-      './scripts/deployment/utils' \
-      './scripts/gui_auth_realignment/.cache' \
-      './scripts/gui_auth_realignment/lib' \
-      './scripts/maintenance/cleanup' \
-      './scripts/maintenance/optimization' \
-      './scripts/maintenance/recovery' \
-      './scripts/network/diagnostics' \
-      './scripts/network/security' \
-      './scripts/network/setup' \
-      './scripts/testing/integration' \
-      './scripts/testing/unit' \
-      './scripts/testing/utils' \
-      './scripts/validation/__pycache__' \
-      './scripts/verification/__pycache__' \
-      './service_configs/x_lucid_cluster_calibration/__pycache__' \
-      './sessions/api/__pycache__' \
-      './sessions/api/config' \
-      './sessions/api/integration' \
-      './sessions/core/__pycache__' \
-      './sessions/encryption/__pycache__' \
-      './sessions/integration/__pycache__' \
-      './sessions/pipeline/__pycache__' \
-      './sessions/pipeline/integration' \
-      './sessions/processor/__pycache__' \
-      './sessions/processor/config' \
-      './sessions/processor/integration' \
-      './sessions/recorder/__pycache__' \
-      './sessions/recorder/config' \
-      './sessions/recorder/integration' \
-      './sessions/security/__pycache__' \
-      './sessions/session_systems_control/__pycache__' \
-      './sessions/storage/__pycache__' \
-      './sessions/storage/config' \
       './admin/ui/static/css' \
       './admin/ui/static/js' \
-      './blockchain/api/app/__pycache__' \
-      './blockchain/api/app/crypto' \
-      './blockchain/api/app/database' \
-      './blockchain/api/app/db' \
-      './blockchain/api/app/middleware' \
-      './blockchain/api/app/models' \
-      './blockchain/api/app/repo' \
-      './blockchain/api/app/routers' \
-      './blockchain/api/app/routes' \
-      './blockchain/api/app/schemas' \
-      './blockchain/api/app/services' \
-      './blockchain/data/api/__pycache__' \
-      './configs/secrets/runtime/compose' \
-      './sessions/api/integration/__pycache__' \
-      './sessions/pipeline/integration/__pycache__' \
-      './sessions/processor/integration/__pycache__' \
-      './sessions/recorder/integration/__pycache__' \
-      './blockchain/api/app/crypto/__pycache__' \
-      './blockchain/api/app/database/__pycache__' \
-      './blockchain/api/app/database/repositories' \
-      './blockchain/api/app/db/__pycache__' \
-      './blockchain/api/app/middleware/__pycache__' \
-      './blockchain/api/app/models/__pycache__' \
-      './blockchain/api/app/repo/__pycache__' \
-      './blockchain/api/app/routers/__pycache__' \
-      './blockchain/api/app/routes/__pycache__' \
-      './blockchain/api/app/schemas/__pycache__' \
-      './blockchain/api/app/services/__pycache__' \
     ; do \
       printf 'LUCID_X_FILES_SKELETON_%s' "$(date +%s)" > "$d/.keep"; \
       touch "$d/.keep"; \
     done
 # LUCID_X_FILES_SKELETON_END
 # LUCID_ALIGNMENT_MAT_COPY_DIRECTORIES_BEGIN
-# alignment-mat admin-system-gateway_manifest.json: compose_service='admin-system-gateway' — manifest py/yml/yaml/json → builder COPY (#10).
-COPY common/ ./common/
-COPY configs/ ./configs/
-COPY infrastructure/containers/ ./infrastructure/containers/
+# alignment-mat admin-system-gateway_manifest.json: compose_service='admin-system-gateway' — explicit manifest paths → 49 builder COPY line(s) (dockerfile_layout_structure.json section #10 COPY_DIRECTORIES).
+COPY _gen_host_config.py ./_gen_host_config.py
+COPY admin/config/load_host_config.py ./admin/config/load_host_config.py
+COPY common/__init__.py ./common/__init__.py
+COPY common/contact_profile_env.py ./common/contact_profile_env.py
+COPY common/governance/__init__.py ./common/governance/__init__.py
+COPY common/governance/lucid_governor.py ./common/governance/lucid_governor.py
+COPY common/governance/param_registry.py ./common/governance/param_registry.py
+COPY common/governance/timelock.py ./common/governance/timelock.py
+COPY common/load_host_config.py ./common/load_host_config.py
+COPY common/security/__init__.py ./common/security/__init__.py
+COPY common/security/input_controller.py ./common/security/input_controller.py
+COPY common/security/policy_validator.py ./common/security/policy_validator.py
+COPY common/security/privacy_shield.py ./common/security/privacy_shield.py
+COPY common/security/session_validator.py ./common/security/session_validator.py
+COPY common/security/trust_nothing_engine.py ./common/security/trust_nothing_engine.py
+COPY common/server-tools/__init__.py ./common/server-tools/__init__.py
+COPY common/tor/__init__.py ./common/tor/__init__.py
+COPY common/tor/onion_service.py ./common/tor/onion_service.py
+COPY common/tor/socks_proxy.py ./common/tor/socks_proxy.py
+COPY common/tor/tor_manager.py ./common/tor/tor_manager.py
+COPY configs/x-files.json ./configs/x-files.json
+COPY infrastructure/containers/admin/admin-system-gateway/entrypoint.py ./infrastructure/containers/admin/admin-system-gateway/entrypoint.py
+COPY infrastructure/containers/admin/admin-system-gateway/verify_runtime.py ./infrastructure/containers/admin/admin-system-gateway/verify_runtime.py
+COPY infrastructure/containers/admin/config/admin-system-gateway.connections.json ./infrastructure/containers/admin/config/admin-system-gateway.connections.json
+COPY infrastructure/containers/admin/config/openssl-api.yml ./infrastructure/containers/admin/config/openssl-api.yml
+COPY infrastructure/containers/admin/docker-compose.admin.yml ./infrastructure/containers/admin/docker-compose.admin.yml
+COPY infrastructure/containers/config-listings.json ./infrastructure/containers/config-listings.json
+COPY infrastructure/containers/dockerfile_layout_run_report.json ./infrastructure/containers/dockerfile_layout_run_report.json
+COPY infrastructure/containers/dockerfile_recalibration_map.json ./infrastructure/containers/dockerfile_recalibration_map.json
+COPY infrastructure/containers/dockerfile_recalibration_map_REPAIRED.json ./infrastructure/containers/dockerfile_recalibration_map_REPAIRED.json
+COPY infrastructure/containers/host-config.yml ./infrastructure/containers/host-config.yml
+COPY infrastructure/containers/node/config/node-system-gateway.connections.json ./infrastructure/containers/node/config/node-system-gateway.connections.json
+COPY infrastructure/containers/node/node-system-gateway/entrypoint.py ./infrastructure/containers/node/node-system-gateway/entrypoint.py
+COPY infrastructure/containers/payment_systems/docker-compose.payment-externals.yml ./infrastructure/containers/payment_systems/docker-compose.payment-externals.yml
+COPY infrastructure/containers/server/docker-compose.server-external.yml ./infrastructure/containers/server/docker-compose.server-external.yml
+COPY infrastructure/containers/services/admin/admin-interface.yml ./infrastructure/containers/services/admin/admin-interface.yml
+COPY infrastructure/containers/services/admin/admin-params-registry.yml ./infrastructure/containers/services/admin/admin-params-registry.yml
+COPY infrastructure/containers/services/admin/admin-system-gateway.yml ./infrastructure/containers/services/admin/admin-system-gateway.yml
+COPY infrastructure/containers/services/admin/admin-ui-backend.yml ./infrastructure/containers/services/admin/admin-ui-backend.yml
+COPY infrastructure/containers/services/middle-ware/master-endpoint.yml ./infrastructure/containers/services/middle-ware/master-endpoint.yml
+COPY infrastructure/containers/services/tor/tunnel-tools.yml ./infrastructure/containers/services/tor/tunnel-tools.yml
+COPY infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.json ./infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.json
+COPY infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.yml ./infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.yml
+COPY infrastructure/containers/services/x_lucid_cluster_calibration/core-cluster-host-alignment.yml ./infrastructure/containers/services/x_lucid_cluster_calibration/core-cluster-host-alignment.yml
+COPY infrastructure/service_mesh/service_mesh_translator.py ./infrastructure/service_mesh/service_mesh_translator.py
 # LUCID_ALIGNMENT_MAT_COPY_DIRECTORIES_END
 # LUCID_X_FILES_SKELETON_BEGIN
 # Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
-COPY scripts/ ./scripts/
 
+
+COPY admin/config/openssl-api.yml /build/node/config/openssl-api.yml
+COPY admin/config/admin-system-gateway.connections.json /build/node/config/connections.json
+COPY admin/admin-system-gateway/entrypoint.py /build/node/entrypoint.py
+COPY admin/admin-system-gateway/verify_runtime.py /build/tmp/verify_runtime.py
+COPY admin/ ./admin/
+
+
+COPY admin/docker-compose.admin.yml /build/service_configs/docker-compose.admin.yml
 
 RUN rm -rf configs/environment 2>/dev/null || true
 
 
-
-COPY infrastructure/containers/admin/config/openssl-api.yml /build/node/config/openssl-api.yml
-COPY infrastructure/containers/admin/config/admin-system-gateway.connections.json /build/node/config/connections.json
-COPY infrastructure/containers/admin/admin-system-gateway/entrypoint.py /build/node/entrypoint.py
-COPY infrastructure/containers/admin/admin-system-gateway/verify_runtime.py /build/tmp/verify_runtime.py
-COPY admin/ ./admin/
-COPY blockchain/ ./blockchain/
-COPY node/ ./node/
-COPY server/ ./server/
-COPY sessions/ ./sessions/
-
-
-COPY service_configs/kubernetes/01_configmaps/database-config.yaml /build/configs/database-config.yaml
-COPY service_configs/kubernetes/01_configmaps/api-gateway-config.yaml /build/configs/api-gateway-config.yaml
-COPY infrastructure/containers/admin/docker-compose.admin.yml /build/service_configs/docker-compose.admin.yml
 
 RUN printf "LUCID_ADMIN_GATEWAY_RUNTIME_DIRECTORY" > /var/run/.keep && \
     printf "LUCID_ADMIN_GATEWAY_LIB_DIRECTORY" > /var/lib/.keep && \
@@ -468,8 +331,8 @@ RUN chown -R 65532:65532 /build/host/host-config.yml /build/service_configs/cont
 ############################
 FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12:latest
 
-ARG BUILD_DATE
-ARG VCS_REF
+ARG BUILD_DATE=
+ARG VCS_REF=
 ARG VERSION=1.0.0
 # Lucid Tor egress / network isolation (PUBLIC_TOR_IP: ../../configs/environment/ ; compose: lucid-tor-egress-network)
 ARG PUBLIC_TOR_IP=109.70.100.1
@@ -530,14 +393,10 @@ ENV     PUBLIC_TOR_IP="${PUBLIC_TOR_IP}" \
 # LUCID_RUNTIME_COPY_FROM_BUILD_BEGIN
 # Generated: same directory set as LUCID_X_FILES_SKELETON (./ under WORKDIR /build).
 COPY --from=builder --chown=65532:65532 /build/admin/ /app/admin/
-COPY --from=builder --chown=65532:65532 /build/blockchain/ /app/blockchain/
 COPY --from=builder --chown=65532:65532 /build/common/ /app/common/
 COPY --from=builder --chown=65532:65532 /build/configs/ /app/configs/
 COPY --from=builder --chown=65532:65532 /build/node/ /app/node/
-COPY --from=builder --chown=65532:65532 /build/scripts/ /app/scripts/
-COPY --from=builder --chown=65532:65532 /build/server/ /app/server/
 COPY --from=builder --chown=65532:65532 /build/service_configs/ /app/service_configs/
-COPY --from=builder --chown=65532:65532 /build/sessions/ /app/sessions/
 COPY --from=builder --chown=65532:65532 /build/tmp/ /app/tmp/
 # LUCID_RUNTIME_COPY_FROM_BUILD_END
 
@@ -548,6 +407,7 @@ COPY --from=builder --chown=65532:65532 /usr/lib/*/libssl.so* /app/usr/lib/
 COPY --from=builder --chown=65532:65532 /usr/lib/*/ossl-modules/ /app/usr/lib/
 COPY --from=builder --chown=65532:65532 /usr/lib/*/libcurl.so* /app/usr/lib/
 COPY --from=builder --chown=65532:65532 /bin/ /app/bin/
+COPY --from=builder --chown=65532:65532 /dev/null/ /app/dev/null/
 COPY --from=builder --chown=65532:65532 /etc/ssl/ /app/etc/ssl/
 COPY --from=builder --chown=65532:65532 /usr/bin/ /app/usr/bin/
 COPY --from=builder --chown=65532:65532 /usr/lib/python3/dist-packages/ /app/usr/lib/python3/dist-packages/
@@ -556,18 +416,14 @@ COPY --from=builder --chown=65532:65532 /usr/local/lib/python3.11/site-packages/
 COPY --from=builder --chown=65532:65532 /var/lib/ /app/var/lib/
 COPY --from=builder --chown=65532:65532 /var/run/ /app/var/run/
 # LUCID_RUNTIME_COPY_FROM_BUILDER_APT_END
-# LUCID_IMAGE_CONFIG: (runtime)
+
+
+
 
 # LUCID_RUNTIME_COPY_FROM_BUILD_END
-
-
-
-
+# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
+# Generated: apt + RUN scaffold (mkdir/printf/touch/chown) -> FHS (not ./ or /build/; lib_search_and_inject.py).
 COPY --from=builder --chown=65532:65532 /build/wheels/ /app/wheels/
-COPY --from=builder --chown=65532:65532 /build/configs/database-config.yaml /app/configs/database-config.yaml
-COPY --from=builder --chown=65532:65532 /build/configs/api-gateway-config.yaml /app/configs/api-gateway-config.yaml
-COPY --from=builder --chown=65532:65532 /build/configs/operations/docker-compose.admin.yml /app/configs/operations/docker-compose.admin.yml
-COPY --from=builder --chown=65532:65532 /build/tmp/verify_runtime.py /app/tmp/verify_runtime.py
 
 RUN ["/app/usr/bin/python3.11", "/app/tmp/verify_runtime.py"]
 RUN ["rm", "-f", "/app/tmp/verify_runtime.py"]

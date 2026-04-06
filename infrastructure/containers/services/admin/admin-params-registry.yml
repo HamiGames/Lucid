@@ -1,0 +1,41 @@
+# File: /app/service_configs/admin/admin-params-registry.yml
+# x-lucid-file-path: /app/service_configs/admin/admin-params-registry.yml
+# x-lucid-file-directory: /app/service_configs/admin
+# x-lucid-file-type: YAML
+# Lucid alignment: host_registry=infrastructure/containers/host-config.yml (container /app/configs/host-config.yml); path_index=x-files.json section_to_canonical
+#
+# compose_service=admin-params-registry; YAML/JSON/Python lists from alignment manifest (list_service_files_by_name.py).
+
+version: '1.0'
+description: >
+  Conventional service bundle index for admin-params-registry. Refs below mirror the alignment
+  manifest for this compose service. Cross-check infrastructure/containers/host-config.yml and x-files.json.
+
+x-lucid-calibration:
+  source_host_config: infrastructure/containers/host-config.yml
+  source_x_files: x-files.json
+  bundle_repo_path: infrastructure/containers/services/admin/admin-params-registry.yml
+  bundle_container_path: /app/service_configs/admin/admin-params-registry.yml
+  alignment_manifest_tool: scripts/gui_auth_realignment/list_service_files_by_name.py
+
+compose_service: "admin-params-registry"
+associated_needles:
+  - "admin_params_registry"
+  - "admin-params-registry"
+
+manifest_alignment:
+  yml_refs:
+    - "configs/container/admin/docker-compose.admin.yml"
+    - "infrastructure/containers/admin/docker-compose.admin.yml"
+    - "infrastructure/containers/host-config.yml"
+    - "infrastructure/containers/services/middle-ware/master-endpoint.yml"
+    - "infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.yml"
+    - "infrastructure/containers/services/x_lucid_cluster_calibration/core-cluster-host-alignment.yml"
+  json_refs:
+    - "infrastructure/containers/admin/config/admin-system-gateway.connections.json"
+    - "infrastructure/containers/config-listings.json"
+    - "infrastructure/containers/dockerfile_recalibration_map.json"
+    - "infrastructure/containers/dockerfile_recalibration_map_REPAIRED.json"
+    - "infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.json"
+  py_refs:
+    - "common/load_host_config.py"

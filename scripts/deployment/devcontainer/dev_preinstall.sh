@@ -49,7 +49,7 @@ export TZ=${TZ:-Etc/UTC}
 export APT_KEY_DONT_WARN_ON_DANGEROUS_USAGE=1
 
 log "Preparing apt state..."
-_run_as_root 'mkdir -p -m 0755 /var/lib/apt/lists/partial || true'
+_run_as_root 'mkdir -p -m 0755 /app/var/lib/apt/lists/partial || true'
 _run_as_root 'rm -f /var/lib/apt/lists/lock /var/cache/apt/archives/lock /var/lib/dpkg/lock-frontend /var/lib/dpkg/lock || true'
 _run_as_root 'apt-get update -y'
 

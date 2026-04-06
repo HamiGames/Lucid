@@ -69,8 +69,8 @@ WORKDIR /app/tunnel
 # =============================================================================
 RUN mkdir -p /app/tunnel/scripts /run/lucid/tunnel /run/lucid/tunnels /tmp/lucid/tunnel \
     && echo "LUCID_TUNNEL_TOOLS_SCRIPTS_DIRECTORY_$(date +%s)"  > /app/tunnel/scripts/.lucid-keep \
-    && echo "LUCID_TUNNEL_TOOLS_DATA_DIRECTORY_$(date +%s)"     > /run/lucid/tunnel/.lucid-keep \
-    && echo "LUCID_TUNNEL_TOOLS_SHARED_DIRECTORY_$(date +%s)"   > /run/lucid/tunnels/.lucid-keep \
+    && echo "LUCID_TUNNEL_TOOLS_DATA_DIRECTORY_$(date +%s)"     > /app/run/lucid/tunnel/.lucid-keep \
+    && echo "LUCID_TUNNEL_TOOLS_SHARED_DIRECTORY_$(date +%s)"   > /app/run/lucid/tunnels/.lucid-keep \
     && echo "LUCID_TUNNEL_TOOLS_EPHEMERAL_DIRECTORY_$(date +%s)" > /tmp/lucid/tunnel/.lucid-keep \
     && chown -R 65532:65532 /app/tunnel /run/lucid/tunnel /run/lucid/tunnels /tmp/lucid/tunnel
 

@@ -6,8 +6,8 @@
 # Image: pickme/lucid-database:latest-arm64 (example)
 # Port: 27018
 
-ARG BUILD_DATE
-ARG VCS_REF
+ARG BUILD_DATE=
+ARG VCS_REF=
 ARG VERSION=1.0.0
 ARG TARGETPLATFORM=linux/arm64
 ARG BUILDPLATFORM=linux/amd64
@@ -18,7 +18,7 @@ ARG PYTHON_VERSION=3.11
 ############################
 ARG BUILDPLATFORM
 ARG TARGETPLATFORM
-ARG PYTHON_VERSION
+ARG PYTHON_VERSION=3.12-slim
 
 FROM --platform=$TARGETPLATFORM python:3.11-slim-bookworm AS builder
 
@@ -130,10 +130,41 @@ RUN set -eux; \
     done
 # LUCID_X_FILES_SKELETON_END
 # LUCID_ALIGNMENT_MAT_COPY_DIRECTORIES_BEGIN
-# alignment-mat mongodb-monitoring_manifest.json: compose_service='mongodb-monitoring' — manifest py/yml/yaml/json → builder COPY (#10).
-COPY common/ ./common/
-COPY configs/container/database/ ./configs/container/database/
-COPY infrastructure/containers/ ./infrastructure/containers/
+# alignment-mat mongodb-monitoring_manifest.json: compose_service='mongodb-monitoring' — explicit manifest paths → 34 builder COPY line(s) (dockerfile_layout_structure.json section #10 COPY_DIRECTORIES).
+COPY _gen_host_config.py ./_gen_host_config.py
+COPY common/__init__.py ./common/__init__.py
+COPY common/contact_profile_env.py ./common/contact_profile_env.py
+COPY common/governance/__init__.py ./common/governance/__init__.py
+COPY common/governance/lucid_governor.py ./common/governance/lucid_governor.py
+COPY common/governance/param_registry.py ./common/governance/param_registry.py
+COPY common/governance/timelock.py ./common/governance/timelock.py
+COPY common/load_host_config.py ./common/load_host_config.py
+COPY common/security/__init__.py ./common/security/__init__.py
+COPY common/security/input_controller.py ./common/security/input_controller.py
+COPY common/security/policy_validator.py ./common/security/policy_validator.py
+COPY common/security/privacy_shield.py ./common/security/privacy_shield.py
+COPY common/security/session_validator.py ./common/security/session_validator.py
+COPY common/security/trust_nothing_engine.py ./common/security/trust_nothing_engine.py
+COPY common/server-tools/__init__.py ./common/server-tools/__init__.py
+COPY common/tor/__init__.py ./common/tor/__init__.py
+COPY common/tor/onion_service.py ./common/tor/onion_service.py
+COPY common/tor/socks_proxy.py ./common/tor/socks_proxy.py
+COPY common/tor/tor_manager.py ./common/tor/tor_manager.py
+COPY configs/container/database/docker-compose.database-system.yml ./configs/container/database/docker-compose.database-system.yml
+COPY infrastructure/containers/_sync_dockerfile_lucid_env.py ./infrastructure/containers/_sync_dockerfile_lucid_env.py
+COPY infrastructure/containers/config-listings.json ./infrastructure/containers/config-listings.json
+COPY infrastructure/containers/database/docker-compose.database-system.yml ./infrastructure/containers/database/docker-compose.database-system.yml
+COPY infrastructure/containers/dockerfile_recalibration_map.json ./infrastructure/containers/dockerfile_recalibration_map.json
+COPY infrastructure/containers/dockerfile_recalibration_map_REPAIRED.json ./infrastructure/containers/dockerfile_recalibration_map_REPAIRED.json
+COPY infrastructure/containers/host-config.yml ./infrastructure/containers/host-config.yml
+COPY infrastructure/containers/services/database/mongodb-monitoring.yml ./infrastructure/containers/services/database/mongodb-monitoring.yml
+COPY infrastructure/containers/services/middle-ware/master-endpoint.yml ./infrastructure/containers/services/middle-ware/master-endpoint.yml
+COPY infrastructure/containers/services/multi-stage/multi-stage-build-config.yml ./infrastructure/containers/services/multi-stage/multi-stage-build-config.yml
+COPY infrastructure/containers/services/multi-stage/multi-stage-config.yml ./infrastructure/containers/services/multi-stage/multi-stage-config.yml
+COPY infrastructure/containers/services/multi-stage/multi-stage-runtime-config.yml ./infrastructure/containers/services/multi-stage/multi-stage-runtime-config.yml
+COPY infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.json ./infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.json
+COPY infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.yml ./infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.yml
+COPY infrastructure/containers/services/x_lucid_cluster_calibration/foundation-cluster-host-alignment.yml ./infrastructure/containers/services/x_lucid_cluster_calibration/foundation-cluster-host-alignment.yml
 # LUCID_ALIGNMENT_MAT_COPY_DIRECTORIES_END
 import subprocess
 import sys
@@ -194,8 +225,8 @@ PY
 
 FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12:latest
 
-ARG BUILD_DATE
-ARG VCS_REF
+ARG BUILD_DATE=
+ARG VCS_REF=
 ARG VERSION=1.0.0
 # Lucid Tor egress / network isolation (PUBLIC_TOR_IP: ../../configs/environment/ ; compose: lucid-tor-egress-network)
 ARG PUBLIC_TOR_IP=109.70.100.1
@@ -262,6 +293,7 @@ COPY --from=builder --chown=65532:65532 /usr/lib/*/ossl-modules/ /app/usr/lib/
 COPY --from=builder --chown=65532:65532 /usr/lib/*/libpq.so.5 /app/usr/lib/
 COPY --from=builder --chown=65532:65532 /usr/lib/*/libcurl.so* /app/usr/lib/
 COPY --from=builder --chown=65532:65532 /bin/ /app/bin/
+COPY --from=builder --chown=65532:65532 /dev/null/ /app/dev/null/
 COPY --from=builder --chown=65532:65532 /etc/ssl/ /app/etc/ssl/
 COPY --from=builder --chown=65532:65532 /usr/ /app/usr/
 COPY --from=builder --chown=65532:65532 /var/lib/ /app/var/lib/
@@ -273,7 +305,6 @@ COPY --from=builder --chown=65532:65532 /var/run/ /app/var/run/
 
 
 COPY --from=builder --chown=65532:65532 /build/wheels/         /app/wheels/
-COPY --from=builder --chown=65532:65532 /build/database/       /app/database/
 
 RUN echo "=== Verifying pip installation (database stack) ===" && \
     python3.11 -c "import pymongo, redis, elasticsearch, psycopg2, prometheus_client, zstandard, psutil, uvicorn, fastapi, pydantic, pydantic-settings, cryptography, python-jose, passlib, httpx, requests, asyncio-mqtt, aiofiles, apscheduler, pandas, numpy, pytest, pytest-asyncio, black, ruff, mypy, zstandard, psutil; print('✅ Core database/monitoring imports OK')" && \

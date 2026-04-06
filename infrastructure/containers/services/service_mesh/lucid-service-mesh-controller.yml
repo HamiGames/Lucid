@@ -1,0 +1,57 @@
+# File: /app/infrastructure/containers/services/service_mesh/lucid-service-mesh-controller.yml
+# x-lucid-file-path: /app/infrastructure/containers/services/service_mesh/lucid-service-mesh-controller.yml
+# x-lucid-file-directory: /app/infrastructure/containers/services/service_mesh
+# x-lucid-file-type: YAML
+# Lucid alignment: host_registry=infrastructure/containers/host-config.yml (container /app/configs/host-config.yml); path_index=x-files.json section_to_canonical
+#
+# compose_service=lucid-service-mesh-controller; YAML/JSON/Python lists from alignment manifest (list_service_files_by_name.py).
+
+version: '1.0'
+description: >
+  Conventional service bundle index for lucid-service-mesh-controller. Refs below mirror the alignment
+  manifest for this compose service. Cross-check infrastructure/containers/host-config.yml and x-files.json.
+
+x-lucid-calibration:
+  source_host_config: infrastructure/containers/host-config.yml
+  source_x_files: x-files.json
+  bundle_repo_path: infrastructure/containers/services/service_mesh/lucid-service-mesh-controller.yml
+  bundle_container_path: /app/infrastructure/containers/services/service_mesh/lucid-service-mesh-controller.yml
+  alignment_manifest_tool: scripts/gui_auth_realignment/list_service_files_by_name.py
+
+compose_service: "lucid-service-mesh-controller"
+associated_needles:
+  - "lucid_service_mesh_controller"
+  - "lucid-service-mesh-controller"
+
+manifest_alignment:
+  yml_refs:
+    - "configs/container/manifest.yml"
+    - "configs/docker/docker-compose.all.yml"
+    - "configs/docker/docker-compose.core.yml"
+    - "configs/docker/docker-compose.foundation-02.yml"
+    - "configs/docker/docker-compose.foundation.yml"
+    - "configs/services/beta-sidecar.yml"
+    - "configs/services/gui-api-bridge.yml"
+    - "configs/services/gui-docker-manager.yml"
+    - "configs/services/service-discovery.yml"
+    - "infrastructure/containers/host-config.yml"
+    - "infrastructure/containers/services/middle-ware/auth-service.yml"
+    - "infrastructure/containers/services/beta-sidecar.yml"
+    - "infrastructure/containers/services/database/database.yml"
+    - "infrastructure/containers/services/gui/gui-api-bridge.yml"
+    - "infrastructure/containers/services/gui/gui-docker-manager.yml"
+    - "infrastructure/containers/services/middle-ware/master-endpoint.yml"
+    - "infrastructure/containers/services/service-discovery.yml"
+    - "infrastructure/containers/services/service_mesh/services.yaml"
+    - "infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.yml"
+    - "infrastructure/containers/services/x_lucid_cluster_calibration/core-cluster-host-alignment.yml"
+    - "infrastructure/service_mesh/config/service-mesh.yaml"
+    - "infrastructure/service_mesh/sidecar/envoy/config/cluster.yaml"
+  json_refs:
+    - "infrastructure/containers/config-listings.json"
+    - "infrastructure/containers/dockerfile_recalibration_map.json"
+    - "infrastructure/containers/dockerfile_recalibration_map_REPAIRED.json"
+    - "infrastructure/containers/services/service_mesh/consul.json"
+    - "infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.json"
+  py_refs:
+    - "common/load_host_config.py"

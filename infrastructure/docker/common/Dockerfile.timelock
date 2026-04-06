@@ -15,19 +15,12 @@ ARG BUILDPLATFORM=linux/amd64
 ############################
 # Stage 1 — Builder
 ############################
-FROM --platform=$TARGETPLATFORM python:3.11-slim-bookworm AS builder
-
 ARG BUILDPLATFORM
 ARG TARGETPLATFORM
 
-WORKDIR /build
+FROM --platform=$TARGETPLATFORM python:3.11-slim-bookworm AS builder
 
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1 \
-    PIP_PREFER_BINARY=1 \
-    DEBIAN_FRONTEND=noninteractive
+WORKDIR /build
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
@@ -85,15 +78,6 @@ RUN mkdir -p /root/.rustup /root/.cargo && \
 RUN apt-get remove -y rustc cargo && rm -rf /root/.cargo /root/.rustup && \
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
 
-ENV PATH=/root/.cargo/bin:$PATH
-
-RUN printf "LUCID_TIMELOCK_RUNTIME" > /var/run/.keep && \
-    printf "LUCID_TIMELOCK_LIB" > /var/lib/.keep && \
-    chown -R 65532:65532 /var/run /var/lib && chmod 644 /var/run/.keep /var/lib/.keep
-
-RUN mkdir -p /usr/local/lib/python3.11/site-packages /usr/local/bin && \
-    chown -R 65532:65532 /usr/local/lib/python3.11/site-packages /usr/local/bin
-
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --upgrade pip setuptools wheel
 
@@ -108,24 +92,12 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 # LUCID_X_FILES_SKELETON_BEGIN
 # Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
 RUN set -eux; \
-    mkdir -p '.' './auth' './blockchain' './common' './configs' './scripts' './service_configs' './wallet' './auth/__pycache__' './auth/api' './auth/config' './auth/docs' './auth/middleware' './auth/models' './auth/services' './auth/utils' './blockchain/__pycache__' './blockchain/anchoring' './blockchain/api' './blockchain/chain_client' './blockchain/config' './blockchain/contracts' './blockchain/core' './blockchain/data' './blockchain/deployment' './blockchain/docs' './blockchain/evm' './blockchain/governance' './blockchain/manager' './blockchain/on_system_chain' './blockchain/scripts' './blockchain/tests' './blockchain/utils' './common/__pycache__' './common/governance' './common/security' './common/server-tools' './common/templates' './common/tor' './configs/.ssh' './configs/alignment-mats' './configs/container' './configs/database' './configs/docker' './configs/env' './configs/environment' './configs/gui-alignment' './configs/integration' './configs/kubernetes' './configs/logging' './configs/pi' './configs/secrets' './configs/security' './configs/tor' './scripts/__pycache__' './scripts/auth_sm_realignment' './scripts/build' './scripts/compliance' './scripts/config' './scripts/contracts' './scripts/database' './scripts/deployment' './scripts/devcontainer' './scripts/docs' './scripts/foundation' './scripts/gui' './scripts/gui_auth_realignment' './scripts/hardware' './scripts/integration' './scripts/lib' './scripts/load' './scripts/logging' './scripts/maintenance' './scripts/migration' './scripts/monitoring' './scripts/network' './scripts/re-build' './scripts/registry' './scripts/secrets' './scripts/security' './scripts/services' './scripts/testing' './scripts/validation' './scripts/verification' './wallet/__pycache__' './wallet/security' './wallet/walletd' './auth/api/__pycache__' './auth/config/__pycache__' './auth/middleware/__pycache__' './auth/models/__pycache__' './auth/services/__pycache__' './auth/utils/__pycache__' './blockchain/anchoring/__pycache__' './blockchain/api/app' './blockchain/chain_client/__pycache__' './blockchain/config/__pycache__' './blockchain/contracts/__pycache__' './blockchain/core/__pycache__' './blockchain/data/__pycache__' './blockchain/data/api' './blockchain/deployment/__pycache__' './blockchain/evm/__pycache__' './blockchain/governance/__pycache__' './blockchain/manager/__pycache__' './blockchain/on_system_chain/__pycache__' './blockchain/scripts/__pycache__' './blockchain/tests/__pycache__' './blockchain/utils/__pycache__' './common/governance/__pycache__' './common/security/__pycache__' './common/server-tools/__pycache__' './common/tor/__pycache__' './configs/container/admin' './configs/container/auth' './configs/container/base' './configs/container/blockchain' './configs/container/database' './configs/container/electron_gui' './configs/container/gui' './configs/container/node' './configs/container/payment_systems' './configs/container/rdp' './configs/container/server' './configs/container/sessions' './configs/container/storage' './configs/container/tor' './configs/database/elasticsearch' './configs/database/redis' './configs/docker/distroless' './configs/docker/docs' './configs/docker/multi-stage' './configs/environment/development' './configs/environment/pi' './configs/environment/production' './configs/environment/staging' './configs/pi/ssh' './configs/secrets/runtime' './scripts/auth_sm_realignment/.cache' './scripts/auth_sm_realignment/lib' './scripts/build/__pycache__' './scripts/build/components' './scripts/build/core' './scripts/build/distroless' './scripts/build/utils' './scripts/compliance/distroless' './scripts/compliance/general' './scripts/deployment/devcontainer' './scripts/deployment/distroless' './scripts/deployment/pi' './scripts/deployment/utils' './scripts/gui_auth_realignment/.cache' './scripts/gui_auth_realignment/lib' './scripts/maintenance/cleanup' './scripts/maintenance/optimization' './scripts/maintenance/recovery' './scripts/network/diagnostics' './scripts/network/security' './scripts/network/setup' './scripts/testing/integration' './scripts/testing/unit' './scripts/testing/utils' './scripts/validation/__pycache__' './scripts/verification/__pycache__' './wallet/security/__pycache__' './wallet/walletd/__pycache__' './blockchain/api/app/__pycache__' './blockchain/api/app/crypto' './blockchain/api/app/database' './blockchain/api/app/db' './blockchain/api/app/middleware' './blockchain/api/app/models' './blockchain/api/app/repo' './blockchain/api/app/routers' './blockchain/api/app/routes' './blockchain/api/app/schemas' './blockchain/api/app/services' './blockchain/data/api/__pycache__' './configs/secrets/runtime/compose' './blockchain/api/app/crypto/__pycache__' './blockchain/api/app/database/__pycache__' './blockchain/api/app/database/repositories' './blockchain/api/app/db/__pycache__' './blockchain/api/app/middleware/__pycache__' './blockchain/api/app/models/__pycache__' './blockchain/api/app/repo/__pycache__' './blockchain/api/app/routers/__pycache__' './blockchain/api/app/routes/__pycache__' './blockchain/api/app/schemas/__pycache__' './blockchain/api/app/services/__pycache__'; \
+    mkdir -p '.' './blockchain' './common' './configs' './blockchain/__pycache__' './blockchain/anchoring' './blockchain/api' './blockchain/chain_client' './blockchain/config' './blockchain/contracts' './blockchain/core' './blockchain/data' './blockchain/deployment' './blockchain/docs' './blockchain/evm' './blockchain/governance' './blockchain/manager' './blockchain/on_system_chain' './blockchain/scripts' './blockchain/tests' './blockchain/utils' './common/__pycache__' './common/governance' './common/security' './common/server-tools' './common/templates' './common/tor' './configs/.ssh' './configs/container' './configs/database' './configs/docker' './configs/env' './configs/environment' './configs/integration' './configs/kubernetes' './configs/logging' './configs/pi' './configs/secrets' './configs/security' './configs/tor' './blockchain/anchoring/__pycache__' './blockchain/api/app' './blockchain/chain_client/__pycache__' './blockchain/config/__pycache__' './blockchain/contracts/__pycache__' './blockchain/core/__pycache__' './blockchain/data/__pycache__' './blockchain/data/api' './blockchain/deployment/__pycache__' './blockchain/evm/__pycache__' './blockchain/governance/__pycache__' './blockchain/manager/__pycache__' './blockchain/on_system_chain/__pycache__' './blockchain/scripts/__pycache__' './blockchain/tests/__pycache__' './blockchain/utils/__pycache__' './common/governance/__pycache__' './common/security/__pycache__' './common/server-tools/__pycache__' './common/tor/__pycache__' './configs/container/admin' './configs/container/auth' './configs/container/base' './configs/container/blockchain' './configs/container/database' './configs/container/electron_gui' './configs/container/gui' './configs/container/node' './configs/container/payment_systems' './configs/container/rdp' './configs/container/server' './configs/container/sessions' './configs/container/storage' './configs/container/tor' './configs/database/elasticsearch' './configs/database/redis' './configs/docker/distroless' './configs/docker/docs' './configs/docker/multi-stage' './configs/pi/ssh' './blockchain/api/app/__pycache__' './blockchain/api/app/crypto' './blockchain/api/app/database' './blockchain/api/app/db' './blockchain/api/app/middleware' './blockchain/api/app/models' './blockchain/api/app/repo' './blockchain/api/app/routers' './blockchain/api/app/routes' './blockchain/api/app/schemas' './blockchain/api/app/services' './blockchain/data/api/__pycache__' './blockchain/api/app/crypto/__pycache__' './blockchain/api/app/database/__pycache__' './blockchain/api/app/database/repositories' './blockchain/api/app/db/__pycache__' './blockchain/api/app/middleware/__pycache__' './blockchain/api/app/models/__pycache__' './blockchain/api/app/repo/__pycache__' './blockchain/api/app/routers/__pycache__' './blockchain/api/app/routes/__pycache__' './blockchain/api/app/schemas/__pycache__' './blockchain/api/app/services/__pycache__'; \
     for d in \
       '.' \
-      './auth' \
       './blockchain' \
       './common' \
       './configs' \
-      './scripts' \
-      './service_configs' \
-      './wallet' \
-      './auth/__pycache__' \
-      './auth/api' \
-      './auth/config' \
-      './auth/docs' \
-      './auth/middleware' \
-      './auth/models' \
-      './auth/services' \
-      './auth/utils' \
       './blockchain/__pycache__' \
       './blockchain/anchoring' \
       './blockchain/api' \
@@ -150,13 +122,11 @@ RUN set -eux; \
       './common/templates' \
       './common/tor' \
       './configs/.ssh' \
-      './configs/alignment-mats' \
       './configs/container' \
       './configs/database' \
       './configs/docker' \
       './configs/env' \
       './configs/environment' \
-      './configs/gui-alignment' \
       './configs/integration' \
       './configs/kubernetes' \
       './configs/logging' \
@@ -164,45 +134,6 @@ RUN set -eux; \
       './configs/secrets' \
       './configs/security' \
       './configs/tor' \
-      './scripts/__pycache__' \
-      './scripts/auth_sm_realignment' \
-      './scripts/build' \
-      './scripts/compliance' \
-      './scripts/config' \
-      './scripts/contracts' \
-      './scripts/database' \
-      './scripts/deployment' \
-      './scripts/devcontainer' \
-      './scripts/docs' \
-      './scripts/foundation' \
-      './scripts/gui' \
-      './scripts/gui_auth_realignment' \
-      './scripts/hardware' \
-      './scripts/integration' \
-      './scripts/lib' \
-      './scripts/load' \
-      './scripts/logging' \
-      './scripts/maintenance' \
-      './scripts/migration' \
-      './scripts/monitoring' \
-      './scripts/network' \
-      './scripts/re-build' \
-      './scripts/registry' \
-      './scripts/secrets' \
-      './scripts/security' \
-      './scripts/services' \
-      './scripts/testing' \
-      './scripts/validation' \
-      './scripts/verification' \
-      './wallet/__pycache__' \
-      './wallet/security' \
-      './wallet/walletd' \
-      './auth/api/__pycache__' \
-      './auth/config/__pycache__' \
-      './auth/middleware/__pycache__' \
-      './auth/models/__pycache__' \
-      './auth/services/__pycache__' \
-      './auth/utils/__pycache__' \
       './blockchain/anchoring/__pycache__' \
       './blockchain/api/app' \
       './blockchain/chain_client/__pycache__' \
@@ -242,40 +173,7 @@ RUN set -eux; \
       './configs/docker/distroless' \
       './configs/docker/docs' \
       './configs/docker/multi-stage' \
-      './configs/environment/development' \
-      './configs/environment/pi' \
-      './configs/environment/production' \
-      './configs/environment/staging' \
       './configs/pi/ssh' \
-      './configs/secrets/runtime' \
-      './scripts/auth_sm_realignment/.cache' \
-      './scripts/auth_sm_realignment/lib' \
-      './scripts/build/__pycache__' \
-      './scripts/build/components' \
-      './scripts/build/core' \
-      './scripts/build/distroless' \
-      './scripts/build/utils' \
-      './scripts/compliance/distroless' \
-      './scripts/compliance/general' \
-      './scripts/deployment/devcontainer' \
-      './scripts/deployment/distroless' \
-      './scripts/deployment/pi' \
-      './scripts/deployment/utils' \
-      './scripts/gui_auth_realignment/.cache' \
-      './scripts/gui_auth_realignment/lib' \
-      './scripts/maintenance/cleanup' \
-      './scripts/maintenance/optimization' \
-      './scripts/maintenance/recovery' \
-      './scripts/network/diagnostics' \
-      './scripts/network/security' \
-      './scripts/network/setup' \
-      './scripts/testing/integration' \
-      './scripts/testing/unit' \
-      './scripts/testing/utils' \
-      './scripts/validation/__pycache__' \
-      './scripts/verification/__pycache__' \
-      './wallet/security/__pycache__' \
-      './wallet/walletd/__pycache__' \
       './blockchain/api/app/__pycache__' \
       './blockchain/api/app/crypto' \
       './blockchain/api/app/database' \
@@ -288,7 +186,6 @@ RUN set -eux; \
       './blockchain/api/app/schemas' \
       './blockchain/api/app/services' \
       './blockchain/data/api/__pycache__' \
-      './configs/secrets/runtime/compose' \
       './blockchain/api/app/crypto/__pycache__' \
       './blockchain/api/app/database/__pycache__' \
       './blockchain/api/app/database/repositories' \
@@ -306,26 +203,63 @@ RUN set -eux; \
     done
 # LUCID_X_FILES_SKELETON_END
 # LUCID_ALIGNMENT_MAT_COPY_DIRECTORIES_BEGIN
-# alignment-mat timelock_manifest.json: compose_service='timelock' — manifest py/yml/yaml/json → builder COPY (#10).
-COPY common/ ./common/
-COPY configs/ ./configs/
-COPY infrastructure/containers/ ./infrastructure/containers/
+# alignment-mat timelock_manifest.json: compose_service='timelock' — explicit manifest paths → 36 builder COPY line(s) (dockerfile_layout_structure.json section #10 COPY_DIRECTORIES).
+COPY _gen_host_config.py ./_gen_host_config.py
+COPY blockchain/governance/__init__.py ./blockchain/governance/__init__.py
+COPY blockchain/governance/integrate_timelock.py ./blockchain/governance/integrate_timelock.py
+COPY blockchain/governance/spin_up_timelock.py ./blockchain/governance/spin_up_timelock.py
+COPY blockchain/governance/start_timelock.py ./blockchain/governance/start_timelock.py
+COPY blockchain/governance/test_timelock.py ./blockchain/governance/test_timelock.py
+COPY blockchain/governance/timelock.py ./blockchain/governance/timelock.py
+COPY common/__init__.py ./common/__init__.py
+COPY common/contact_profile_env.py ./common/contact_profile_env.py
+COPY common/governance/__init__.py ./common/governance/__init__.py
+COPY common/governance/lucid_governor.py ./common/governance/lucid_governor.py
+COPY common/governance/param_registry.py ./common/governance/param_registry.py
+COPY common/governance/timelock.py ./common/governance/timelock.py
+COPY common/load_host_config.py ./common/load_host_config.py
+COPY common/security/__init__.py ./common/security/__init__.py
+COPY common/security/input_controller.py ./common/security/input_controller.py
+COPY common/security/policy_validator.py ./common/security/policy_validator.py
+COPY common/security/privacy_shield.py ./common/security/privacy_shield.py
+COPY common/security/session_validator.py ./common/security/session_validator.py
+COPY common/security/trust_nothing_engine.py ./common/security/trust_nothing_engine.py
+COPY common/server-tools/__init__.py ./common/server-tools/__init__.py
+COPY common/tor/__init__.py ./common/tor/__init__.py
+COPY common/tor/onion_service.py ./common/tor/onion_service.py
+COPY common/tor/socks_proxy.py ./common/tor/socks_proxy.py
+COPY common/tor/tor_manager.py ./common/tor/tor_manager.py
+COPY configs/x-files.json ./configs/x-files.json
+COPY infrastructure/containers/config-listings.json ./infrastructure/containers/config-listings.json
+COPY infrastructure/containers/dockerfile_recalibration_map.json ./infrastructure/containers/dockerfile_recalibration_map.json
+COPY infrastructure/containers/dockerfile_recalibration_map_REPAIRED.json ./infrastructure/containers/dockerfile_recalibration_map_REPAIRED.json
+COPY infrastructure/containers/host-config.yml ./infrastructure/containers/host-config.yml
+COPY infrastructure/containers/services/middle-ware/master-endpoint.yml ./infrastructure/containers/services/middle-ware/master-endpoint.yml
+COPY infrastructure/containers/services/tor/timelock.yml ./infrastructure/containers/services/tor/timelock.yml
+COPY infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.json ./infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.json
+COPY infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.yml ./infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.yml
+COPY infrastructure/containers/services/x_lucid_cluster_calibration/core-cluster-host-alignment.yml ./infrastructure/containers/services/x_lucid_cluster_calibration/core-cluster-host-alignment.yml
+COPY infrastructure/containers/services/x_lucid_cluster_calibration/payment-cluster-host-alignment.yml ./infrastructure/containers/services/x_lucid_cluster_calibration/payment-cluster-host-alignment.yml
 # LUCID_ALIGNMENT_MAT_COPY_DIRECTORIES_END
+
+COPY common/__init__.py ./common/__init__.py
+COPY common/governance/ ./common/governance/
+COPY blockchain/ ./blockchain/
+
+RUN printf "LUCID_TIMELOCK_RUNTIME" > /var/run/.keep && \
+    printf "LUCID_TIMELOCK_LIB" > /var/lib/.keep && \
+    chown -R 65532:65532 /var/run /var/lib && chmod 644 /var/run/.keep /var/lib/.keep
+
+RUN mkdir -p /usr/local/lib/python3.11/site-packages /usr/local/bin && \
+    chown -R 65532:65532 /usr/local/lib/python3.11/site-packages /usr/local/bin
+
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --no-cache-dir --no-index --find-links /build/wheels \
         PyJWT cryptography motor pymongo python-dotenv
-COPY scripts/ ./scripts/
-
 RUN printf "LUCID_TIMELOCK_MARKER" > /usr/local/lib/python3.11/site-packages/.lucid-marker && \
     chown 65532:65532 /usr/local/lib/python3.11/site-packages/.lucid-marker
 
 RUN python3.11 -c "import jwt, cryptography, motor, pymongo; print('timelock deps ok')"
-
-COPY common/__init__.py ./common/__init__.py
-COPY common/governance/ ./common/governance/
-COPY wallet/ ./wallet/
-COPY auth/ ./auth/
-COPY blockchain/ ./blockchain/
 
 RUN mkdir -p /app/service_configs /app/configs
 
@@ -338,9 +272,16 @@ RUN test -f ./common/governance/timelock.py
 ############################
 # Stage 2 — Distroless
 ############################
-FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12:latest
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_PREFER_BINARY=1 \
+    DEBIAN_FRONTEND=noninteractive
 
-WORKDIR /app
+ENV PATH=/root/.cargo/bin:$PATH
+
+FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12:latest
 
 ARG BUILD_DATE
 ARG VCS_REF
@@ -349,6 +290,8 @@ ARG VERSION=1.0.0
 ARG PUBLIC_TOR_IP=109.70.100.1
 ARG LUCID_INTERNAL_NETWORK_NAME=lucid-pi-network
 ARG LUCID_TOR_EGRESS_NETWORK_NAME=lucid-tor-egress-network
+
+WORKDIR /app
 
 LABEL maintainer="Lucid Development Team" \
       com.lucid.network.internal="${LUCID_INTERNAL_NETWORK_NAME}" \
@@ -396,13 +339,9 @@ ENV     PUBLIC_TOR_IP="${PUBLIC_TOR_IP}" \
     XDG_RUNTIME_DIR="/tmp/timelock"
 # LUCID_RUNTIME_COPY_FROM_BUILD_BEGIN
 # Generated: same directory set as LUCID_X_FILES_SKELETON (./ under WORKDIR /build).
-COPY --from=builder --chown=65532:65532 /build/auth/ /app/auth/
 COPY --from=builder --chown=65532:65532 /build/blockchain/ /app/blockchain/
 COPY --from=builder --chown=65532:65532 /build/common/ /app/common/
 COPY --from=builder --chown=65532:65532 /build/configs/ /app/configs/
-COPY --from=builder --chown=65532:65532 /build/scripts/ /app/scripts/
-COPY --from=builder --chown=65532:65532 /build/service_configs/ /app/service_configs/
-COPY --from=builder --chown=65532:65532 /build/wallet/ /app/wallet/
 # LUCID_RUNTIME_COPY_FROM_BUILD_END
 
 # LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
@@ -422,14 +361,9 @@ COPY --from=builder --chown=65532:65532 /usr/local/lib/python3.11/site-packages/
 COPY --from=builder --chown=65532:65532 /var/lib/ /app/var/lib/
 COPY --from=builder --chown=65532:65532 /var/run/ /app/var/run/
 # LUCID_RUNTIME_COPY_FROM_BUILDER_APT_END
-
-COPY --from=builder --chown=65532:65532 /app/configs/ /app/configs/
-COPY --from=builder --chown=65532:65532 /app/service_configs/ /app/service_configs/
-COPY --from=builder --chown=65532:65532 /data/timelock/ /data/timelock/
-COPY --from=builder --chown=65532:65532 /tmp/timelock/ /tmp/timelock/
+# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
+# Generated: apt + RUN scaffold (mkdir/printf/touch/chown) -> FHS (not ./ or /build/; lib_search_and_inject.py).
 COPY --from=builder --chown=65532:65532 /build/wheels/ /app/wheels/
-
-COPY --from=builder /usr/bin/tini /app/usr/bin/tini
 
 RUN ["/app/usr/bin/python3.11", "-c", "import os,sys; sp='/app/usr/local/lib/python3.11/site-packages'; sys.path.insert(0,sp); import jwt, cryptography, motor; m=os.path.join(sp,'.lucid-marker'); assert os.path.isfile(m); print('runtime ok')"]
 

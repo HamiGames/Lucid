@@ -226,7 +226,7 @@ configure_tor_service() {
     # Create log directory
     mkdir -p /var/log/tor
     chown debian-tor:debian-tor /var/log/tor
-    chmod 755 /var/log/tor
+    chmod 755 /app/var/log/tor
     
     # Configure logrotate for Tor logs
     cat > /etc/logrotate.d/tor << 'EOF'

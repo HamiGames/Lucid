@@ -1,0 +1,47 @@
+# File: /app/service_configs/tor/tunnel-tools.yml
+# x-lucid-file-path: /app/service_configs/tor/tunnel-tools.yml
+# x-lucid-file-directory: /app/service_configs/tor
+# x-lucid-file-type: YAML
+# Lucid alignment: host_registry=infrastructure/containers/host-config.yml (container /app/configs/host-config.yml); path_index=x-files.json section_to_canonical
+#
+# compose_service=tunnel-tools; YAML/JSON/Python lists from alignment manifest (list_service_files_by_name.py).
+
+version: '1.0'
+description: >
+  Conventional service bundle index for tunnel-tools. Refs below mirror the alignment
+  manifest for this compose service. Cross-check infrastructure/containers/host-config.yml and x-files.json.
+
+x-lucid-calibration:
+  source_host_config: infrastructure/containers/host-config.yml
+  source_x_files: x-files.json
+  bundle_repo_path: infrastructure/containers/services/tor/tunnel-tools.yml
+  bundle_container_path: /app/service_configs/tor/tunnel-tools.yml
+  alignment_manifest_tool: scripts/gui_auth_realignment/list_service_files_by_name.py
+
+compose_service: "tunnel-tools"
+associated_needles:
+  - "tunnel-tools"
+  - "tunnel_tools"
+
+manifest_alignment:
+  yml_refs:
+    - "configs/container/tor/docker-compose.proxy-systems.yml"
+    - "configs/docker/docker-compose.core.yml"
+    - "configs/services/gui-docker-manager.yml"
+    - "infrastructure/containers/.devcontainer/devcontainer.yaml"
+    - "infrastructure/containers/host-config.yml"
+    - "infrastructure/containers/services/gui/gui-docker-manager.yml"
+    - "infrastructure/containers/services/middle-ware/master-endpoint.yml"
+    - "infrastructure/containers/services/tor/tor-operational-layout.yml"
+    - "infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.yml"
+    - "infrastructure/containers/services/x_lucid_cluster_calibration/foundation-cluster-host-alignment.yml"
+    - "infrastructure/containers/tor/docker-compose.proxy-systems.yml"
+  json_refs:
+    - "configs/gui-alignment/gui-tor-manager.json"
+    - "infrastructure/containers/admin/config/admin-system-gateway.connections.json"
+    - "infrastructure/containers/config-listings.json"
+    - "infrastructure/containers/dockerfile_recalibration_map.json"
+    - "infrastructure/containers/dockerfile_recalibration_map_REPAIRED.json"
+    - "infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.json"
+  py_refs:
+    - "common/load_host_config.py"

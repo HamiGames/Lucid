@@ -38,20 +38,29 @@ Layout sections (see infrastructure/containers/dockerfile_layout_structure.json)
   same quoting rules for pruned directory COPY specs.
   When ``# LUCID_ALIGNMENT_MAT_RUNTIME_COPY_BEGIN`` ... ``END`` exists, ``--mat-copy-mode files`` also
   emits one ``COPY --from=builder`` per path into ``/app/...`` (``--no-mat-runtime-file-copies`` to skip).
-  #7 COPY_REQUIREMENTS / #8 PIP wheels, #9 DIRECTORY_SKELETON, #20 COPY_CONTENT are driven by
-  infrastructure/containers/inject_dockerfile_x_files_skeleton.py after that, using existing
-  plain COPY lines + x-files-listing.txt. Layout inject is on by default; use
-  --no-inject-copy-layout for LABEL/ENV/header + mat COPY only. Optional
+  #7 COPY_REQUIREMENTS / #8 PIP wheels,   #9 DIRECTORY_SKELETON, #20 COPY_CONTENT are driven by
+  infrastructure/containers/inject_dockerfile_x_files_skeleton.py after that when you pass
+  --inject-copy-layout (uses x-files-listing.txt). Default is **no** inject — LABEL/ENV/header +
+  mat COPY only. Optional
   --inject-strip-build-scaffold runs cleanup before layout inject. Use --validate-x-files-copy
   for x-files.json runtime COPY checks.
 
 Usage (repo root):
   python scripts/gui_auth_realignment/rewrite_dockerfiles_from_alignment_mats.py
   python scripts/gui_auth_realignment/rewrite_dockerfiles_from_alignment_mats.py --dry-run
+  python scripts/gui_auth_realignment/rewrite_dockerfiles_from_alignment_mats.py \\
+      --no-mat-runtime-file-copies \\
+      --only-dockerfile infrastructure/containers/tor/Dockerfile.tor-proxy-02
   python scripts/gui_auth_realignment/rewrite_dockerfiles_from_alignment_mats.py --backup
-  python scripts/gui_auth_realignment/rewrite_dockerfiles_from_alignment_mats.py --no-inject-copy-layout
+  python scripts/gui_auth_realignment/rewrite_dockerfiles_from_alignment_mats.py \\
+      --inject-copy-layout
   python scripts/gui_auth_realignment/rewrite_dockerfiles_from_alignment_mats.py \\
       --inject-strip-build-scaffold --validate-x-files-copy --strict-x-files-copy
+
+**Default:** layout inject is **off** — it depends on repo-root ``x-files-listing.txt``, which this
+workflow does not use. You get host-config metadata + manifest mat COPY (#10) only. Pass
+``--inject-copy-layout`` only when you maintain ``x-files-listing.txt`` and want skeleton/runtime
+layout sync. Omit ``--dry-run`` to write Dockerfiles.
 """
 
 from __future__ import annotations
@@ -955,13 +964,23 @@ def run_inject_copy_layout(
     return subprocess.call(cmd, cwd=str(repo))
 
 
+def _norm_only_dockerfile_path(p: str) -> str:
+    """Repo-relative POSIX path for --only-dockerfile matching."""
+    return Path(p.strip()).as_posix().lstrip("./")
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(
         description=(
             "Alignment mats → Dockerfiles: apply configs/alignment-mats manifests + host-config "
             "(and built-in Dockerfile fallbacks when unset) to each service source_dockerfile "
             "(metadata, mat py/yml COPY block #10, optional inject for layout #7-9/#20)."
-        )
+        ),
+        epilog=(
+            "To apply changes: omit --dry-run. Layout inject is off by default (no x-files-listing.txt). "
+            "Pass --inject-copy-layout only if you use that listing + inject_dockerfile_x_files_skeleton."
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     ap.add_argument("--repo-root", default=None)
     ap.add_argument("--mat-dir", default=str(DEFAULT_MAT_DIR), help="Dir of *_manifest.json")
@@ -1001,12 +1020,12 @@ def main() -> int:
     ap.add_argument(
         "--inject-copy-layout",
         action=argparse.BooleanOptionalAction,
-        default=True,
+        default=False,
         help=(
             "After metadata + optional mat COPY, run inject_dockerfile_x_files_skeleton.py "
-            "--run-full-with-sync per target Dockerfile (layout #7-9, #20; uses x-files-listing.txt "
-            "and builder plain COPY). Default: on. "
-            "--no-inject-copy-layout: no injector. With --dry-run, inject runs without --apply."
+            "--run-full-with-sync per target Dockerfile (layout #7-9, #20). Requires repo-root "
+            "x-files-listing.txt. Default: off (alignment rewrite does not use that file). "
+            "With --dry-run, inject runs without --apply."
         ),
     )
     ap.add_argument(
@@ -1047,6 +1066,16 @@ def main() -> int:
         "--verbose",
         action="store_true",
         help="Print absolute repo root and per-target Dockerfile + alignment mat paths (stdout).",
+    )
+    ap.add_argument(
+        "--only-dockerfile",
+        action="append",
+        default=[],
+        metavar="REPO_REL_PATH",
+        help=(
+            "Limit rewrites to this host-config source_dockerfile (repo-relative, forward slashes). "
+            "Repeat to allow several paths. Example: infrastructure/containers/tor/Dockerfile.tor-proxy-02"
+        ),
     )
     args = ap.parse_args()
     repo = _repo_root(args.repo_root)
@@ -1157,6 +1186,27 @@ def main() -> int:
                 flush=True,
             )
 
+    if args.only_dockerfile:
+        want = {_norm_only_dockerfile_path(x) for x in args.only_dockerfile if str(x).strip()}
+        prev_n = len(plan)
+        plan = [
+            (path, dfp, meta)
+            for path, dfp, meta in plan
+            if _norm_only_dockerfile_path(dfp) in want
+        ]
+        if prev_n and not plan:
+            print(
+                "No plan entries match --only-dockerfile "
+                f"{sorted(want)!r} (had {prev_n} resolved Dockerfile(s); "
+                "paths must match host-config source_dockerfile exactly).",
+                file=sys.stderr,
+            )
+            return 1
+        print(
+            f"Filtered plan: {len(plan)} Dockerfile(s) (--only-dockerfile {sorted(want)!r})",
+            flush=True,
+        )
+
     if not plan:
         print("Nothing to rewrite.", file=sys.stderr)
         return 1
@@ -1172,8 +1222,8 @@ def main() -> int:
 
     if args.inject_copy_layout or args.inject_strip_build_scaffold or args.apply_mat_copy_directories:
         print(
-            "Note: UNCHANGED/WROTE refers to this step's Dockerfile text (metadata, "
-            "optional mat COPY #10, then inject refines #7-9/#20 after the file is saved).",
+            "Note: UNCHANGED/WROTE refers to this step's Dockerfile text (metadata + optional mat COPY #10; "
+            "with --inject-copy-layout, inject may then refine #7-9/#20 after save).",
             flush=True,
         )
 

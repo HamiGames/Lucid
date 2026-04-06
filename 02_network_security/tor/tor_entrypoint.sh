@@ -5,7 +5,7 @@
 # x-lucid-file-directory: /app/02_network_security/tor
 # x-lucid-file-type: shell
 # Aligned with: 02_network_security/tor/Dockerfile.tor-proxy-02 (SPEC-4 Stage 0, distroless).
-# Runtime: WORKDIR /app, USER debian-tor; tor at /app/usr/bin/tor; busybox at /app/bin/busybox.
+# Runtime: WORKDIR /app, USER debian-tor; tor on PATH (/app/bin/tor); busybox at /app/bin/busybox.
 # Distroless busybox compatible.
 # No return statements — all flow control is if/else/exit.
 # All arithmetic increments use pre-increment (( ++var )) || true to survive set -e.
@@ -21,16 +21,19 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-# Ensure applet commands resolve (distroless has no /usr/bin/tor on default PATH alone)
-if [[ -d /app/usr/bin ]]; then
-  [[ ":${PATH:-}:" != *":/app/usr/bin:"* ]] && PATH="/app/usr/bin:${PATH:-}"
-fi
+# Ensure applet commands resolve (Dockerfile.tor-proxy layout: /app/bin, /app/sbin)
 if [[ -d /app/bin ]]; then
   [[ ":${PATH:-}:" != *":/app/bin:"* ]] && PATH="/app/bin:${PATH:-}"
 fi
+if [[ -d /app/sbin ]]; then
+  [[ ":${PATH:-}:" != *":/app/sbin:"* ]] && PATH="/app/sbin:${PATH:-}"
+fi
+if [[ -d /app/usr/bin ]]; then
+  [[ ":${PATH:-}:" != *":/app/usr/bin:"* ]] && PATH="/app/usr/bin:${PATH:-}"
+fi
 export PATH
 
-readonly SCRIPT_VERSION="5.5.1"
+readonly SCRIPT_VERSION="5.5.2"
 readonly COOKIE_SIZE=32
 readonly COOKIE_HEX_LENGTH=64
 
@@ -606,6 +609,28 @@ SocksPort 0.0.0.0:${TOR_SOCKS_PORT}
 
 ControlPort 0.0.0.0:${TOR_CONTROL_PORT}
 EOF
+
+    # tor-geoipdb paths: Dockerfile.tor-proxy uses /opt/share/tor; Debian package uses /usr/share/tor.
+    _geoip_dir=""
+    if [[ -r /opt/share/tor/geoip ]]; then
+        _geoip_dir="/opt/share/tor"
+    elif [[ -r /usr/share/tor/geoip ]]; then
+        _geoip_dir="/usr/share/tor"
+    elif [[ -r /app/share/tor/geoip ]]; then
+        _geoip_dir="/app/share/tor"
+    fi
+    if [[ -n "${_geoip_dir}" ]]; then
+        printf '\nGeoIPFile %s/geoip\n' "${_geoip_dir}" >> "${tmp_torrc}"
+    else
+        log_warn "GeoIP file missing (expected /opt/share/tor or /usr/share/tor) — install tor-geoipdb in image"
+    fi
+    if [[ -n "${_geoip_dir}" ]] && [[ -r "${_geoip_dir}/geoip6" ]]; then
+        printf 'GeoIPv6File %s/geoip6\n' "${_geoip_dir}" >> "${tmp_torrc}"
+    elif [[ -r /usr/share/tor/geoip6 ]]; then
+        printf 'GeoIPv6File /usr/share/tor/geoip6\n' >> "${tmp_torrc}"
+    else
+        log_warn "GeoIPv6 file missing — install tor-geoipdb in image"
+    fi
 
     if [[ -n "${TOR_CONTROL_SOCKET}" ]]; then
         printf 'ControlSocket %s\n' "${TOR_CONTROL_SOCKET}" >> "${tmp_torrc}"

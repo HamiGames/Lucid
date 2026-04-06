@@ -21,6 +21,9 @@ Usage examples (repo root):
   python infrastructure/containers/organize_dockerfiles_by_layout.py \
     --path infrastructure/containers \
     --write
+
+  # Same as --write (aliases): --apply, --in-place
+  # Optional template check: --template or --template-path
 """
 
 from __future__ import annotations
@@ -351,11 +354,19 @@ def process_file(
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Organize Dockerfiles by Dockerfile-layout section order.")
+    parser = argparse.ArgumentParser(
+        description="Organize Dockerfiles by Dockerfile-layout section order.",
+        epilog="Apply changes with --write (or aliases --apply / --in-place). "
+        "Without --write, output is preview-only. "
+        "--dry-run forces preview even if --write is set.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
     parser.add_argument(
         "--template",
+        "--template-path",
         default="",
-        help="Optional text template path. JSON map remains source of truth.",
+        metavar="PATH",
+        help="Optional text template path (alias: --template-path). JSON map remains source of truth.",
     )
     parser.add_argument("--path", required=True, help="Target Dockerfile file or directory.")
     parser.add_argument(
@@ -363,7 +374,13 @@ def main() -> int:
         default="infrastructure/containers/dockerfile_layout_structure.json",
         help="JSON structure rules file.",
     )
-    parser.add_argument("--write", action="store_true", help="Rewrite files in place.")
+    parser.add_argument(
+        "--write",
+        "--apply",
+        "--in-place",
+        action="store_true",
+        help="Rewrite files in place (aliases: --apply, --in-place).",
+    )
     parser.add_argument("--dry-run", action="store_true", help="Preview changes without writing.")
     parser.add_argument("--backup-ext", default="", help="Optional backup extension (example: .layout.bak). Empty means no backup.")
     parser.add_argument(

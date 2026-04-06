@@ -8,11 +8,26 @@ Same path-resolution rules (source map, optional repo discovery, tier_a JSON tar
 but driven by explicit ``--service NAME`` values—not by enumerating gui-services.json.
 
 For each name you pass:
-  - ``python_dirs`` / ``yml_extra`` / ``global_python_files`` come from ``--source-map`` (same JSON shape
-    as gui_service_source_map.json). Missing map file → empty dirs / extras (stderr notice).
-  - Optional ``--mat``: if the service appears there, ``compose_files``, ``container_name``, and
-    ``lucid_service`` from that row are merged (same as the GUI list tool).
+  - ``python_dirs`` / ``yml_extra`` / ``global_python_files`` / ``global_python_dirs`` come from ``--source-map``
+    (same JSON shape as configs/alignment-mats/service_source_map.json). ``global_python_dirs`` (e.g. ``common``)
+    are merged into every service's ``py`` list. Compose services named ``node-*`` also get implicit walk roots
+    (when those directories exist): ``infrastructure/containers/node`` for every node plane service;
+    ``infrastructure/containers/overlord`` for ``node-overlord``; the repo package ``node/`` for
+    ``node-worker``, ``node-management``, and ``node-system-gateway`` (images that COPY the full ``node`` tree).
+    If ``--source-map`` is omitted: use that file when present, else
+    fall back to scripts/gui_auth_realignment/gui_service_source_map.json (GUI-only legacy).
+    Missing map file → empty dirs / extras (notice on stderr).
+  - Optional ``--mat``: JSON with ``services: [{ "compose_service", "compose_files", ... }]`` (e.g. generated
+    from a compose bundle). **Omit for bulk non-GUI alignment** — there is no full-stack mat in-repo; without
+    ``--mat``, paths come from ``--source-map`` (``yml_extra`` / ``python_dirs``) plus discovery needles
+    (service name only).
   - Discovery needles: service name plus mat fields when present; plus ``--extra-needle`` (repeatable).
+    With ``--discover-associated`` (default): YAML/JSON are scanned under ``configs/``, ``infrastructure/containers``,
+    ``infrastructure/service_mesh``, plus each service's walked ``python_dirs`` / ``global_python_dirs``. Needle-matched
+    ``*.py`` are scanned from **repository root** once per run (skip dirs: ``.git``, ``venv``, ``node_modules``, etc.).
+    Declared ``python_dirs`` / ``global_python_dirs`` / ``global_python_files`` are always listed; needle-matched
+    ``py`` from the repo root is **unioned** with those when ``--discover-associated`` is on.
+  - ``--json-manifests`` only merges paths from ``tier_a_json_targets.json`` (gui subset); it does not load existing ``*_manifest.json`` files.
 
 ``missing_expected`` can treat ``configs/gui-alignment/<service>.json`` as optional for non-GUI stacks
 via ``--omit-gui-alignment-convention``.
@@ -22,21 +37,42 @@ Usage (repo root):
   python scripts/gui_auth_realignment/list_service_files_by_name.py \\
       --service gui-api-bridge --service chain-to-pay \\
       --mat configs/services/some-mat.json \\
-      --source-map scripts/gui_auth_realignment/gui_service_source_map.json
+      --source-map configs/alignment-mats/service_source_map.json
   python scripts/gui_auth_realignment/list_service_files_by_name.py \\
       --service my-worker --omit-gui-alignment-convention --format json
 
-  Names from a file (one per line), merged with any ``--service``:
+  Regenerate all ``*_manifest.json`` (no ellipsis in the shell — do not paste ``...`` as an argument).
+  PowerShell: use a single line, or line continuation with backtick (`` ` ``), not ``^`` (that is cmd.exe).
+  Bash: the line-continuation backslash must be the **last character** on the line (no space after it). If the line ends with backslash + space + newline,
+  the shell stops the Python command there; the following line is executed as a new command (``--manifest-suffix: command not found``).
+
+  Bulk alignment manifests (all services in ``service_names.txt``, **not** GUI-only) — omit ``--mat`` and
+  omit ``--json-manifests`` (that flag only adds seven gui Tier-A JSON paths from ``tier_a_json_targets.json``):
+
   python scripts/gui_auth_realignment/list_service_files_by_name.py \\
       --services-from configs/alignment-mats/service_names.txt \\
-      --omit-gui-alignment-convention --manifest-dir configs/alignment-mats \\
+      --omit-gui-alignment-convention \\
+      --manifest-dir configs/alignment-mats \\
       --manifest-suffix _manifest.json
+
+  Optional GUI compose merge (``gui-services.json`` is **GUI integration only**, ~7 services):
+
+  python scripts/gui_auth_realignment/list_service_files_by_name.py \\
+      --services-from configs/alignment-mats/service_names.txt \\
+      --mat configs/gui-alignment/gui-services.json \\
+      --omit-gui-alignment-convention --json-manifests \\
+      --manifest-dir configs/alignment-mats --manifest-suffix _manifest.json
+
+  ``service_source_map.json`` is always ``--source-map`` (default path when omitted), never ``--mat``.
+
+  Omit ``--source-map`` when configs/alignment-mats/service_source_map.json exists (default).
 """
 
 from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from pathlib import Path
 from typing import Any, Dict, List, Set, Tuple
@@ -45,7 +81,9 @@ _HERE = Path(__file__).resolve().parent
 if str(_HERE) not in sys.path:
     sys.path.insert(0, str(_HERE))
 
-DEFAULT_SOURCE_MAP = _HERE / "gui_service_source_map.json"
+# Prefer full alignment map; legacy GUI-only file if the canonical map was not generated yet.
+ALIGNMENT_SOURCE_MAP_REL = Path("configs/alignment-mats/service_source_map.json")
+LEGACY_GUI_SOURCE_MAP = _HERE / "gui_service_source_map.json"
 TIER_A_TARGETS = _HERE / "tier_a_json_targets.json"
 TOOL_ID = "scripts/gui_auth_realignment/list_service_files_by_name.py"
 
@@ -61,8 +99,10 @@ SKIP_DIR_NAMES = frozenset(
         "build",
         ".next",
         "target",
+        ".cursor",
     }
 )
+# YAML/JSON needle scan: keep narrower trees (large JSON under repo root is expensive).
 DEFAULT_DISCOVERY_ROOTS = (
     "configs",
     "infrastructure/containers",
@@ -70,6 +110,51 @@ DEFAULT_DISCOVERY_ROOTS = (
 )
 DEFAULT_DISCOVER_MAX_BYTES = 2_000_000
 MIN_NEEDLE_LEN = 6
+
+# Implicit dirs for compose_service names ``node-*`` (alignment mats / Docker COPY allowlists).
+_NODE_INFRA_DIR = "infrastructure/containers/node"
+_NODE_APP_DIR = "node"
+_NODE_OVERLORD_RUNTIME_DIR = "infrastructure/containers/overlord"
+# Images that COPY the repo ``node/`` application tree (not just requirements.txt).
+_NODE_FULL_APP_TREE_SERVICES = frozenset(
+    {
+        "node-management",
+        "node-system-gateway",
+        "node-worker",
+    }
+)
+
+
+def _implicit_node_plane_python_dirs(repo: Path, compose_service: str) -> List[str]:
+    """
+    Extra directory roots merged into ``python_dirs`` / discovery (only existing dirs).
+
+    - Every ``node-*`` service: ``infrastructure/containers/node`` (compose fragments, gateway entrypoints, …).
+    - ``node-overlord``: ``infrastructure/containers/overlord`` (runtime app/trigger/entrypoint).
+    - Repo package ``node/``: ``node-worker``, ``node-management``, ``node-system-gateway`` only (full-tree COPY
+      in Dockerfiles). Omitted for ``node-interface`` (GUI), ``node-overlord``, and slim images that only use
+      ``node/requirements.txt`` (gov/registry/utils) so manifests stay tight for COPY cleanup.
+    """
+    name = compose_service.replace("\\", "/").strip()
+    if not name.startswith("node-"):
+        return []
+
+    out: List[str] = []
+
+    p_infra = repo / _NODE_INFRA_DIR
+    if p_infra.is_dir():
+        out.append(_NODE_INFRA_DIR.replace("\\", "/"))
+
+    if name == "node-overlord":
+        p_ol = repo / _NODE_OVERLORD_RUNTIME_DIR
+        if p_ol.is_dir():
+            out.append(_NODE_OVERLORD_RUNTIME_DIR.replace("\\", "/"))
+    elif name in _NODE_FULL_APP_TREE_SERVICES:
+        p_app = repo / _NODE_APP_DIR
+        if p_app.is_dir():
+            out.append(_NODE_APP_DIR.replace("\\", "/"))
+
+    return out
 
 
 def _sanitize_cli_token(s: str | None) -> str:
@@ -189,6 +274,29 @@ def _should_skip_path(p: Path) -> bool:
     return any(part in SKIP_DIR_NAMES for part in p.parts)
 
 
+def _list_repo_py_files(repo: Path) -> List[Path]:
+    """All ``*.py`` under repo root (respects SKIP_DIR_NAMES). Built once per run for needle matching."""
+    out: List[Path] = []
+    repo_resolved = repo.resolve()
+    try:
+        for p in repo.rglob("*.py"):
+            if _should_skip_path(p) or not p.is_file():
+                continue
+            try:
+                rp = p.resolve()
+            except OSError:
+                continue
+            try:
+                rp.relative_to(repo_resolved)
+            except ValueError:
+                continue
+            out.append(p)
+    except OSError:
+        pass
+    out.sort(key=lambda x: x.as_posix().lower())
+    return out
+
+
 def _read_text_limited(path: Path, max_bytes: int) -> str | None:
     try:
         data = path.read_bytes()[:max_bytes]
@@ -200,9 +308,18 @@ def _read_text_limited(path: Path, max_bytes: int) -> str | None:
 
 
 def _text_matches_any_needle(text: str, needles: List[str]) -> bool:
-    tl = text.casefold()
+    """
+    Long needles: case-insensitive substring (e.g. admin-overlord).
+    Short needles (< MIN_NEEDLE_LEN): whole-token match so ``base`` does not match ``database``.
+    """
     for n in needles:
-        if n.casefold() in tl:
+        if not n:
+            continue
+        if len(n) < MIN_NEEDLE_LEN:
+            pat = re.compile(r"(?<!\w)" + re.escape(n) + r"(?!\w)", re.IGNORECASE)
+            if pat.search(text):
+                return True
+        elif n.casefold() in text.casefold():
             return True
     return False
 
@@ -254,6 +371,58 @@ def _discover_yml_json(
     return yml_out, json_out
 
 
+def _load_repo_py_snippets(repo: Path, py_paths: List[Path], max_bytes: int) -> List[Tuple[str, str]]:
+    """Read each ``*.py`` once; return (repo-relative path, text) for needle scans (one pass per run)."""
+    rows: List[Tuple[str, str]] = []
+    repo_resolved = repo.resolve()
+    for p in py_paths:
+        try:
+            if p.stat().st_size > max_bytes * 2:
+                continue
+        except OSError:
+            continue
+        txt = _read_text_limited(p, max_bytes)
+        if txt is None:
+            continue
+        try:
+            rel = p.resolve().relative_to(repo_resolved).as_posix()
+        except ValueError:
+            continue
+        rows.append((rel, txt))
+    return rows
+
+
+def _discover_py_needle_matched_from_snippets(
+    snippets: List[Tuple[str, str]],
+    needles: List[str],
+) -> Set[str]:
+    py_out: Set[str] = set()
+    for rel, txt in snippets:
+        if _text_matches_any_needle(txt, needles):
+            py_out.add(rel)
+    return py_out
+
+
+def _service_bundle_yml_exists(repo: Path, compose_service: str) -> bool:
+    """
+    True if the service bundle exists at the flat conventional path or anywhere under
+    infrastructure/containers/services/**/{compose_service}.yml|.yaml (subfolder layout).
+    """
+    for suffix in (".yml", ".yaml"):
+        flat = repo / f"infrastructure/containers/services/{compose_service}{suffix}"
+        if flat.is_file():
+            return True
+    root = repo / "infrastructure/containers/services"
+    if not root.is_dir():
+        return False
+    for suffix in (".yml", ".yaml"):
+        name = f"{compose_service}{suffix}"
+        for p in root.rglob(name):
+            if p.is_file() and p.name == name:
+                return True
+    return False
+
+
 def _expected_path_gaps(
     repo: Path,
     compose_service: str,
@@ -268,7 +437,7 @@ def _expected_path_gaps(
         if not (repo / rel_ga).is_file():
             miss_exp.append(rel_ga)
     rel_infra = f"infrastructure/containers/services/{compose_service}.yml"
-    if not (repo / rel_infra).is_file():
+    if not _service_bundle_yml_exists(repo, compose_service):
         miss_exp.append(rel_infra)
     for rel in tier_json_rels:
         r = rel.replace("\\", "/")
@@ -284,10 +453,20 @@ def _mat_row_for_service(mat: Dict[str, Any], name: str) -> Dict[str, Any]:
     return {}
 
 
+def _default_source_map_path(repo: Path) -> Path:
+    align = repo / ALIGNMENT_SOURCE_MAP_REL
+    if align.is_file():
+        return align
+    return LEGACY_GUI_SOURCE_MAP
+
+
 def _resolve_source_map(repo: Path, path_arg: str | None) -> tuple[Dict[str, Any] | None, Path]:
-    p = Path(path_arg) if path_arg else DEFAULT_SOURCE_MAP
-    if not p.is_absolute():
-        p = repo / p
+    if path_arg:
+        p = Path(path_arg)
+        if not p.is_absolute():
+            p = repo / p
+    else:
+        p = _default_source_map_path(repo)
     raw = _load_json(p)
     if raw is None:
         print(f"Notice: source map missing or unreadable: {p} (using empty services)", file=sys.stderr)
@@ -300,7 +479,17 @@ def _resolve_source_map(repo: Path, path_arg: str | None) -> tuple[Dict[str, Any
 
 def main() -> int:
     ap = argparse.ArgumentParser(
-        description="List .yml / .yaml / .json / .py for arbitrary service names (optional mat row merge)."
+        description=(
+            "List .yml / .yaml / .json / .py per service: declared paths + optional needle scan "
+            "(YAML/JSON/Python under default roots and python_dirs)."
+        ),
+        epilog=(
+            "Shell: in bash, \\ must be the last character on the line (no trailing space after \\). "
+            "Bulk non-GUI: omit --mat (no full-stack services mat in repo). "
+            "Optional --mat: services[].compose_service JSON (gui-services.json = GUI subset only). "
+            "--source-map defaults to configs/alignment-mats/service_source_map.json."
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     ap.add_argument("--repo-root", default=None, help="Repository root")
     ap.add_argument(
@@ -321,12 +510,18 @@ def main() -> int:
     ap.add_argument(
         "--source-map",
         default=None,
-        help=f"JSON like gui_service_source_map.json (default: {DEFAULT_SOURCE_MAP.name} next to this script)",
+        help=(
+            "JSON: services.<name>.python_dirs / yml_extra; top-level global_python_files / global_python_dirs (default: "
+            "configs/alignment-mats/service_source_map.json if present, else gui_service_source_map.json)"
+        ),
     )
     ap.add_argument(
         "--mat",
         default=None,
-        help="Optional services mat (same shape as gui-services.json); merge row when compose_service matches",
+        help=(
+            "Optional: services[] mat with compose_files per compose_service (e.g. gui-services.json — GUI-only). "
+            "Omit for bulk non-GUI alignment from service_names.txt."
+        ),
     )
     ap.add_argument("--extra-needle", action="append", default=[], help="Extra discovery substring (repeatable)")
     ap.add_argument(
@@ -339,7 +534,10 @@ def main() -> int:
     ap.add_argument(
         "--json-manifests",
         action="store_true",
-        help="Include Tier A alignment JSON paths from tier_a_json_targets.json in output",
+        help=(
+            "Add gui Tier-A paths from tier_a_json_targets.json (only services listed there; "
+            "does not read configs/alignment-mats/*_manifest.json)"
+        ),
     )
     ap.add_argument(
         "--manifest-dir",
@@ -355,7 +553,10 @@ def main() -> int:
         "--discover-associated",
         action=argparse.BooleanOptionalAction,
         default=True,
-        help="Scan YAML/JSON under default roots + python_dirs for needles (default: on)",
+        help=(
+            "Needle-scan: YAML/JSON under configs + infrastructure/containers + service_mesh + walked python dirs; "
+            "Python under entire repo root (default: on)"
+        ),
     )
     ap.add_argument(
         "--discover-max-bytes",
@@ -429,6 +630,9 @@ def main() -> int:
     mp_raw, map_path_resolved = _resolve_source_map(repo, args.source_map)
     smap: Dict[str, Any] = (mp_raw.get("services") or {}) if isinstance(mp_raw, dict) else {}
     global_py = list((mp_raw.get("global_python_files") or []) if isinstance(mp_raw, dict) else [])
+    global_py_dirs = [
+        str(x).replace("\\", "/") for x in ((mp_raw.get("global_python_dirs") or []) if isinstance(mp_raw, dict) else [])
+    ]
 
     tier_targets: Dict[str, List[str]] = {}
     tj = _load_json(TIER_A_TARGETS)
@@ -443,11 +647,20 @@ def main() -> int:
     service_names = sorted(set(args.services), key=lambda s: s.lower())
     include_gui_align = not args.omit_gui_alignment_convention
 
+    repo_py_paths: List[Path] = _list_repo_py_files(repo) if args.discover_associated else []
+    repo_py_snippets: List[Tuple[str, str]] = (
+        _load_repo_py_snippets(repo, repo_py_paths, args.discover_max_bytes) if repo_py_paths else []
+    )
+
     result: Dict[str, Any] = {}
     for name in service_names:
         row = _mat_row_for_service(mat, name) if mat else {}
         reg = smap.get(name) or {}
-        py_dirs = list(reg.get("python_dirs") or [])
+        declared_py_dirs = [str(d).replace("\\", "/") for d in (reg.get("python_dirs") or [])]
+        dirs_walk_py = list(dict.fromkeys(declared_py_dirs + global_py_dirs))
+        for d in _implicit_node_plane_python_dirs(repo, name):
+            if d not in dirs_walk_py:
+                dirs_walk_py.append(d)
         yml_extra = [str(x).replace("\\", "/") for x in (reg.get("yml_extra") or [])]
         compose_files = [str(x).replace("\\", "/") for x in (row.get("compose_files") or [])]
 
@@ -462,11 +675,13 @@ def main() -> int:
         tier_rels = [str(x).replace("\\", "/") for x in (tier_targets.get(name) or [])]
         yml_from_scan: Set[str] = set()
         json_from_scan: Set[str] = set()
+        py_from_scan: Set[str] = set()
         if args.discover_associated and needles:
-            d_roots = _discovery_roots_for_service(repo, py_dirs)
+            d_roots = _discovery_roots_for_service(repo, dirs_walk_py)
             yml_from_scan, json_from_scan = _discover_yml_json(
                 repo, d_roots, needles, args.discover_max_bytes
             )
+            py_from_scan = _discover_py_needle_matched_from_snippets(repo_py_snippets, needles)
 
         yml_resolved = sorted(set(yml_declared) | yml_from_scan)
         miss_exp, miss_tier = _expected_path_gaps(
@@ -475,7 +690,7 @@ def main() -> int:
 
         py_rel: List[str] = []
         py_missing_dirs: List[str] = []
-        for d in py_dirs:
+        for d in dirs_walk_py:
             found, miss = _iter_py_under(repo, d)
             py_missing_dirs.extend(miss)
             py_rel.extend(p.relative_to(repo).as_posix() for p in found)
@@ -483,7 +698,7 @@ def main() -> int:
         globs, g_miss = _collect_global_py(repo, global_py)
         py_rel.extend(globs)
         py_missing_dirs = sorted(set(py_missing_dirs))
-        py_rel = sorted(set(py_rel))
+        py_rel = sorted(set(py_rel) | py_from_scan)
 
         manifests: List[str] = []
         if args.json_manifests and name in tier_targets:
@@ -563,24 +778,24 @@ def main() -> int:
             for p in payload["alignment_json"]:
                 print(f"    {p}")
         if payload.get("missing_expected"):
-            print("  (missing expected conventional paths:)", file=sys.stderr)
+            print("  (missing expected conventional paths:)")
             for p in payload["missing_expected"]:
-                print(f"    - {p}", file=sys.stderr)
+                print(f"    - {p}")
         if payload.get("missing_tier_a_json"):
-            print("  (missing tier_a_json_targets:)", file=sys.stderr)
+            print("  (missing tier_a_json_targets:)")
             for p in payload["missing_tier_a_json"]:
-                print(f"    - {p}", file=sys.stderr)
+                print(f"    - {p}")
         if payload["missing_yml"]:
-            print("  (missing yaml refs / non-yml skipped:)", file=sys.stderr)
+            print("  (missing yaml refs / non-yml skipped:)")
             for p in payload["missing_yml"]:
-                print(f"    - {p}", file=sys.stderr)
+                print(f"    - {p}")
         if payload["missing_python_dirs"]:
-            print("  (missing python_dirs:)", file=sys.stderr)
+            print("  (missing python_dirs:)")
             for p in payload["missing_python_dirs"]:
-                print(f"    - {p}", file=sys.stderr)
+                print(f"    - {p}")
         if payload.get("missing_global_py"):
             for p in payload["missing_global_py"]:
-                print(f"  (missing global_py: {p})", file=sys.stderr)
+                print(f"  (missing global_py: {p})")
         print()
     return 0
 

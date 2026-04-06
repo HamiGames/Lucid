@@ -4,12 +4,30 @@
   "compose_service": "database-monitoring",
   "yml": [
     "infrastructure/containers/host-config.yml",
-    "infrastructure/containers/services/database-monitoring.yml",
-    "infrastructure/containers/services/master-endpoint.yml",
+    "infrastructure/containers/services/database/database-monitoring.yml",
+    "infrastructure/containers/services/middle-ware/master-endpoint.yml",
     "infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.yml"
   ],
   "py": [
-    "common/load_host_config.py"
+    "_gen_host_config.py",
+    "common/__init__.py",
+    "common/contact_profile_env.py",
+    "common/governance/__init__.py",
+    "common/governance/lucid_governor.py",
+    "common/governance/param_registry.py",
+    "common/governance/timelock.py",
+    "common/load_host_config.py",
+    "common/security/__init__.py",
+    "common/security/input_controller.py",
+    "common/security/policy_validator.py",
+    "common/security/privacy_shield.py",
+    "common/security/session_validator.py",
+    "common/security/trust_nothing_engine.py",
+    "common/server-tools/__init__.py",
+    "common/tor/__init__.py",
+    "common/tor/onion_service.py",
+    "common/tor/socks_proxy.py",
+    "common/tor/tor_manager.py"
   ],
   "json": [
     "infrastructure/containers/config-listings.json",
@@ -26,7 +44,7 @@
   "missing_global_py": [],
   "missing_expected": [],
   "missing_tier_a_json": [],
-  "source_map_path": "scripts/gui_auth_realignment/gui_service_source_map.json",
-  "mat_path": "configs/services/gui-services.json",
+  "source_map_path": "configs/alignment-mats/service_source_map.json",
+  "mat_path": null,
   "mat_row_matched": false
 }

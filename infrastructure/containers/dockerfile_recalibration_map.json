@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-03-31T08:36:57.115449+00:00",
+  "generated_at": "2026-04-04T04:16:26.384841+00:00",
   "sources": {
     "service_ids": "infrastructure/containers/service_id-list.json",
     "ports": "ports.txt",
@@ -9,7 +9,7 @@
   "stats": {
     "with_canonical": 0,
     "with_ports_key": 73,
-    "with_ports_row": 66,
+    "with_ports_row": 0,
     "total_dockerfiles": 242
   },
   "dockerfiles": {
@@ -50,11 +50,7 @@
         "org_lucid_service_id": "org.lucid.dockerfile.v1.591364bf7014b2ea:02_network_security/tor/Dockerfile.tor-proxy"
       },
       "ports_service_key": "tor_socks",
-      "ports": {
-        "port": 9050,
-        "service_name": "tor-socks",
-        "http_path": "http://tor-socks:9050/app"
-      }
+      "ports": null
     },
     "02_network_security/tor/Dockerfile.tor-proxy-02": {
       "basename": "Dockerfile.tor-proxy-02",
@@ -67,11 +63,7 @@
         "org_lucid_service_id": "org.lucid.dockerfile.v1.54d39a62f7acb816:02_network_security/tor/Dockerfile.tor-proxy-02"
       },
       "ports_service_key": "tor_socks",
-      "ports": {
-        "port": 9050,
-        "service_name": "tor-socks",
-        "http_path": "http://tor-socks:9050/app"
-      }
+      "ports": null
     },
     "02_network_security/tunnels/Dockerfile": {
       "basename": "Dockerfile",
@@ -84,11 +76,7 @@
         "org_lucid_service_id": "org.lucid.dockerfile.v1.4f64d0e01ac457ea:02_network_security/tunnels/Dockerfile"
       },
       "ports_service_key": "tunnel_tools",
-      "ports": {
-        "port": 7000,
-        "service_name": "tunnel-tools",
-        "http_path": "http://tunnel-tools:7000/app"
-      }
+      "ports": null
     },
     "02_network_security/tunnels/Dockerfile.tunnels": {
       "basename": "Dockerfile.tunnels",
@@ -101,11 +89,7 @@
         "org_lucid_service_id": "org.lucid.dockerfile.v1.c06efa5c28671a57:02_network_security/tunnels/Dockerfile.tunnels"
       },
       "ports_service_key": "tunnel_tools",
-      "ports": {
-        "port": 7000,
-        "service_name": "tunnel-tools",
-        "http_path": "http://tunnel-tools:7000/app"
-      }
+      "ports": null
     },
     "03_api_gateway/api/Dockerfile": {
       "basename": "Dockerfile",
@@ -495,11 +479,7 @@
         "org_lucid_service_id": "org.lucid.dockerfile.v1.c65a84c6523f4640:infrastructure/containers/admin/dockerfile.admin-overlord"
       },
       "ports_service_key": "admin_overlord",
-      "ports": {
-        "port": 8140,
-        "service_name": "admin-overlord",
-        "http_path": "http://admin-overlord:8140/app"
-      }
+      "ports": null
     },
     "infrastructure/containers/admin/Dockerfile.admin-system-gateway": {
       "basename": "Dockerfile.admin-system-gateway",
@@ -512,11 +492,7 @@
         "org_lucid_service_id": "org.lucid.dockerfile.v1.fc3684a4624a54de:infrastructure/containers/admin/Dockerfile.admin-system-gateway"
       },
       "ports_service_key": "admin_system_gateway",
-      "ports": {
-        "port": 8155,
-        "service_name": "admin-system-gateway",
-        "http_path": "http://admin-system-gateway:8155/health"
-      }
+      "ports": null
     },
     "infrastructure/containers/admin/Dockerfile.admin-ui-backend": {
       "basename": "Dockerfile.admin-ui-backend",
@@ -529,11 +505,7 @@
         "org_lucid_service_id": "org.lucid.dockerfile.v1.0b6971fcfb5b84c4:infrastructure/containers/admin/Dockerfile.admin-ui-backend"
       },
       "ports_service_key": "admin_ui_backend",
-      "ports": {
-        "port": 8120,
-        "service_name": "admin-ui-backend",
-        "http_path": "http://admin-ui-backend:8120/app"
-      }
+      "ports": null
     },
     "infrastructure/containers/admin/Dockerfile.gov-client": {
       "basename": "Dockerfile.gov-client",
@@ -546,11 +518,7 @@
         "org_lucid_service_id": "org.lucid.dockerfile.v1.69d01008a4c37ab6:infrastructure/containers/admin/Dockerfile.gov-client"
       },
       "ports_service_key": "admin_governance_client",
-      "ports": {
-        "port": 8070,
-        "service_name": "admin-governance-client",
-        "http_path": "http://admin-governance-client:8070/app"
-      }
+      "ports": null
     },
     "infrastructure/containers/admin/Dockerfile.governance-client": {
       "basename": "Dockerfile.governance-client",
@@ -563,11 +531,7 @@
         "org_lucid_service_id": "org.lucid.dockerfile.v1.1abb6da3235bf6af:infrastructure/containers/admin/Dockerfile.governance-client"
       },
       "ports_service_key": "admin_governance_client",
-      "ports": {
-        "port": 8070,
-        "service_name": "admin-governance-client",
-        "http_path": "http://admin-governance-client:8070/app"
-      }
+      "ports": null
     },
     "infrastructure/containers/admin/Dockerfile.key-rotation": {
       "basename": "Dockerfile.key-rotation",
@@ -580,11 +544,7 @@
         "org_lucid_service_id": "org.lucid.dockerfile.v1.1b8b18f128107333:infrastructure/containers/admin/Dockerfile.key-rotation"
       },
       "ports_service_key": "admin_key_rotation",
-      "ports": {
-        "port": 8060,
-        "service_name": "admin-key-rotation",
-        "http_path": "http://admin-key-rotation:8060/app"
-      }
+      "ports": null
     },
     "infrastructure/containers/admin/Dockerfile.params-registry": {
       "basename": "Dockerfile.params-registry",
@@ -597,11 +557,7 @@
         "org_lucid_service_id": "org.lucid.dockerfile.v1.7158b0580c4433ea:infrastructure/containers/admin/Dockerfile.params-registry"
       },
       "ports_service_key": "admin_params_registry",
-      "ports": {
-        "port": 8050,
-        "service_name": "admin-params-registry",
-        "http_path": "http://admin-params-registry:8050/app"
-      }
+      "ports": null
     },
     "infrastructure/containers/auth/Dockerfile.auth-service": {
       "basename": "Dockerfile.auth-service",
@@ -614,11 +570,7 @@
         "org_lucid_service_id": "org.lucid.dockerfile.v1.230145073e49c489:infrastructure/containers/auth/Dockerfile.auth-service"
       },
       "ports_service_key": "lucid_auth_service",
-      "ports": {
-        "port": 8089,
-        "service_name": "lucid-auth-service",
-        "http_path": "http://lucid-auth-service:8089/app"
-      }
+      "ports": null
     },
     "infrastructure/containers/auth/Dockerfile.lucid-gov": {
       "basename": "Dockerfile.lucid-gov",
@@ -631,11 +583,7 @@
         "org_lucid_service_id": "org.lucid.dockerfile.v1.584438e85a616f1d:infrastructure/containers/auth/Dockerfile.lucid-gov"
       },
       "ports_service_key": "lucid_gov",
-      "ports": {
-        "port": 8108,
-        "service_name": "lucid-gov",
-        "http_path": "http://lucid-gov:8108/app"
-      }
+      "ports": null
     },
     "infrastructure/containers/base/Dockerfile.base": {
       "basename": "Dockerfile.base",
@@ -687,11 +635,7 @@
         "org_lucid_service_id": "org.lucid.dockerfile.v1.3885187a8dcebe77:infrastructure/containers/blockchain/Dockerfile.block-manager"
       },
       "ports_service_key": "block_manager",
-      "ports": {
-        "port": 8086,
-        "service_name": "block-manager",
-        "http_path": "http://block-manager:8086/app"
-      }
+      "ports": null
     },
     "infrastructure/containers/blockchain/Dockerfile.chain-to-pay": {
       "basename": "Dockerfile.chain-to-pay",
@@ -704,11 +648,7 @@
         "org_lucid_service_id": "org.lucid.dockerfile.v1.c1ec1c20cc20c960:infrastructure/containers/blockchain/Dockerfile.chain-to-pay"
       },
       "ports_service_key": "chain_to_pay",
-      "ports": {
-        "port": 8114,
-        "service_name": "chain-to-pay",
-        "http_path": "http://chain-to-pay:8114/app"
-      }
+      "ports": null
     },
     "infrastructure/containers/blockchain/Dockerfile.consensus-engine": {
       "basename": "Dockerfile.consensus-engine",
@@ -721,11 +661,7 @@
         "org_lucid_service_id": "org.lucid.dockerfile.v1.a681fced58bc57eb:infrastructure/containers/blockchain/Dockerfile.consensus-engine"
       },
       "ports_service_key": "blockchain_consensus_engine",
-      "ports": {
-        "port": 8085,
-        "service_name": "blockchain-consensus-engine",
-        "http_path": "http://blockchain-consensus-engine:8085/app"
-      }
+      "ports": null
     },
     "infrastructure/containers/blockchain/Dockerfile.data": {
       "basename": "Dockerfile.data",
@@ -738,11 +674,7 @@
         "org_lucid_service_id": "org.lucid.dockerfile.v1.a47b92cca69ac5cf:infrastructure/containers/blockchain/Dockerfile.data"
       },
       "ports_service_key": "data_chain",
-      "ports": {
-        "port": 8087,
-        "service_name": "data-chain",
-        "http_path": "http://data-chain:8087/app"
-      }
+      "ports": null
     },
     "infrastructure/containers/blockchain/Dockerfile.engine": {
       "basename": "Dockerfile.engine",
@@ -755,11 +687,7 @@
         "org_lucid_service_id": "org.lucid.dockerfile.v1.432fa3cdc353e5a9:infrastructure/containers/blockchain/Dockerfile.engine"
       },
       "ports_service_key": "blockchain_engine",
-      "ports": {
-        "port": 8084,
-        "service_name": "blockchain-engine",
-        "http_path": "http://blockchain-engine:8084/app"
-      }
+      "ports": null
     },
     "infrastructure/containers/database/Dockerfile.database": {
       "basename": "Dockerfile.database",
@@ -772,11 +700,7 @@
         "org_lucid_service_id": "org.lucid.dockerfile.v1.d33eb21629817b7b:infrastructure/containers/database/Dockerfile.database"
       },
       "ports_service_key": "mongodb_monitoring",
-      "ports": {
-        "port": 27018,
-        "service_name": "mongodb-monitoring",
-        "http_path": "http://mongodb-monitoring:27018/app"
-      }
+      "ports": null
     },
     "infrastructure/containers/database/Dockerfile.database-overlord": {
       "basename": "Dockerfile.database-overlord",
@@ -789,11 +713,7 @@
         "org_lucid_service_id": "org.lucid.dockerfile.v1.c59e13efce333887:infrastructure/containers/database/Dockerfile.database-overlord"
       },
       "ports_service_key": "database_overlord",
-      "ports": {
-        "port": 8120,
-        "service_name": "database-overlord",
-        "http_path": "http://database-overlord:8120/app"
-      }
+      "ports": null
     },
     "infrastructure/containers/database/Dockerfile.elasticsearch": {
       "basename": "Dockerfile.elasticsearch",
@@ -806,11 +726,7 @@
         "org_lucid_service_id": "org.lucid.dockerfile.v1.bd0d6dd088846725:infrastructure/containers/database/Dockerfile.elasticsearch"
       },
       "ports_service_key": "lucid_elasticsearch_http",
-      "ports": {
-        "port": 9200,
-        "service_name": "lucid-elasticsearch-http",
-        "http_path": "http://lucid-elasticsearch-http:9200/app"
-      }
+      "ports": null
     },
     "infrastructure/containers/database/Dockerfile.mongodb": {
       "basename": "Dockerfile.mongodb",
@@ -823,11 +739,7 @@
         "org_lucid_service_id": "org.lucid.dockerfile.v1.cac56eba7308180f:infrastructure/containers/database/Dockerfile.mongodb"
       },
       "ports_service_key": "lucid_mongodb",
-      "ports": {
-        "port": 27017,
-        "service_name": "lucid-mongodb",
-        "http_path": "http://lucid-mongodb:27017/app"
-      }
+      "ports": null
     },
     "infrastructure/containers/database/Dockerfile.redis": {
       "basename": "Dockerfile.redis",
@@ -840,11 +752,7 @@
         "org_lucid_service_id": "org.lucid.dockerfile.v1.20e2827f5f14f6a2:infrastructure/containers/database/Dockerfile.redis"
       },
       "ports_service_key": "lucid_redis",
-      "ports": {
-        "port": 6379,
-        "service_name": "lucid-redis",
-        "http_path": "http://lucid-redis:6379/app"
-      }
+      "ports": null
     },
     "infrastructure/containers/electron_gui/Dockerfile.admin": {
       "basename": "Dockerfile.admin",
@@ -857,11 +765,7 @@
         "org_lucid_service_id": "org.lucid.dockerfile.v1.bae1f4189041fc14:infrastructure/containers/electron_gui/Dockerfile.admin"
       },
       "ports_service_key": "admin_ui_backend",
-      "ports": {
-        "port": 8120,
-        "service_name": "admin-ui-backend",
-        "http_path": "http://admin-ui-backend:8120/app"
-      }
+      "ports": null
     },
     "infrastructure/containers/electron_gui/Dockerfile.node": {
       "basename": "Dockerfile.node",
@@ -874,11 +778,7 @@
         "org_lucid_service_id": "org.lucid.dockerfile.v1.1566acb8cc6665d1:infrastructure/containers/electron_gui/Dockerfile.node"
       },
       "ports_service_key": "electron_gui_node",
-      "ports": {
-        "port": 3002,
-        "service_name": "electron-gui-node",
-        "http_path": "http://electron-gui-node:3002/app"
-      }
+      "ports": null
     },
     "infrastructure/containers/electron_gui/Dockerfile.user": {
       "basename": "Dockerfile.user",
@@ -891,11 +791,7 @@
         "org_lucid_service_id": "org.lucid.dockerfile.v1.a98923af26167049:infrastructure/containers/electron_gui/Dockerfile.user"
       },
       "ports_service_key": "electron_gui_user",
-      "ports": {
-        "port": 3001,
-        "service_name": "electron-gui-user",
-        "http_path": "http://electron-gui-user:3001/app"
-      }
+      "ports": null
     },
     "infrastructure/containers/gui/Dockerfile.gui": {
       "basename": "Dockerfile.gui",
@@ -908,11 +804,7 @@
         "org_lucid_service_id": "org.lucid.dockerfile.v1.372035a9a8d68da4:infrastructure/containers/gui/Dockerfile.gui"
       },
       "ports_service_key": "gui_docker_manager",
-      "ports": {
-        "port": 8098,
-        "service_name": "gui-docker-manager",
-        "http_path": "http://gui-docker-manager:8098/app"
-      }
+      "ports": null
     },
     "infrastructure/containers/gui/Dockerfile.gui-api-bridge": {
       "basename": "Dockerfile.gui-api-bridge",
@@ -925,11 +817,7 @@
         "org_lucid_service_id": "org.lucid.dockerfile.v1.ae1e151ee8579eac:infrastructure/containers/gui/Dockerfile.gui-api-bridge"
       },
       "ports_service_key": "gui_api_bridge",
-      "ports": {
-        "port": 8102,
-        "service_name": "gui-api-bridge",
-        "http_path": "http://gui-api-bridge:8102/app"
-      }
+      "ports": null
     },
     "infrastructure/containers/gui/Dockerfile.gui-hardware-manager": {
       "basename": "Dockerfile.gui-hardware-manager",
@@ -942,11 +830,7 @@
         "org_lucid_service_id": "org.lucid.dockerfile.v1.b531e524082b39cd:infrastructure/containers/gui/Dockerfile.gui-hardware-manager"
       },
       "ports_service_key": "gui_hardware_manager",
-      "ports": {
-        "port": 8099,
-        "service_name": "gui-hardware-manager",
-        "http_path": "http://gui-hardware-manager:8099/app"
-      }
+      "ports": null
     },
     "infrastructure/containers/gui/Dockerfile.gui-tor-manager": {
       "basename": "Dockerfile.gui-tor-manager",
@@ -959,11 +843,7 @@
         "org_lucid_service_id": "org.lucid.dockerfile.v1.49b98c1d2c183ab7:infrastructure/containers/gui/Dockerfile.gui-tor-manager"
       },
       "ports_service_key": "gui_tor_manager_http",
-      "ports": {
-        "port": 8097,
-        "service_name": "gui-tor-manager",
-        "http_path": "http://gui-tor-manager:8097/app"
-      }
+      "ports": null
     },
     "infrastructure/containers/node/Dockerfile.node-gov": {
       "basename": "Dockerfile.node-gov",
@@ -976,11 +856,7 @@
         "org_lucid_service_id": "org.lucid.dockerfile.v1.d56efdab537567f2:infrastructure/containers/node/Dockerfile.node-gov"
       },
       "ports_service_key": "node_gov",
-      "ports": {
-        "port": 8620,
-        "service_name": "node-gov",
-        "http_path": "http://node-gov:8620/app"
-      }
+      "ports": null
     },
     "infrastructure/containers/node/Dockerfile.node-management": {
       "basename": "Dockerfile.node-management",
@@ -993,11 +869,7 @@
         "org_lucid_service_id": "org.lucid.dockerfile.v1.a6e21e69f127616e:infrastructure/containers/node/Dockerfile.node-management"
       },
       "ports_service_key": "node_management",
-      "ports": {
-        "port": 8095,
-        "service_name": "node-management",
-        "http_path": "http://node-management:8095/app"
-      }
+      "ports": null
     },
     "infrastructure/containers/node/Dockerfile.node-overlord": {
       "basename": "Dockerfile.node-overlord",
@@ -1010,11 +882,7 @@
         "org_lucid_service_id": "org.lucid.dockerfile.v1.11c76e7e7b7b3429:infrastructure/containers/node/Dockerfile.node-overlord"
       },
       "ports_service_key": "node_overlord",
-      "ports": {
-        "port": 8130,
-        "service_name": "node-overlord",
-        "http_path": "http://node-overlord:8130/app"
-      }
+      "ports": null
     },
     "infrastructure/containers/node/Dockerfile.node-registry": {
       "basename": "Dockerfile.node-registry",
@@ -1027,11 +895,7 @@
         "org_lucid_service_id": "org.lucid.dockerfile.v1.193af8946ff8b328:infrastructure/containers/node/Dockerfile.node-registry"
       },
       "ports_service_key": "node_registry",
-      "ports": {
-        "port": 8610,
-        "service_name": "node-registry",
-        "http_path": "http://node-registry:8610/app"
-      }
+      "ports": null
     },
     "infrastructure/containers/node/Dockerfile.node-system-gateway": {
       "basename": "Dockerfile.node-system-gateway",
@@ -1044,11 +908,7 @@
         "org_lucid_service_id": "org.lucid.dockerfile.v1.5c60d7db4997343e:infrastructure/containers/node/Dockerfile.node-system-gateway"
       },
       "ports_service_key": "node_system_gateway",
-      "ports": {
-        "port": 8640,
-        "service_name": "node-system-gateway",
-        "http_path": "http://node-system-gateway:8640/app"
-      }
+      "ports": null
     },
     "infrastructure/containers/node/Dockerfile.node-utils": {
       "basename": "Dockerfile.node-utils",
@@ -1061,11 +921,7 @@
         "org_lucid_service_id": "org.lucid.dockerfile.v1.844e38b5044a049f:infrastructure/containers/node/Dockerfile.node-utils"
       },
       "ports_service_key": "node_utils",
-      "ports": {
-        "port": 8630,
-        "service_name": "node-utils",
-        "http_path": "http://node-utils:8630/app"
-      }
+      "ports": null
     },
     "infrastructure/containers/node/Dockerfile.node-worker": {
       "basename": "Dockerfile.node-worker",
@@ -1078,11 +934,7 @@
         "org_lucid_service_id": "org.lucid.dockerfile.v1.0a4af1e17fed523a:infrastructure/containers/node/Dockerfile.node-worker"
       },
       "ports_service_key": "node_worker",
-      "ports": {
-        "port": 8600,
-        "service_name": "node-worker",
-        "http_path": "http://node-worker:8600/app"
-      }
+      "ports": null
     },
     "infrastructure/containers/payment_systems/Dockerfile.on-system-chain-client": {
       "basename": "Dockerfile.on-system-chain-client",
@@ -1095,11 +947,7 @@
         "org_lucid_service_id": "org.lucid.dockerfile.v1.7cda0b5641f32450:infrastructure/containers/payment_systems/Dockerfile.on-system-chain-client"
       },
       "ports_service_key": "on_system_chain_client",
-      "ports": {
-        "port": 8040,
-        "service_name": "on-system-chain-client",
-        "http_path": "http://on-system-chain-client:8040/app"
-      }
+      "ports": null
     },
     "infrastructure/containers/payment_systems/Dockerfile.payment-gateway": {
       "basename": "Dockerfile.payment-gateway",
@@ -1112,11 +960,7 @@
         "org_lucid_service_id": "org.lucid.dockerfile.v1.ecb7d04499051884:infrastructure/containers/payment_systems/Dockerfile.payment-gateway"
       },
       "ports_service_key": "payment_system_gateway",
-      "ports": {
-        "port": 8097,
-        "service_name": "payment-system-gateway",
-        "http_path": "http://payment-system-gateway:8097/app"
-      }
+      "ports": null
     },
     "infrastructure/containers/payment_systems/Dockerfile.tron-node-client": {
       "basename": "Dockerfile.tron-node-client",
@@ -1129,11 +973,7 @@
         "org_lucid_service_id": "org.lucid.dockerfile.v1.0968fe4e5f1ddcbd:infrastructure/containers/payment_systems/Dockerfile.tron-node-client"
       },
       "ports_service_key": "tron_node_client",
-      "ports": {
-        "port": 8030,
-        "service_name": "tron-node-client",
-        "http_path": "http://tron-node-client:8030/app"
-      }
+      "ports": null
     },
     "infrastructure/containers/payment_systems/Dockerfile.tron-payment-service": {
       "basename": "Dockerfile.tron-payment-service",
@@ -1146,11 +986,7 @@
         "org_lucid_service_id": "org.lucid.dockerfile.v1.f4941299577e6e8c:infrastructure/containers/payment_systems/Dockerfile.tron-payment-service"
       },
       "ports_service_key": "tron_payment_service",
-      "ports": {
-        "port": 8080,
-        "service_name": "tron-payment-service",
-        "http_path": "http://tron-payment-service:8080/app"
-      }
+      "ports": null
     },
     "infrastructure/containers/payment_systems/Dockerfile.wallet": {
       "basename": "Dockerfile.wallet",
@@ -1163,11 +999,7 @@
         "org_lucid_service_id": "org.lucid.dockerfile.v1.4c33f23318b42f7b:infrastructure/containers/payment_systems/Dockerfile.wallet"
       },
       "ports_service_key": "wallet_manager",
-      "ports": {
-        "port": 8093,
-        "service_name": "wallet-manager",
-        "http_path": "http://wallet-manager:8093/app"
-      }
+      "ports": null
     },
     "infrastructure/containers/rdp/Dockerfile.rdp-controller": {
       "basename": "Dockerfile.rdp-controller",
@@ -1193,11 +1025,7 @@
         "org_lucid_service_id": "org.lucid.dockerfile.v1.81e12d75c5d335ef:infrastructure/containers/server/Dockerfile"
       },
       "ports_service_key": "lucid_server_core",
-      "ports": {
-        "port": 8100,
-        "service_name": "lucid-server-core",
-        "http_path": "http://lucid-server-core:8100/app"
-      }
+      "ports": null
     },
     "infrastructure/containers/server/Dockerfile.rdp-server-manager": {
       "basename": "Dockerfile.rdp-server-manager",
@@ -1210,11 +1038,7 @@
         "org_lucid_service_id": "org.lucid.dockerfile.v1.03f85ade52648b36:infrastructure/containers/server/Dockerfile.rdp-server-manager"
       },
       "ports_service_key": "rdp_server_manager",
-      "ports": {
-        "port": 8090,
-        "service_name": "rdp-server-manager-http",
-        "http_path": "http://rdp-server-manager-http:8090/app"
-      }
+      "ports": null
     },
     "infrastructure/containers/server/Dockerfile.server-gateway": {
       "basename": "Dockerfile.server-gateway",
@@ -1227,11 +1051,7 @@
         "org_lucid_service_id": "org.lucid.dockerfile.v1.43cd9ae831546923:infrastructure/containers/server/Dockerfile.server-gateway"
       },
       "ports_service_key": "lucid_server_gateway",
-      "ports": {
-        "port": 8080,
-        "service_name": "server-gateway",
-        "http_path": "http://server-gateway:8080/app"
-      }
+      "ports": null
     },
     "infrastructure/containers/server/Dockerfile.server-manager": {
       "basename": "Dockerfile.server-manager",
@@ -1244,11 +1064,7 @@
         "org_lucid_service_id": "org.lucid.dockerfile.v1.fec05bf9884b5d04:infrastructure/containers/server/Dockerfile.server-manager"
       },
       "ports_service_key": "lucid_server_manager",
-      "ports": {
-        "port": 8081,
-        "service_name": "lucid-server-manager",
-        "http_path": "http://lucid-server-manager:8081/app"
-      }
+      "ports": null
     },
     "infrastructure/containers/server/Dockerfile.service-mesh-controller": {
       "basename": "Dockerfile.service-mesh-controller",
@@ -1261,11 +1077,7 @@
         "org_lucid_service_id": "org.lucid.dockerfile.v1.8ad49f39ee138448:infrastructure/containers/server/Dockerfile.service-mesh-controller"
       },
       "ports_service_key": "lucid_service_mesh_controller",
-      "ports": {
-        "port": 8500,
-        "service_name": "lucid-service-mesh-controller",
-        "http_path": "http://lucid-service-mesh-controller:8500/app"
-      }
+      "ports": null
     },
     "infrastructure/containers/services/node/Dockerfile": {
       "basename": "Dockerfile",
@@ -1278,11 +1090,7 @@
         "org_lucid_service_id": "org.lucid.dockerfile.v1.1a1a275e499a8734:infrastructure/containers/services/node/Dockerfile"
       },
       "ports_service_key": "node_management",
-      "ports": {
-        "port": 8095,
-        "service_name": "node-management",
-        "http_path": "http://node-management:8095/app"
-      }
+      "ports": null
     },
     "infrastructure/containers/services/node/Dockerfile.node-management": {
       "basename": "Dockerfile.node-management",
@@ -1295,11 +1103,7 @@
         "org_lucid_service_id": "org.lucid.dockerfile.v1.8f0c01a962e345cf:infrastructure/containers/services/node/Dockerfile.node-management"
       },
       "ports_service_key": "node_management",
-      "ports": {
-        "port": 8095,
-        "service_name": "node-management",
-        "http_path": "http://node-management:8095/app"
-      }
+      "ports": null
     },
     "infrastructure/containers/sessions/Dockerfile.anchoring": {
       "basename": "Dockerfile.anchoring",
@@ -1312,11 +1116,7 @@
         "org_lucid_service_id": "org.lucid.dockerfile.v1.11933b3531e16165:infrastructure/containers/sessions/Dockerfile.anchoring"
       },
       "ports_service_key": "session_anchoring",
-      "ports": {
-        "port": 8085,
-        "service_name": "session-anchoring",
-        "http_path": "http://session-anchoring:8085/app"
-      }
+      "ports": null
     },
     "infrastructure/containers/sessions/Dockerfile.api": {
       "basename": "Dockerfile.api",
@@ -1329,11 +1129,7 @@
         "org_lucid_service_id": "org.lucid.dockerfile.v1.6748fe5e53be162b:infrastructure/containers/sessions/Dockerfile.api"
       },
       "ports_service_key": "session_api",
-      "ports": {
-        "port": 8113,
-        "service_name": "session-api",
-        "http_path": "http://session-api:8113/app"
-      }
+      "ports": null
     },
     "infrastructure/containers/sessions/Dockerfile.chunk-processor": {
       "basename": "Dockerfile.chunk-processor",
@@ -1346,11 +1142,7 @@
         "org_lucid_service_id": "org.lucid.dockerfile.v1.c02ea0943f466134:infrastructure/containers/sessions/Dockerfile.chunk-processor"
       },
       "ports_service_key": "session_chunk_processor",
-      "ports": {
-        "port": 8010,
-        "service_name": "session-chunk-processor",
-        "http_path": "http://session-chunk-processor:8010/app"
-      }
+      "ports": null
     },
     "infrastructure/containers/sessions/Dockerfile.merkle-tree-builder": {
       "basename": "Dockerfile.merkle-tree-builder",
@@ -1363,11 +1155,7 @@
         "org_lucid_service_id": "org.lucid.dockerfile.v1.88309208fd5b8f80:infrastructure/containers/sessions/Dockerfile.merkle-tree-builder"
       },
       "ports_service_key": "session_merkle_tree_builder",
-      "ports": {
-        "port": 8092,
-        "service_name": "session-merkle-tree-builder",
-        "http_path": "http://session-merkle-tree-builder:8092/app"
-      }
+      "ports": null
     },
     "infrastructure/containers/sessions/Dockerfile.session-overlord": {
       "basename": "Dockerfile.session-overlord",
@@ -1380,11 +1168,7 @@
         "org_lucid_service_id": "org.lucid.dockerfile.v1.194515037502d9c5:infrastructure/containers/sessions/Dockerfile.session-overlord"
       },
       "ports_service_key": "session_overlord",
-      "ports": {
-        "port": 8110,
-        "service_name": "session-overlord",
-        "http_path": "http://session-overlord:8110/app"
-      }
+      "ports": null
     },
     "infrastructure/containers/sessions/Dockerfile.session-pipeline": {
       "basename": "Dockerfile.session-pipeline",
@@ -1410,11 +1194,7 @@
         "org_lucid_service_id": "org.lucid.dockerfile.v1.70fe865ea6b688fd:infrastructure/containers/sessions/Dockerfile.session-pipeline-manager"
       },
       "ports_service_key": "session_pipeline_manager",
-      "ports": {
-        "port": 7990,
-        "service_name": "session-pipeline-manager",
-        "http_path": "http://session-pipeline-manager:7990/app"
-      }
+      "ports": null
     },
     "infrastructure/containers/sessions/Dockerfile.session-storage-service": {
       "basename": "Dockerfile.session-storage-service",
@@ -1427,11 +1207,7 @@
         "org_lucid_service_id": "org.lucid.dockerfile.v1.0491f551b52254df:infrastructure/containers/sessions/Dockerfile.session-storage-service"
       },
       "ports_service_key": "session_storage_service",
-      "ports": {
-        "port": 8020,
-        "service_name": "session-storage-service",
-        "http_path": "http://session-storage-service:8020/app"
-      }
+      "ports": null
     },
     "infrastructure/containers/sessions/Dockerfile.session-systems-control": {
       "basename": "Dockerfile.session-systems-control",
@@ -1444,11 +1220,7 @@
         "org_lucid_service_id": "org.lucid.dockerfile.v1.9587e97e6a96ca34:infrastructure/containers/sessions/Dockerfile.session-systems-control"
       },
       "ports_service_key": "session_system_control",
-      "ports": {
-        "port": 7988,
-        "service_name": "session-system-control",
-        "http_path": "http://session-system-control:7988/app"
-      }
+      "ports": null
     },
     "infrastructure/containers/storage/Dockerfile.elasticsearch": {
       "basename": "Dockerfile.elasticsearch",
@@ -1461,11 +1233,7 @@
         "org_lucid_service_id": "org.lucid.dockerfile.v1.48701e1a21b14772:infrastructure/containers/storage/Dockerfile.elasticsearch"
       },
       "ports_service_key": "lucid_elasticsearch_http",
-      "ports": {
-        "port": 9200,
-        "service_name": "lucid-elasticsearch-http",
-        "http_path": "http://lucid-elasticsearch-http:9200/app"
-      }
+      "ports": null
     },
     "infrastructure/containers/storage/Dockerfile.mongodb": {
       "basename": "Dockerfile.mongodb",
@@ -1478,11 +1246,7 @@
         "org_lucid_service_id": "org.lucid.dockerfile.v1.1a87ea332346d719:infrastructure/containers/storage/Dockerfile.mongodb"
       },
       "ports_service_key": "lucid_mongodb",
-      "ports": {
-        "port": 27017,
-        "service_name": "lucid-mongodb",
-        "http_path": "http://lucid-mongodb:27017/app"
-      }
+      "ports": null
     },
     "infrastructure/containers/storage/Dockerfile.redis": {
       "basename": "Dockerfile.redis",
@@ -1495,11 +1259,7 @@
         "org_lucid_service_id": "org.lucid.dockerfile.v1.61fd3450f8ba8a48:infrastructure/containers/storage/Dockerfile.redis"
       },
       "ports_service_key": "lucid_redis",
-      "ports": {
-        "port": 6379,
-        "service_name": "lucid-redis",
-        "http_path": "http://lucid-redis:6379/app"
-      }
+      "ports": null
     },
     "infrastructure/containers/storage/Dockerfile.storage": {
       "basename": "Dockerfile.storage",
@@ -1512,11 +1272,7 @@
         "org_lucid_service_id": "org.lucid.dockerfile.v1.86b998f8d949cf9d:infrastructure/containers/storage/Dockerfile.storage"
       },
       "ports_service_key": "lucid_system_storage",
-      "ports": {
-        "port": 9900,
-        "service_name": "lucid-system-storage",
-        "http_path": "http://lucid-system-storage:9900/app"
-      }
+      "ports": null
     },
     "infrastructure/containers/tor/Dockerfile": {
       "basename": "Dockerfile",
@@ -1529,11 +1285,7 @@
         "org_lucid_service_id": "org.lucid.dockerfile.v1.ef31cd690d8f3a2c:infrastructure/containers/tor/Dockerfile"
       },
       "ports_service_key": "tunnel_tools",
-      "ports": {
-        "port": 7000,
-        "service_name": "tunnel-tools",
-        "http_path": "http://tunnel-tools:7000/app"
-      }
+      "ports": null
     },
     "infrastructure/containers/tor/Dockerfile.tor-proxy-02": {
       "basename": "Dockerfile.tor-proxy-02",
@@ -1546,11 +1298,7 @@
         "org_lucid_service_id": "org.lucid.dockerfile.v1.2143ae84c81ed42f:infrastructure/containers/tor/Dockerfile.tor-proxy-02"
       },
       "ports_service_key": "tor_socks",
-      "ports": {
-        "port": 9050,
-        "service_name": "tor-socks",
-        "http_path": "http://tor-socks:9050/app"
-      }
+      "ports": null
     },
     "infrastructure/containers/tor/Dockerfile.tunnels": {
       "basename": "Dockerfile.tunnels",
@@ -1563,11 +1311,7 @@
         "org_lucid_service_id": "org.lucid.dockerfile.v1.1e0ab614e1003171:infrastructure/containers/tor/Dockerfile.tunnels"
       },
       "ports_service_key": "tunnel_tools",
-      "ports": {
-        "port": 7000,
-        "service_name": "tunnel-tools",
-        "http_path": "http://tunnel-tools:7000/app"
-      }
+      "ports": null
     },
     "infrastructure/containers/user/Dockerfile": {
       "basename": "Dockerfile",
@@ -1580,11 +1324,7 @@
         "org_lucid_service_id": "org.lucid.dockerfile.v1.ccb15d3adc538585:infrastructure/containers/user/Dockerfile"
       },
       "ports_service_key": "main_lucid_gateway",
-      "ports": {
-        "port": 8080,
-        "service_name": "api-gateway",
-        "http_path": "http://api-gateway:8080/app"
-      }
+      "ports": null
     },
     "infrastructure/containers/vm/Dockerfile.vm": {
       "basename": "Dockerfile.vm",
@@ -1597,11 +1337,7 @@
         "org_lucid_service_id": "org.lucid.dockerfile.v1.be69280a098dd938:infrastructure/containers/vm/Dockerfile.vm"
       },
       "ports_service_key": "vm_service",
-      "ports": {
-        "port": 8107,
-        "service_name": "vm-service",
-        "http_path": "http://vm-service:8107/app"
-      }
+      "ports": null
     },
     "infrastructure/docker/common/Dockerfile": {
       "basename": "Dockerfile",

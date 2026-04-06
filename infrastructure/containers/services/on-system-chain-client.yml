@@ -33,7 +33,7 @@ manifest_alignment:
     - "infrastructure/containers/blockchain/docker-compose.manager.yml"
     - "infrastructure/containers/host-config.yml"
     - "infrastructure/containers/payment_systems/docker-compose.payment-internal.yml"
-    - "infrastructure/containers/services/master-endpoint.yml"
+    - "infrastructure/containers/services/middle-ware/master-endpoint.yml"
     - "infrastructure/containers/services/payment_services/payment-services-host-alignment.yml"
     - "infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.yml"
     - "infrastructure/containers/services/x_lucid_cluster_calibration/core-cluster-host-alignment.yml"

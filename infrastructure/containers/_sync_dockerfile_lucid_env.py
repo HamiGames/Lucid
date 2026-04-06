@@ -92,6 +92,14 @@ SKIP_REL_PATHS = frozenset(
 )
 
 
+def _read_text_robust(path: Path) -> str:
+    """UTF-8 / UTF-16 (BOM) — matches build_dockerfile_recalibration_map.py JSON reader."""
+    raw = path.read_bytes()
+    if len(raw) >= 2 and raw[0:2] in (b"\xff\xfe", b"\xfe\xff"):
+        return raw.decode("utf-16")
+    return raw.decode("utf-8-sig")
+
+
 def load_service_ips() -> dict[str, str]:
     text = SERVICE_IP_PATH.read_text(encoding="utf-8")
     idx = text.find("service_ips:")
@@ -111,7 +119,7 @@ def load_host_config_services() -> dict:
 
 def load_ports_services() -> dict[str, dict]:
     """Parse ports.txt service blocks (indent 2 = key, indent 4 = fields)."""
-    text = PORTS_PATH.read_text(encoding="utf-8")
+    text = _read_text_robust(PORTS_PATH)
     out: dict[str, dict] = {}
     current: str | None = None
     for line in text.splitlines():

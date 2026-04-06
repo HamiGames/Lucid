@@ -17,18 +17,11 @@ ARG PYTHON_VERSION=3.11
 ############################
 # Stage 1 – Builder
 ############################
-FROM --platform=$TARGETPLATFORM python:3.11-slim-bookworm AS builder
-
 ARG BUILDPLATFORM
 ARG TARGETPLATFORM
 ARG PYTHON_VERSION
 
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1 \
-    PIP_PREFER_BINARY=1 \
-    DEBIAN_FRONTEND=noninteractive
+FROM --platform=$TARGETPLATFORM python:3.11-slim-bookworm AS builder
 
 WORKDIR /build
 
@@ -82,58 +75,30 @@ RUN set -eux; \
 # LUCID_LIB_SKELETON_END
 
 
-RUN printf "LUCID_DB_BACKUP_RUNTIME" > /var/run/.keep && \
-    printf "LUCID_DB_BACKUP_LIB" > /var/lib/.keep && \
-    chown -R 65532:65532 /var/run /var/lib && \
-    chmod 644 /var/run/.keep /var/lib/.keep
-
-RUN mkdir -p /usr/local/lib/python3.11/site-packages /usr/local/bin && \
-    chown -R 65532:65532 /usr/local/lib/python3.11/site-packages /usr/local/bin
-
+COPY database/services/backup/requirements-backup.txt ./requirements.txt
 RUN --mount=type=cache,target=/root/.cache/pip \
     mkdir -p /build/wheels && \
     pip install --upgrade pip setuptools wheel && \
     pip --version && \
     python3.11 -m wheel version
 
-COPY database/services/backup/requirements-backup.txt ./requirements.txt
-RUN sed -i \
-    '/^pytest/d;/^black/d;/^ruff/d;/^mypy/d;/httpx\[cli\]/d;/^pymongo-backup/d' \
-    ./requirements.txt || true
-
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip wheel --no-cache-dir --wheel-dir /build/wheels -r ./requirements.txt
 # LUCID_X_FILES_SKELETON_BEGIN
 # Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
 RUN set -eux; \
-    mkdir -p '.' './common' './configs' './database' './scripts' './service_mesh' './storage' './common/__pycache__' './common/governance' './common/security' './common/server-tools' './common/templates' './common/tor' './configs/.ssh' './configs/container' './configs/database' './configs/docker' './configs/env' './configs/environment' './configs/integration' './configs/kubernetes' './configs/logging' './configs/pi' './configs/secrets' './configs/security' './configs/tor' './database/__pycache__' './database/admin' './database/api' './database/config' './database/elasticsearch' './database/models' './database/mongodb' './database/redis' './database/repositories' './database/schema' './database/schemas' './database/services' './scripts/__pycache__' './scripts/auth_sm_realignment' './scripts/build' './scripts/compliance' './scripts/config' './scripts/contracts' './scripts/database' './scripts/deployment' './scripts/devcontainer' './scripts/docs' './scripts/foundation' './scripts/gui' './scripts/gui_auth_realignment' './scripts/hardware' './scripts/integration' './scripts/lib' './scripts/load' './scripts/logging' './scripts/maintenance' './scripts/migration' './scripts/monitoring' './scripts/network' './scripts/re-build' './scripts/registry' './scripts/secrets' './scripts/security' './scripts/services' './scripts/testing' './scripts/validation' './scripts/verification' './service_mesh/__pycache__' './service_mesh/communication' './service_mesh/config' './service_mesh/controller' './service_mesh/discovery' './service_mesh/docs' './service_mesh/security' './service_mesh/sidecar' './storage/__pycache__' './storage/backups' './storage/cache' './storage/data' './common/governance/__pycache__' './common/security/__pycache__' './common/server-tools/__pycache__' './common/tor/__pycache__' './configs/container/admin' './configs/container/auth' './configs/container/base' './configs/container/blockchain' './configs/container/database' './configs/container/electron_gui' './configs/container/gui' './configs/container/node' './configs/container/payment_systems' './configs/container/rdp' './configs/container/server' './configs/container/sessions' './configs/container/storage' './configs/container/tor' './configs/database/elasticsearch' './configs/database/redis' './configs/docker/distroless' './configs/docker/docs' './configs/docker/multi-stage' './configs/pi/ssh' './database/admin/__pycache__' './database/api/__pycache__' './database/config/__pycache__' './database/elasticsearch/__pycache__' './database/models/__pycache__' './database/mongodb/__pycache__' './database/redis/__pycache__' './database/repositories/__pycache__' './database/schema/__pycache__' './database/services/__pycache__' './database/services/backup' './database/services/migration' './database/services/monitoring' './scripts/auth_sm_realignment/.cache' './scripts/auth_sm_realignment/lib' './scripts/build/__pycache__' './scripts/build/components' './scripts/build/core' './scripts/build/distroless' './scripts/build/utils' './scripts/compliance/distroless' './scripts/compliance/general' './scripts/deployment/devcontainer' './scripts/deployment/distroless' './scripts/deployment/pi' './scripts/deployment/utils' './scripts/gui_auth_realignment/.cache' './scripts/gui_auth_realignment/lib' './scripts/maintenance/cleanup' './scripts/maintenance/optimization' './scripts/maintenance/recovery' './scripts/network/diagnostics' './scripts/network/security' './scripts/network/setup' './scripts/testing/integration' './scripts/testing/unit' './scripts/testing/utils' './scripts/validation/__pycache__' './scripts/verification/__pycache__' './service_mesh/communication/__pycache__' './service_mesh/config/policies' './service_mesh/config/services' './service_mesh/controller/__pycache__' './service_mesh/discovery/__pycache__' './service_mesh/security/__pycache__' './service_mesh/sidecar/envoy' './service_mesh/sidecar/proxy' './storage/backups/configs' './storage/backups/database' './storage/backups/user-data' './storage/cache/build' './storage/cache/docker' './storage/cache/temp' './storage/data/blockchain' './storage/data/logs' './storage/data/sessions' './database/services/backup/__pycache__' './database/services/migration/__pycache__' './database/services/monitoring/__pycache__' './service_mesh/sidecar/envoy/__pycache__' './service_mesh/sidecar/envoy/config' './service_mesh/sidecar/proxy/__pycache__'; \
+    mkdir -p '.' './common' './database' './service_mesh' './common/__pycache__' './common/governance' './common/security' './common/server-tools' './common/templates' './common/tor' './database/__pycache__' './database/admin' './database/api' './database/config' './database/elasticsearch' './database/models' './database/mongodb' './database/redis' './database/repositories' './database/schema' './database/schemas' './database/services' './service_mesh/__pycache__' './service_mesh/communication' './service_mesh/config' './service_mesh/controller' './service_mesh/discovery' './service_mesh/docs' './service_mesh/security' './service_mesh/sidecar' './tests/validation' './common/governance/__pycache__' './common/security/__pycache__' './common/server-tools/__pycache__' './common/tor/__pycache__' './database/admin/__pycache__' './database/api/__pycache__' './database/config/__pycache__' './database/elasticsearch/__pycache__' './database/models/__pycache__' './database/mongodb/__pycache__' './database/redis/__pycache__' './database/repositories/__pycache__' './database/schema/__pycache__' './database/services/__pycache__' './database/services/backup' './database/services/migration' './database/services/monitoring' './service_mesh/communication/__pycache__' './service_mesh/config/policies' './service_mesh/config/services' './service_mesh/controller/__pycache__' './service_mesh/discovery/__pycache__' './service_mesh/security/__pycache__' './service_mesh/sidecar/envoy' './service_mesh/sidecar/proxy' './database/services/backup/__pycache__' './database/services/migration/__pycache__' './database/services/monitoring/__pycache__' './service_mesh/sidecar/envoy/__pycache__' './service_mesh/sidecar/envoy/config' './service_mesh/sidecar/proxy/__pycache__'; \
     for d in \
       '.' \
       './common' \
-      './configs' \
       './database' \
-      './scripts' \
       './service_mesh' \
-      './storage' \
       './common/__pycache__' \
       './common/governance' \
       './common/security' \
       './common/server-tools' \
       './common/templates' \
       './common/tor' \
-      './configs/.ssh' \
-      './configs/container' \
-      './configs/database' \
-      './configs/docker' \
-      './configs/env' \
-      './configs/environment' \
-      './configs/integration' \
-      './configs/kubernetes' \
-      './configs/logging' \
-      './configs/pi' \
-      './configs/secrets' \
-      './configs/security' \
-      './configs/tor' \
       './database/__pycache__' \
       './database/admin' \
       './database/api' \
@@ -146,36 +111,6 @@ RUN set -eux; \
       './database/schema' \
       './database/schemas' \
       './database/services' \
-      './scripts/__pycache__' \
-      './scripts/auth_sm_realignment' \
-      './scripts/build' \
-      './scripts/compliance' \
-      './scripts/config' \
-      './scripts/contracts' \
-      './scripts/database' \
-      './scripts/deployment' \
-      './scripts/devcontainer' \
-      './scripts/docs' \
-      './scripts/foundation' \
-      './scripts/gui' \
-      './scripts/gui_auth_realignment' \
-      './scripts/hardware' \
-      './scripts/integration' \
-      './scripts/lib' \
-      './scripts/load' \
-      './scripts/logging' \
-      './scripts/maintenance' \
-      './scripts/migration' \
-      './scripts/monitoring' \
-      './scripts/network' \
-      './scripts/re-build' \
-      './scripts/registry' \
-      './scripts/secrets' \
-      './scripts/security' \
-      './scripts/services' \
-      './scripts/testing' \
-      './scripts/validation' \
-      './scripts/verification' \
       './service_mesh/__pycache__' \
       './service_mesh/communication' \
       './service_mesh/config' \
@@ -184,34 +119,11 @@ RUN set -eux; \
       './service_mesh/docs' \
       './service_mesh/security' \
       './service_mesh/sidecar' \
-      './storage/__pycache__' \
-      './storage/backups' \
-      './storage/cache' \
-      './storage/data' \
+      './tests/validation' \
       './common/governance/__pycache__' \
       './common/security/__pycache__' \
       './common/server-tools/__pycache__' \
       './common/tor/__pycache__' \
-      './configs/container/admin' \
-      './configs/container/auth' \
-      './configs/container/base' \
-      './configs/container/blockchain' \
-      './configs/container/database' \
-      './configs/container/electron_gui' \
-      './configs/container/gui' \
-      './configs/container/node' \
-      './configs/container/payment_systems' \
-      './configs/container/rdp' \
-      './configs/container/server' \
-      './configs/container/sessions' \
-      './configs/container/storage' \
-      './configs/container/tor' \
-      './configs/database/elasticsearch' \
-      './configs/database/redis' \
-      './configs/docker/distroless' \
-      './configs/docker/docs' \
-      './configs/docker/multi-stage' \
-      './configs/pi/ssh' \
       './database/admin/__pycache__' \
       './database/api/__pycache__' \
       './database/config/__pycache__' \
@@ -225,32 +137,6 @@ RUN set -eux; \
       './database/services/backup' \
       './database/services/migration' \
       './database/services/monitoring' \
-      './scripts/auth_sm_realignment/.cache' \
-      './scripts/auth_sm_realignment/lib' \
-      './scripts/build/__pycache__' \
-      './scripts/build/components' \
-      './scripts/build/core' \
-      './scripts/build/distroless' \
-      './scripts/build/utils' \
-      './scripts/compliance/distroless' \
-      './scripts/compliance/general' \
-      './scripts/deployment/devcontainer' \
-      './scripts/deployment/distroless' \
-      './scripts/deployment/pi' \
-      './scripts/deployment/utils' \
-      './scripts/gui_auth_realignment/.cache' \
-      './scripts/gui_auth_realignment/lib' \
-      './scripts/maintenance/cleanup' \
-      './scripts/maintenance/optimization' \
-      './scripts/maintenance/recovery' \
-      './scripts/network/diagnostics' \
-      './scripts/network/security' \
-      './scripts/network/setup' \
-      './scripts/testing/integration' \
-      './scripts/testing/unit' \
-      './scripts/testing/utils' \
-      './scripts/validation/__pycache__' \
-      './scripts/verification/__pycache__' \
       './service_mesh/communication/__pycache__' \
       './service_mesh/config/policies' \
       './service_mesh/config/services' \
@@ -259,15 +145,6 @@ RUN set -eux; \
       './service_mesh/security/__pycache__' \
       './service_mesh/sidecar/envoy' \
       './service_mesh/sidecar/proxy' \
-      './storage/backups/configs' \
-      './storage/backups/database' \
-      './storage/backups/user-data' \
-      './storage/cache/build' \
-      './storage/cache/docker' \
-      './storage/cache/temp' \
-      './storage/data/blockchain' \
-      './storage/data/logs' \
-      './storage/data/sessions' \
       './database/services/backup/__pycache__' \
       './database/services/migration/__pycache__' \
       './database/services/monitoring/__pycache__' \
@@ -280,19 +157,55 @@ RUN set -eux; \
     done
 # LUCID_X_FILES_SKELETON_END
 # LUCID_ALIGNMENT_MAT_COPY_DIRECTORIES_BEGIN
-# alignment-mat database-backup_manifest.json: compose_service='database-backup' — manifest py/yml/yaml/json → builder COPY (#10).
-COPY common/ ./common/
-COPY infrastructure/containers/ ./infrastructure/containers/
+# alignment-mat database-backup_manifest.json: compose_service='database-backup' — explicit manifest paths → 29 builder COPY line(s) (dockerfile_layout_structure.json section #10 COPY_DIRECTORIES).
+COPY _gen_host_config.py ./_gen_host_config.py
+COPY common/__init__.py ./common/__init__.py
+COPY common/contact_profile_env.py ./common/contact_profile_env.py
+COPY common/governance/__init__.py ./common/governance/__init__.py
+COPY common/governance/lucid_governor.py ./common/governance/lucid_governor.py
+COPY common/governance/param_registry.py ./common/governance/param_registry.py
+COPY common/governance/timelock.py ./common/governance/timelock.py
+COPY common/load_host_config.py ./common/load_host_config.py
+COPY common/security/__init__.py ./common/security/__init__.py
+COPY common/security/input_controller.py ./common/security/input_controller.py
+COPY common/security/policy_validator.py ./common/security/policy_validator.py
+COPY common/security/privacy_shield.py ./common/security/privacy_shield.py
+COPY common/security/session_validator.py ./common/security/session_validator.py
+COPY common/security/trust_nothing_engine.py ./common/security/trust_nothing_engine.py
+COPY common/server-tools/__init__.py ./common/server-tools/__init__.py
+COPY common/tor/__init__.py ./common/tor/__init__.py
+COPY common/tor/onion_service.py ./common/tor/onion_service.py
+COPY common/tor/socks_proxy.py ./common/tor/socks_proxy.py
+COPY common/tor/tor_manager.py ./common/tor/tor_manager.py
+COPY database/api/backups.py ./database/api/backups.py
+COPY infrastructure/containers/config-listings.json ./infrastructure/containers/config-listings.json
+COPY infrastructure/containers/dockerfile_recalibration_map.json ./infrastructure/containers/dockerfile_recalibration_map.json
+COPY infrastructure/containers/dockerfile_recalibration_map_REPAIRED.json ./infrastructure/containers/dockerfile_recalibration_map_REPAIRED.json
+COPY infrastructure/containers/host-config.yml ./infrastructure/containers/host-config.yml
+COPY infrastructure/containers/services/database/database-backup.yml ./infrastructure/containers/services/database/database-backup.yml
+COPY infrastructure/containers/services/middle-ware/master-endpoint.yml ./infrastructure/containers/services/middle-ware/master-endpoint.yml
+COPY infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.json ./infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.json
+COPY infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.yml ./infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.yml
+COPY tests/validation/test_all_apis_responding.py ./tests/validation/test_all_apis_responding.py
 # LUCID_ALIGNMENT_MAT_COPY_DIRECTORIES_END
-COPY scripts/ ./scripts/
-
-RUN rm -rf configs/environment 2>/dev/null || true
-
 
 COPY database/ ./database/
-COPY storage/ ./storage/
-COPY service_configs/kubernetes/ ./configs/kubernetes/
 COPY infrastructure/service_mesh/ ./service_mesh/
+
+
+RUN printf "LUCID_DB_BACKUP_RUNTIME" > /var/run/.keep && \
+    printf "LUCID_DB_BACKUP_LIB" > /var/lib/.keep && \
+    chown -R 65532:65532 /var/run /var/lib && \
+    chmod 644 /var/run/.keep /var/lib/.keep
+
+RUN mkdir -p /usr/local/lib/python3.11/site-packages /usr/local/bin && \
+    chown -R 65532:65532 /usr/local/lib/python3.11/site-packages /usr/local/bin
+
+RUN sed -i \
+    '/^pytest/d;/^black/d;/^ruff/d;/^mypy/d;/httpx\[cli\]/d;/^pymongo-backup/d' \
+    ./requirements.txt || true
+
+RUN rm -rf configs/environment 2>/dev/null || true
 
 
 RUN --mount=type=cache,target=/root/.cache/pip \
@@ -311,9 +224,14 @@ RUN test -f ./database/services/backup/main.py
 ############################
 # Stage 2 – Runtime (Distroless)
 ############################
-FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12:latest
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_PREFER_BINARY=1 \
+    DEBIAN_FRONTEND=noninteractive
 
-WORKDIR /app
+FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12:latest
 
 ARG BUILD_DATE
 ARG VCS_REF
@@ -322,6 +240,8 @@ ARG VERSION=1.0.0
 ARG PUBLIC_TOR_IP=109.70.100.1
 ARG LUCID_INTERNAL_NETWORK_NAME=lucid-pi-network
 ARG LUCID_TOR_EGRESS_NETWORK_NAME=lucid-tor-egress-network
+
+WORKDIR /app
 
 LABEL maintainer="Lucid Development Team" \
       com.lucid.network.internal="${LUCID_INTERNAL_NETWORK_NAME}" \
@@ -368,11 +288,9 @@ ENV     PUBLIC_TOR_IP="${PUBLIC_TOR_IP}" \
 # LUCID_RUNTIME_COPY_FROM_BUILD_BEGIN
 # Generated: same directory set as LUCID_X_FILES_SKELETON (./ under WORKDIR /build).
 COPY --from=builder --chown=65532:65532 /build/common/ /app/common/
-COPY --from=builder --chown=65532:65532 /build/configs/ /app/configs/
 COPY --from=builder --chown=65532:65532 /build/database/ /app/database/
-COPY --from=builder --chown=65532:65532 /build/scripts/ /app/scripts/
 COPY --from=builder --chown=65532:65532 /build/service_mesh/ /app/service_mesh/
-COPY --from=builder --chown=65532:65532 /build/storage/ /app/storage/
+COPY --from=builder --chown=65532:65532 /build/tests/validation/ /app/tests/validation/
 # LUCID_RUNTIME_COPY_FROM_BUILD_END
 
 # LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
@@ -381,6 +299,7 @@ COPY --from=builder --chown=65532:65532 /usr/lib/*/libffi.so* /app/usr/lib/
 COPY --from=builder --chown=65532:65532 /usr/lib/*/libssl.so* /app/usr/lib/
 COPY --from=builder --chown=65532:65532 /usr/lib/*/ossl-modules/ /app/usr/lib/
 COPY --from=builder --chown=65532:65532 /usr/lib/*/libcurl.so* /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /dev/null/ /app/dev/null/
 COPY --from=builder --chown=65532:65532 /etc/ssl/ /app/etc/ssl/
 COPY --from=builder --chown=65532:65532 /usr/bin/ /app/usr/bin/
 COPY --from=builder --chown=65532:65532 /usr/lib/python3/dist-packages/ /app/usr/lib/python3/dist-packages/
@@ -390,28 +309,18 @@ COPY --from=builder --chown=65532:65532 /usr/sbin/ /app/usr/sbin/
 COPY --from=builder --chown=65532:65532 /var/lib/ /app/var/lib/
 COPY --from=builder --chown=65532:65532 /var/run/ /app/var/run/
 # LUCID_RUNTIME_COPY_FROM_BUILDER_APT_END
-# LUCID_RUNTIME_COPY_FROM_BUILD_BEGIN
-# Generated: same directory set as LUCID_X_FILES_SKELETON (./ under WORKDIR /build).
+# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
+# Generated: apt + RUN scaffold (mkdir/printf/touch/chown) -> FHS (not ./ or /build/; lib_search_and_inject.py).
 COPY --from=builder --chown=65532:65532 /build/infrastructure/kubernetes/ /app/infrastructure/kubernetes/
 COPY --from=builder --chown=65532:65532 /build/infrastructure/service_mesh/ /app/infrastructure/service_mesh/
 
-COPY --from=builder /var/run/ /app/var/run/
-COPY --from=builder /var/lib/ /app/var/lib/
-COPY --from=builder /etc/ssl/certs/ca-certificates.crt /app/etc/ssl/certs/ca-certificates.crt
-COPY --from=builder /usr/local/lib/python3.11/site-packages/ /app/usr/local/lib/python3.11/site-packages/
-COPY --from=builder /usr/local/bin/ /app/usr/local/bin/
-COPY --from=builder /usr/bin/ /app/usr/bin/
-COPY --from=builder /usr/sbin/ /app/usr/sbin/
-COPY --from=builder /usr/bin/tini /app/usr/bin/tini
-
 COPY --from=builder --chown=65532:65532 /build/wheels/ /app/wheels/
-COPY --from=builder --chown=65532:65532 /build/configs/env/database-backup.env /app/configs/env/database-backup.env
 
 RUN ["/app/usr/bin/python3.11", "-c", \
     "import os, sys; sys.path.insert(0, '/app/usr/local/lib/python3.11/site-packages'); \
      assert os.path.isfile('/app/configs/host-config.yml'); \
-     assert os.path.isfile('/app/service_configs/container-runtime-layout.yml'); \
-     assert os.path.isfile('/app/service_configs/kubernetes/database-config.yaml'); \
+     assert os.path.isfile('/app/infrastructure/containers/services/container-runtime-layout.yml'); \
+     assert os.path.isfile('/app/infrastructure/containers/services/kubernetes/database-config.yaml'); \
      import pymongo, motor, redis; \
      print('database-backup runtime ok')"]
 

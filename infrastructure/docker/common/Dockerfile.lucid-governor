@@ -16,18 +16,11 @@ ARG PYTHON_VERSION=3.11
 ############################
 # Stage 1 – Builder
 ############################
-FROM --platform=$TARGETPLATFORM python:3.11-slim-bookworm AS builder
-
 ARG BUILDPLATFORM
 ARG TARGETPLATFORM
 ARG PYTHON_VERSION
 
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1 \
-    PIP_PREFER_BINARY=1 \
-    DEBIAN_FRONTEND=noninteractive
+FROM --platform=$TARGETPLATFORM python:3.11-slim-bookworm AS builder
 
 WORKDIR /build
 
@@ -94,21 +87,6 @@ RUN mkdir -p /root /root/.rustup /root/.cargo && \
 RUN apt-get remove -y rustc cargo && rm -rf /root/.cargo /root/.rustup && \
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
 
-ENV PATH=/root/.cargo/bin:$PATH
-
-RUN printf "LUCID_LUCID_GOV_RUNTIME" > /var/run/.keep && \
-    printf "LUCID_LUCID_GOV_LIB" > /var/lib/.keep && \
-    chown -R 65532:65532 /var/run /var/lib && chmod 644 /var/run/.keep /var/lib/.keep
-
-RUN mkdir -p /usr/local/lib/python3.11/site-packages /usr/local/bin && \
-    chown -R 65532:65532 /usr/local/lib/python3.11/site-packages /usr/local/bin
-
-RUN mkdir -p /app-dirs/cache/lucid-gov /app-dirs/data/lucid-gov /app-dirs/logs/lucid-gov && \
-    printf "LUCID_LUCID_GOV_CACHE_$(date +%s)" > /app-dirs/cache/lucid-gov/.keep && \
-    printf "LUCID_LUCID_GOV_DATA_$(date +%s)" > /app-dirs/data/lucid-gov/.keep && \
-    printf "LUCID_LUCID_GOV_LOGS_$(date +%s)" > /app-dirs/logs/lucid-gov/.keep && \
-    chown -R 65532:65532 /app-dirs
-
 COPY <<'REQ' /build/requirements.txt
 PyJWT>=2.8.0
 cryptography>=41.0.0
@@ -126,62 +104,13 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 # LUCID_X_FILES_SKELETON_BEGIN
 # Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
 RUN set -eux; \
-    mkdir -p '.' './03_api_gateway' './admin' './auth' './blockchain' './common' './electron_gui' './gui_api_bridge' './gui_hardware_manager' './gui_tor_manager' './node' './rdp' './scripts' './server' './service_mesh' './wallet' './03_api_gateway/__pycache__' './03_api_gateway/api' './03_api_gateway/certs' './03_api_gateway/config' './03_api_gateway/database' './03_api_gateway/docs' './03_api_gateway/endpoints' './03_api_gateway/gateway' './03_api_gateway/legacy' './03_api_gateway/logs' './03_api_gateway/middleware' './03_api_gateway/models' './03_api_gateway/repositories' './03_api_gateway/scripts' './03_api_gateway/services' './03_api_gateway/utils' './admin/__pycache__' './admin/admin_ui' './admin/api' './admin/audit' './admin/config' './admin/emergency' './admin/governance' './admin/key_rotation' './admin/over_lord' './admin/rbac' './admin/services' './admin/system' './admin/ui' './admin/utils' './auth/__pycache__' './auth/api' './auth/config' './auth/docs' './auth/middleware' './auth/models' './auth/services' './auth/utils' './blockchain/__pycache__' './blockchain/anchoring' './blockchain/api' './blockchain/chain_client' './blockchain/config' './blockchain/contracts' './blockchain/core' './blockchain/data' './blockchain/deployment' './blockchain/docs' './blockchain/evm' './blockchain/governance' './blockchain/manager' './blockchain/on_system_chain' './blockchain/scripts' './blockchain/tests' './blockchain/utils' './common/__pycache__' './common/governance' './common/security' './common/server-tools' './common/templates' './common/tor' './electron_gui/__pycache__' './electron_gui/assets' './electron_gui/configs' './electron_gui/dist' './electron_gui/distroless' './electron_gui/main' './electron_gui/node_modules' './electron_gui/renderer' './electron_gui/scripts' './electron_gui/shared' './electron_gui/tests' './electron_gui/utils' './gui_api_bridge/__pycache__' './gui_api_bridge/config' './gui_api_bridge/gui_api_bridge' './gui_api_bridge/integration' './gui_api_bridge/middleware' './gui_api_bridge/models' './gui_api_bridge/routers' './gui_api_bridge/scripts' './gui_api_bridge/services' './gui_api_bridge/utils' './gui_hardware_manager/__pycache__' './gui_hardware_manager/gui_hardware_manager' './gui_tor_manager/gui_tor_manager' './node/__pycache__' './node/api' './node/config' './node/consensus' './node/dht_crdt' './node/economy' './node/flags' './node/governance' './node/models' './node/over_lord' './node/payouts' './node/pools' './node/poot' './node/registration' './node/repositories' './node/resources' './node/service_configs' './node/shards' './node/sync' './node/tor' './node/validation' './node/worker' './rdp/__pycache__' './rdp/client' './rdp/common' './rdp/config' './rdp/database' './rdp/monitoring' './rdp/protocol' './rdp/recorder' './rdp/resource_monitor' './rdp/scripts' './rdp/security' './rdp/server' './rdp/server_manager' './rdp/session_controller' './rdp/xrdp' './scripts/__pycache__' './scripts/auth_sm_realignment' './scripts/build' './scripts/compliance' './scripts/config' './scripts/contracts' './scripts/database' './scripts/deployment' './scripts/devcontainer' './scripts/docs' './scripts/foundation' './scripts/gui' './scripts/gui_auth_realignment' './scripts/hardware' './scripts/integration' './scripts/lib' './scripts/load' './scripts/logging' './scripts/maintenance' './scripts/migration' './scripts/monitoring' './scripts/network' './scripts/re-build' './scripts/registry' './scripts/secrets' './scripts/security' './scripts/services' './scripts/testing' './scripts/validation' './scripts/verification' './server/__pycache__' './service_mesh/__pycache__' './service_mesh/communication' './service_mesh/config' './service_mesh/controller' './service_mesh/discovery' './service_mesh/docs' './service_mesh/security' './service_mesh/sidecar' './wallet/__pycache__' './wallet/security' './wallet/walletd' './03_api_gateway/api/__pycache__' './03_api_gateway/api/app' './03_api_gateway/api/lucid_api.egg-info' './03_api_gateway/api/tests' './03_api_gateway/config/__pycache__' './03_api_gateway/database/__pycache__' './03_api_gateway/docs/swagger' './03_api_gateway/endpoints/__pycache__' './03_api_gateway/legacy/api' './03_api_gateway/legacy/gateway' './03_api_gateway/middleware/__pycache__' './03_api_gateway/models/__pycache__' './03_api_gateway/repositories/__pycache__' './03_api_gateway/services/__pycache__' './03_api_gateway/utils/__pycache__' './admin/admin_ui/__pycache__' './admin/api/__pycache__' './admin/audit/__pycache__' './admin/config/__pycache__' './admin/emergency/__pycache__' './admin/governance/__pycache__' './admin/key_rotation/__pycache__' './admin/rbac/__pycache__' './admin/services/__pycache__' './admin/system/__pycache__' './admin/ui/__pycache__' './admin/ui/static' './admin/ui/templates' './admin/utils/__pycache__' './auth/api/__pycache__' './auth/config/__pycache__' './auth/middleware/__pycache__' './auth/models/__pycache__' './auth/services/__pycache__' './auth/utils/__pycache__' './blockchain/anchoring/__pycache__' './blockchain/api/app' './blockchain/chain_client/__pycache__' './blockchain/config/__pycache__' './blockchain/contracts/__pycache__' './blockchain/core/__pycache__' './blockchain/data/__pycache__' './blockchain/data/api' './blockchain/deployment/__pycache__' './blockchain/evm/__pycache__' './blockchain/governance/__pycache__' './blockchain/manager/__pycache__' './blockchain/on_system_chain/__pycache__' './blockchain/scripts/__pycache__' './blockchain/tests/__pycache__' './blockchain/utils/__pycache__' './common/governance/__pycache__' './common/security/__pycache__' './common/server-tools/__pycache__' './common/tor/__pycache__' './electron_gui/assets/icons' './electron_gui/assets/images' './electron_gui/assets/tor' './electron_gui/dist/main' './electron_gui/dist/shared' './electron_gui/main/ipc' './electron_gui/node_modules/cpu-features' './electron_gui/node_modules/ssh2' './electron_gui/node_modules/tiny-secp256k1' './electron_gui/renderer/admin' './electron_gui/renderer/common' './electron_gui/renderer/developer' './electron_gui/renderer/node' './electron_gui/renderer/user' './electron_gui/tests/e2e' './electron_gui/utils/__pycache__' './gui_api_bridge/gui_api_bridge/__pycache__' './gui_api_bridge/gui_api_bridge/config' './gui_api_bridge/gui_api_bridge/integration' './gui_api_bridge/gui_api_bridge/middleware' './gui_api_bridge/gui_api_bridge/models' './gui_api_bridge/gui_api_bridge/routers' './gui_api_bridge/gui_api_bridge/services' './gui_api_bridge/gui_api_bridge/utils' './gui_api_bridge/gui_api_bridge/{config,middleware,routers,services,integration,models,utils}' './gui_hardware_manager/gui_hardware_manager/__pycache__' './gui_hardware_manager/gui_hardware_manager/integration' './gui_hardware_manager/gui_hardware_manager/middleware' './gui_hardware_manager/gui_hardware_manager/models' './gui_hardware_manager/gui_hardware_manager/routers' './gui_hardware_manager/gui_hardware_manager/services' './gui_hardware_manager/gui_hardware_manager/utils' './gui_tor_manager/gui_tor_manager/__pycache__' './gui_tor_manager/gui_tor_manager/config' './gui_tor_manager/gui_tor_manager/integration' './gui_tor_manager/gui_tor_manager/middleware' './gui_tor_manager/gui_tor_manager/models' './gui_tor_manager/gui_tor_manager/routers' './gui_tor_manager/gui_tor_manager/services' './gui_tor_manager/gui_tor_manager/utils' './node/api/__pycache__' './node/consensus/__pycache__' './node/dht_crdt/__pycache__' './node/economy/__pycache__' './node/flags/__pycache__' './node/governance/__pycache__' './node/models/__pycache__' './node/payouts/__pycache__' './node/pools/__pycache__' './node/poot/__pycache__' './node/registration/__pycache__' './node/repositories/__pycache__' './node/resources/__pycache__' './node/service_configs/x_lucid_cluster_calibration' './node/shards/__pycache__' './node/sync/__pycache__' './node/tor/__pycache__' './node/validation/__pycache__' './node/worker/__pycache__' './rdp/client/__pycache__' './rdp/common/__pycache__' './rdp/common/governance' './rdp/monitoring/grafana' './rdp/protocol/__pycache__' './rdp/recorder/__pycache__' './rdp/resource_monitor/__pycache__' './rdp/resource_monitor/config' './rdp/security/__pycache__' './rdp/server/__pycache__' './rdp/server_manager/__pycache__' './rdp/server_manager/config' './rdp/session_controller/__pycache__' './rdp/session_controller/config' './rdp/session_controller/integration' './rdp/xrdp/__pycache__' './rdp/xrdp/config' './scripts/auth_sm_realignment/.cache' './scripts/auth_sm_realignment/lib' './scripts/build/__pycache__' './scripts/build/components' './scripts/build/core' './scripts/build/distroless' './scripts/build/utils' './scripts/compliance/distroless' './scripts/compliance/general' './scripts/deployment/devcontainer' './scripts/deployment/distroless' './scripts/deployment/pi' './scripts/deployment/utils' './scripts/gui_auth_realignment/.cache' './scripts/gui_auth_realignment/lib' './scripts/maintenance/cleanup' './scripts/maintenance/optimization' './scripts/maintenance/recovery' './scripts/network/diagnostics' './scripts/network/security' './scripts/network/setup' './scripts/testing/integration' './scripts/testing/unit' './scripts/testing/utils' './scripts/validation/__pycache__' './scripts/verification/__pycache__' './service_mesh/communication/__pycache__' './service_mesh/config/policies' './service_mesh/config/services' './service_mesh/controller/__pycache__' './service_mesh/discovery/__pycache__' './service_mesh/security/__pycache__' './service_mesh/sidecar/envoy' './service_mesh/sidecar/proxy' './wallet/security/__pycache__' './wallet/walletd/__pycache__' './03_api_gateway/api/app/__pycache__' './03_api_gateway/api/app/database' './03_api_gateway/api/app/db' './03_api_gateway/api/app/middleware' './03_api_gateway/api/app/models' './03_api_gateway/api/app/routers' './03_api_gateway/api/app/routes' './03_api_gateway/api/app/schemas' './03_api_gateway/api/app/scripts' './03_api_gateway/api/app/security' './03_api_gateway/api/app/services' './03_api_gateway/api/app/utils' './03_api_gateway/api/tests/__pycache__' './03_api_gateway/api/tests/integration' './03_api_gateway/docs/swagger/dist' './admin/ui/static/css' './admin/ui/static/js' './blockchain/api/app/__pycache__' './blockchain/api/app/crypto' './blockchain/api/app/database' './blockchain/api/app/db' './blockchain/api/app/middleware' './blockchain/api/app/models' './blockchain/api/app/repo' './blockchain/api/app/routers' './blockchain/api/app/routes' './blockchain/api/app/schemas' './blockchain/api/app/services' './blockchain/data/api/__pycache__' './electron_gui/dist/main/ipc' './electron_gui/node_modules/cpu-features/.github' './electron_gui/node_modules/cpu-features/deps' './electron_gui/node_modules/cpu-features/lib' './electron_gui/node_modules/cpu-features/src' './electron_gui/node_modules/cpu-features/test' './electron_gui/node_modules/ssh2/.github' './electron_gui/node_modules/ssh2/examples' './electron_gui/node_modules/ssh2/lib' './electron_gui/node_modules/ssh2/test' './electron_gui/node_modules/ssh2/util' './electron_gui/node_modules/tiny-secp256k1/native' './electron_gui/node_modules/tiny-secp256k1/node_modules' './electron_gui/node_modules/tiny-secp256k1/scripts' './electron_gui/renderer/admin/components' './electron_gui/renderer/admin/pages' './electron_gui/renderer/admin/services' './electron_gui/renderer/admin/store' './electron_gui/renderer/admin/styles' './electron_gui/renderer/common/components' './electron_gui/renderer/common/hooks' './electron_gui/renderer/common/store' './electron_gui/renderer/common/styles' './electron_gui/renderer/developer/components' './electron_gui/renderer/developer/pages' './electron_gui/renderer/developer/services' './electron_gui/renderer/developer/styles' './electron_gui/renderer/node/components' './electron_gui/renderer/node/pages' './electron_gui/renderer/node/services' './electron_gui/renderer/node/styles' './electron_gui/renderer/user/components' './electron_gui/renderer/user/pages' './electron_gui/renderer/user/services' './electron_gui/renderer/user/styles' './gui_hardware_manager/gui_hardware_manager/integration/__pycache__' './gui_hardware_manager/gui_hardware_manager/middleware/__pycache__' './gui_hardware_manager/gui_hardware_manager/models/__pycache__' './gui_hardware_manager/gui_hardware_manager/routers/__pycache__' './gui_hardware_manager/gui_hardware_manager/services/__pycache__' './gui_hardware_manager/gui_hardware_manager/utils/__pycache__' './gui_tor_manager/gui_tor_manager/config/__pycache__' './gui_tor_manager/gui_tor_manager/integration/__pycache__' './gui_tor_manager/gui_tor_manager/middleware/__pycache__' './gui_tor_manager/gui_tor_manager/models/__pycache__' './gui_tor_manager/gui_tor_manager/routers/__pycache__' './gui_tor_manager/gui_tor_manager/services/__pycache__' './gui_tor_manager/gui_tor_manager/utils/__pycache__' './rdp/monitoring/grafana/dashboards' './rdp/monitoring/grafana/datasources' './rdp/session_controller/integration/__pycache__' './service_mesh/sidecar/envoy/__pycache__' './service_mesh/sidecar/envoy/config' './service_mesh/sidecar/proxy/__pycache__' './03_api_gateway/api/app/database/__pycache__' './03_api_gateway/api/app/db/__pycache__' './03_api_gateway/api/app/db/models' './03_api_gateway/api/app/middleware/__pycache__' './03_api_gateway/api/app/models/__pycache__' './03_api_gateway/api/app/routers/__pycache__' './03_api_gateway/api/app/routes/__pycache__' './03_api_gateway/api/app/schemas/__pycache__' './03_api_gateway/api/app/scripts/__pycache__' './03_api_gateway/api/app/security/__pycache__' './03_api_gateway/api/app/services/__pycache__' './03_api_gateway/api/app/utils/__pycache__' './03_api_gateway/api/tests/integration/__pycache__' './blockchain/api/app/crypto/__pycache__' './blockchain/api/app/database/__pycache__' './blockchain/api/app/database/repositories' './blockchain/api/app/db/__pycache__' './blockchain/api/app/middleware/__pycache__' './blockchain/api/app/models/__pycache__' './blockchain/api/app/repo/__pycache__' './blockchain/api/app/routers/__pycache__' './blockchain/api/app/routes/__pycache__' './blockchain/api/app/schemas/__pycache__' './blockchain/api/app/services/__pycache__' './electron_gui/node_modules/cpu-features/.github/workflows' './electron_gui/node_modules/cpu-features/deps/cpu_features' './electron_gui/node_modules/ssh2/.github/workflows' './electron_gui/node_modules/ssh2/lib/protocol' './electron_gui/node_modules/ssh2/test/fixtures' './electron_gui/node_modules/tiny-secp256k1/native/secp256k1' './electron_gui/node_modules/tiny-secp256k1/node_modules/bn.js' './electron_gui/renderer/admin/components/modals'; \
+    mkdir -p '.' './blockchain' './common' './configs' './service_mesh' './blockchain/__pycache__' './blockchain/anchoring' './blockchain/api' './blockchain/chain_client' './blockchain/config' './blockchain/contracts' './blockchain/core' './blockchain/data' './blockchain/deployment' './blockchain/docs' './blockchain/evm' './blockchain/governance' './blockchain/manager' './blockchain/on_system_chain' './blockchain/scripts' './blockchain/tests' './blockchain/utils' './common/__pycache__' './common/governance' './common/security' './common/server-tools' './common/templates' './common/tor' './configs/.ssh' './configs/container' './configs/database' './configs/docker' './configs/env' './configs/environment' './configs/integration' './configs/kubernetes' './configs/logging' './configs/pi' './configs/secrets' './configs/security' './configs/tor' './service_mesh/__pycache__' './service_mesh/communication' './service_mesh/config' './service_mesh/controller' './service_mesh/discovery' './service_mesh/docs' './service_mesh/security' './service_mesh/sidecar' './blockchain/anchoring/__pycache__' './blockchain/api/app' './blockchain/chain_client/__pycache__' './blockchain/config/__pycache__' './blockchain/contracts/__pycache__' './blockchain/core/__pycache__' './blockchain/data/__pycache__' './blockchain/data/api' './blockchain/deployment/__pycache__' './blockchain/evm/__pycache__' './blockchain/governance/__pycache__' './blockchain/manager/__pycache__' './blockchain/on_system_chain/__pycache__' './blockchain/scripts/__pycache__' './blockchain/tests/__pycache__' './blockchain/utils/__pycache__' './common/governance/__pycache__' './common/security/__pycache__' './common/server-tools/__pycache__' './common/tor/__pycache__' './configs/container/admin' './configs/container/auth' './configs/container/base' './configs/container/blockchain' './configs/container/database' './configs/container/electron_gui' './configs/container/gui' './configs/container/node' './configs/container/payment_systems' './configs/container/rdp' './configs/container/server' './configs/container/sessions' './configs/container/storage' './configs/container/tor' './configs/database/elasticsearch' './configs/database/redis' './configs/docker/distroless' './configs/docker/docs' './configs/docker/multi-stage' './configs/pi/ssh' './service_mesh/communication/__pycache__' './service_mesh/config/policies' './service_mesh/config/services' './service_mesh/controller/__pycache__' './service_mesh/discovery/__pycache__' './service_mesh/security/__pycache__' './service_mesh/sidecar/envoy' './service_mesh/sidecar/proxy' './blockchain/api/app/__pycache__' './blockchain/api/app/crypto' './blockchain/api/app/database' './blockchain/api/app/db' './blockchain/api/app/middleware' './blockchain/api/app/models' './blockchain/api/app/repo' './blockchain/api/app/routers' './blockchain/api/app/routes' './blockchain/api/app/schemas' './blockchain/api/app/services' './blockchain/data/api/__pycache__' './service_mesh/sidecar/envoy/__pycache__' './service_mesh/sidecar/envoy/config' './service_mesh/sidecar/proxy/__pycache__' './blockchain/api/app/crypto/__pycache__' './blockchain/api/app/database/__pycache__' './blockchain/api/app/database/repositories' './blockchain/api/app/db/__pycache__' './blockchain/api/app/middleware/__pycache__' './blockchain/api/app/models/__pycache__' './blockchain/api/app/repo/__pycache__' './blockchain/api/app/routers/__pycache__' './blockchain/api/app/routes/__pycache__' './blockchain/api/app/schemas/__pycache__' './blockchain/api/app/services/__pycache__'; \
     for d in \
       '.' \
-      './03_api_gateway' \
-      './admin' \
-      './auth' \
       './blockchain' \
       './common' \
-      './electron_gui' \
-      './gui_api_bridge' \
-      './gui_hardware_manager' \
-      './gui_tor_manager' \
-      './node' \
-      './rdp' \
-      './scripts' \
-      './server' \
+      './configs' \
       './service_mesh' \
-      './wallet' \
-      './03_api_gateway/__pycache__' \
-      './03_api_gateway/api' \
-      './03_api_gateway/certs' \
-      './03_api_gateway/config' \
-      './03_api_gateway/database' \
-      './03_api_gateway/docs' \
-      './03_api_gateway/endpoints' \
-      './03_api_gateway/gateway' \
-      './03_api_gateway/legacy' \
-      './03_api_gateway/logs' \
-      './03_api_gateway/middleware' \
-      './03_api_gateway/models' \
-      './03_api_gateway/repositories' \
-      './03_api_gateway/scripts' \
-      './03_api_gateway/services' \
-      './03_api_gateway/utils' \
-      './admin/__pycache__' \
-      './admin/admin_ui' \
-      './admin/api' \
-      './admin/audit' \
-      './admin/config' \
-      './admin/emergency' \
-      './admin/governance' \
-      './admin/key_rotation' \
-      './admin/over_lord' \
-      './admin/rbac' \
-      './admin/services' \
-      './admin/system' \
-      './admin/ui' \
-      './admin/utils' \
-      './auth/__pycache__' \
-      './auth/api' \
-      './auth/config' \
-      './auth/docs' \
-      './auth/middleware' \
-      './auth/models' \
-      './auth/services' \
-      './auth/utils' \
       './blockchain/__pycache__' \
       './blockchain/anchoring' \
       './blockchain/api' \
@@ -205,99 +134,19 @@ RUN set -eux; \
       './common/server-tools' \
       './common/templates' \
       './common/tor' \
-      './electron_gui/__pycache__' \
-      './electron_gui/assets' \
-      './electron_gui/configs' \
-      './electron_gui/dist' \
-      './electron_gui/distroless' \
-      './electron_gui/main' \
-      './electron_gui/node_modules' \
-      './electron_gui/renderer' \
-      './electron_gui/scripts' \
-      './electron_gui/shared' \
-      './electron_gui/tests' \
-      './electron_gui/utils' \
-      './gui_api_bridge/__pycache__' \
-      './gui_api_bridge/config' \
-      './gui_api_bridge/gui_api_bridge' \
-      './gui_api_bridge/integration' \
-      './gui_api_bridge/middleware' \
-      './gui_api_bridge/models' \
-      './gui_api_bridge/routers' \
-      './gui_api_bridge/scripts' \
-      './gui_api_bridge/services' \
-      './gui_api_bridge/utils' \
-      './gui_hardware_manager/__pycache__' \
-      './gui_hardware_manager/gui_hardware_manager' \
-      './gui_tor_manager/gui_tor_manager' \
-      './node/__pycache__' \
-      './node/api' \
-      './node/config' \
-      './node/consensus' \
-      './node/dht_crdt' \
-      './node/economy' \
-      './node/flags' \
-      './node/governance' \
-      './node/models' \
-      './node/over_lord' \
-      './node/payouts' \
-      './node/pools' \
-      './node/poot' \
-      './node/registration' \
-      './node/repositories' \
-      './node/resources' \
-      './node/service_configs' \
-      './node/shards' \
-      './node/sync' \
-      './node/tor' \
-      './node/validation' \
-      './node/worker' \
-      './rdp/__pycache__' \
-      './rdp/client' \
-      './rdp/common' \
-      './rdp/config' \
-      './rdp/database' \
-      './rdp/monitoring' \
-      './rdp/protocol' \
-      './rdp/recorder' \
-      './rdp/resource_monitor' \
-      './rdp/scripts' \
-      './rdp/security' \
-      './rdp/server' \
-      './rdp/server_manager' \
-      './rdp/session_controller' \
-      './rdp/xrdp' \
-      './scripts/__pycache__' \
-      './scripts/auth_sm_realignment' \
-      './scripts/build' \
-      './scripts/compliance' \
-      './scripts/config' \
-      './scripts/contracts' \
-      './scripts/database' \
-      './scripts/deployment' \
-      './scripts/devcontainer' \
-      './scripts/docs' \
-      './scripts/foundation' \
-      './scripts/gui' \
-      './scripts/gui_auth_realignment' \
-      './scripts/hardware' \
-      './scripts/integration' \
-      './scripts/lib' \
-      './scripts/load' \
-      './scripts/logging' \
-      './scripts/maintenance' \
-      './scripts/migration' \
-      './scripts/monitoring' \
-      './scripts/network' \
-      './scripts/re-build' \
-      './scripts/registry' \
-      './scripts/secrets' \
-      './scripts/security' \
-      './scripts/services' \
-      './scripts/testing' \
-      './scripts/validation' \
-      './scripts/verification' \
-      './server/__pycache__' \
+      './configs/.ssh' \
+      './configs/container' \
+      './configs/database' \
+      './configs/docker' \
+      './configs/env' \
+      './configs/environment' \
+      './configs/integration' \
+      './configs/kubernetes' \
+      './configs/logging' \
+      './configs/pi' \
+      './configs/secrets' \
+      './configs/security' \
+      './configs/tor' \
       './service_mesh/__pycache__' \
       './service_mesh/communication' \
       './service_mesh/config' \
@@ -306,44 +155,6 @@ RUN set -eux; \
       './service_mesh/docs' \
       './service_mesh/security' \
       './service_mesh/sidecar' \
-      './wallet/__pycache__' \
-      './wallet/security' \
-      './wallet/walletd' \
-      './03_api_gateway/api/__pycache__' \
-      './03_api_gateway/api/app' \
-      './03_api_gateway/api/lucid_api.egg-info' \
-      './03_api_gateway/api/tests' \
-      './03_api_gateway/config/__pycache__' \
-      './03_api_gateway/database/__pycache__' \
-      './03_api_gateway/docs/swagger' \
-      './03_api_gateway/endpoints/__pycache__' \
-      './03_api_gateway/legacy/api' \
-      './03_api_gateway/legacy/gateway' \
-      './03_api_gateway/middleware/__pycache__' \
-      './03_api_gateway/models/__pycache__' \
-      './03_api_gateway/repositories/__pycache__' \
-      './03_api_gateway/services/__pycache__' \
-      './03_api_gateway/utils/__pycache__' \
-      './admin/admin_ui/__pycache__' \
-      './admin/api/__pycache__' \
-      './admin/audit/__pycache__' \
-      './admin/config/__pycache__' \
-      './admin/emergency/__pycache__' \
-      './admin/governance/__pycache__' \
-      './admin/key_rotation/__pycache__' \
-      './admin/rbac/__pycache__' \
-      './admin/services/__pycache__' \
-      './admin/system/__pycache__' \
-      './admin/ui/__pycache__' \
-      './admin/ui/static' \
-      './admin/ui/templates' \
-      './admin/utils/__pycache__' \
-      './auth/api/__pycache__' \
-      './auth/config/__pycache__' \
-      './auth/middleware/__pycache__' \
-      './auth/models/__pycache__' \
-      './auth/services/__pycache__' \
-      './auth/utils/__pycache__' \
       './blockchain/anchoring/__pycache__' \
       './blockchain/api/app' \
       './blockchain/chain_client/__pycache__' \
@@ -364,108 +175,26 @@ RUN set -eux; \
       './common/security/__pycache__' \
       './common/server-tools/__pycache__' \
       './common/tor/__pycache__' \
-      './electron_gui/assets/icons' \
-      './electron_gui/assets/images' \
-      './electron_gui/assets/tor' \
-      './electron_gui/dist/main' \
-      './electron_gui/dist/shared' \
-      './electron_gui/main/ipc' \
-      './electron_gui/node_modules/cpu-features' \
-      './electron_gui/node_modules/ssh2' \
-      './electron_gui/node_modules/tiny-secp256k1' \
-      './electron_gui/renderer/admin' \
-      './electron_gui/renderer/common' \
-      './electron_gui/renderer/developer' \
-      './electron_gui/renderer/node' \
-      './electron_gui/renderer/user' \
-      './electron_gui/tests/e2e' \
-      './electron_gui/utils/__pycache__' \
-      './gui_api_bridge/gui_api_bridge/__pycache__' \
-      './gui_api_bridge/gui_api_bridge/config' \
-      './gui_api_bridge/gui_api_bridge/integration' \
-      './gui_api_bridge/gui_api_bridge/middleware' \
-      './gui_api_bridge/gui_api_bridge/models' \
-      './gui_api_bridge/gui_api_bridge/routers' \
-      './gui_api_bridge/gui_api_bridge/services' \
-      './gui_api_bridge/gui_api_bridge/utils' \
-      './gui_api_bridge/gui_api_bridge/{config,middleware,routers,services,integration,models,utils}' \
-      './gui_hardware_manager/gui_hardware_manager/__pycache__' \
-      './gui_hardware_manager/gui_hardware_manager/integration' \
-      './gui_hardware_manager/gui_hardware_manager/middleware' \
-      './gui_hardware_manager/gui_hardware_manager/models' \
-      './gui_hardware_manager/gui_hardware_manager/routers' \
-      './gui_hardware_manager/gui_hardware_manager/services' \
-      './gui_hardware_manager/gui_hardware_manager/utils' \
-      './gui_tor_manager/gui_tor_manager/__pycache__' \
-      './gui_tor_manager/gui_tor_manager/config' \
-      './gui_tor_manager/gui_tor_manager/integration' \
-      './gui_tor_manager/gui_tor_manager/middleware' \
-      './gui_tor_manager/gui_tor_manager/models' \
-      './gui_tor_manager/gui_tor_manager/routers' \
-      './gui_tor_manager/gui_tor_manager/services' \
-      './gui_tor_manager/gui_tor_manager/utils' \
-      './node/api/__pycache__' \
-      './node/consensus/__pycache__' \
-      './node/dht_crdt/__pycache__' \
-      './node/economy/__pycache__' \
-      './node/flags/__pycache__' \
-      './node/governance/__pycache__' \
-      './node/models/__pycache__' \
-      './node/payouts/__pycache__' \
-      './node/pools/__pycache__' \
-      './node/poot/__pycache__' \
-      './node/registration/__pycache__' \
-      './node/repositories/__pycache__' \
-      './node/resources/__pycache__' \
-      './node/service_configs/x_lucid_cluster_calibration' \
-      './node/shards/__pycache__' \
-      './node/sync/__pycache__' \
-      './node/tor/__pycache__' \
-      './node/validation/__pycache__' \
-      './node/worker/__pycache__' \
-      './rdp/client/__pycache__' \
-      './rdp/common/__pycache__' \
-      './rdp/common/governance' \
-      './rdp/monitoring/grafana' \
-      './rdp/protocol/__pycache__' \
-      './rdp/recorder/__pycache__' \
-      './rdp/resource_monitor/__pycache__' \
-      './rdp/resource_monitor/config' \
-      './rdp/security/__pycache__' \
-      './rdp/server/__pycache__' \
-      './rdp/server_manager/__pycache__' \
-      './rdp/server_manager/config' \
-      './rdp/session_controller/__pycache__' \
-      './rdp/session_controller/config' \
-      './rdp/session_controller/integration' \
-      './rdp/xrdp/__pycache__' \
-      './rdp/xrdp/config' \
-      './scripts/auth_sm_realignment/.cache' \
-      './scripts/auth_sm_realignment/lib' \
-      './scripts/build/__pycache__' \
-      './scripts/build/components' \
-      './scripts/build/core' \
-      './scripts/build/distroless' \
-      './scripts/build/utils' \
-      './scripts/compliance/distroless' \
-      './scripts/compliance/general' \
-      './scripts/deployment/devcontainer' \
-      './scripts/deployment/distroless' \
-      './scripts/deployment/pi' \
-      './scripts/deployment/utils' \
-      './scripts/gui_auth_realignment/.cache' \
-      './scripts/gui_auth_realignment/lib' \
-      './scripts/maintenance/cleanup' \
-      './scripts/maintenance/optimization' \
-      './scripts/maintenance/recovery' \
-      './scripts/network/diagnostics' \
-      './scripts/network/security' \
-      './scripts/network/setup' \
-      './scripts/testing/integration' \
-      './scripts/testing/unit' \
-      './scripts/testing/utils' \
-      './scripts/validation/__pycache__' \
-      './scripts/verification/__pycache__' \
+      './configs/container/admin' \
+      './configs/container/auth' \
+      './configs/container/base' \
+      './configs/container/blockchain' \
+      './configs/container/database' \
+      './configs/container/electron_gui' \
+      './configs/container/gui' \
+      './configs/container/node' \
+      './configs/container/payment_systems' \
+      './configs/container/rdp' \
+      './configs/container/server' \
+      './configs/container/sessions' \
+      './configs/container/storage' \
+      './configs/container/tor' \
+      './configs/database/elasticsearch' \
+      './configs/database/redis' \
+      './configs/docker/distroless' \
+      './configs/docker/docs' \
+      './configs/docker/multi-stage' \
+      './configs/pi/ssh' \
       './service_mesh/communication/__pycache__' \
       './service_mesh/config/policies' \
       './service_mesh/config/services' \
@@ -474,25 +203,6 @@ RUN set -eux; \
       './service_mesh/security/__pycache__' \
       './service_mesh/sidecar/envoy' \
       './service_mesh/sidecar/proxy' \
-      './wallet/security/__pycache__' \
-      './wallet/walletd/__pycache__' \
-      './03_api_gateway/api/app/__pycache__' \
-      './03_api_gateway/api/app/database' \
-      './03_api_gateway/api/app/db' \
-      './03_api_gateway/api/app/middleware' \
-      './03_api_gateway/api/app/models' \
-      './03_api_gateway/api/app/routers' \
-      './03_api_gateway/api/app/routes' \
-      './03_api_gateway/api/app/schemas' \
-      './03_api_gateway/api/app/scripts' \
-      './03_api_gateway/api/app/security' \
-      './03_api_gateway/api/app/services' \
-      './03_api_gateway/api/app/utils' \
-      './03_api_gateway/api/tests/__pycache__' \
-      './03_api_gateway/api/tests/integration' \
-      './03_api_gateway/docs/swagger/dist' \
-      './admin/ui/static/css' \
-      './admin/ui/static/js' \
       './blockchain/api/app/__pycache__' \
       './blockchain/api/app/crypto' \
       './blockchain/api/app/database' \
@@ -505,73 +215,9 @@ RUN set -eux; \
       './blockchain/api/app/schemas' \
       './blockchain/api/app/services' \
       './blockchain/data/api/__pycache__' \
-      './electron_gui/dist/main/ipc' \
-      './electron_gui/node_modules/cpu-features/.github' \
-      './electron_gui/node_modules/cpu-features/deps' \
-      './electron_gui/node_modules/cpu-features/lib' \
-      './electron_gui/node_modules/cpu-features/src' \
-      './electron_gui/node_modules/cpu-features/test' \
-      './electron_gui/node_modules/ssh2/.github' \
-      './electron_gui/node_modules/ssh2/examples' \
-      './electron_gui/node_modules/ssh2/lib' \
-      './electron_gui/node_modules/ssh2/test' \
-      './electron_gui/node_modules/ssh2/util' \
-      './electron_gui/node_modules/tiny-secp256k1/native' \
-      './electron_gui/node_modules/tiny-secp256k1/node_modules' \
-      './electron_gui/node_modules/tiny-secp256k1/scripts' \
-      './electron_gui/renderer/admin/components' \
-      './electron_gui/renderer/admin/pages' \
-      './electron_gui/renderer/admin/services' \
-      './electron_gui/renderer/admin/store' \
-      './electron_gui/renderer/admin/styles' \
-      './electron_gui/renderer/common/components' \
-      './electron_gui/renderer/common/hooks' \
-      './electron_gui/renderer/common/store' \
-      './electron_gui/renderer/common/styles' \
-      './electron_gui/renderer/developer/components' \
-      './electron_gui/renderer/developer/pages' \
-      './electron_gui/renderer/developer/services' \
-      './electron_gui/renderer/developer/styles' \
-      './electron_gui/renderer/node/components' \
-      './electron_gui/renderer/node/pages' \
-      './electron_gui/renderer/node/services' \
-      './electron_gui/renderer/node/styles' \
-      './electron_gui/renderer/user/components' \
-      './electron_gui/renderer/user/pages' \
-      './electron_gui/renderer/user/services' \
-      './electron_gui/renderer/user/styles' \
-      './gui_hardware_manager/gui_hardware_manager/integration/__pycache__' \
-      './gui_hardware_manager/gui_hardware_manager/middleware/__pycache__' \
-      './gui_hardware_manager/gui_hardware_manager/models/__pycache__' \
-      './gui_hardware_manager/gui_hardware_manager/routers/__pycache__' \
-      './gui_hardware_manager/gui_hardware_manager/services/__pycache__' \
-      './gui_hardware_manager/gui_hardware_manager/utils/__pycache__' \
-      './gui_tor_manager/gui_tor_manager/config/__pycache__' \
-      './gui_tor_manager/gui_tor_manager/integration/__pycache__' \
-      './gui_tor_manager/gui_tor_manager/middleware/__pycache__' \
-      './gui_tor_manager/gui_tor_manager/models/__pycache__' \
-      './gui_tor_manager/gui_tor_manager/routers/__pycache__' \
-      './gui_tor_manager/gui_tor_manager/services/__pycache__' \
-      './gui_tor_manager/gui_tor_manager/utils/__pycache__' \
-      './rdp/monitoring/grafana/dashboards' \
-      './rdp/monitoring/grafana/datasources' \
-      './rdp/session_controller/integration/__pycache__' \
       './service_mesh/sidecar/envoy/__pycache__' \
       './service_mesh/sidecar/envoy/config' \
       './service_mesh/sidecar/proxy/__pycache__' \
-      './03_api_gateway/api/app/database/__pycache__' \
-      './03_api_gateway/api/app/db/__pycache__' \
-      './03_api_gateway/api/app/db/models' \
-      './03_api_gateway/api/app/middleware/__pycache__' \
-      './03_api_gateway/api/app/models/__pycache__' \
-      './03_api_gateway/api/app/routers/__pycache__' \
-      './03_api_gateway/api/app/routes/__pycache__' \
-      './03_api_gateway/api/app/schemas/__pycache__' \
-      './03_api_gateway/api/app/scripts/__pycache__' \
-      './03_api_gateway/api/app/security/__pycache__' \
-      './03_api_gateway/api/app/services/__pycache__' \
-      './03_api_gateway/api/app/utils/__pycache__' \
-      './03_api_gateway/api/tests/integration/__pycache__' \
       './blockchain/api/app/crypto/__pycache__' \
       './blockchain/api/app/database/__pycache__' \
       './blockchain/api/app/database/repositories' \
@@ -583,34 +229,76 @@ RUN set -eux; \
       './blockchain/api/app/routes/__pycache__' \
       './blockchain/api/app/schemas/__pycache__' \
       './blockchain/api/app/services/__pycache__' \
-      './electron_gui/node_modules/cpu-features/.github/workflows' \
-      './electron_gui/node_modules/cpu-features/deps/cpu_features' \
-      './electron_gui/node_modules/ssh2/.github/workflows' \
-      './electron_gui/node_modules/ssh2/lib/protocol' \
-      './electron_gui/node_modules/ssh2/test/fixtures' \
-      './electron_gui/node_modules/tiny-secp256k1/native/secp256k1' \
-      './electron_gui/node_modules/tiny-secp256k1/node_modules/bn.js' \
-      './electron_gui/renderer/admin/components/modals' \
     ; do \
       printf 'LUCID_X_FILES_SKELETON_%s' "$(date +%s)" > "$d/.keep"; \
       touch "$d/.keep"; \
     done
 # LUCID_X_FILES_SKELETON_END
-COPY scripts/ ./scripts/
-
-RUN rm -rf configs/environment 2>/dev/null || true
-
+# LUCID_ALIGNMENT_MAT_COPY_DIRECTORIES_BEGIN
+# alignment-mat lucid-gov_manifest.json: compose_service='lucid-gov' — explicit manifest paths → 37 builder COPY line(s) (dockerfile_layout_structure.json section #10 COPY_DIRECTORIES).
+COPY _gen_host_config.py ./_gen_host_config.py
+COPY blockchain/governance/lucid_governor.py ./blockchain/governance/lucid_governor.py
+COPY common/__init__.py ./common/__init__.py
+COPY common/contact_profile_env.py ./common/contact_profile_env.py
+COPY common/governance/__init__.py ./common/governance/__init__.py
+COPY common/governance/lucid_governor.py ./common/governance/lucid_governor.py
+COPY common/governance/param_registry.py ./common/governance/param_registry.py
+COPY common/governance/timelock.py ./common/governance/timelock.py
+COPY common/load_host_config.py ./common/load_host_config.py
+COPY common/security/__init__.py ./common/security/__init__.py
+COPY common/security/input_controller.py ./common/security/input_controller.py
+COPY common/security/policy_validator.py ./common/security/policy_validator.py
+COPY common/security/privacy_shield.py ./common/security/privacy_shield.py
+COPY common/security/session_validator.py ./common/security/session_validator.py
+COPY common/security/trust_nothing_engine.py ./common/security/trust_nothing_engine.py
+COPY common/server-tools/__init__.py ./common/server-tools/__init__.py
+COPY common/tor/__init__.py ./common/tor/__init__.py
+COPY common/tor/onion_service.py ./common/tor/onion_service.py
+COPY common/tor/socks_proxy.py ./common/tor/socks_proxy.py
+COPY common/tor/tor_manager.py ./common/tor/tor_manager.py
+COPY configs/container/admin/docker-compose.admin.yml ./configs/container/admin/docker-compose.admin.yml
+COPY configs/x-files.json ./configs/x-files.json
+COPY infrastructure/containers/admin/docker-compose.admin.yml ./infrastructure/containers/admin/docker-compose.admin.yml
+COPY infrastructure/containers/apply_alignment_mat_copy_section10.py ./infrastructure/containers/apply_alignment_mat_copy_section10.py
+COPY infrastructure/containers/config-listings.json ./infrastructure/containers/config-listings.json
+COPY infrastructure/containers/dockerfile_layout_run_report.json ./infrastructure/containers/dockerfile_layout_run_report.json
+COPY infrastructure/containers/dockerfile_recalibration_map.json ./infrastructure/containers/dockerfile_recalibration_map.json
+COPY infrastructure/containers/dockerfile_recalibration_map_REPAIRED.json ./infrastructure/containers/dockerfile_recalibration_map_REPAIRED.json
+COPY infrastructure/containers/generate_lib_skeleton_from_runtime_copy.py ./infrastructure/containers/generate_lib_skeleton_from_runtime_copy.py
+COPY infrastructure/containers/host-config.yml ./infrastructure/containers/host-config.yml
+COPY infrastructure/containers/services/common/lucid-gov.yml ./infrastructure/containers/services/common/lucid-gov.yml
+COPY infrastructure/containers/services/middle-ware/master-endpoint.yml ./infrastructure/containers/services/middle-ware/master-endpoint.yml
+COPY infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.json ./infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.json
+COPY infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.yml ./infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.yml
+COPY infrastructure/containers/services/x_lucid_cluster_calibration/core-cluster-host-alignment.yml ./infrastructure/containers/services/x_lucid_cluster_calibration/core-cluster-host-alignment.yml
+COPY infrastructure/containers/services/x_lucid_cluster_calibration/foundation-cluster-host-alignment.yml ./infrastructure/containers/services/x_lucid_cluster_calibration/foundation-cluster-host-alignment.yml
+COPY infrastructure/containers/services/x_lucid_cluster_calibration/payment-cluster-host-alignment.yml ./infrastructure/containers/services/x_lucid_cluster_calibration/payment-cluster-host-alignment.yml
+# LUCID_ALIGNMENT_MAT_COPY_DIRECTORIES_END
 
 COPY infrastructure/service_mesh/ ./service_mesh/
 COPY common/ ./common/
-COPY gui_api_bridge/ ./gui_api_bridge/
-COPY gui_tor_manager/ ./gui_tor_manager/
-COPY gui_hardware_manager/ ./gui_hardware_manager/
-COPY electron_gui/ ./electron_gui/
-COPY 03_api_gateway/ ./03_api_gateway/
 
-COPY RDP/ ./rdp/
-COPY scripts/ ./scripts/
+
+COPY common/ ./common/
+
+
+COPY blockchain/ ./blockchain/
+
+RUN printf "LUCID_LUCID_GOV_RUNTIME" > /var/run/.keep && \
+    printf "LUCID_LUCID_GOV_LIB" > /var/lib/.keep && \
+    chown -R 65532:65532 /var/run /var/lib && chmod 644 /var/run/.keep /var/lib/.keep
+
+RUN mkdir -p /usr/local/lib/python3.11/site-packages /usr/local/bin && \
+    chown -R 65532:65532 /usr/local/lib/python3.11/site-packages /usr/local/bin
+
+RUN mkdir -p /app-dirs/cache/lucid-gov /app-dirs/data/lucid-gov /app-dirs/logs/lucid-gov && \
+    printf "LUCID_LUCID_GOV_CACHE_$(date +%s)" > /app-dirs/cache/lucid-gov/.keep && \
+    printf "LUCID_LUCID_GOV_DATA_$(date +%s)" > /app-dirs/data/lucid-gov/.keep && \
+    printf "LUCID_LUCID_GOV_LOGS_$(date +%s)" > /app-dirs/logs/lucid-gov/.keep && \
+    chown -R 65532:65532 /app-dirs
+
+RUN rm -rf configs/environment 2>/dev/null || true
+
 
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --no-cache-dir --no-index --find-links /build/wheels -r ./requirements.txt
@@ -622,18 +310,8 @@ RUN python3.11 -c "import jwt, cryptography, motor, pymongo; print('lucid-gov de
 
 
 
-COPY common/ ./common/
-COPY node/ ./node/
-COPY server/ ./server/
-
-
 RUN rm -rf configs/environment 2>/dev/null || true
 
-
-COPY admin/ ./admin/
-COPY wallet/ ./wallet/
-COPY auth/ ./auth/
-COPY blockchain/ ./blockchain/
 
 RUN printf "LUCID_LUCID_GOV_SOURCE_$(date +%s)" > ./common/governance/.keep && \
     chown -R 65532:65532 ./common ./wallet ./auth ./blockchain && \
@@ -644,9 +322,17 @@ RUN test -f ./common/governance/lucid_governor.py && echo "lucid-gov source OK"
 ############################
 # Stage 2 – Runtime (Distroless)
 ############################
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_PREFER_BINARY=1 \
+    DEBIAN_FRONTEND=noninteractive
+
+ENV PATH=/root/.cargo/bin:$PATH
+
 FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12:latest
 
-WORKDIR /app
 ARG BUILD_DATE
 ARG VCS_REF
 ARG VERSION=1.0.0
@@ -655,6 +341,7 @@ ARG PUBLIC_TOR_IP=109.70.100.1
 ARG LUCID_INTERNAL_NETWORK_NAME=lucid-pi-network
 ARG LUCID_TOR_EGRESS_NETWORK_NAME=lucid-tor-egress-network
 
+WORKDIR /app
 LABEL maintainer="Lucid Development Team" \
       com.lucid.network.internal="${LUCID_INTERNAL_NETWORK_NAME}" \
       com.lucid.network.tor_egress="${LUCID_TOR_EGRESS_NETWORK_NAME}" \
@@ -703,21 +390,10 @@ ENV     PUBLIC_TOR_IP="${PUBLIC_TOR_IP}" \
     XDG_RUNTIME_DIR="/tmp/governor"
 # LUCID_RUNTIME_COPY_FROM_BUILD_BEGIN
 # Generated: same directory set as LUCID_X_FILES_SKELETON (./ under WORKDIR /build).
-COPY --from=builder --chown=65532:65532 /build/03_api_gateway/ /app/03_api_gateway/
-COPY --from=builder --chown=65532:65532 /build/admin/ /app/admin/
-COPY --from=builder --chown=65532:65532 /build/auth/ /app/auth/
 COPY --from=builder --chown=65532:65532 /build/blockchain/ /app/blockchain/
 COPY --from=builder --chown=65532:65532 /build/common/ /app/common/
-COPY --from=builder --chown=65532:65532 /build/electron_gui/ /app/electron_gui/
-COPY --from=builder --chown=65532:65532 /build/gui_api_bridge/ /app/gui_api_bridge/
-COPY --from=builder --chown=65532:65532 /build/gui_hardware_manager/ /app/gui_hardware_manager/
-COPY --from=builder --chown=65532:65532 /build/gui_tor_manager/ /app/gui_tor_manager/
-COPY --from=builder --chown=65532:65532 /build/node/ /app/node/
-COPY --from=builder --chown=65532:65532 /build/rdp/ /app/rdp/
-COPY --from=builder --chown=65532:65532 /build/scripts/ /app/scripts/
-COPY --from=builder --chown=65532:65532 /build/server/ /app/server/
+COPY --from=builder --chown=65532:65532 /build/configs/ /app/configs/
 COPY --from=builder --chown=65532:65532 /build/service_mesh/ /app/service_mesh/
-COPY --from=builder --chown=65532:65532 /build/wallet/ /app/wallet/
 # LUCID_RUNTIME_COPY_FROM_BUILD_END
 
 # LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
@@ -728,6 +404,7 @@ COPY --from=builder --chown=65532:65532 /usr/lib/*/ossl-modules/ /app/usr/lib/
 COPY --from=builder --chown=65532:65532 /usr/lib/*/libcurl.so* /app/usr/lib/
 COPY --from=builder --chown=65532:65532 /app-dirs/ /app/app-dirs/
 COPY --from=builder --chown=65532:65532 /bin/ /app/bin/
+COPY --from=builder --chown=65532:65532 /dev/null/ /app/dev/null/
 COPY --from=builder --chown=65532:65532 /etc/ssl/ /app/etc/ssl/
 COPY --from=builder --chown=65532:65532 /usr/bin/ /app/usr/bin/
 COPY --from=builder --chown=65532:65532 /usr/lib/python3/dist-packages/ /app/usr/lib/python3/dist-packages/
@@ -737,25 +414,9 @@ COPY --from=builder --chown=65532:65532 /usr/sbin/ /app/usr/sbin/
 COPY --from=builder --chown=65532:65532 /var/lib/ /app/var/lib/
 COPY --from=builder --chown=65532:65532 /var/run/ /app/var/run/
 # LUCID_RUNTIME_COPY_FROM_BUILDER_APT_END
-
-
-
-COPY --from=builder /var/run/ /app/var/run/
-COPY --from=builder /var/lib/ /app/var/lib/
-COPY --from=builder /etc/ssl/certs/ca-certificates.crt /app/etc/ssl/certs/ca-certificates.crt
-COPY --from=builder /usr/local/lib/python3.11/site-packages/ /app/usr/local/lib/python3.11/site-packages/
-COPY --from=builder /usr/local/bin/ /app/usr/local/bin/
-COPY --from=builder /usr/bin/ /app/usr/bin/
-COPY --from=builder /usr/sbin/ /app/usr/sbin/
-
+# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
+# Generated: apt + RUN scaffold (mkdir/printf/touch/chown) -> FHS (not ./ or /build/; lib_search_and_inject.py).
 COPY --from=builder --chown=65532:65532 /build/wheels/ /app/wheels/
-COPY --from=builder --chown=65532:65532 /app-dirs/cache /app/cache
-COPY --from=builder --chown=65532:65532 /app-dirs/data /app/data
-COPY --from=builder --chown=65532:65532 /app-dirs/logs /app/logs
-
-
-# LUCID_RUNTIME_COPY_FROM_BUILD_BEGIN
-
 RUN ["/app/usr/bin/python3.11", "-c", "import os,sys; sp='/app/usr/local/lib/python3.11/site-packages'; sys.path.insert(0,sp); assert os.path.isdir(sp); m=os.path.join(sp,'.lucid-marker'); assert os.path.isfile(m) and os.path.getsize(m)>0; import jwt,cryptography,motor,pymongo; print('runtime OK')"]
 
 RUN ["/app/usr/bin/python3.11", "-c", "import os; assert os.path.isfile('/app/common/governance/lucid_governor.py'); assert os.path.getsize('/app/common/governance/.keep')>0; print('layout OK')"]

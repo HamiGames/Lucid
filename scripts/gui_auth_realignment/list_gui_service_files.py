@@ -3,19 +3,21 @@
 File: scripts/gui_auth_realignment/list_gui_service_files.py
 
 Lists *.yml, *.yaml, *.json, and *.py files associated with each compose_service in a gui-services mat
-(default: configs/services/gui-services.json).
+(default: configs/gui-alignment/gui-services.json).
 
 Sources merged per service:
   - compose_files[] from the mat row
-  - python_dirs + yml_extra from gui_service_source_map.json
-  - global_python_files from gui_service_source_map.json
+  - python_dirs + yml_extra from configs/alignment-mats/service_source_map.json when present,
+    else scripts/gui_auth_realignment/gui_service_source_map.json
+  - global_python_files and global_python_dirs (every service) from the same map file
   - configs/gui-alignment/*.json from tier_a_json_targets.json (--json-manifests)
   - Optional repo scan (--discover-associated): YAML/JSON under configs/, infrastructure/containers,
-    infrastructure/service_mesh, and each service python_dirs that contain service name tokens
+    infrastructure/service_mesh, plus walked python dirs; needle-matched ``*.py`` from full repo root (each file read once)
     (hyphen/underscore/container_name), including compose files, endpoint YAML, and support JSON.
 
-``missing_expected`` lists conventional paths (alignment JSON, infrastructure/services/<service>.yml)
-that are absent. ``missing_tier_a_json`` lists tier allowlist JSON paths that are missing on disk.
+``missing_expected`` lists conventional paths (alignment JSON, flat services/<service>.yml) that are
+absent; the services bundle is also considered present if found at services/**/<service>.yml|.yaml.
+``missing_tier_a_json`` lists tier allowlist JSON paths that are missing on disk.
 
 Usage (repo root):
   python scripts/gui_auth_realignment/list_gui_service_files.py
@@ -30,6 +32,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from pathlib import Path
 from typing import Any, Dict, List, Set, Tuple
@@ -38,8 +41,16 @@ _HERE = Path(__file__).resolve().parent
 if str(_HERE) not in sys.path:
     sys.path.insert(0, str(_HERE))
 
-DEFAULT_MAT = Path("configs/services/gui-services.json")
-MAP_PATH = _HERE / "gui_service_source_map.json"
+DEFAULT_MAT = Path("configs/gui-alignment/gui-services.json")
+ALIGNMENT_SOURCE_MAP_REL = Path("configs/alignment-mats/service_source_map.json")
+LEGACY_GUI_SOURCE_MAP = _HERE / "gui_service_source_map.json"
+
+
+def _map_path_for_repo(repo: Path) -> Path:
+    align = repo / ALIGNMENT_SOURCE_MAP_REL
+    if align.is_file():
+        return align
+    return LEGACY_GUI_SOURCE_MAP
 TIER_A_TARGETS = _HERE / "tier_a_json_targets.json"
 
 SKIP_DIR_NAMES = frozenset(
@@ -54,6 +65,7 @@ SKIP_DIR_NAMES = frozenset(
         "build",
         ".next",
         "target",
+        ".cursor",
     }
 )
 DEFAULT_DISCOVERY_ROOTS = (
@@ -157,6 +169,28 @@ def _should_skip_path(p: Path) -> bool:
     return any(part in SKIP_DIR_NAMES for part in p.parts)
 
 
+def _list_repo_py_files(repo: Path) -> List[Path]:
+    out: List[Path] = []
+    repo_resolved = repo.resolve()
+    try:
+        for p in repo.rglob("*.py"):
+            if _should_skip_path(p) or not p.is_file():
+                continue
+            try:
+                rp = p.resolve()
+            except OSError:
+                continue
+            try:
+                rp.relative_to(repo_resolved)
+            except ValueError:
+                continue
+            out.append(p)
+    except OSError:
+        pass
+    out.sort(key=lambda x: x.as_posix().lower())
+    return out
+
+
 def _read_text_limited(path: Path, max_bytes: int) -> str | None:
     try:
         data = path.read_bytes()[:max_bytes]
@@ -168,9 +202,14 @@ def _read_text_limited(path: Path, max_bytes: int) -> str | None:
 
 
 def _text_matches_any_needle(text: str, needles: List[str]) -> bool:
-    tl = text.casefold()
     for n in needles:
-        if n.casefold() in tl:
+        if not n:
+            continue
+        if len(n) < MIN_NEEDLE_LEN:
+            pat = re.compile(r"(?<!\w)" + re.escape(n) + r"(?!\w)", re.IGNORECASE)
+            if pat.search(text):
+                return True
+        elif n.casefold() in text.casefold():
             return True
     return False
 
@@ -222,6 +261,57 @@ def _discover_yml_json(
     return yml_out, json_out
 
 
+def _load_repo_py_snippets(repo: Path, py_paths: List[Path], max_bytes: int) -> List[Tuple[str, str]]:
+    rows: List[Tuple[str, str]] = []
+    repo_resolved = repo.resolve()
+    for p in py_paths:
+        try:
+            if p.stat().st_size > max_bytes * 2:
+                continue
+        except OSError:
+            continue
+        txt = _read_text_limited(p, max_bytes)
+        if txt is None:
+            continue
+        try:
+            rel = p.resolve().relative_to(repo_resolved).as_posix()
+        except ValueError:
+            continue
+        rows.append((rel, txt))
+    return rows
+
+
+def _discover_py_needle_matched_from_snippets(
+    snippets: List[Tuple[str, str]],
+    needles: List[str],
+) -> Set[str]:
+    py_out: Set[str] = set()
+    for rel, txt in snippets:
+        if _text_matches_any_needle(txt, needles):
+            py_out.add(rel)
+    return py_out
+
+
+def _service_bundle_yml_exists(repo: Path, compose_service: str) -> bool:
+    """
+    True if the service bundle exists at the flat conventional path or anywhere under
+    infrastructure/containers/services/**/{compose_service}.yml|.yaml (subfolder layout).
+    """
+    for suffix in (".yml", ".yaml"):
+        flat = repo / f"infrastructure/containers/services/{compose_service}{suffix}"
+        if flat.is_file():
+            return True
+    root = repo / "infrastructure/containers/services"
+    if not root.is_dir():
+        return False
+    for suffix in (".yml", ".yaml"):
+        name = f"{compose_service}{suffix}"
+        for p in root.rglob(name):
+            if p.is_file() and p.name == name:
+                return True
+    return False
+
+
 def _expected_path_gaps(repo: Path, compose_service: str, tier_json_rels: List[str]) -> Tuple[List[str], List[str]]:
     miss_exp: List[str] = []
     miss_tier: List[str] = []
@@ -230,6 +320,10 @@ def _expected_path_gaps(repo: Path, compose_service: str, tier_json_rels: List[s
         f"infrastructure/containers/services/{compose_service}.yml",
     ]
     for rel in conventional:
+        if rel == f"infrastructure/containers/services/{compose_service}.yml":
+            if not _service_bundle_yml_exists(repo, compose_service):
+                miss_exp.append(rel)
+            continue
         if not (repo / rel).is_file():
             miss_exp.append(rel)
     for rel in tier_json_rels:
@@ -255,7 +349,10 @@ def main() -> int:
     ap.add_argument(
         "--json-manifests",
         action="store_true",
-        help="Include Tier A alignment JSON paths from tier_a_json_targets.json in output",
+        help=(
+            "Add gui Tier-A paths from tier_a_json_targets.json (subset of services; "
+            "does not ingest configs/alignment-mats/*_manifest.json)"
+        ),
     )
     ap.add_argument(
         "--manifest-dir",
@@ -275,7 +372,7 @@ def main() -> int:
         help=(
             "Scan YAML/JSON under configs/, infrastructure/containers/, infrastructure/service_mesh/, "
             "and each service python_dir for name tokens (compose_service, container_name, underscore form). "
-            "Default: on. Use --no-discover-associated for declared paths only."
+            "Default: on (YAML/JSON/Python by needle). Use --no-discover-associated for declared paths only."
         ),
     )
     ap.add_argument(
@@ -300,17 +397,24 @@ def main() -> int:
         print("mat.services must be a list", file=sys.stderr)
         return 2
 
-    mp = _load_json(MAP_PATH)
+    map_path = _map_path_for_repo(repo)
+    mp = _load_json(map_path)
     if not isinstance(mp, dict):
-        print(f"Invalid or missing map: {MAP_PATH}", file=sys.stderr)
+        print(f"Invalid or missing map: {map_path}", file=sys.stderr)
         return 2
     smap = mp.get("services") or {}
     global_py = list(mp.get("global_python_files") or [])
+    global_py_dirs = [str(x).replace("\\", "/") for x in (mp.get("global_python_dirs") or [])]
 
     tier_targets: Dict[str, List[str]] = {}
     tj = _load_json(_HERE / "tier_a_json_targets.json")
     if isinstance(tj, dict):
         tier_targets = {str(k): list(v or []) for k, v in (tj.get("targets") or {}).items()}
+
+    repo_py_paths: List[Path] = _list_repo_py_files(repo) if args.discover_associated else []
+    repo_py_snippets: List[Tuple[str, str]] = (
+        _load_repo_py_snippets(repo, repo_py_paths, args.discover_max_bytes) if repo_py_paths else []
+    )
 
     result: Dict[str, Any] = {}
     for row in svc_rows:
@@ -324,7 +428,8 @@ def main() -> int:
 
         compose_files = [str(x).replace("\\", "/") for x in (row.get("compose_files") or [])]
         reg = smap.get(name) or {}
-        py_dirs = list(reg.get("python_dirs") or [])
+        declared_py_dirs = [str(d).replace("\\", "/") for d in (reg.get("python_dirs") or [])]
+        dirs_walk_py = list(dict.fromkeys(declared_py_dirs + global_py_dirs))
         yml_extra = [str(x).replace("\\", "/") for x in (reg.get("yml_extra") or [])]
 
         yml_paths = compose_files + yml_extra
@@ -334,18 +439,20 @@ def main() -> int:
         tier_rels = [str(x).replace("\\", "/") for x in (tier_targets.get(name) or [])]
         yml_from_scan: Set[str] = set()
         json_from_scan: Set[str] = set()
+        py_from_scan: Set[str] = set()
         if args.discover_associated and needles:
-            d_roots = _discovery_roots_for_service(repo, py_dirs)
+            d_roots = _discovery_roots_for_service(repo, dirs_walk_py)
             yml_from_scan, json_from_scan = _discover_yml_json(
                 repo, d_roots, needles, args.discover_max_bytes
             )
+            py_from_scan = _discover_py_needle_matched_from_snippets(repo_py_snippets, needles)
 
         yml_resolved = sorted(set(yml_declared) | yml_from_scan)
         miss_exp, miss_tier = _expected_path_gaps(repo, name, tier_rels)
 
         py_rel: List[str] = []
         py_missing_dirs: List[str] = []
-        for d in py_dirs:
+        for d in dirs_walk_py:
             found, miss = _iter_py_under(repo, d)
             py_missing_dirs.extend(miss)
             py_rel.extend(p.relative_to(repo).as_posix() for p in found)
@@ -353,7 +460,7 @@ def main() -> int:
         globs, g_miss = _collect_global_py(repo, global_py)
         py_rel.extend(globs)
         py_missing_dirs = sorted(set(py_missing_dirs))
-        py_rel = sorted(set(py_rel))
+        py_rel = sorted(set(py_rel) | py_from_scan)
 
         manifests: List[str] = []
         if args.json_manifests and name in tier_targets:

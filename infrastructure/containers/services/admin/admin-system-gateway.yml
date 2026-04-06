@@ -1,0 +1,50 @@
+# File: /app/service_configs/admin/admin-system-gateway.yml
+# x-lucid-file-path: /app/service_configs/admin/admin-system-gateway.yml
+# x-lucid-file-directory: /app/service_configs/admin
+# x-lucid-file-type: YAML
+# Lucid alignment: host_registry=infrastructure/containers/host-config.yml (container /app/configs/host-config.yml); path_index=x-files.json section_to_canonical
+#
+# compose_service=admin-system-gateway; YAML/JSON/Python lists from alignment manifest (list_service_files_by_name.py).
+
+version: '1.0'
+description: >
+  Conventional service bundle index for admin-system-gateway. Refs below mirror the alignment
+  manifest for this compose service. Cross-check infrastructure/containers/host-config.yml and x-files.json.
+
+x-lucid-calibration:
+  source_host_config: infrastructure/containers/host-config.yml
+  source_x_files: x-files.json
+  bundle_repo_path: infrastructure/containers/services/admin/admin-system-gateway.yml
+  bundle_container_path: /app/service_configs/admin/admin-system-gateway.yml
+  alignment_manifest_tool: scripts/gui_auth_realignment/list_service_files_by_name.py
+
+compose_service: "admin-system-gateway"
+associated_needles:
+  - "admin-system-gateway"
+  - "admin_system_gateway"
+
+manifest_alignment:
+  yml_refs:
+    - "configs/container/admin/docker-compose.admin.yml"
+    - "configs/container/payment_systems/docker-compose.payment-externals.yml"
+    - "configs/container/server/docker-compose.server-external.yml"
+    - "infrastructure/containers/admin/config/openssl-api.yml"
+    - "infrastructure/containers/admin/docker-compose.admin.yml"
+    - "infrastructure/containers/host-config.yml"
+    - "infrastructure/containers/payment_systems/docker-compose.payment-externals.yml"
+    - "infrastructure/containers/server/docker-compose.server-external.yml"
+    - "infrastructure/containers/services/admin/admin-interface.yml"
+    - "infrastructure/containers/services/middle-ware/master-endpoint.yml"
+    - "infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.yml"
+    - "infrastructure/containers/services/x_lucid_cluster_calibration/core-cluster-host-alignment.yml"
+  json_refs:
+    - "configs/x-files.json"
+    - "infrastructure/containers/admin/config/admin-system-gateway.connections.json"
+    - "infrastructure/containers/config-listings.json"
+    - "infrastructure/containers/dockerfile_layout_run_report.json"
+    - "infrastructure/containers/dockerfile_recalibration_map.json"
+    - "infrastructure/containers/dockerfile_recalibration_map_REPAIRED.json"
+    - "infrastructure/containers/node/config/node-system-gateway.connections.json"
+    - "infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.json"
+  py_refs:
+    - "common/load_host_config.py"

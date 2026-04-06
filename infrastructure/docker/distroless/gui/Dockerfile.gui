@@ -18,14 +18,14 @@ ARG BUNDLE_DIR=/opt/lucid/bundles
 ############################
 # Stage 1 – Strapper (electron_gui sources + node_modules tarballs)
 ############################
-FROM --platform=$TARGETPLATFORM node:20-bookworm AS strapper
-
 ARG NPM_INSTALL_FLAGS="--omit=dev"
 ARG TARGETPLATFORM
 
+FROM --platform=$TARGETPLATFORM node:20-bookworm AS strapper
+
 WORKDIR /work/electron_gui
 # LUCID_ALIGNMENT_MAT_COPY_DIRECTORIES_BEGIN
-# alignment-mat gui-strap_manifest.json: compose_service='gui-strap' — manifest py/yml/yaml/json → builder COPY (#10).
+# alignment-mat gui-strap_manifest.json: compose_service='gui-strap' — explicit manifest paths → 24 builder COPY line(s) (dockerfile_layout_structure.json section #10 COPY_DIRECTORIES).
 # LUCID_X_FILES_SKELETON_BEGIN
 # Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
 RUN set -eux; \
@@ -106,15 +106,35 @@ RUN set -eux; \
       touch "$d/.keep"; \
     done
 # LUCID_X_FILES_SKELETON_END
-COPY common/ ./common/
-COPY infrastructure/containers/services/x_lucid_cluster_calibration/ ./infrastructure/containers/services/x_lucid_cluster_calibration/
+COPY common/__init__.py ./common/__init__.py
+COPY common/contact_profile_env.py ./common/contact_profile_env.py
+COPY common/governance/__init__.py ./common/governance/__init__.py
+COPY common/governance/lucid_governor.py ./common/governance/lucid_governor.py
+COPY common/governance/param_registry.py ./common/governance/param_registry.py
+COPY common/governance/timelock.py ./common/governance/timelock.py
+COPY common/load_host_config.py ./common/load_host_config.py
+COPY common/security/__init__.py ./common/security/__init__.py
+COPY common/security/input_controller.py ./common/security/input_controller.py
+COPY common/security/policy_validator.py ./common/security/policy_validator.py
+COPY common/security/privacy_shield.py ./common/security/privacy_shield.py
+COPY common/security/session_validator.py ./common/security/session_validator.py
+COPY common/security/trust_nothing_engine.py ./common/security/trust_nothing_engine.py
+COPY common/server-tools/__init__.py ./common/server-tools/__init__.py
+COPY common/tor/__init__.py ./common/tor/__init__.py
+COPY common/tor/onion_service.py ./common/tor/onion_service.py
+COPY common/tor/socks_proxy.py ./common/tor/socks_proxy.py
+COPY common/tor/tor_manager.py ./common/tor/tor_manager.py
+COPY infrastructure/containers/apply_alignment_mat_copy_section10.py ./infrastructure/containers/apply_alignment_mat_copy_section10.py
+COPY infrastructure/containers/services/gui/gui-strap.yml ./infrastructure/containers/services/gui/gui-strap.yml
+COPY infrastructure/containers/services/middle-ware/master-endpoint.yml ./infrastructure/containers/services/middle-ware/master-endpoint.yml
+COPY infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.json ./infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.json
+COPY infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.yml ./infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.yml
+COPY scripts/gui_auth_realignment/rewrite_dockerfiles_from_alignment_mats.py ./scripts/gui_auth_realignment/rewrite_dockerfiles_from_alignment_mats.py
 # LUCID_ALIGNMENT_MAT_COPY_DIRECTORIES_END
 COPY scripts/ ./scripts/
 
-COPY electron_gui/package*.json ./
-RUN npm install ${NPM_INSTALL_FLAGS}
 
-COPY electron_gui/ ./
+RUN npm install ${NPM_INSTALL_FLAGS}
 
 RUN npm dedupe && npm cache clean --force
 
@@ -146,40 +166,83 @@ RUN mkdir -p /tmp/strap \
 ############################
 FROM --platform=$TARGETPLATFORM debian:12-slim AS bundle-prep
 
+FROM --platform=$TARGETPLATFORM gcr.io/distroless/base-debian12:latest
+
 ARG STRAP_DIR=/opt/lucid/electron_gui
 ARG BUNDLE_DIR=/opt/lucid/bundles
 ARG TARGETPLATFORM
 
+ARG TARGETPLATFORM=linux/arm64
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION=1.0.0
+# Lucid Tor egress / network isolation (PUBLIC_TOR_IP: ../../configs/environment/ ; compose: lucid-tor-egress-network)
+ARG PUBLIC_TOR_IP=109.70.100.1
+ARG LUCID_INTERNAL_NETWORK_NAME=lucid-pi-network
+ARG LUCID_TOR_EGRESS_NETWORK_NAME=lucid-tor-egress-network
+ARG STRAP_DIR=/opt/lucid/electron_gui
+ARG BUNDLE_DIR=/opt/lucid/bundles
+
+WORKDIR /
+
+WORKDIR ${STRAP_DIR}
+
+LABEL maintainer="Lucid Development Team" \
+      com.lucid.network.internal="${LUCID_INTERNAL_NETWORK_NAME}" \
+      com.lucid.network.tor_egress="${LUCID_TOR_EGRESS_NETWORK_NAME}" \
+      com.lucid.tor.public_egress_ip="${PUBLIC_TOR_IP}" \
+      org.opencontainers.image.title="Lucid Electron GUI Strap" \
+      org.opencontainers.image.description="Distroless Electron GUI bundle for Pi console configuration" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.created="${BUILD_DATE}" \
+      com.lucid.plane="ops" \
+      com.lucid.service="gui-strap" \
+      com.lucid.layer="3" \
+      org.lucid.layer="3" \
+      com.lucid.platform="arm64" \
+      com.lucid.architecture="linux/arm64" \
+      com.lucid.security="distroless" \
+      com.lucid.vulnerabilities="zero" \
+      com.lucid.expose="0" \
+      com.lucid.cluster="support" \
+      com.lucid.tor.compatible="true" \
+      com.lucid.env.config=".env.foundation" \
+      com.lucid.hostconfig.upstream_api_gateway_host="api-gateway" \
+      com.lucid.hostconfig.upstream_api_gateway_port="8080"
+
 ENV DEBIAN_FRONTEND=noninteractive
 
-RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
-    --mount=type=cache,target=/var/lib/apt,sharing=locked \
-    rm -rf /var/lib/apt/lists/* && \
-    apt-get update --allow-releaseinfo-change && \
-    apt-get install -y --no-install-recommends \
-        bash \
-        tar \
-        gzip \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+ENV     PUBLIC_TOR_IP="${PUBLIC_TOR_IP}" \
+    LUCID_INTERNAL_NETWORK_NAME="${LUCID_INTERNAL_NETWORK_NAME}" \
+    LUCID_TOR_EGRESS_NETWORK_NAME="${LUCID_TOR_EGRESS_NETWORK_NAME}" \
+    BUNDLE_DIR=${BUNDLE_DIR} \
+    LUCID_API_GATEWAY_HOST="api-gateway" \
+    LUCID_API_GATEWAY_PORT="0" \
+    LUCID_HOST_CONFIG_PATH="/app/configs/host-config.yml" \
+    LUCID_HOST_CONFIG_SERVICE_NAME=gui_strap \
+    LUCID_PLATFORM="arm64" \
+    LUCID_SERVICE_HOST_IP= \
+    LUCID_SERVICE_HTTP_PATH=http://gui-strap:0/app \
+    NODE_ENV="development" \
+    STRAP_DIR=${STRAP_DIR}
+# LUCID_RUNTIME_COPY_FROM_BUILD_BEGIN
+# Generated: same directory set as LUCID_X_FILES_SKELETON (./ under WORKDIR /build).
+COPY --from=strapper --chown=65532:65532 /build/common/ /app/common/
+COPY --from=strapper --chown=65532:65532 /build/node_modules/ /app/node_modules/
+COPY --from=strapper --chown=65532:65532 /build/scripts/ /app/scripts/
+# LUCID_RUNTIME_COPY_FROM_BUILD_END
 
-# LUCID_LIB_SKELETON_BEGIN
-# Generated: FHS dirs for builder (from final-stage COPY --from, excluding /build/ sources;
-# ancestor dirs collapsed; overlaps with builder mkdir/.keep removed — see collect_skeleton_paths_from_dockerfile).
-RUN set -eux; \
-  mkdir -p \
-    '/bin' \
-    '/usr/bin'; \
-  for d in \
-    '/bin' \
-    '/usr/bin'; \
-  do \
-    printf 'LUCID_LIB_SKELETON_%s' "$(date +%s)" > "$d/.keep"; \
-    touch "$d/.keep"; \
-  done
-# LUCID_LIB_SKELETON_END
-
-
+# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
+# Generated: apt + RUN scaffold (mkdir/printf/touch/chown) -> FHS (not ./ or /build/; lib_search_and_inject.py).
+COPY --from=strapper --chown=65532:65532 /bin/ /app/bin/
+COPY --from=strapper --chown=65532:65532 /dev/null/ /app/dev/null/
+COPY --from=strapper --chown=65532:65532 /usr/bin/ /app/usr/bin/
+COPY --from=strapper --chown=65532:65532 /usr/local/bin/ /app/usr/local/bin/
+COPY --from=strapper --chown=65532:65532 /usr/local/lib/ /app/usr/local/lib/
+# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_END
+# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
+# Generated: apt + RUN scaffold (mkdir/printf/touch/chown) -> FHS (not ./ or /build/; lib_search_and_inject.py).
 RUN ln -sf /bin/bash /bin/sh
 
 RUN mkdir -p "${BUNDLE_DIR}" "${STRAP_DIR}"
@@ -190,12 +253,15 @@ RUN rm -rf configs/environment 2>/dev/null || true
 
 
 # Container directory layout (03_api_gateway/Dockerfile): common/tor, kubernetes configmaps
+RUN chmod +x /usr/local/bin/lucid-gui-strap
+
+############################
+# Stage 3 – Runtime (distroless base + bash/tar/gzip and libs)
+############################
+ENTRYPOINT ["/bin/bash", "/usr/local/bin/lucid-gui-strap"]
 COPY common/__init__.py /build/common/__init__.py
 COPY common/tor/ /build/common/tor/
 COPY infrastucture/kubernetes/01_configmaps/ ./configs/kubernetes/01_configmaps/
-
-COPY --from=strapper /tmp/strap/electron_gui-src.tar.gz ${BUNDLE_DIR}/electron_gui-src.tar.gz
-COPY --from=strapper /tmp/strap/electron_gui-node_modules.tar.gz ${BUNDLE_DIR}/electron_gui-node_modules.tar.gz
 
 COPY <<'EOF' /usr/local/bin/lucid-gui-strap
 #!/bin/bash
@@ -232,100 +298,3 @@ INFO
 
 exec tail -f /dev/null
 EOF
-
-RUN chmod +x /usr/local/bin/lucid-gui-strap
-
-############################
-# Stage 3 – Runtime (distroless base + bash/tar/gzip and libs)
-############################
-ARG TARGETPLATFORM=linux/arm64
-FROM --platform=$TARGETPLATFORM gcr.io/distroless/base-debian12:latest
-
-WORKDIR /
-
-ARG BUILD_DATE
-ARG VCS_REF
-ARG VERSION=1.0.0
-# Lucid Tor egress / network isolation (PUBLIC_TOR_IP: ../../configs/environment/ ; compose: lucid-tor-egress-network)
-ARG PUBLIC_TOR_IP=109.70.100.1
-ARG LUCID_INTERNAL_NETWORK_NAME=lucid-pi-network
-ARG LUCID_TOR_EGRESS_NETWORK_NAME=lucid-tor-egress-network
-ARG STRAP_DIR=/opt/lucid/electron_gui
-ARG BUNDLE_DIR=/opt/lucid/bundles
-
-COPY --from=bundle-prep ${BUNDLE_DIR} ${BUNDLE_DIR}
-# LUCID_IMAGE_CONFIG: host-config + container services (runtime)
-
-COPY --from=bundle-prep --chown=65532:65532 /build/common/__init__.py /app/common/__init__.py
-COPY --from=bundle-prep --chown=65532:65532 /build/common/tor/ /app/common/tor/
-COPY --from=bundle-prep --chown=65532:65532 /build/configs/ /build/configs/
-
-COPY --from=bundle-prep ${STRAP_DIR} ${STRAP_DIR}
-COPY --from=bundle-prep /usr/local/bin/lucid-gui-strap /usr/local/bin/lucid-gui-strap
-COPY --from=bundle-prep /bin/bash /bin/bash
-COPY --from=bundle-prep /bin/sh /bin/sh
-COPY --from=bundle-prep /bin/tar /bin/tar
-COPY --from=bundle-prep /bin/gzip /bin/gzip
-COPY --from=bundle-prep /usr/lib/*/libz.so.1 /usr/lib/
-COPY --from=bundle-prep /usr/lib/*/libbz2.so.* /usr/lib/
-COPY --from=bundle-prep /usr/lib/*/liblzma.so.* /usr/lib/
-COPY --from=bundle-prep /usr/lib/*/libzstd.so.* /usr/lib/
-COPY --from=bundle-prep /usr/lib/*/libpthread.so.0 /usr/lib/
-COPY --from=bundle-prep /usr/lib/*/libc.so.6 /usr/lib/
-COPY --from=bundle-prep /usr/lib/*/libtinfo.so.* /usr/lib/
-COPY --from=bundle-prep /usr/lib*/ld-linux-*.so.* /usr/lib64/
-
-LABEL maintainer="Lucid Development Team" \
-      com.lucid.network.internal="${LUCID_INTERNAL_NETWORK_NAME}" \
-      com.lucid.network.tor_egress="${LUCID_TOR_EGRESS_NETWORK_NAME}" \
-      com.lucid.tor.public_egress_ip="${PUBLIC_TOR_IP}" \
-      org.opencontainers.image.title="Lucid Electron GUI Strap" \
-      org.opencontainers.image.description="Distroless Electron GUI bundle for Pi console configuration" \
-      org.opencontainers.image.version="${VERSION}" \
-      org.opencontainers.image.revision="${VCS_REF}" \
-      org.opencontainers.image.created="${BUILD_DATE}" \
-      com.lucid.plane="ops" \
-      com.lucid.service="gui-strap" \
-      com.lucid.layer="3" \
-      org.lucid.layer="3" \
-      com.lucid.platform="arm64" \
-      com.lucid.architecture="linux/arm64" \
-      com.lucid.security="distroless" \
-      com.lucid.vulnerabilities="zero" \
-      com.lucid.expose="0" \
-      com.lucid.cluster="support" \
-      com.lucid.tor.compatible="true" \
-      com.lucid.env.config=".env.foundation" \
-      com.lucid.hostconfig.upstream_api_gateway_host="api-gateway" \
-      com.lucid.hostconfig.upstream_api_gateway_port="8080"
-
-ENV     PUBLIC_TOR_IP="${PUBLIC_TOR_IP}" \
-    LUCID_INTERNAL_NETWORK_NAME="${LUCID_INTERNAL_NETWORK_NAME}" \
-    LUCID_TOR_EGRESS_NETWORK_NAME="${LUCID_TOR_EGRESS_NETWORK_NAME}" \
-    BUNDLE_DIR=${BUNDLE_DIR} \
-    LUCID_API_GATEWAY_HOST="api-gateway" \
-    LUCID_API_GATEWAY_PORT="0" \
-    LUCID_HOST_CONFIG_PATH="/app/configs/host-config.yml" \
-    LUCID_HOST_CONFIG_SERVICE_NAME=gui_strap \
-    LUCID_PLATFORM="arm64" \
-    LUCID_SERVICE_HOST_IP= \
-    LUCID_SERVICE_HTTP_PATH=http://gui-strap:0/app \
-    NODE_ENV="development" \
-    STRAP_DIR=${STRAP_DIR}
-# LUCID_RUNTIME_COPY_FROM_BUILD_BEGIN
-# Generated: same directory set as LUCID_X_FILES_SKELETON (./ under WORKDIR /build).
-COPY --from=strapper --chown=65532:65532 /build/common/ /app/common/
-COPY --from=strapper --chown=65532:65532 /build/node_modules/ /app/node_modules/
-COPY --from=strapper --chown=65532:65532 /build/scripts/ /app/scripts/
-# LUCID_RUNTIME_COPY_FROM_BUILD_END
-
-# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
-# Generated: apt + RUN scaffold (mkdir/printf/touch/chown) -> FHS (not ./ or /build/; lib_search_and_inject.py).
-COPY --from=strapper --chown=65532:65532 /bin/ /app/bin/
-COPY --from=strapper --chown=65532:65532 /usr/bin/ /app/usr/bin/
-# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_END
-
-
-WORKDIR ${STRAP_DIR}
-
-ENTRYPOINT ["/bin/bash", "/usr/local/bin/lucid-gui-strap"]

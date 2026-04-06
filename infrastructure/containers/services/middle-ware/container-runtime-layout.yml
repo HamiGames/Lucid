@@ -1,0 +1,50 @@
+# File: /app/service_configs/middle-ware/container-runtime-layout.yml
+# x-lucid-file-path: /app/service_configs/middle-ware/container-runtime-layout.yml
+# x-lucid-file-directory: /app/service_configs/middle-ware
+# x-lucid-file-type: YAML
+# Lucid alignment: host_registry=infrastructure/containers/host-config.yml (container /app/configs/host-config.yml); path_index=x-files.json section_to_canonical
+
+# =============================================================================
+# Lucid — where files under infrastructure/containers/services/ live at runtime
+#
+# Policy: *.yml, *.yaml, *.json, *.conf in this tree are packaged for containers.
+# Default in-image (or bind-mount target) root:
+#   /app/service_configs/<path relative to this directory>
+#
+# Examples:
+#   logging/fluentd.conf              -> /app/service_configs/logging/fluentd.conf
+#   sessions/api-config.yaml          -> /app/service_configs/sessions/api-config.yaml
+#   service_mesh/consul.json          -> /app/service_configs/service_mesh/consul.json
+#   (consul.json is machine-readable for Consul; do not add non-Consul keys — path is by convention only.)
+#
+# Service hostname, port, static host_ip (repository root service-ip.txt), and http_path template (generated): infrastructure/containers/host-config.yml
+# Payment TRON stack: x-lucid alignment bundle payment_services/payment-services-host-alignment.yml (pairs with docker-compose.payment-internal.yml).
+# Per com.lucid.cluster groups: x_lucid_cluster_calibration/*-cluster-host-alignment.yml (host-config.yml + x-files-listing.txt + x-files.json; regenerate via infrastructure/containers/_gen_x_lucid_cluster_calibration.py).
+# When editing *.yml / *.yaml / *.json / *.conf here, keep Docker DNS service_name and ports consistent with that registry (e.g. lucid-mongodb, lucid-redis, api-gateway).
+#
+# Dockerfiles typically:
+#   COPY infrastructure/containers/services/ /app/service_configs/
+#
+# Compose fragments in this tree may still use HOST paths (e.g. Pi /mnt/...) only for
+# bind-mounting logs, caches, or env files at `docker compose` time; those LHS paths are
+# not the runtime location of this config subtree.
+#
+# Host-side stack entrypoints (repo-relative paths under configs/docker/):
+#   Listed in configs_docker_compose_yml below. Run from configs/docker with e.g.
+#   docker compose -f docker-compose.<stack>.yml up — align service_name / ports with
+#   infrastructure/containers/host-config.yml and this service_configs tree.
+# =============================================================================
+
+lucid_services_config_root: /app/service_configs
+
+# Tor egress Docker bridge: lucid-tor-egress-network (172.31.0.0/16) — create manually per infrastructure/containers/network/network.txt; dual-home tor-proxy in infrastructure/containers/tor/docker-compose.proxy-systems.yml; env keys LUCID_TOR_EGRESS_* and PUBLIC_TOR_IP in configs/environment/.env.master.
+#
+# Docker Compose files under configs/docker/ (orchestration on build/target host; not under lucid_services_config_root unless COPY'd explicitly).
+configs_docker_compose_yml:
+  - configs/docker/docker-compose.all.yml
+  - configs/docker/docker-compose.application.yml
+  - configs/docker/docker-compose.core.yml
+  - configs/docker/docker-compose.foundation.yml
+  - configs/docker/docker-compose.foundation-02.yml
+  - configs/docker/docker-compose.gui-integration.yml
+  - configs/docker/docker-compose.support.yml

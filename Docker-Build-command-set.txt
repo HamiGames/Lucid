@@ -1,0 +1,578 @@
+# pickme/lucid-devcontainer-network-friendly:latest-arm64  service: devcontainer-network-friendly  (infrastructure/containers/.devcontainer/Dockerfile.network-friendly)
+cd /mnt/myssd/Lucid/Lucid && \
+docker builder prune -af && \
+docker build --no-cache --platform linux/arm64 \
+  -f infrastructure/containers/.devcontainer/Dockerfile.network-friendly \
+  -t pickme/lucid-devcontainer-network-friendly:latest-arm64 \
+  .
+# pickme/lucid-devcontainer-simple:latest-arm64  service: devcontainer-simple  (infrastructure/containers/.devcontainer/Dockerfile.simple)
+cd /mnt/myssd/Lucid/Lucid && \
+docker builder prune -af && \
+docker build --no-cache --platform linux/arm64 \
+  -f infrastructure/containers/.devcontainer/Dockerfile.simple \
+  -t pickme/lucid-devcontainer-simple:latest-arm64 \
+  .
+# pickme/lucid-admin-overlord:latest-arm64  service: admin-overlord  (infrastructure/containers/admin/dockerfile.admin-overlord)
+cd /mnt/myssd/Lucid/Lucid && \
+docker builder prune -af && \
+docker build --no-cache --platform linux/arm64 \
+  -f infrastructure/containers/admin/dockerfile.admin-overlord \
+  -t pickme/lucid-admin-overlord:latest-arm64 \
+  .
+# pickme/lucid-admin-system-gateway:latest-arm64  service: admin-system-gateway  (infrastructure/containers/admin/Dockerfile.admin-system-gateway)
+cd /mnt/myssd/Lucid/Lucid && \
+docker builder prune -af && \
+docker build --no-cache --platform linux/arm64 \
+  -f infrastructure/containers/admin/Dockerfile.admin-system-gateway \
+  -t pickme/lucid-admin-system-gateway:latest-arm64 \
+  .
+# pickme/lucid-admin-ui-backend:latest-arm64  service: admin-ui-backend  (infrastructure/containers/admin/Dockerfile.admin-ui-backend)
+cd /mnt/myssd/Lucid/Lucid && \
+docker builder prune -af && \
+docker build --no-cache --platform linux/arm64 \
+  -f infrastructure/containers/admin/Dockerfile.admin-ui-backend \
+  -t pickme/lucid-admin-ui-backend:latest-arm64 \
+  .
+# pickme/lucid-admin-gov-client:latest-arm64  service: admin-governance-client  (infrastructure/containers/admin/Dockerfile.gov-client)
+cd /mnt/myssd/Lucid/Lucid && \
+docker builder prune -af && \
+docker build --no-cache --platform linux/arm64 \
+  -f infrastructure/containers/admin/Dockerfile.gov-client \
+  -t pickme/lucid-admin-gov-client:latest-arm64 \
+  .
+# pickme/lucid-admin-key-rotation:latest-arm64  service: admin-key-rotation  (infrastructure/containers/admin/Dockerfile.key-rotation)
+cd /mnt/myssd/Lucid/Lucid && \
+docker builder prune -af && \
+docker build --no-cache --platform linux/arm64 \
+  -f infrastructure/containers/admin/Dockerfile.key-rotation \
+  -t pickme/lucid-admin-key-rotation:latest-arm64 \
+  .
+# pickme/lucid-admin-params-registry:latest-arm64  service: admin-params-registry  (infrastructure/containers/admin/Dockerfile.params-registry)
+cd /mnt/myssd/Lucid/Lucid && \
+docker builder prune -af && \
+docker build --no-cache --platform linux/arm64 \
+  -f infrastructure/containers/admin/Dockerfile.params-registry \
+  -t pickme/lucid-admin-params-registry:latest-arm64 \
+  .
+# pickme/lucid-auth-service:latest-arm64  service: lucid-auth-service  (infrastructure/containers/auth/Dockerfile.auth-service)
+cd /mnt/myssd/Lucid/Lucid && \
+docker builder prune -af && \
+docker build --no-cache --platform linux/arm64 \
+  -f infrastructure/containers/auth/Dockerfile.auth-service \
+  -t pickme/lucid-auth-service:latest-arm64 \
+  .
+# pickme/lucid-auth-lucid-gov:latest-arm64  service: lucid-gov  (infrastructure/containers/auth/Dockerfile.lucid-gov)
+cd /mnt/myssd/Lucid/Lucid && \
+docker builder prune -af && \
+docker build --no-cache --platform linux/arm64 \
+  -f infrastructure/containers/auth/Dockerfile.lucid-gov \
+  -t pickme/lucid-auth-lucid-gov:latest-arm64 \
+  .
+# pickme/lucid-base:latest-arm64  service: base-runtime  (infrastructure/containers/base/Dockerfile.base)
+cd /mnt/myssd/Lucid/Lucid && \
+docker builder prune -af && \
+docker build --no-cache --platform linux/arm64 \
+  -f infrastructure/containers/base/Dockerfile.base \
+  -t pickme/lucid-base:latest-arm64 \
+  .
+# pickme/lucid-base-java-base:latest-arm64  service: java-base  (infrastructure/containers/base/Dockerfile.java-base)
+cd /mnt/myssd/Lucid/Lucid && \
+docker builder prune -af && \
+docker build --no-cache --platform linux/arm64 \
+  -f infrastructure/containers/base/Dockerfile.java-base \
+  -t pickme/lucid-base-java-base:latest-arm64 \
+  .
+# pickme/lucid-base-python-base:latest-arm64  service: python-base  (infrastructure/containers/base/Dockerfile.python-base)
+cd /mnt/myssd/Lucid/Lucid && \
+docker builder prune -af && \
+docker build --no-cache --platform linux/arm64 \
+  -f infrastructure/containers/base/Dockerfile.python-base \
+  -t pickme/lucid-base-python-base:latest-arm64 \
+  .
+# pickme/lucid-blockchain-block-manager:latest-arm64  service: block-manager  (infrastructure/containers/blockchain/Dockerfile.block-manager)
+cd /mnt/myssd/Lucid/Lucid && \
+docker builder prune -af && \
+docker build --no-cache --platform linux/arm64 \
+  -f infrastructure/containers/blockchain/Dockerfile.block-manager \
+  -t pickme/lucid-blockchain-block-manager:latest-arm64 \
+  .
+# pickme/lucid-blockchain-chain-to-pay:latest-arm64  service: chain-to-pay  (infrastructure/containers/blockchain/Dockerfile.chain-to-pay)
+cd /mnt/myssd/Lucid/Lucid && \
+docker builder prune -af && \
+docker build --no-cache --platform linux/arm64 \
+  -f infrastructure/containers/blockchain/Dockerfile.chain-to-pay \
+  -t pickme/lucid-blockchain-chain-to-pay:latest-arm64 \
+  .
+# pickme/lucid-blockchain-consensus-engine:latest-arm64  service: consensus-engine  (infrastructure/containers/blockchain/Dockerfile.consensus-engine)
+cd /mnt/myssd/Lucid/Lucid && \
+docker builder prune -af && \
+docker build --no-cache --platform linux/arm64 \
+  -f infrastructure/containers/blockchain/Dockerfile.consensus-engine \
+  -t pickme/lucid-blockchain-consensus-engine:latest-arm64 \
+  .
+# pickme/lucid-blockchain-data:latest-arm64  service: data-chain  (infrastructure/containers/blockchain/Dockerfile.data)
+cd /mnt/myssd/Lucid/Lucid && \
+docker builder prune -af && \
+docker build --no-cache --platform linux/arm64 \
+  -f infrastructure/containers/blockchain/Dockerfile.data \
+  -t pickme/lucid-blockchain-data:latest-arm64 \
+  .
+# pickme/lucid-blockchain-engine:latest-arm64  service: blockchain-engine  (infrastructure/containers/blockchain/Dockerfile.engine)
+cd /mnt/myssd/Lucid/Lucid && \
+docker builder prune -af && \
+docker build --no-cache --platform linux/arm64 \
+  -f infrastructure/containers/blockchain/Dockerfile.engine \
+  -t pickme/lucid-blockchain-engine:latest-arm64 \
+  .
+# pickme/lucid-database-database:latest-arm64  service: mongodb-monitoring  (infrastructure/containers/database/Dockerfile.database)
+cd /mnt/myssd/Lucid/Lucid && \
+docker builder prune -af && \
+docker build --no-cache --platform linux/arm64 \
+  -f infrastructure/containers/database/Dockerfile.database \
+  -t pickme/lucid-database-database:latest-arm64 \
+  .
+# pickme/lucid-database-overlord:latest-arm64  service: database-overlord  (infrastructure/containers/database/Dockerfile.database-overlord)
+cd /mnt/myssd/Lucid/Lucid && \
+docker builder prune -af && \
+docker build --no-cache --platform linux/arm64 \
+  -f infrastructure/containers/database/Dockerfile.database-overlord \
+  -t pickme/lucid-database-overlord:latest-arm64 \
+  .
+# pickme/lucid-database-elasticsearch:latest-arm64  service: lucid-elasticsearch  (infrastructure/containers/database/Dockerfile.elasticsearch)
+cd /mnt/myssd/Lucid/Lucid && \
+docker builder prune -af && \
+docker build --no-cache --platform linux/arm64 \
+  -f infrastructure/containers/database/Dockerfile.elasticsearch \
+  -t pickme/lucid-database-elasticsearch:latest-arm64 \
+  .
+# pickme/lucid-database-mongodb:latest-arm64  service: lucid-mongodb  (infrastructure/containers/database/Dockerfile.mongodb)
+cd /mnt/myssd/Lucid/Lucid && \
+docker builder prune -af && \
+docker build --no-cache --platform linux/arm64 \
+  -f infrastructure/containers/database/Dockerfile.mongodb \
+  -t pickme/lucid-database-mongodb:latest-arm64 \
+  .
+# pickme/lucid-database-redis:latest-arm64  service: lucid-redis  (infrastructure/containers/database/Dockerfile.redis)
+cd /mnt/myssd/Lucid/Lucid && \
+docker builder prune -af && \
+docker build --no-cache --platform linux/arm64 \
+  -f infrastructure/containers/database/Dockerfile.redis \
+  -t pickme/lucid-database-redis:latest-arm64 \
+  .
+# pickme/lucid-electron_gui-admin:latest-arm64  service: admin-interface  (infrastructure/containers/electron_gui/Dockerfile.admin)
+cd /mnt/myssd/Lucid/Lucid && \
+docker builder prune -af && \
+docker build --no-cache --platform linux/arm64 \
+  -f infrastructure/containers/electron_gui/Dockerfile.admin \
+  -t pickme/lucid-electron_gui-admin:latest-arm64 \
+  .
+# pickme/lucid-electron_gui-node:latest-arm64  service: electron-gui-node  (infrastructure/containers/electron_gui/Dockerfile.node)
+cd /mnt/myssd/Lucid/Lucid && \
+docker builder prune -af && \
+docker build --no-cache --platform linux/arm64 \
+  -f infrastructure/containers/electron_gui/Dockerfile.node \
+  -t pickme/lucid-electron_gui-node:latest-arm64 \
+  .
+# pickme/lucid-electron_gui-user:latest-arm64  service: electron-gui-user  (infrastructure/containers/electron_gui/Dockerfile.user)
+cd /mnt/myssd/Lucid/Lucid && \
+docker builder prune -af && \
+docker build --no-cache --platform linux/arm64 \
+  -f infrastructure/containers/electron_gui/Dockerfile.user \
+  -t pickme/lucid-electron_gui-user:latest-arm64 \
+  .
+# pickme/lucid-gui-api-bridge:latest-arm64  service: gui-api-bridge  (infrastructure/containers/gui/Dockerfile.gui-api-bridge)
+cd /mnt/myssd/Lucid/Lucid && \
+docker builder prune -af && \
+docker build --no-cache --platform linux/arm64 \
+  -f infrastructure/containers/gui/Dockerfile.gui-api-bridge \
+  -t pickme/lucid-gui-api-bridge:latest-arm64 \
+  .
+# pickme/lucid-gui-docker-manager:latest-arm64  service: gui-docker-manager  (infrastructure/containers/gui/Dockerfile.gui-docker-manager)
+cd /mnt/myssd/Lucid/Lucid && \
+docker builder prune -af && \
+docker build --no-cache --platform linux/arm64 \
+  -f infrastructure/containers/gui/Dockerfile.gui-docker-manager \
+  -t pickme/lucid-gui-docker-manager:latest-arm64 \
+  .
+# pickme/lucid-gui-hardware-manager:latest-arm64  service: gui-hardware-manager  (infrastructure/containers/gui/Dockerfile.gui-hardware-manager)
+cd /mnt/myssd/Lucid/Lucid && \
+docker builder prune -af && \
+docker build --no-cache --platform linux/arm64 \
+  -f infrastructure/containers/gui/Dockerfile.gui-hardware-manager \
+  -t pickme/lucid-gui-hardware-manager:latest-arm64 \
+  .
+# pickme/lucid-gui-tor-manager:latest-arm64  service: gui-tor-manager  (infrastructure/containers/gui/Dockerfile.gui-tor-manager)
+cd /mnt/myssd/Lucid/Lucid && \
+docker builder prune -af && \
+docker build --no-cache --platform linux/arm64 \
+  -f infrastructure/containers/gui/Dockerfile.gui-tor-manager \
+  -t pickme/lucid-gui-tor-manager:latest-arm64 \
+  .
+# pickme/lucid-node-gov:latest-arm64  service: node-gov  (infrastructure/containers/node/Dockerfile.node-gov)
+cd /mnt/myssd/Lucid/Lucid && \
+docker builder prune -af && \
+docker build --no-cache --platform linux/arm64 \
+  -f infrastructure/containers/node/Dockerfile.node-gov \
+  -t pickme/lucid-node-gov:latest-arm64 \
+  .
+# pickme/lucid-node-management:latest-arm64  service: node-management  (infrastructure/containers/node/Dockerfile.node-management)
+cd /mnt/myssd/Lucid/Lucid && \
+docker builder prune -af && \
+docker build --no-cache --platform linux/arm64 \
+  -f infrastructure/containers/node/Dockerfile.node-management \
+  -t pickme/lucid-node-management:latest-arm64 \
+  .
+# pickme/lucid-node-overlord:latest-arm64  service: node-overlord  (infrastructure/containers/node/Dockerfile.node-overlord)
+cd /mnt/myssd/Lucid/Lucid && \
+docker builder prune -af && \
+docker build --no-cache --platform linux/arm64 \
+  -f infrastructure/containers/node/Dockerfile.node-overlord \
+  -t pickme/lucid-node-overlord:latest-arm64 \
+  .
+# pickme/lucid-node-registry:latest-arm64  service: node-registry  (infrastructure/containers/node/Dockerfile.node-registry)
+cd /mnt/myssd/Lucid/Lucid && \
+docker builder prune -af && \
+docker build --no-cache --platform linux/arm64 \
+  -f infrastructure/containers/node/Dockerfile.node-registry \
+  -t pickme/lucid-node-registry:latest-arm64 \
+  .
+# pickme/lucid-node-system-gateway:latest-arm64  service: node-system-gateway  (infrastructure/containers/node/Dockerfile.node-system-gateway)
+cd /mnt/myssd/Lucid/Lucid && \
+docker builder prune -af && \
+docker build --no-cache --platform linux/arm64 \
+  -f infrastructure/containers/node/Dockerfile.node-system-gateway \
+  -t pickme/lucid-node-system-gateway:latest-arm64 \
+  .
+# pickme/lucid-node-utils:latest-arm64  service: node-utils  (infrastructure/containers/node/Dockerfile.node-utils)
+cd /mnt/myssd/Lucid/Lucid && \
+docker builder prune -af && \
+docker build --no-cache --platform linux/arm64 \
+  -f infrastructure/containers/node/Dockerfile.node-utils \
+  -t pickme/lucid-node-utils:latest-arm64 \
+  .
+# pickme/lucid-node-worker:latest-arm64  service: node-worker  (infrastructure/containers/node/Dockerfile.node-worker)
+cd /mnt/myssd/Lucid/Lucid && \
+docker builder prune -af && \
+docker build --no-cache --platform linux/arm64 \
+  -f infrastructure/containers/node/Dockerfile.node-worker \
+  -t pickme/lucid-node-worker:latest-arm64 \
+  .
+# pickme/lucid-on-system-chain-client:latest-arm64  service: on-system-chain-client  (infrastructure/containers/payment_systems/Dockerfile.on-system-chain-client)
+cd /mnt/myssd/Lucid/Lucid && \
+docker builder prune -af && \
+docker build --no-cache --platform linux/arm64 \
+  -f infrastructure/containers/payment_systems/Dockerfile.on-system-chain-client \
+  -t pickme/lucid-on-system-chain-client:latest-arm64 \
+  .
+# pickme/lucid-payment-gateway:latest-arm64  service: payment-system-gateway  (infrastructure/containers/payment_systems/Dockerfile.payment-gateway)
+cd /mnt/myssd/Lucid/Lucid && \
+docker builder prune -af && \
+docker build --no-cache --platform linux/arm64 \
+  -f infrastructure/containers/payment_systems/Dockerfile.payment-gateway \
+  -t pickme/lucid-payment-gateway:latest-arm64 \
+  .
+# pickme/lucid-tron-node-client:latest-arm64  service: tron-node-client  (infrastructure/containers/payment_systems/Dockerfile.tron-node-client)
+cd /mnt/myssd/Lucid/Lucid && \
+docker builder prune -af && \
+docker build --no-cache --platform linux/arm64 \
+  -f infrastructure/containers/payment_systems/Dockerfile.tron-node-client \
+  -t pickme/lucid-tron-node-client:latest-arm64 \
+  .
+# pickme/lucid-tron-payment-service:latest-arm64  service: tron-payment-service  (infrastructure/containers/payment_systems/Dockerfile.tron-payment-service)
+cd /mnt/myssd/Lucid/Lucid && \
+docker builder prune -af && \
+docker build --no-cache --platform linux/arm64 \
+  -f infrastructure/containers/payment_systems/Dockerfile.tron-payment-service \
+  -t pickme/lucid-tron-payment-service:latest-arm64 \
+  .
+# pickme/lucid-wallet:latest-arm64  service: wallet-manager  (infrastructure/containers/payment_systems/Dockerfile.wallet)
+cd /mnt/myssd/Lucid/Lucid && \
+docker builder prune -af && \
+docker build --no-cache --platform linux/arm64 \
+  -f infrastructure/containers/payment_systems/Dockerfile.wallet \
+  -t pickme/lucid-wallet:latest-arm64 \
+  .
+# pickme/lucid-rdp-rdp-controller:latest-arm64  service: rdp-controller  (infrastructure/containers/rdp/Dockerfile.rdp-controller)
+cd /mnt/myssd/Lucid/Lucid && \
+docker builder prune -af && \
+docker build --no-cache --platform linux/arm64 \
+  -f infrastructure/containers/rdp/Dockerfile.rdp-controller \
+  -t pickme/lucid-rdp-rdp-controller:latest-arm64 \
+  .
+# pickme/lucid-server-default:latest-arm64  service: lucid-server-core  (infrastructure/containers/server/Dockerfile)
+cd /mnt/myssd/Lucid/Lucid && \
+docker builder prune -af && \
+docker build --no-cache --platform linux/arm64 \
+  -f infrastructure/containers/server/Dockerfile \
+  -t pickme/lucid-server-default:latest-arm64 \
+  .
+# pickme/lucid-server-rdp-server-manager:latest-arm64  service: lucid-rdp-server-manager  (infrastructure/containers/server/Dockerfile.rdp-server-manager)
+cd /mnt/myssd/Lucid/Lucid && \
+docker builder prune -af && \
+docker build --no-cache --platform linux/arm64 \
+  -f infrastructure/containers/server/Dockerfile.rdp-server-manager \
+  -t pickme/lucid-server-rdp-server-manager:latest-arm64 \
+  .
+# pickme/lucid-server-gateway:latest-arm64  service: server-gateway  (infrastructure/containers/server/Dockerfile.server-gateway)
+cd /mnt/myssd/Lucid/Lucid && \
+docker builder prune -af && \
+docker build --no-cache --platform linux/arm64 \
+  -f infrastructure/containers/server/Dockerfile.server-gateway \
+  -t pickme/lucid-server-gateway:latest-arm64 \
+  .
+# pickme/lucid-server-manager:latest-arm64  service: lucid-server-manager  (infrastructure/containers/server/Dockerfile.server-manager)
+cd /mnt/myssd/Lucid/Lucid && \
+docker builder prune -af && \
+docker build --no-cache --platform linux/arm64 \
+  -f infrastructure/containers/server/Dockerfile.server-manager \
+  -t pickme/lucid-server-manager:latest-arm64 \
+  .
+# pickme/lucid-server-service-mesh-controller:latest-arm64  service: lucid-service-mesh-controller  (infrastructure/containers/server/Dockerfile.service-mesh-controller)
+cd /mnt/myssd/Lucid/Lucid && \
+docker builder prune -af && \
+docker build --no-cache --platform linux/arm64 \
+  -f infrastructure/containers/server/Dockerfile.service-mesh-controller \
+  -t pickme/lucid-server-service-mesh-controller:latest-arm64 \
+  .
+# pickme/lucid-sessions-anchoring:latest-arm64  service: session-anchoring  (infrastructure/containers/sessions/Dockerfile.anchoring)
+cd /mnt/myssd/Lucid/Lucid && \
+docker builder prune -af && \
+docker build --no-cache --platform linux/arm64 \
+  -f infrastructure/containers/sessions/Dockerfile.anchoring \
+  -t pickme/lucid-sessions-anchoring:latest-arm64 \
+  .
+# pickme/lucid-sessions-api:latest-arm64  service: session-api  (infrastructure/containers/sessions/Dockerfile.api)
+cd /mnt/myssd/Lucid/Lucid && \
+docker builder prune -af && \
+docker build --no-cache --platform linux/arm64 \
+  -f infrastructure/containers/sessions/Dockerfile.api \
+  -t pickme/lucid-sessions-api:latest-arm64 \
+  .
+# pickme/lucid-sessions-chunk-processor:latest-arm64  service: session-chunk-processor  (infrastructure/containers/sessions/Dockerfile.chunk-processor)
+cd /mnt/myssd/Lucid/Lucid && \
+docker builder prune -af && \
+docker build --no-cache --platform linux/arm64 \
+  -f infrastructure/containers/sessions/Dockerfile.chunk-processor \
+  -t pickme/lucid-sessions-chunk-processor:latest-arm64 \
+  .
+# pickme/lucid-sessions-merkle-tree-builder:latest-arm64  service: merkle-tree-builder  (infrastructure/containers/sessions/Dockerfile.merkle-tree-builder)
+cd /mnt/myssd/Lucid/Lucid && \
+docker builder prune -af && \
+docker build --no-cache --platform linux/arm64 \
+  -f infrastructure/containers/sessions/Dockerfile.merkle-tree-builder \
+  -t pickme/lucid-sessions-merkle-tree-builder:latest-arm64 \
+  .
+# pickme/lucid-sessions-overlord:latest-arm64  service: session-overlord  (infrastructure/containers/sessions/Dockerfile.session-overlord)
+cd /mnt/myssd/Lucid/Lucid && \
+docker builder prune -af && \
+docker build --no-cache --platform linux/arm64 \
+  -f infrastructure/containers/sessions/Dockerfile.session-overlord \
+  -t pickme/lucid-sessions-overlord:latest-arm64 \
+  .
+# pickme/lucid-sessions-pipeline:latest-arm64  service: session-pipeline  (infrastructure/containers/sessions/Dockerfile.session-pipeline)
+cd /mnt/myssd/Lucid/Lucid && \
+docker builder prune -af && \
+docker build --no-cache --platform linux/arm64 \
+  -f infrastructure/containers/sessions/Dockerfile.session-pipeline \
+  -t pickme/lucid-sessions-pipeline:latest-arm64 \
+  .
+# pickme/lucid-sessions-pipeline-manager:latest-arm64  service: session-pipeline-manager  (infrastructure/containers/sessions/Dockerfile.session-pipeline-manager)
+cd /mnt/myssd/Lucid/Lucid && \
+docker builder prune -af && \
+docker build --no-cache --platform linux/arm64 \
+  -f infrastructure/containers/sessions/Dockerfile.session-pipeline-manager \
+  -t pickme/lucid-sessions-pipeline-manager:latest-arm64 \
+  .
+# pickme/lucid-sessions-storage-service:latest-arm64  service: session-storage-service  (infrastructure/containers/sessions/Dockerfile.session-storage-service)
+cd /mnt/myssd/Lucid/Lucid && \
+docker builder prune -af && \
+docker build --no-cache --platform linux/arm64 \
+  -f infrastructure/containers/sessions/Dockerfile.session-storage-service \
+  -t pickme/lucid-sessions-storage-service:latest-arm64 \
+  .
+# pickme/lucid-sessions-systems-control:latest-arm64  service: session-system-control  (infrastructure/containers/sessions/Dockerfile.session-systems-control)
+cd /mnt/myssd/Lucid/Lucid && \
+docker builder prune -af && \
+docker build --no-cache --platform linux/arm64 \
+  -f infrastructure/containers/sessions/Dockerfile.session-systems-control \
+  -t pickme/lucid-sessions-systems-control:latest-arm64 \
+  .
+# pickme/lucid-elasticsearch:latest-arm64  service: elasticsearch-storage  (infrastructure/containers/storage/Dockerfile.elasticsearch)
+cd /mnt/myssd/Lucid/Lucid && \
+docker builder prune -af && \
+docker build --no-cache --platform linux/arm64 \
+  -f infrastructure/containers/storage/Dockerfile.elasticsearch \
+  -t pickme/lucid-elasticsearch:latest-arm64 \
+  .
+# pickme/lucid-mongodb:latest-arm64  service: lucid-mongodb  (infrastructure/containers/storage/Dockerfile.mongodb)
+cd /mnt/myssd/Lucid/Lucid && \
+docker builder prune -af && \
+docker build --no-cache --platform linux/arm64 \
+  -f infrastructure/containers/storage/Dockerfile.mongodb \
+  -t pickme/lucid-mongodb:latest-arm64 \
+  .
+# pickme/lucid-storage-redis:latest-arm64  service: lucid-redis-storage  (infrastructure/containers/storage/Dockerfile.redis)
+cd /mnt/myssd/Lucid/Lucid && \
+docker builder prune -af && \
+docker build --no-cache --platform linux/arm64 \
+  -f infrastructure/containers/storage/Dockerfile.redis \
+  -t pickme/lucid-storage-redis:latest-arm64 \
+  .
+# pickme/lucid-storage-service:latest-arm64  service: lucid-system-storage  (infrastructure/containers/storage/Dockerfile.storage)
+cd /mnt/myssd/Lucid/Lucid && \
+docker builder prune -af && \
+docker build --no-cache --platform linux/arm64 \
+  -f infrastructure/containers/storage/Dockerfile.storage \
+  -t pickme/lucid-storage-service:latest-arm64 \
+  .
+
+**TOR PROXY**
+# pickme/lucid-proxy-02:latest-arm64  service: tor-socks  (infrastructure/containers/tor/Dockerfile.tor-proxy-02)
+cd /mnt/myssd/Lucid/Lucid && \
+docker builder prune -af && \
+docker build --no-cache --platform linux/arm64 \
+  -f infrastructure/containers/tor/Dockerfile.tor-proxy-02 \
+  -t pickme/lucid-proxy-02:latest-arm64 \
+  .
+# pickme/lucid-tunnels-tools:latest-arm64  service: tunnel-tools  (infrastructure/containers/tor/Dockerfile.tunnels)
+cd /mnt/myssd/Lucid/Lucid && \
+docker builder prune -af && \
+docker build --no-cache --platform linux/arm64 \
+  -f infrastructure/containers/tor/Dockerfile.tunnels \
+  -t pickme/lucid-tunnels-tools:latest-arm64 \
+  .
+# pickme/lucid-user-default:latest-arm64  service: api-gateway  (infrastructure/containers/user/Dockerfile)
+cd /mnt/myssd/Lucid/Lucid && \
+docker builder prune -af && \
+docker build --no-cache --platform linux/arm64 \
+  -f infrastructure/containers/user/Dockerfile \
+  -t pickme/lucid-user-default:latest-arm64 \
+  .
+# pickme/lucid-vm-services:latest-arm64  service: vm-service  (infrastructure/containers/vm/Dockerfile.vm)
+cd /mnt/myssd/Lucid/Lucid && \
+docker builder prune -af && \
+docker build --no-cache --platform linux/arm64 \
+  -f infrastructure/containers/vm/Dockerfile.vm \
+  -t pickme/lucid-vm-services:latest-arm64 \
+  .
+
+# pickme/lucid-docker-common-default:latest-arm64  service: server-common  (infrastructure/docker/common/Dockerfile)
+cd /mnt/myssd/Lucid/Lucid && \
+docker builder prune -af && \
+docker build --no-cache --platform linux/arm64 \
+  -f infrastructure/docker/common/Dockerfile \
+  -t pickme/lucid-docker-common-default:latest-arm64 \
+  .
+# pickme/lucid-docker-common:latest-arm64  service: common  (infrastructure/docker/common/Dockerfile.common)
+cd /mnt/myssd/Lucid/Lucid && \
+docker builder prune -af && \
+docker build --no-cache --platform linux/arm64 \
+  -f infrastructure/docker/common/Dockerfile.common \
+  -t pickme/lucid-docker-common:latest-arm64 \
+  .
+# pickme/lucid-docker-common-lucid-governor:latest-arm64  service: lucid-gov  (infrastructure/docker/common/Dockerfile.lucid-governor)
+cd /mnt/myssd/Lucid/Lucid && \
+docker builder prune -af && \
+docker build --no-cache --platform linux/arm64 \
+  -f infrastructure/docker/common/Dockerfile.lucid-governor \
+  -t pickme/lucid-docker-common-lucid-governor:latest-arm64 \
+  .
+# pickme/lucid-docker-common-timelock:latest-arm64  service: timelock  (infrastructure/docker/common/Dockerfile.timelock)
+cd /mnt/myssd/Lucid/Lucid && \
+docker builder prune -af && \
+docker build --no-cache --platform linux/arm64 \
+  -f infrastructure/docker/common/Dockerfile.timelock \
+  -t pickme/lucid-docker-common-timelock:latest-arm64 \
+  .
+# pickme/lucid-docker-databases-backup:latest-arm64  service: database-backup  (infrastructure/docker/databases/Dockerfile.database-backup)
+cd /mnt/myssd/Lucid/Lucid && \
+docker builder prune -af && \
+docker build --no-cache --platform linux/arm64 \
+  -f infrastructure/docker/databases/Dockerfile.database-backup \
+  -t pickme/lucid-docker-databases-backup:latest-arm64 \
+  .
+# pickme/lucid-docker-databases-monitoring:latest-arm64  service: database-monitoring  (infrastructure/docker/databases/Dockerfile.database-monitoring)
+cd /mnt/myssd/Lucid/Lucid && \
+docker builder prune -af && \
+docker build --no-cache --platform linux/arm64 \
+  -f infrastructure/docker/databases/Dockerfile.database-monitoring \
+  -t pickme/lucid-docker-databases-monitoring:latest-arm64 \
+  .
+# pickme/lucid-docker-distroless-base:latest-arm64  service: base  (infrastructure/docker/distroless/base/Dockerfile.base)
+cd /mnt/myssd/Lucid/Lucid && \
+docker builder prune -af && \
+docker build --no-cache --platform linux/arm64 \
+  -f infrastructure/docker/distroless/base/Dockerfile.base \
+  -t pickme/lucid-docker-distroless-base:latest-arm64 \
+  .
+# pickme/lucid-docker-distroless-gui:latest-arm64  service: gui-strap  (infrastructure/docker/distroless/gui/Dockerfile.gui)
+cd /mnt/myssd/Lucid/Lucid && \
+docker builder prune -af && \
+docker build --no-cache --platform linux/arm64 \
+  -f infrastructure/docker/distroless/gui/Dockerfile.gui \
+  -t pickme/lucid-docker-distroless-gui:latest-arm64 \
+  .
+# pickme/lucid-docker-distroless-rdp:latest-arm64  service: rdp  (infrastructure/docker/distroless/rdp/Dockerfile.rdp)
+cd /mnt/myssd/Lucid/Lucid && \
+docker builder prune -af && \
+docker build --no-cache --platform linux/arm64 \
+  -f infrastructure/docker/distroless/rdp/Dockerfile.rdp \
+  -t pickme/lucid-docker-distroless-rdp:latest-arm64 \
+  .
+# pickme/lucid-docker-multi-stage-vm:latest-arm64  service: vm-manager  (infrastructure/docker/multi-stage/Dockerfile.vm)
+cd /mnt/myssd/Lucid/Lucid && \
+docker builder prune -af && \
+docker build --no-cache --platform linux/arm64 \
+  -f infrastructure/docker/multi-stage/Dockerfile.vm \
+  -t pickme/lucid-docker-multi-stage-vm:latest-arm64 \
+  .
+# pickme/lucid-docker-tron-client:latest-arm64  service: tron-node-client  (infrastructure/docker/payment-systems/Dockerfile.tron-client)
+cd /mnt/myssd/Lucid/Lucid && \
+docker builder prune -af && \
+docker build --no-cache --platform linux/arm64 \
+  -f infrastructure/docker/payment-systems/Dockerfile.tron-client \
+  -t pickme/lucid-docker-tron-client:latest-arm64 \
+  .
+# pickme/lucid-docker-vm-manager:latest-arm64  service: vm-manager  (infrastructure/docker/vm/Dockerfile.vm-manager)
+cd /mnt/myssd/Lucid/Lucid && \
+docker builder prune -af && \
+docker build --no-cache --platform linux/arm64 \
+  -f infrastructure/docker/vm/Dockerfile.vm-manager \
+  -t pickme/lucid-docker-vm-manager:latest-arm64 \
+  .
+# pickme/lucid-docker-vm-orchestrator:latest-arm64  service: vm-orchestrator  (infrastructure/docker/vm/Dockerfile.vm-orchestrator)
+cd /mnt/myssd/Lucid/Lucid && \
+docker builder prune -af && \
+docker build --no-cache --platform linux/arm64 \
+  -f infrastructure/docker/vm/Dockerfile.vm-orchestrator \
+  -t pickme/lucid-docker-vm-orchestrator:latest-arm64 \
+  .
+# pickme/lucid-docker-vm-resource-monitor:latest-arm64  service: vm-resource-monitor  (infrastructure/docker/vm/Dockerfile.vm-resource-monitor)
+cd /mnt/myssd/Lucid/Lucid && \
+docker builder prune -af && \
+docker build --no-cache --platform linux/arm64 \
+  -f infrastructure/docker/vm/Dockerfile.vm-resource-monitor \
+  -t pickme/lucid-docker-vm-resource-monitor:latest-arm64 \
+  .
+# pickme/lucid-wallet-key-rotation:latest-arm64  service: wallet-key-rotation  (infrastructure/docker/wallet/Dockerfile.key-rotation)
+cd /mnt/myssd/Lucid/Lucid && \
+docker builder prune -af && \
+docker build --no-cache --platform linux/arm64 \
+  -f infrastructure/docker/wallet/Dockerfile.key-rotation \
+  -t pickme/lucid-wallet-key-rotation:latest-arm64 \
+  .
+# pickme/lucid-wallet-role-manager:latest-arm64  service: role-manager  (infrastructure/docker/wallet/Dockerfile.role-manager)
+cd /mnt/myssd/Lucid/Lucid && \
+docker builder prune -af && \
+docker build --no-cache --platform linux/arm64 \
+  -f infrastructure/docker/wallet/Dockerfile.role-manager \
+  -t pickme/lucid-wallet-role-manager:latest-arm64 \
+  .
+# pickme/lucid-wallet-software-vault:latest-arm64  service: software-vault  (infrastructure/docker/wallet/Dockerfile.software-vault)
+cd /mnt/myssd/Lucid/Lucid && \
+docker builder prune -af && \
+docker build --no-cache --platform linux/arm64 \
+  -f infrastructure/docker/wallet/Dockerfile.software-vault \
+  -t pickme/lucid-wallet-software-vault:latest-arm64 \
+  .
+

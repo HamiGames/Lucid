@@ -1,0 +1,40 @@
+# File: /app/service_configs/server/server-gateway.yml
+# x-lucid-file-path: /app/service_configs/server/server-gateway.yml
+# x-lucid-file-directory: /app/service_configs/server
+# x-lucid-file-type: YAML
+# Lucid alignment: host_registry=infrastructure/containers/host-config.yml (container /app/configs/host-config.yml); path_index=x-files.json section_to_canonical
+#
+# compose_service=server-gateway; YAML/JSON/Python lists from alignment manifest (list_service_files_by_name.py).
+
+version: '1.0'
+description: >
+  Conventional service bundle index for server-gateway. Refs below mirror the alignment
+  manifest for this compose service. Cross-check infrastructure/containers/host-config.yml and x-files.json.
+
+x-lucid-calibration:
+  source_host_config: infrastructure/containers/host-config.yml
+  source_x_files: x-files.json
+  bundle_repo_path: infrastructure/containers/services/server/server-gateway.yml
+  bundle_container_path: /app/service_configs/server/server-gateway.yml
+  alignment_manifest_tool: scripts/gui_auth_realignment/list_service_files_by_name.py
+
+compose_service: "server-gateway"
+associated_needles:
+  - "server-gateway"
+  - "server_gateway"
+
+manifest_alignment:
+  yml_refs:
+    - "configs/container/server/docker-compose.server-external.yml"
+    - "infrastructure/containers/host-config.yml"
+    - "infrastructure/containers/server/docker-compose.server-external.yml"
+    - "infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.yml"
+    - "infrastructure/containers/user/docker-compose.user-services.yml"
+  json_refs:
+    - "infrastructure/containers/config-listings.json"
+    - "infrastructure/containers/dockerfile_layout_run_report.json"
+    - "infrastructure/containers/dockerfile_recalibration_map.json"
+    - "infrastructure/containers/dockerfile_recalibration_map_REPAIRED.json"
+    - "infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.json"
+  py_refs:
+    - "common/load_host_config.py"

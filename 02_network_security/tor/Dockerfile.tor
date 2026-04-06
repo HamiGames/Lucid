@@ -3,8 +3,8 @@
 # Build Context: project root (same as tunnel-tools)
 # syntax=docker/dockerfile:1.5
 
-ARG BUILD_DATE
-ARG VCS_REF
+ARG BUILD_DATE=
+ARG VCS_REF=
 ARG VERSION=2.0.0
 ARG TARGETPLATFORM=linux/arm64
 ARG BUILDPLATFORM=linux/amd64
@@ -50,33 +50,33 @@ WORKDIR /build
 # /run itself is NOT touched — the distroless base owns it as root:root 755.
 # Only /run/lucid/* subdirs are created here and copied into the runtime stage.
 # /app/tor is the container application root (WORKDIR in runtime stage).
-RUN install -d -o debian-tor -g debian-tor -m 700 /var/lib/tor            \
- && install -d -o debian-tor -g debian-tor -m 755 /run/lucid              \
- && install -d -o debian-tor -g debian-tor -m 755 /run/lucid/onion        \
- && install -d -o debian-tor -g debian-tor -m 700 /run/lucid/tor          \
+RUN install -d -o debian-tor -g debian-tor -m 700 /app/var/lib/tor            \
+ && install -d -o debian-tor -g debian-tor -m 755 /app/run/lucid              \
+ && install -d -o debian-tor -g debian-tor -m 755 /app/run/lucid/onion        \
+ && install -d -o debian-tor -g debian-tor -m 700 /app/run/lucid/tor          \
  && install -d -o debian-tor -g debian-tor -m 700 /tmp/lucid/tor          \
  && install -d -o root       -g root       -m 755 /usr/local/bin          \
  && install -d -o root       -g root       -m 755 /etc/tor                \
  && install -d -o root       -g root       -m 755 /etc/tor/tunnels        \
  && install -d -o root       -g root       -m 755 /tmp/lucid/tor/tunnels  \
  && install -d -o debian-tor -g debian-tor -m 755 /app/tor \
- && install -d -o root       -g root       -m 755 /run/lucid/tor/lucid_admin \
+ && install -d -o root       -g root       -m 755 /app/run/lucid/tor/lucid_admin \
  && install -d -o root       -g root       -m 755 /tmp/lucid/tor/lucid_admin \
- && install -d -o root       -g root       -m 755 /run/lucid/tor/lucid_vm \
- && install -d -o root       -g root       -m 755 /run/lucid/tor/lucid_node \
- && install -d -o root       -g root       -m 755 /run/lucid/tor/lucid_blockchain \
- && install -d -o root       -g root       -m 755 /run/lucid/tor/lucid_governance \
- && install -d -o root       -g root       -m 755 /run/lucid/tor/lucid_payment \
- && install -d -o root       -g root       -m 755 /run/lucid/tor/lucid_session \
- && install -d -o root       -g root       -m 755 /run/lucid/tor/lucid_rdp \
- && install -d -o root       -g root       -m 755 /run/lucid/tor/lucid_wallet \
- && install -d -o root       -g root       -m 755 /run/lucid/tor/lucid_voting \
- && install -d -o root       -g root       -m 755 /run/lucid/tor/lucid_voting_system \
- && install -d -o root       -g root       -m 755 /run/lucid/tor/lucid_voting_system_admin \
- && install -d -o root       -g root       -m 755 /run/lucid/tor/lucid_voting_system_admin_admin \
- && install -d -o root       -g root       -m 755 /run/lucid/tor/lucid_server \
- && install -d -o root       -g root       -m 755 /run/lucid/tor/myservice \
- && install -d -o root       -g root       -m 755 /run/lucid/tor/lucid_portal
+ && install -d -o root       -g root       -m 755 /app/run/lucid/tor/lucid_vm \
+ && install -d -o root       -g root       -m 755 /app/run/lucid/tor/lucid_node \
+ && install -d -o root       -g root       -m 755 /app/run/lucid/tor/lucid_blockchain \
+ && install -d -o root       -g root       -m 755 /app/run/lucid/tor/lucid_governance \
+ && install -d -o root       -g root       -m 755 /app/run/lucid/tor/lucid_payment \
+ && install -d -o root       -g root       -m 755 /app/run/lucid/tor/lucid_session \
+ && install -d -o root       -g root       -m 755 /app/run/lucid/tor/lucid_rdp \
+ && install -d -o root       -g root       -m 755 /app/run/lucid/tor/lucid_wallet \
+ && install -d -o root       -g root       -m 755 /app/run/lucid/tor/lucid_voting \
+ && install -d -o root       -g root       -m 755 /app/run/lucid/tor/lucid_voting_system \
+ && install -d -o root       -g root       -m 755 /app/run/lucid/tor/lucid_voting_system_admin \
+ && install -d -o root       -g root       -m 755 /app/run/lucid/tor/lucid_voting_system_admin_admin \
+ && install -d -o root       -g root       -m 755 /app/run/lucid/tor/lucid_server \
+ && install -d -o root       -g root       -m 755 /app/run/lucid/tor/myservice \
+ && install -d -o root       -g root       -m 755 /app/run/lucid/tor/lucid_portal
 
 
 
@@ -206,8 +206,8 @@ RUN set -eux; \
 # =============================================================================
 FROM --platform=$TARGETPLATFORM gcr.io/distroless/base-debian12:latest AS runtime
 
-ARG BUILD_DATE
-ARG VCS_REF
+ARG BUILD_DATE=
+ARG VCS_REF=
 ARG VERSION=2.0.0
 
 LABEL maintainer="Lucid Development Team" \
@@ -308,14 +308,14 @@ COPY --from=tor-builder /etc/passwd /etc/passwd
 COPY --from=tor-builder /etc/group  /etc/group
 
 # ── Lucid scripts and torrc (from build context) ──────────────────────────────
-COPY --chmod=644 02_network_security/tor/torrc                             /etc/tor/torrc
-COPY --chmod=755 02_network_security/tor/entrypoint.sh                     /usr/local/bin/entrypoint.sh
-COPY --chmod=755 02_network_security/tor/tor-health.sh                     /usr/local/bin/tor-health
-COPY --chmod=755 02_network_security/tor/tor-show-onion.sh                 /usr/local/bin/tor-show-onion
-COPY --chmod=755 02_network_security/tor/scripts/create_ephemeral_onion.sh /usr/local/bin/create-ephemeral-onion
+COPY --chmod=644 tor/torrc /etc/tor/torrc
+COPY --chmod=755 tor/entrypoint.sh /usr/local/bin/entrypoint.sh
+COPY --chmod=755 tor/tor-health.sh /usr/local/bin/tor-health
+COPY --chmod=755 tor/tor-show-onion.sh /usr/local/bin/tor-show-onion
+COPY --chmod=755 tor/scripts/create_ephemeral_onion.sh /usr/local/bin/create-ephemeral-onion
 
 # ── Tunnel configs (build context: 02-network/security/tunnels) ───────────────
-COPY --chmod=644 02_network_security/tunnels                               /run/lucid/tor/tunnels
+COPY --chmod=644 tunnels /run/lucid/tor/tunnels
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=45s --retries=5 \
   CMD ["/bin/bash", "/usr/local/bin/tor-health"]

@@ -15,13 +15,30 @@
     "infrastructure/containers/blockchain/docker-compose.chain.yml",
     "infrastructure/containers/gui/docker-compose.node-gui.yml",
     "infrastructure/containers/node/docker-compose.node-gui.yml",
-    "infrastructure/containers/services/gui-docker-manager-service-groups.yml",
-    "infrastructure/containers/services/gui-docker-manager.yml",
-    "infrastructure/containers/services/master-endpoint.yml",
-    "infrastructure/containers/services/node-interface.yml"
+    "infrastructure/containers/services/gui/gui-docker-manager-service-groups.yml",
+    "infrastructure/containers/services/gui/gui-docker-manager.yml",
+    "infrastructure/containers/services/middle-ware/master-endpoint.yml",
+    "infrastructure/containers/services/node/node-interface.yml"
   ],
   "py": [
+    "common/__init__.py",
+    "common/contact_profile_env.py",
+    "common/governance/__init__.py",
+    "common/governance/lucid_governor.py",
+    "common/governance/param_registry.py",
+    "common/governance/timelock.py",
     "common/load_host_config.py",
+    "common/security/__init__.py",
+    "common/security/input_controller.py",
+    "common/security/policy_validator.py",
+    "common/security/privacy_shield.py",
+    "common/security/session_validator.py",
+    "common/security/trust_nothing_engine.py",
+    "common/server-tools/__init__.py",
+    "common/tor/__init__.py",
+    "common/tor/onion_service.py",
+    "common/tor/socks_proxy.py",
+    "common/tor/tor_manager.py",
     "electron_gui/__init__.py",
     "electron_gui/utils/__init__.py",
     "electron_gui/utils/converter.py",
@@ -37,7 +54,15 @@
     "gui/core/tor_client.py",
     "gui/core/widgets.py",
     "gui/node/__init__.py",
-    "gui/shared/__init__.py"
+    "gui/shared/__init__.py",
+    "gui_hardware_manager/gui_hardware_manager/config.py",
+    "gui_tor_manager/gui_tor_manager/middleware/cors.py",
+    "infrastructure/containers/_patch_skeletons.py",
+    "infrastructure/containers/node/node-system-gateway/entrypoint.py",
+    "infrastructure/containers/node/node-system-gateway/verify_files.py",
+    "infrastructure/containers/node/node-system-gateway/verify_runtime.py",
+    "scripts/gui_auth_realignment/list_service_files_by_name.py",
+    "scripts/re-build/gui_scrub_python_env_secrets.py"
   ],
   "json": [
     "configs/gui-alignment/gui-services.json",
@@ -45,7 +70,6 @@
     "configs/services/gui-services.json"
   ],
   "associated_needles": [
-    "lucid-node-interface",
     "node-interface",
     "node_interface"
   ],
@@ -54,7 +78,7 @@
   "missing_global_py": [],
   "missing_expected": [],
   "missing_tier_a_json": [],
-  "source_map_path": "scripts/gui_auth_realignment/gui_service_source_map.json",
-  "mat_path": "configs/services/gui-services.json",
-  "mat_row_matched": true
+  "source_map_path": "configs/alignment-mats/service_source_map.json",
+  "mat_path": null,
+  "mat_row_matched": false
 }

@@ -105,7 +105,7 @@ lucid_resolve_repo_root() {
         fi
     fi
 
-    if [[ -f /app/configs/.env.master ]] || [[ -f /app/configs/host-config.yml ]] || [[ -f /app/configs/x-files.json ]] || [[ -f /app/service_configs/host-config.yml ]]; then
+    if [[ -f /app/configs/.env.master ]] || [[ -f /app/configs/host-config.yml ]] || [[ -f /app/configs/x-files.json ]] || [[ -f /app/infrastructure/containers/services/host-config.yml ]]; then
         printf '%s' "/app"
         return 0
     fi

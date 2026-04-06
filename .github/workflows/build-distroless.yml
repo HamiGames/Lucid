@@ -8,7 +8,7 @@
 #   infrastructure/docker/distroless/base/Dockerfile.base        → same directory as compose (build context: repo root)
 #   infrastructure/docker/multi-stage/Dockerfile.{database,storage,vm} → /app/configs/docker/multi-stage/
 #   configs/docker/distroless/*.yml                               → /app/configs/docker/distroless/*.yml
-#   infrastructure/containers/services/distroless/*.yml           → /app/service_configs/distroless/*.yml
+#   infrastructure/containers/services/distroless/*.yml           → /app/infrastructure/containers/services/distroless/*.yml
 # Registry / image names stay env-driven below (not path-indexed in x-files.json).
 
 name: Multi-Stage Distroless Builds

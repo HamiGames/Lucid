@@ -5,7 +5,7 @@
 # x-lucid-file-directory: /app/02_network_security/tor/scripts
 # x-lucid-file-type: shell
 # This script demonstrates the full onion creation workflow
-# Service hostnames/ports align with /app/service_configs/host-config.yml (set_host_config.sh).
+# Service hostnames/ports align with /app/infrastructure/containers/services/host-config.yml (set_host_config.sh).
 
 set -Eeuo pipefail
 

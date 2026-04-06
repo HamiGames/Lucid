@@ -4,11 +4,11 @@
 # x-lucid-file-type: shell
 #
 # Reads the Lucid host registry (cross-container DNS, ports, static host IPs) from
-#   /app/service_configs/host-config.yml
+#   /app/infrastructure/containers/services/host-config.yml
 # and exports environment variables used by Tor scripts and onion helpers.
 #
 # Canonical in-container path (see infrastructure/containers/*/Dockerfile COPY):
-#   infrastructure/containers/host-config.yml  ->  /app/service_configs/host-config.yml
+#   infrastructure/containers/host-config.yml  ->  /app/infrastructure/containers/services/host-config.yml
 # Optional legacy mirror: /app/configs/host-config.yml
 #
 # Usage:
@@ -59,7 +59,7 @@ _lucid_hc_resolve_path() {
   local p
   for p in \
     "${LUCID_HOST_CONFIG_PATH:-}" \
-    "/app/service_configs/host-config.yml" \
+    "/app/infrastructure/containers/services/host-config.yml" \
     "/app/configs/host-config.yml"; do
     [[ -n "$p" && -f "$p" ]] && { printf '%s' "$p"; return 0; }
   done

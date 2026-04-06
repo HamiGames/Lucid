@@ -4,7 +4,7 @@
 # x-lucid-file-path: /app/02_network_security/tor/scripts/tor_env.sh
 # x-lucid-file-directory: /app/02_network_security/tor/scripts
 # x-lucid-file-type: shell
-# Cross-container names, ports, and host IPs: /app/service_configs/host-config.yml (see set_host_config.sh).
+# Cross-container names, ports, and host IPs: /app/infrastructure/containers/services/host-config.yml (see set_host_config.sh).
 
 log() { printf '[tor_env] %s\n' "$*"; }
 

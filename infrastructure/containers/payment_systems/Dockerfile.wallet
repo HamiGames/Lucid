@@ -7,8 +7,8 @@
 # host-config.yml: wallet_manager → wallet-manager:8093
 # Compose: infrastructure/containers/payment_systems/docker-compose.payment-internal.yml
 
-ARG BUILD_DATE
-ARG VCS_REF
+ARG BUILD_DATE=
+ARG VCS_REF=
 ARG VERSION=1.0.0
 ARG TARGETPLATFORM=linux/arm64
 ARG BUILDPLATFORM=linux/amd64
@@ -19,7 +19,7 @@ ARG PYTHON_VERSION=3.11
 ############################
 ARG BUILDPLATFORM
 ARG TARGETPLATFORM
-ARG PYTHON_VERSION
+ARG PYTHON_VERSION=3.12-slim
 
 FROM --platform=$TARGETPLATFORM python:3.11-slim-bookworm AS builder
 
@@ -82,14 +82,57 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 # LUCID_X_FILES_SKELETON_BEGIN
 # Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
 RUN set -eux; \
-    mkdir -p '.' './common' './configs' './scripts' './service_configs' './tron' './common/__pycache__' './common/governance' './common/security' './common/server-tools' './common/templates' './common/tor' './configs/.ssh' './configs/alignment-mats' './configs/container' './configs/database' './configs/docker' './configs/env' './configs/environment' './configs/gui-alignment' './configs/integration' './configs/kubernetes' './configs/logging' './configs/pi' './configs/secrets' './configs/security' './configs/tor' './scripts/__pycache__' './scripts/auth_sm_realignment' './scripts/build' './scripts/compliance' './scripts/config' './scripts/contracts' './scripts/database' './scripts/deployment' './scripts/devcontainer' './scripts/docs' './scripts/foundation' './scripts/gui' './scripts/gui_auth_realignment' './scripts/hardware' './scripts/integration' './scripts/lib' './scripts/load' './scripts/logging' './scripts/maintenance' './scripts/migration' './scripts/monitoring' './scripts/network' './scripts/re-build' './scripts/registry' './scripts/secrets' './scripts/security' './scripts/services' './scripts/testing' './scripts/validation' './scripts/verification' './tron/__pycache__' './tron/api' './tron/config' './tron/models' './tron/repositories' './tron/schemas' './tron/services' './tron/utils' './common/governance/__pycache__' './common/security/__pycache__' './common/server-tools/__pycache__' './common/tor/__pycache__' './configs/container/admin' './configs/container/auth' './configs/container/base' './configs/container/blockchain' './configs/container/database' './configs/container/electron_gui' './configs/container/gui' './configs/container/node' './configs/container/payment_systems' './configs/container/rdp' './configs/container/server' './configs/container/sessions' './configs/container/storage' './configs/container/tor' './configs/database/elasticsearch' './configs/database/redis' './configs/docker/distroless' './configs/docker/docs' './configs/docker/multi-stage' './configs/environment/development' './configs/environment/pi' './configs/environment/production' './configs/environment/staging' './configs/pi/ssh' './configs/secrets/runtime' './scripts/auth_sm_realignment/.cache' './scripts/auth_sm_realignment/lib' './scripts/build/__pycache__' './scripts/build/components' './scripts/build/core' './scripts/build/distroless' './scripts/build/utils' './scripts/compliance/distroless' './scripts/compliance/general' './scripts/deployment/devcontainer' './scripts/deployment/distroless' './scripts/deployment/pi' './scripts/deployment/utils' './scripts/gui_auth_realignment/.cache' './scripts/gui_auth_realignment/lib' './scripts/maintenance/cleanup' './scripts/maintenance/optimization' './scripts/maintenance/recovery' './scripts/network/diagnostics' './scripts/network/security' './scripts/network/setup' './scripts/testing/integration' './scripts/testing/unit' './scripts/testing/utils' './scripts/validation/__pycache__' './scripts/verification/__pycache__' './tron/api/__pycache__' './tron/models/__pycache__' './tron/repositories/__pycache__' './tron/services/__pycache__' './tron/utils/__pycache__' './configs/secrets/runtime/compose'; \
+    mkdir -p '.' './03_api_gateway' './apps' './auth' './common' './configs' './payment_systems' './service_configs' './service_mesh' './tron' './wallet' './03_api_gateway/__pycache__' './03_api_gateway/api' './03_api_gateway/certs' './03_api_gateway/config' './03_api_gateway/database' './03_api_gateway/docs' './03_api_gateway/endpoints' './03_api_gateway/gateway' './03_api_gateway/legacy' './03_api_gateway/logs' './03_api_gateway/middleware' './03_api_gateway/models' './03_api_gateway/repositories' './03_api_gateway/scripts' './03_api_gateway/services' './03_api_gateway/utils' './apps/__pycache__' './apps/admin_ui' './apps/chain_client' './apps/chunker' './apps/dht_node' './apps/encryptor' './apps/exporter' './apps/gui-user' './apps/gui_admin' './apps/gui_node' './apps/merkle' './apps/recorder' './apps/tron-node' './apps/walletd' './auth/__pycache__' './auth/api' './auth/config' './auth/docs' './auth/middleware' './auth/models' './auth/services' './auth/utils' './common/__pycache__' './common/governance' './common/security' './common/server-tools' './common/templates' './common/tor' './configs/.ssh' './configs/container' './configs/database' './configs/docker' './configs/env' './configs/environment' './configs/integration' './configs/kubernetes' './configs/logging' './configs/pi' './configs/secrets' './configs/security' './configs/tor' './payment_systems/__pycache__' './payment_systems/payment_acceptor' './payment_systems/tron' './payment_systems/tron_node' './payment_systems/tron_relay' './payment_systems/wallet' './service_mesh/__pycache__' './service_mesh/communication' './service_mesh/config' './service_mesh/controller' './service_mesh/discovery' './service_mesh/security' './service_mesh/sidecar' './tests/security' './tests/validation' './tron/__pycache__' './tron/api' './tron/config' './tron/models' './tron/repositories' './tron/schemas' './tron/services' './tron/utils' './wallet/__pycache__' './wallet/security' './wallet/walletd' './03_api_gateway/api/__pycache__' './03_api_gateway/api/app' './03_api_gateway/api/lucid_api.egg-info' './03_api_gateway/api/tests' './03_api_gateway/config/__pycache__' './03_api_gateway/database/__pycache__' './03_api_gateway/docs/swagger' './03_api_gateway/endpoints/__pycache__' './03_api_gateway/legacy/api' './03_api_gateway/legacy/gateway' './03_api_gateway/middleware/__pycache__' './03_api_gateway/models/__pycache__' './03_api_gateway/repositories/__pycache__' './03_api_gateway/services/__pycache__' './03_api_gateway/utils/__pycache__' './apps/admin_ui/__pycache__' './apps/admin_ui/src' './apps/chain_client/__pycache__' './apps/chain_client/src' './apps/chunker/__pycache__' './apps/chunker/src' './apps/dht_node/__pycache__' './apps/encryptor/__pycache__' './apps/encryptor/src' './apps/exporter/__pycache__' './apps/gui-user/__pycache__' './apps/gui-user/src' './apps/gui_admin/__pycache__' './apps/gui_admin/src' './apps/gui_node/__pycache__' './apps/gui_node/src' './apps/merkle/__pycache__' './apps/recorder/__pycache__' './apps/tron-node/__pycache__' './apps/tron-node/src' './apps/walletd/__pycache__' './auth/api/__pycache__' './auth/config/__pycache__' './auth/middleware/__pycache__' './auth/models/__pycache__' './auth/services/__pycache__' './auth/utils/__pycache__' './common/governance/__pycache__' './common/security/__pycache__' './common/server-tools/__pycache__' './common/tor/__pycache__' './configs/container/admin' './configs/container/auth' './configs/container/base' './configs/container/blockchain' './configs/container/database' './configs/container/electron_gui' './configs/container/gui' './configs/container/node' './configs/container/payment_systems' './configs/container/rdp' './configs/container/server' './configs/container/sessions' './configs/container/storage' './configs/container/tor' './configs/database/elasticsearch' './configs/database/redis' './configs/docker/distroless' './configs/docker/docs' './configs/docker/multi-stage' './configs/pi/ssh' './payment_systems/payment_acceptor/__pycache__' './payment_systems/tron/__pycache__' './payment_systems/tron/api' './payment_systems/tron/config' './payment_systems/tron/models' './payment_systems/tron/repositories' './payment_systems/tron/schemas' './payment_systems/tron/services' './payment_systems/tron/utils' './payment_systems/tron_node/__pycache__' './payment_systems/tron_relay/__pycache__' './payment_systems/tron_relay/api' './payment_systems/tron_relay/config' './payment_systems/tron_relay/services' './payment_systems/wallet/__pycache__' './service_mesh/communication/__pycache__' './service_mesh/config/policies' './service_mesh/config/services' './service_mesh/controller/__pycache__' './service_mesh/discovery/__pycache__' './service_mesh/security/__pycache__' './service_mesh/sidecar/envoy' './service_mesh/sidecar/proxy' './tron/api/__pycache__' './tron/models/__pycache__' './tron/repositories/__pycache__' './tron/services/__pycache__' './tron/utils/__pycache__' './wallet/security/__pycache__' './wallet/walletd/__pycache__' './03_api_gateway/api/app/__pycache__' './03_api_gateway/api/app/database' './03_api_gateway/api/app/db' './03_api_gateway/api/app/middleware' './03_api_gateway/api/app/models' './03_api_gateway/api/app/routers' './03_api_gateway/api/app/routes' './03_api_gateway/api/app/schemas' './03_api_gateway/api/app/scripts' './03_api_gateway/api/app/security' './03_api_gateway/api/app/services' './03_api_gateway/api/app/utils' './03_api_gateway/api/tests/__pycache__' './03_api_gateway/api/tests/integration' './03_api_gateway/docs/swagger/dist' './apps/admin_ui/src/app' './apps/admin_ui/src/components' './apps/admin_ui/src/hooks' './apps/admin_ui/src/lib' './apps/admin_ui/src/types' './apps/chain_client/src/__pycache__' './apps/chain_client/src/services' './apps/chunker/src/__pycache__' './apps/encryptor/src/__pycache__' './apps/gui-user/src/app' './apps/gui-user/src/components' './apps/gui-user/src/services' './apps/gui-user/src/stores' './apps/gui_admin/src/app' './apps/gui_node/src/app' './apps/tron-node/src/__pycache__' './payment_systems/tron/api/__pycache__' './payment_systems/tron/models/__pycache__' './payment_systems/tron/repositories/__pycache__' './payment_systems/tron/services/__pycache__' './payment_systems/tron/utils/__pycache__' './payment_systems/tron_relay/api/__pycache__' './payment_systems/tron_relay/services/__pycache__' './service_mesh/sidecar/envoy/__pycache__' './service_mesh/sidecar/envoy/config' './service_mesh/sidecar/proxy/__pycache__' './03_api_gateway/api/app/database/__pycache__' './03_api_gateway/api/app/db/__pycache__' './03_api_gateway/api/app/db/models' './03_api_gateway/api/app/middleware/__pycache__' './03_api_gateway/api/app/models/__pycache__' './03_api_gateway/api/app/routers/__pycache__' './03_api_gateway/api/app/routes/__pycache__' './03_api_gateway/api/app/schemas/__pycache__' './03_api_gateway/api/app/scripts/__pycache__' './03_api_gateway/api/app/security/__pycache__' './03_api_gateway/api/app/services/__pycache__' './03_api_gateway/api/app/utils/__pycache__' './03_api_gateway/api/tests/integration/__pycache__' './apps/admin_ui/src/components/dashboard' './apps/admin_ui/src/components/ui' './apps/chain_client/src/services/__pycache__'; \
     for d in \
       '.' \
+      './03_api_gateway' \
+      './apps' \
+      './auth' \
       './common' \
       './configs' \
-      './scripts' \
+      './payment_systems' \
       './service_configs' \
+      './service_mesh' \
       './tron' \
+      './wallet' \
+      './03_api_gateway/__pycache__' \
+      './03_api_gateway/api' \
+      './03_api_gateway/certs' \
+      './03_api_gateway/config' \
+      './03_api_gateway/database' \
+      './03_api_gateway/docs' \
+      './03_api_gateway/endpoints' \
+      './03_api_gateway/gateway' \
+      './03_api_gateway/legacy' \
+      './03_api_gateway/logs' \
+      './03_api_gateway/middleware' \
+      './03_api_gateway/models' \
+      './03_api_gateway/repositories' \
+      './03_api_gateway/scripts' \
+      './03_api_gateway/services' \
+      './03_api_gateway/utils' \
+      './apps/__pycache__' \
+      './apps/admin_ui' \
+      './apps/chain_client' \
+      './apps/chunker' \
+      './apps/dht_node' \
+      './apps/encryptor' \
+      './apps/exporter' \
+      './apps/gui-user' \
+      './apps/gui_admin' \
+      './apps/gui_node' \
+      './apps/merkle' \
+      './apps/recorder' \
+      './apps/tron-node' \
+      './apps/walletd' \
+      './auth/__pycache__' \
+      './auth/api' \
+      './auth/config' \
+      './auth/docs' \
+      './auth/middleware' \
+      './auth/models' \
+      './auth/services' \
+      './auth/utils' \
       './common/__pycache__' \
       './common/governance' \
       './common/security' \
@@ -97,13 +140,11 @@ RUN set -eux; \
       './common/templates' \
       './common/tor' \
       './configs/.ssh' \
-      './configs/alignment-mats' \
       './configs/container' \
       './configs/database' \
       './configs/docker' \
       './configs/env' \
       './configs/environment' \
-      './configs/gui-alignment' \
       './configs/integration' \
       './configs/kubernetes' \
       './configs/logging' \
@@ -111,36 +152,21 @@ RUN set -eux; \
       './configs/secrets' \
       './configs/security' \
       './configs/tor' \
-      './scripts/__pycache__' \
-      './scripts/auth_sm_realignment' \
-      './scripts/build' \
-      './scripts/compliance' \
-      './scripts/config' \
-      './scripts/contracts' \
-      './scripts/database' \
-      './scripts/deployment' \
-      './scripts/devcontainer' \
-      './scripts/docs' \
-      './scripts/foundation' \
-      './scripts/gui' \
-      './scripts/gui_auth_realignment' \
-      './scripts/hardware' \
-      './scripts/integration' \
-      './scripts/lib' \
-      './scripts/load' \
-      './scripts/logging' \
-      './scripts/maintenance' \
-      './scripts/migration' \
-      './scripts/monitoring' \
-      './scripts/network' \
-      './scripts/re-build' \
-      './scripts/registry' \
-      './scripts/secrets' \
-      './scripts/security' \
-      './scripts/services' \
-      './scripts/testing' \
-      './scripts/validation' \
-      './scripts/verification' \
+      './payment_systems/__pycache__' \
+      './payment_systems/payment_acceptor' \
+      './payment_systems/tron' \
+      './payment_systems/tron_node' \
+      './payment_systems/tron_relay' \
+      './payment_systems/wallet' \
+      './service_mesh/__pycache__' \
+      './service_mesh/communication' \
+      './service_mesh/config' \
+      './service_mesh/controller' \
+      './service_mesh/discovery' \
+      './service_mesh/security' \
+      './service_mesh/sidecar' \
+      './tests/security' \
+      './tests/validation' \
       './tron/__pycache__' \
       './tron/api' \
       './tron/config' \
@@ -149,6 +175,51 @@ RUN set -eux; \
       './tron/schemas' \
       './tron/services' \
       './tron/utils' \
+      './wallet/__pycache__' \
+      './wallet/security' \
+      './wallet/walletd' \
+      './03_api_gateway/api/__pycache__' \
+      './03_api_gateway/api/app' \
+      './03_api_gateway/api/lucid_api.egg-info' \
+      './03_api_gateway/api/tests' \
+      './03_api_gateway/config/__pycache__' \
+      './03_api_gateway/database/__pycache__' \
+      './03_api_gateway/docs/swagger' \
+      './03_api_gateway/endpoints/__pycache__' \
+      './03_api_gateway/legacy/api' \
+      './03_api_gateway/legacy/gateway' \
+      './03_api_gateway/middleware/__pycache__' \
+      './03_api_gateway/models/__pycache__' \
+      './03_api_gateway/repositories/__pycache__' \
+      './03_api_gateway/services/__pycache__' \
+      './03_api_gateway/utils/__pycache__' \
+      './apps/admin_ui/__pycache__' \
+      './apps/admin_ui/src' \
+      './apps/chain_client/__pycache__' \
+      './apps/chain_client/src' \
+      './apps/chunker/__pycache__' \
+      './apps/chunker/src' \
+      './apps/dht_node/__pycache__' \
+      './apps/encryptor/__pycache__' \
+      './apps/encryptor/src' \
+      './apps/exporter/__pycache__' \
+      './apps/gui-user/__pycache__' \
+      './apps/gui-user/src' \
+      './apps/gui_admin/__pycache__' \
+      './apps/gui_admin/src' \
+      './apps/gui_node/__pycache__' \
+      './apps/gui_node/src' \
+      './apps/merkle/__pycache__' \
+      './apps/recorder/__pycache__' \
+      './apps/tron-node/__pycache__' \
+      './apps/tron-node/src' \
+      './apps/walletd/__pycache__' \
+      './auth/api/__pycache__' \
+      './auth/config/__pycache__' \
+      './auth/middleware/__pycache__' \
+      './auth/models/__pycache__' \
+      './auth/services/__pycache__' \
+      './auth/utils/__pycache__' \
       './common/governance/__pycache__' \
       './common/security/__pycache__' \
       './common/server-tools/__pycache__' \
@@ -172,66 +243,207 @@ RUN set -eux; \
       './configs/docker/distroless' \
       './configs/docker/docs' \
       './configs/docker/multi-stage' \
-      './configs/environment/development' \
-      './configs/environment/pi' \
-      './configs/environment/production' \
-      './configs/environment/staging' \
       './configs/pi/ssh' \
-      './configs/secrets/runtime' \
-      './scripts/auth_sm_realignment/.cache' \
-      './scripts/auth_sm_realignment/lib' \
-      './scripts/build/__pycache__' \
-      './scripts/build/components' \
-      './scripts/build/core' \
-      './scripts/build/distroless' \
-      './scripts/build/utils' \
-      './scripts/compliance/distroless' \
-      './scripts/compliance/general' \
-      './scripts/deployment/devcontainer' \
-      './scripts/deployment/distroless' \
-      './scripts/deployment/pi' \
-      './scripts/deployment/utils' \
-      './scripts/gui_auth_realignment/.cache' \
-      './scripts/gui_auth_realignment/lib' \
-      './scripts/maintenance/cleanup' \
-      './scripts/maintenance/optimization' \
-      './scripts/maintenance/recovery' \
-      './scripts/network/diagnostics' \
-      './scripts/network/security' \
-      './scripts/network/setup' \
-      './scripts/testing/integration' \
-      './scripts/testing/unit' \
-      './scripts/testing/utils' \
-      './scripts/validation/__pycache__' \
-      './scripts/verification/__pycache__' \
+      './payment_systems/payment_acceptor/__pycache__' \
+      './payment_systems/tron/__pycache__' \
+      './payment_systems/tron/api' \
+      './payment_systems/tron/config' \
+      './payment_systems/tron/models' \
+      './payment_systems/tron/repositories' \
+      './payment_systems/tron/schemas' \
+      './payment_systems/tron/services' \
+      './payment_systems/tron/utils' \
+      './payment_systems/tron_node/__pycache__' \
+      './payment_systems/tron_relay/__pycache__' \
+      './payment_systems/tron_relay/api' \
+      './payment_systems/tron_relay/config' \
+      './payment_systems/tron_relay/services' \
+      './payment_systems/wallet/__pycache__' \
+      './service_mesh/communication/__pycache__' \
+      './service_mesh/config/policies' \
+      './service_mesh/config/services' \
+      './service_mesh/controller/__pycache__' \
+      './service_mesh/discovery/__pycache__' \
+      './service_mesh/security/__pycache__' \
+      './service_mesh/sidecar/envoy' \
+      './service_mesh/sidecar/proxy' \
       './tron/api/__pycache__' \
       './tron/models/__pycache__' \
       './tron/repositories/__pycache__' \
       './tron/services/__pycache__' \
       './tron/utils/__pycache__' \
-      './configs/secrets/runtime/compose' \
+      './wallet/security/__pycache__' \
+      './wallet/walletd/__pycache__' \
+      './03_api_gateway/api/app/__pycache__' \
+      './03_api_gateway/api/app/database' \
+      './03_api_gateway/api/app/db' \
+      './03_api_gateway/api/app/middleware' \
+      './03_api_gateway/api/app/models' \
+      './03_api_gateway/api/app/routers' \
+      './03_api_gateway/api/app/routes' \
+      './03_api_gateway/api/app/schemas' \
+      './03_api_gateway/api/app/scripts' \
+      './03_api_gateway/api/app/security' \
+      './03_api_gateway/api/app/services' \
+      './03_api_gateway/api/app/utils' \
+      './03_api_gateway/api/tests/__pycache__' \
+      './03_api_gateway/api/tests/integration' \
+      './03_api_gateway/docs/swagger/dist' \
+      './apps/admin_ui/src/app' \
+      './apps/admin_ui/src/components' \
+      './apps/admin_ui/src/hooks' \
+      './apps/admin_ui/src/lib' \
+      './apps/admin_ui/src/types' \
+      './apps/chain_client/src/__pycache__' \
+      './apps/chain_client/src/services' \
+      './apps/chunker/src/__pycache__' \
+      './apps/encryptor/src/__pycache__' \
+      './apps/gui-user/src/app' \
+      './apps/gui-user/src/components' \
+      './apps/gui-user/src/services' \
+      './apps/gui-user/src/stores' \
+      './apps/gui_admin/src/app' \
+      './apps/gui_node/src/app' \
+      './apps/tron-node/src/__pycache__' \
+      './payment_systems/tron/api/__pycache__' \
+      './payment_systems/tron/models/__pycache__' \
+      './payment_systems/tron/repositories/__pycache__' \
+      './payment_systems/tron/services/__pycache__' \
+      './payment_systems/tron/utils/__pycache__' \
+      './payment_systems/tron_relay/api/__pycache__' \
+      './payment_systems/tron_relay/services/__pycache__' \
+      './service_mesh/sidecar/envoy/__pycache__' \
+      './service_mesh/sidecar/envoy/config' \
+      './service_mesh/sidecar/proxy/__pycache__' \
+      './03_api_gateway/api/app/database/__pycache__' \
+      './03_api_gateway/api/app/db/__pycache__' \
+      './03_api_gateway/api/app/db/models' \
+      './03_api_gateway/api/app/middleware/__pycache__' \
+      './03_api_gateway/api/app/models/__pycache__' \
+      './03_api_gateway/api/app/routers/__pycache__' \
+      './03_api_gateway/api/app/routes/__pycache__' \
+      './03_api_gateway/api/app/schemas/__pycache__' \
+      './03_api_gateway/api/app/scripts/__pycache__' \
+      './03_api_gateway/api/app/security/__pycache__' \
+      './03_api_gateway/api/app/services/__pycache__' \
+      './03_api_gateway/api/app/utils/__pycache__' \
+      './03_api_gateway/api/tests/integration/__pycache__' \
+      './apps/admin_ui/src/components/dashboard' \
+      './apps/admin_ui/src/components/ui' \
+      './apps/chain_client/src/services/__pycache__' \
     ; do \
       printf 'LUCID_X_FILES_SKELETON_%s' "$(date +%s)" > "$d/.keep"; \
       touch "$d/.keep"; \
     done
 # LUCID_X_FILES_SKELETON_END
 # LUCID_ALIGNMENT_MAT_COPY_DIRECTORIES_BEGIN
-# alignment-mat wallet-manager_manifest.json: compose_service='wallet-manager' — manifest py/yml/yaml/json → builder COPY (#10).
-COPY common/ ./common/
-COPY configs/ ./configs/
-COPY infrastructure/containers/ ./infrastructure/containers/
-COPY infrastructure/service_mesh/config/ ./infrastructure/service_mesh/config/
+# alignment-mat wallet-manager_manifest.json: compose_service='wallet-manager' — explicit manifest paths → 96 builder COPY line(s) (dockerfile_layout_structure.json section #10 COPY_DIRECTORIES).
+COPY 03_api_gateway/api/app/config.py ./03_api_gateway/api/app/config.py
+COPY 03_api_gateway/api/app/main.py ./03_api_gateway/api/app/main.py
+COPY 03_api_gateway/api/app/routers/meta.py ./03_api_gateway/api/app/routers/meta.py
+COPY 03_api_gateway/api/app/routers/tron_support.py ./03_api_gateway/api/app/routers/tron_support.py
+COPY 03_api_gateway/api/app/services/tron_support_service.py ./03_api_gateway/api/app/services/tron_support_service.py
+COPY 03_api_gateway/services/proxy_service.py ./03_api_gateway/services/proxy_service.py
+COPY 03_api_gateway/services/tron_support_service.py ./03_api_gateway/services/tron_support_service.py
+COPY _gen_host_config.py ./_gen_host_config.py
+COPY apps/walletd/walletd.py ./apps/walletd/walletd.py
+COPY auth/authentication_service.py ./auth/authentication_service.py
+COPY auth/hardware_wallet.py ./auth/hardware_wallet.py
+COPY common/__init__.py ./common/__init__.py
+COPY common/contact_profile_env.py ./common/contact_profile_env.py
+COPY common/governance/__init__.py ./common/governance/__init__.py
+COPY common/governance/lucid_governor.py ./common/governance/lucid_governor.py
+COPY common/governance/param_registry.py ./common/governance/param_registry.py
+COPY common/governance/timelock.py ./common/governance/timelock.py
+COPY common/load_host_config.py ./common/load_host_config.py
+COPY common/security/__init__.py ./common/security/__init__.py
+COPY common/security/input_controller.py ./common/security/input_controller.py
+COPY common/security/policy_validator.py ./common/security/policy_validator.py
+COPY common/security/privacy_shield.py ./common/security/privacy_shield.py
+COPY common/security/session_validator.py ./common/security/session_validator.py
+COPY common/security/trust_nothing_engine.py ./common/security/trust_nothing_engine.py
+COPY common/server-tools/__init__.py ./common/server-tools/__init__.py
+COPY common/tor/__init__.py ./common/tor/__init__.py
+COPY common/tor/onion_service.py ./common/tor/onion_service.py
+COPY common/tor/socks_proxy.py ./common/tor/socks_proxy.py
+COPY common/tor/tor_manager.py ./common/tor/tor_manager.py
+COPY configs/container/blockchain/docker-compose.block-system.yml ./configs/container/blockchain/docker-compose.block-system.yml
+COPY configs/container/gui/docker-compose.node-gui.yml ./configs/container/gui/docker-compose.node-gui.yml
+COPY configs/container/node/docker-compose.node-gui.yml ./configs/container/node/docker-compose.node-gui.yml
+COPY configs/container/payment_systems/docker-compose.payment-externals.yml ./configs/container/payment_systems/docker-compose.payment-externals.yml
+COPY configs/container/payment_systems/docker-compose.payment-internal.yml ./configs/container/payment_systems/docker-compose.payment-internal.yml
+COPY configs/container/server/docker-compose.server-external.yml ./configs/container/server/docker-compose.server-external.yml
+COPY configs/docker/docker-compose.all.yml ./configs/docker/docker-compose.all.yml
+COPY configs/docker/docker-compose.support.yml ./configs/docker/docker-compose.support.yml
+COPY service_configs/beta-sidecar.yml ./service_configs/beta-sidecar.yml
+COPY service_configs/gui-docker-manager.yml ./service_configs/gui-docker-manager.yml
+COPY service_configs/service-discovery.yml ./service_configs/service-discovery.yml
+COPY service_configs/tron-payment.yml ./service_configs/tron-payment.yml
+COPY configs/x-files.json ./configs/x-files.json
+COPY infrastructure/containers/_align_dockerfile_lucid_metadata.py ./infrastructure/containers/_align_dockerfile_lucid_metadata.py
+COPY infrastructure/containers/_sync_dockerfile_lucid_env.py ./infrastructure/containers/_sync_dockerfile_lucid_env.py
+COPY infrastructure/containers/blockchain/config/block-pay-endpoints.yml ./infrastructure/containers/blockchain/config/block-pay-endpoints.yml
+COPY infrastructure/containers/blockchain/docker-compose.block-system.yml ./infrastructure/containers/blockchain/docker-compose.block-system.yml
+COPY infrastructure/containers/config-listings.json ./infrastructure/containers/config-listings.json
+COPY infrastructure/containers/dockerfile_recalibration_map.json ./infrastructure/containers/dockerfile_recalibration_map.json
+COPY infrastructure/containers/dockerfile_recalibration_map_REPAIRED.json ./infrastructure/containers/dockerfile_recalibration_map_REPAIRED.json
+COPY infrastructure/containers/gui/docker-compose.node-gui.yml ./infrastructure/containers/gui/docker-compose.node-gui.yml
+COPY infrastructure/containers/host-config.yml ./infrastructure/containers/host-config.yml
+COPY infrastructure/containers/node/docker-compose.node-gui.yml ./infrastructure/containers/node/docker-compose.node-gui.yml
+COPY infrastructure/containers/payment_systems/docker-compose.payment-externals.yml ./infrastructure/containers/payment_systems/docker-compose.payment-externals.yml
+COPY infrastructure/containers/payment_systems/docker-compose.payment-internal.yml ./infrastructure/containers/payment_systems/docker-compose.payment-internal.yml
+COPY infrastructure/containers/server/docker-compose.server-external.yml ./infrastructure/containers/server/docker-compose.server-external.yml
+COPY infrastructure/containers/services/base/base.yml ./infrastructure/containers/services/base/base.yml
+COPY infrastructure/containers/services/beta-sidecar.yml ./infrastructure/containers/services/beta-sidecar.yml
+COPY infrastructure/containers/services/database/lucid-mongodb.yml ./infrastructure/containers/services/database/lucid-mongodb.yml
+COPY infrastructure/containers/services/database/lucid-redis.yml ./infrastructure/containers/services/database/lucid-redis.yml
+COPY infrastructure/containers/services/gui/gui-docker-manager.yml ./infrastructure/containers/services/gui/gui-docker-manager.yml
+COPY infrastructure/containers/services/middle-ware/master-endpoint.yml ./infrastructure/containers/services/middle-ware/master-endpoint.yml
+COPY infrastructure/containers/services/payment_services/payment-services-host-alignment.yml ./infrastructure/containers/services/payment_services/payment-services-host-alignment.yml
+COPY infrastructure/containers/services/payment_services/staking-config.yaml ./infrastructure/containers/services/payment_services/staking-config.yaml
+COPY infrastructure/containers/services/payment_services/tron-payment.yml ./infrastructure/containers/services/payment_services/tron-payment.yml
+COPY infrastructure/containers/services/payment_services/wallet-manager-config.yaml ./infrastructure/containers/services/payment_services/wallet-manager-config.yaml
+COPY infrastructure/containers/services/service-discovery.yml ./infrastructure/containers/services/service-discovery.yml
+COPY infrastructure/containers/services/vm/vault.yml ./infrastructure/containers/services/vm/vault.yml
+COPY infrastructure/containers/services/wallet/wallet-manager.yml ./infrastructure/containers/services/wallet/wallet-manager.yml
+COPY infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.json ./infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.json
+COPY infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.yml ./infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.yml
+COPY infrastructure/containers/services/x_lucid_cluster_calibration/payment-cluster-host-alignment.yml ./infrastructure/containers/services/x_lucid_cluster_calibration/payment-cluster-host-alignment.yml
+COPY infrastructure/containers/user/docker-compose.user-services.yml ./infrastructure/containers/user/docker-compose.user-services.yml
+COPY infrastructure/service_mesh/config/service-mesh.yaml ./infrastructure/service_mesh/config/service-mesh.yaml
+COPY infrastructure/service_mesh/service_mesh_translator.py ./infrastructure/service_mesh/service_mesh_translator.py
+COPY payment_systems/payment_acceptor/payment_acceptor.py ./payment_systems/payment_acceptor/payment_acceptor.py
+COPY payment_systems/payment_acceptor/payment_processor.py ./payment_systems/payment_acceptor/payment_processor.py
+COPY payment_systems/payment_acceptor/payment_validator.py ./payment_systems/payment_acceptor/payment_validator.py
+COPY payment_systems/tron/api/access_control.py ./payment_systems/tron/api/access_control.py
+COPY payment_systems/tron/api/audit.py ./payment_systems/tron/api/audit.py
+COPY payment_systems/tron/api/backup.py ./payment_systems/tron/api/backup.py
+COPY payment_systems/tron/api/transactions_extended.py ./payment_systems/tron/api/transactions_extended.py
+COPY payment_systems/tron/api/wallets.py ./payment_systems/tron/api/wallets.py
+COPY payment_systems/tron/config.py ./payment_systems/tron/config.py
+COPY payment_systems/tron/main.py ./payment_systems/tron/main.py
+COPY payment_systems/tron/services/__init__.py ./payment_systems/tron/services/__init__.py
+COPY payment_systems/tron/services/payment_gateway.py ./payment_systems/tron/services/payment_gateway.py
+COPY payment_systems/tron/services/wallet_manager.py ./payment_systems/tron/services/wallet_manager.py
+COPY payment_systems/tron/services/wallet_operations.py ./payment_systems/tron/services/wallet_operations.py
+COPY payment_systems/tron/wallet_manager_entrypoint.py ./payment_systems/tron/wallet_manager_entrypoint.py
+COPY payment_systems/tron/wallet_manager_main.py ./payment_systems/tron/wallet_manager_main.py
+COPY service_mesh/service_mesh_translator.py ./service_mesh/service_mesh_translator.py
+COPY tests/security/test_tron_isolation.py ./tests/security/test_tron_isolation.py
+COPY tests/validation/test_all_containers_running.py ./tests/validation/test_all_containers_running.py
+COPY tests/validation/test_all_services_healthy.py ./tests/validation/test_all_services_healthy.py
+COPY wallet/wallet_manager.py ./wallet/wallet_manager.py
+COPY wallet/walletd/hardware_wallet.py ./wallet/walletd/hardware_wallet.py
 # LUCID_ALIGNMENT_MAT_COPY_DIRECTORIES_END
-COPY scripts/ ./scripts/
+
+COPY payment_systems/docker-compose.payment-internal.yml /build/configs/docker-compose.payment-internal.yml
+COPY payment_systems/docker-compose.payment-externals.yml /build/configs/docker-compose.payment-externals.yml
+
+COPY payment_systems/tron/ ./tron/
 
 RUN rm -rf configs/environment 2>/dev/null || true
 
 
-
-COPY infrastructure/containers/payment_systems/docker-compose.payment-internal.yml /build/configs/docker-compose.payment-internal.yml
-COPY infrastructure/containers/payment_systems/docker-compose.payment-externals.yml /build/configs/docker-compose.payment-externals.yml
-
-COPY payment_systems/tron/ ./tron/
 
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --no-cache-dir --no-index --find-links /build/wheels \
@@ -251,8 +463,8 @@ RUN test -f ./tron/wallet_manager_entrypoint.py && test -f ./tron/wallet_manager
 ############################
 FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12:latest
 
-ARG BUILD_DATE
-ARG VCS_REF
+ARG BUILD_DATE=
+ARG VCS_REF=
 ARG VERSION=1.0.0
 # Lucid Tor egress / network isolation (PUBLIC_TOR_IP: ../../configs/environment/ ; compose: lucid-tor-egress-network)
 ARG PUBLIC_TOR_IP=109.70.100.1
@@ -310,11 +522,18 @@ ENV PUBLIC_TOR_IP="${PUBLIC_TOR_IP}" \
     WORKERS="1"
 # LUCID_RUNTIME_COPY_FROM_BUILD_BEGIN
 # Generated: same directory set as LUCID_X_FILES_SKELETON (./ under WORKDIR /build).
+COPY --from=builder --chown=65532:65532 /build/03_api_gateway/ /app/03_api_gateway/
+COPY --from=builder --chown=65532:65532 /build/apps/ /app/apps/
+COPY --from=builder --chown=65532:65532 /build/auth/ /app/auth/
 COPY --from=builder --chown=65532:65532 /build/common/ /app/common/
 COPY --from=builder --chown=65532:65532 /build/configs/ /app/configs/
-COPY --from=builder --chown=65532:65532 /build/scripts/ /app/scripts/
+COPY --from=builder --chown=65532:65532 /build/payment_systems/ /app/payment_systems/
 COPY --from=builder --chown=65532:65532 /build/service_configs/ /app/service_configs/
+COPY --from=builder --chown=65532:65532 /build/service_mesh/ /app/service_mesh/
 COPY --from=builder --chown=65532:65532 /build/tron/ /app/tron/
+COPY --from=builder --chown=65532:65532 /build/wallet/ /app/wallet/
+COPY --from=builder --chown=65532:65532 /build/tests/security/ /app/tests/security/
+COPY --from=builder --chown=65532:65532 /build/tests/validation/ /app/tests/validation/
 # LUCID_RUNTIME_COPY_FROM_BUILD_END
 
 # LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
@@ -323,19 +542,20 @@ COPY --from=builder --chown=65532:65532 /usr/lib/*/libffi.so* /app/usr/lib/
 COPY --from=builder --chown=65532:65532 /usr/lib/*/libssl.so* /app/usr/lib/
 COPY --from=builder --chown=65532:65532 /usr/lib/*/ossl-modules/ /app/usr/lib/
 COPY --from=builder --chown=65532:65532 /usr/lib/*/libcurl.so* /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /dev/null/ /app/dev/null/
 COPY --from=builder --chown=65532:65532 /etc/ssl/ /app/etc/ssl/
 COPY --from=builder --chown=65532:65532 /usr/bin/ /app/usr/bin/
 COPY --from=builder --chown=65532:65532 /usr/lib/python3.11/ /app/usr/lib/python3.11/
 COPY --from=builder --chown=65532:65532 /usr/lib/python3/dist-packages/ /app/usr/lib/python3/dist-packages/
 COPY --from=builder --chown=65532:65532 /usr/local/lib/python3.11/site-packages/ /app/usr/local/lib/python3.11/site-packages/
 # LUCID_RUNTIME_COPY_FROM_BUILDER_APT_END
-# LUCID_IMAGE_CONFIG: (runtime)
+
+
+
 
 # LUCID_RUNTIME_COPY_FROM_BUILD_END
-
-
-
-
+# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
+# Generated: apt + RUN scaffold (mkdir/printf/touch/chown) -> FHS (not ./ or /build/; lib_search_and_inject.py).
 COPY --from=builder --chown=65532:65532 /build/wheels/ /app/wheels/
 
 COPY --from=builder --chown=65532:65532 /build/configs/docker-compose.payment-internal.yml /app/configs/docker-compose.payment-internal.yml

@@ -5,7 +5,7 @@
 # x-lucid-file-directory: /app/02_network_security/tor/scripts
 # x-lucid-file-type: shell
 # Verify Tor bootstrap status (Dockerfile.tor-proxy-02 distroless: busybox + nc + xxd under /app).
-# Cross-container service names/ports: /app/service_configs/host-config.yml (see set_host_config.sh).
+# Cross-container service names/ports: /app/infrastructure/containers/services/host-config.yml (see set_host_config.sh).
 #
 # Terminal DIR when exec'd in container: WORKDIR /app (USER debian-tor).
 
@@ -14,11 +14,14 @@ set -euo pipefail
 log() { printf '[check_tor_bootstrap] %s\n' "$*"; }
 die() { printf '[check_tor_bootstrap] ERROR: %s\n' "$*" >&2; exit 1; }
 
-if [[ -d /app/usr/bin ]]; then
-  [[ ":${PATH:-}:" != *":/app/usr/bin:"* ]] && PATH="/app/usr/bin:${PATH:-}"
-fi
 if [[ -d /app/bin ]]; then
   [[ ":${PATH:-}:" != *":/app/bin:"* ]] && PATH="/app/bin:${PATH:-}"
+fi
+if [[ -d /app/sbin ]]; then
+  [[ ":${PATH:-}:" != *":/app/sbin:"* ]] && PATH="/app/sbin:${PATH:-}"
+fi
+if [[ -d /app/usr/bin ]]; then
+  [[ ":${PATH:-}:" != *":/app/usr/bin:"* ]] && PATH="/app/usr/bin:${PATH:-}"
 fi
 export PATH
 
@@ -28,6 +31,7 @@ BB="${BUSYBOX:-}"
 [[ -z "$BB" ]] && BB="busybox"
 
 TOR_CONTROL_HOST="${TOR_CONTROL_HOST:-127.0.0.1}"
+TOR_PUBLIC_HOST_IP="${TOR_PUBLIC_HOST_IP:-109.70.100.1}"
 TOR_CONTROL_PORT="${TOR_CONTROL_PORT:-9051}"
 TOR_DATA_DIR="${TOR_DATA_DIR:-/app/run/lucid/tor}"
 COOKIE="${TOR_DATA_DIR}/control_auth_cookie"
@@ -51,12 +55,14 @@ log "Tor process is running"
 if command -v xxd >/dev/null 2>&1; then
   COOKIE_HEX="$(xxd -p "$COOKIE" | "${BB}" tr -d '\n')"
 else
-  die "xxd not found (expected /app/usr/bin/xxd in tor-proxy-02)"
+  die "xxd not found (expected /app/bin/xxd in tor-proxy-02)"
 fi
 
 NC_BIN="nc"
 if ! command -v nc >/dev/null 2>&1; then
-  [[ -x /app/usr/bin/nc ]] && NC_BIN="/app/usr/bin/nc"
+  if [[ -x /app/bin/nc ]]; then NC_BIN="/app/bin/nc"
+  elif [[ -x /app/usr/bin/nc ]]; then NC_BIN="/app/usr/bin/nc"
+  fi
 fi
 
 STATUS="$(
