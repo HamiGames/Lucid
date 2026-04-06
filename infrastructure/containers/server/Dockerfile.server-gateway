@@ -1,4 +1,6 @@
 # syntax=docker/dockerfile:1.5
+# File: infrastructure/containers/server/Dockerfile.server-gateway
+#
 # LUCID SERVER GATEWAY — Distroless Python (main HTTP entry for Lucid RDP server tier)
 # Same application stack as 03_api_gateway/Dockerfile; packaged under infrastructure/containers/server/
 # for the server plane. Build context: repository root (.).

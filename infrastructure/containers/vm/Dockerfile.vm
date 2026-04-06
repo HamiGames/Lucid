@@ -1,4 +1,6 @@
 # syntax=docker/dockerfile:1.5
+# File: infrastructure/containers/vm/Dockerfile.vm
+#
 # LUCID VM MANAGEMENT — Distroless Python (aligned with infrastructure/containers/blockchain/Dockerfile.engine + 03_api_gateway/Dockerfile)
 # Image: pickme/lucid-vm:latest-arm64
 # Build context: repository root (.)

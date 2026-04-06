@@ -1,5 +1,6 @@
 # syntax=docker/dockerfile:1.5
-# infrastructure/containers/sessions/Dockerfile.session-overlord
+# File: infrastructure/containers/sessions/Dockerfile.session-overlord
+#
 # Config bake aligned with infrastructure/containers/node/Dockerfile.node-system-gateway.
 # LUCID SESSION OVERLORD — Distroless Python 3.11
 # Hosts templates and HTTP API for sessions env orchestration.

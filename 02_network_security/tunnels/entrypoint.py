@@ -22,8 +22,7 @@ from pathlib import Path
 from typing import List, Tuple, Optional
 
 # Import tunnel modules (handle import errors gracefully)
-# Same-directory modules: repo path uses 02_network_security/tunnels/ but Python
-# package names cannot start with a digit; image/runtime use /app/tunnels/.
+# Same-directory modules: runtime path is /app/02_network_security/tunnels/ (Dockerfile.tunnels CMD).
 try:
     from tunnel_metrics import get_metrics
     from tunnel_status import get_status
@@ -38,7 +37,7 @@ CONTROL_PORT = int(os.getenv("CONTROL_PORT", "9051"))
 # Cookie file locations (check shared volume first, then fallback to direct mount)
 # Both locations map to paths under /run/lucid/tor — tor-proxy's TOR_DATA_DIR
 COOKIE_FILE_SHARED = Path(os.getenv("COOKIE_FILE_SHARED", "/app/run/lucid/onion/control_auth_cookie"))
-COOKIE_FILE_DIRECT = Path(os.getenv("COOKIE_FILE", "/app/run/lucid/tor/control_auth_cookie"))
+COOKIE_FILE_DIRECT = Path(os.getenv("COOKIE_FILE", "/app/var/lib/tor/control_auth_cookie"))
 ONION_PORTS = os.getenv("ONION_PORTS", "80 api-gateway:8080")
 WRITE_ENV = Path(os.getenv("WRITE_ENV", "/app/run/lucid/onion/.onion.env"))
 ROTATE_INTERVAL = int(os.getenv("ROTATE_INTERVAL", "0"))  # minutes; 0 = create once

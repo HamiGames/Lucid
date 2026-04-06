@@ -1,4 +1,6 @@
 # syntax=docker/dockerfile:1.5
+# File: infrastructure/containers/server/Dockerfile.rdp-server-manager
+#
 # LUCID RDP SERVER MANAGER — Distroless Python (structure aligned with Dockerfile.service-mesh-controller)
 # Core HTTP plane for RDP ↔ Lucid server orchestration: FastAPI xrdp integration + baked registry/config.
 # Build context: repository root (.)

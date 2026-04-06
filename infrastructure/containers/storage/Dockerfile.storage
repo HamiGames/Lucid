@@ -1,4 +1,6 @@
 # syntax=docker/dockerfile:1.5
+# File: infrastructure/containers/storage/Dockerfile.storage
+#
 # LUCID STORAGE PLANE — binds to host/pvc capacity: paths, free space, layout for Lucid data roots.
 # Not the database layer (no sharding, indexes, or query semantics here).
 # Design template: 03_api_gateway/Dockerfile (multi-stage, distroless, cache mounts)

@@ -1,4 +1,6 @@
 # syntax=docker/dockerfile:1.5
+# File: infrastructure/containers/node/Dockerfile.node-system-gateway
+#
 # LUCID NODE SYSTEM GATEWAY — Distroless Python (aligned with 03_api_gateway/Dockerfile + infrastructure/containers/controllers/Dockerfile.node-management)
 # Image: pickme/lucid-node-gateway:latest-arm64 (ports.txt)
 # Build context: repository root (.)
@@ -246,7 +248,7 @@ COPY infrastructure/containers/services/node/node-system-gateway.yml ./infrastru
 COPY infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.json ./infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.json
 COPY infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.yml ./infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.yml
 COPY infrastructure/service_mesh/service_mesh_translator.py ./infrastructure/service_mesh/service_mesh_translator.py
-COPY service_mesh/service_mesh_translator.py ./service_mesh/service_mesh_translator.py
+COPY infrastructure/service_mesh/service_mesh_translator.py ./service_mesh/service_mesh_translator.py
 # LUCID_ALIGNMENT_MAT_COPY_DIRECTORIES_END
 # LUCID_X_FILES_SKELETON_BEGIN
 # Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY

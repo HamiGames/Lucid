@@ -1,10 +1,13 @@
 # syntax=docker/dockerfile:1.5
+# File: infrastructure/containers/gui/Dockerfile.gui-api-bridge
+#
 # LUCID GUI API BRIDGE - Distroless Python Service
 # Aligned with dockerfile-design.md, Dockerfile-copy-pattern.md, and 03_api_gateway/Dockerfile
 # Image: pickme/lucid-gui-api-bridge:latest-arm64
 # Port: 8203
 # Build context: repository root
-# Build: docker build -f infrastructure/containers/gui/Dockerfile.gui-api-bridge -t pickme/lucid-gui-api-bridge:latest-arm64 .
+# Build (repository root = context):
+#   docker build -f infrastructure/containers/gui/Dockerfile.gui-api-bridge -t pickme/lucid-gui-api-bridge:latest-arm64 .
 
 ARG BUILD_DATE=
 ARG VCS_REF=

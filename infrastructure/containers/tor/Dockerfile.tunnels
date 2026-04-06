@@ -1,10 +1,14 @@
 # syntax=docker/dockerfile:1.5
+# File: infrastructure/containers/tor/Dockerfile.tunnels
+#
 # LUCID TUNNEL TOOLS -
 # Builds pickme/lucid-tunnel-tools:latest-arm64
-# Compatible with pickme/lucid-tor-proxy:latest-arm64
+# Compatible with infrastructure/containers/tor/Dockerfile.tor-proxy-02 (shared /app paths).
+# Build (repository root):
+#   docker build -f infrastructure/containers/tor/Dockerfile.tunnels -t lucid/tunnel-tools:latest .
 # Professional tunneling utilities for Pi deployment with distroless security
 # Configuration: All values from .env.tunnel-tools, .env.foundation via docker-compose
-# Build Context: 02_network_security/tunnels (relative paths used in COPY commands)
+# Build context: Lucid repository root (same as Dockerfile.tor-proxy-02); paths match /app layout there.
 
 ARG BUILD_DATE=
 ARG VCS_REF=
@@ -253,17 +257,23 @@ COPY infrastructure/containers/config-listings.json ./infrastructure/containers/
 COPY infrastructure/containers/dockerfile_recalibration_map.json ./infrastructure/containers/dockerfile_recalibration_map.json
 COPY infrastructure/containers/dockerfile_recalibration_map_REPAIRED.json ./infrastructure/containers/dockerfile_recalibration_map_REPAIRED.json
 COPY infrastructure/containers/host-config.yml ./infrastructure/containers/host-config.yml
+COPY infrastructure/containers/host-config.yml ./configs/host-config.yml
+COPY infrastructure/containers/host-config.yml ./infrastructure/containers/services/host-config.yml
 COPY infrastructure/containers/services/gui/gui-docker-manager.yml ./infrastructure/containers/services/gui/gui-docker-manager.yml
 COPY infrastructure/containers/services/middle-ware/master-endpoint.yml ./infrastructure/containers/services/middle-ware/master-endpoint.yml
 COPY infrastructure/containers/services/tor/tor-operational-layout.yml ./infrastructure/containers/services/tor/tor-operational-layout.yml
 COPY infrastructure/containers/services/tor/tunnel-tools.yml ./infrastructure/containers/services/tor/tunnel-tools.yml
+COPY infrastructure/containers/services/tor/tor-operational-layout.yml ./service_configs/tor/tor-operational-layout.yml
+COPY infrastructure/containers/services/tor/tunnel-tools.yml ./service_configs/tor/tunnel-tools.yml
+COPY infrastructure/containers/services/tor/tor-socks.yml ./service_configs/tor/tor-socks.yml
+COPY infrastructure/containers/tor/docker-compose.proxy-systems.yml ./service_configs/tor/docker-compose.proxy-systems.yml
 COPY infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.json ./infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.json
 COPY infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.yml ./infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.yml
 COPY infrastructure/containers/services/x_lucid_cluster_calibration/foundation-cluster-host-alignment.yml ./infrastructure/containers/services/x_lucid_cluster_calibration/foundation-cluster-host-alignment.yml
 COPY infrastructure/containers/tor/docker-compose.proxy-systems.yml ./infrastructure/containers/tor/docker-compose.proxy-systems.yml
 COPY infrastructure/service_mesh/service_mesh_translator.py ./infrastructure/service_mesh/service_mesh_translator.py
 COPY scripts/gui_auth_realignment/align_tor_tunnel_gui_systems.py ./scripts/gui_auth_realignment/align_tor_tunnel_gui_systems.py
-COPY service_mesh/service_mesh_translator.py ./service_mesh/service_mesh_translator.py
+COPY infrastructure/service_mesh/service_mesh_translator.py ./service_mesh/service_mesh_translator.py
 # LUCID_ALIGNMENT_MAT_COPY_DIRECTORIES_END
 
 RUN mkdir -p ./configs && \
@@ -272,30 +282,34 @@ RUN mkdir -p ./configs && \
     chown -R 65532:65532 ./configs && \
     chmod 644 ./configs/.keep && \
     echo " Marker files created to lock in directory structure"
-RUN chmod +x ./tunnels/entrypoint.py || true && \
-    ( test -f ./tunnels/__init__.py && chmod +x ./tunnels/__init__.py ) || true && \
-    chmod +x ./tunnels/scripts/*.sh || true && \
-    chmod +x ./tunnels/tunnel_metrics.py || true && \
-    chmod +x ./tunnels/tunnel_status.py || true && \
-    chmod +x ./tunnels/scripts/*.sh || true && \
-    chmod +x ./tunnels/config/* || true && \
+RUN chmod +x ./02_network_security/tunnels/entrypoint.py || true && \
+    ( test -f ./02_network_security/tunnels/__init__.py && chmod +x ./02_network_security/tunnels/__init__.py ) || true && \
+    chmod +x ./02_network_security/tunnels/scripts/*.sh 2>/dev/null || true && \
+    chmod +x ./02_network_security/tunnels/tunnel_metrics.py || true && \
+    chmod +x ./02_network_security/tunnels/tunnel_status.py || true && \
+    chmod +x ./02_network_security/tunnels/config/* 2>/dev/null || true && \
     echo "✅ Permissions set for all files"
+
+# Writable dirs aligned with Dockerfile.tor-proxy-02 (/app/run/lucid/onion, metrics under tunnel)
+RUN mkdir -p ./run/lucid/onion ./run/lucid/tunnel && \
+    chown -R 65532:65532 ./run/lucid && \
+    printf 'platform=tunnel-tools\n' > ./run/lucid/onion/.keep
 
 # Pinned build artifacts: wheelhouse for supply-chain / optional offline installs (tunnel app is stdlib-first).
 RUN python3.11 --version && \
     which python3.11 && \
-    test -f ./tunnels/entrypoint.py && \
-    python3.11 -m py_compile ./tunnels/entrypoint.py && \
-    python3.11 -m py_compile ./tunnels/tunnel_metrics.py && \
-    python3.11 -m py_compile ./tunnels/tunnel_status.py && \
-    ( test ! -f ./tunnels/__init__.py || python3.11 -m py_compile ./tunnels/__init__.py ) && \
+    test -f ./02_network_security/tunnels/entrypoint.py && \
+    python3.11 -m py_compile ./02_network_security/tunnels/entrypoint.py && \
+    python3.11 -m py_compile ./02_network_security/tunnels/tunnel_metrics.py && \
+    python3.11 -m py_compile ./02_network_security/tunnels/tunnel_status.py && \
+    ( test ! -f ./02_network_security/tunnels/__init__.py || python3.11 -m py_compile ./02_network_security/tunnels/__init__.py ) && \
     test -n "$(ls -A /build/wheels 2>/dev/null)" && \
     echo "✅ Builder stage verification passed - All Python files compile successfully"
 
 # =============================================================================
 # STAGE 2: Distroless Runtime with Python3 (Debian 12)
 # =============================================================================
-FROM gcr.io/distroless/python3-debian12:latest
+FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12:latest
 
 ARG BUILD_DATE=
 ARG VCS_REF=
@@ -339,7 +353,7 @@ ENV PUBLIC_TOR_IP="${PUBLIC_TOR_IP}" \
     PATH=/app/usr/local/bin:/app/usr/bin:/app/bin \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONPATH=/app:/app/usr/local/lib/python3.11/site-packages \
+    PYTHONPATH=/app:/app/02_network_security/tunnels:/app/common:/app/usr/local/lib/python3.11/site-packages \
     PYTHONIOENCODING=utf-8 \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
@@ -347,14 +361,21 @@ ENV PUBLIC_TOR_IP="${PUBLIC_TOR_IP}" \
     LUCID_SERVICE_PORT=7000 \
     LUCID_SERVICE_PROTOCOL=http \
     LUCID_SERVICE_HOST_IP=172.20.10.66 \
-    LUCID_SERVICE_HTTP_PATH=http://tunnel-tools:7000/app
+    LUCID_SERVICE_HTTP_PATH=http://tunnel-tools:7000/app \
+    LUCID_HOST_CONFIG_PATH=/app/configs/host-config.yml \
+    LUCID_SERVICES_CONFIG_DIR=/app/service_configs \
+    LUCID_SERVICES_CONFIG_ROOT=/app/service_configs \
+    SSL_CERT_FILE=/app/etc/ssl/certs/ca-certificates.crt \
+    CURL_CA_BUNDLE=/app/etc/ssl/certs/ca-certificates.crt
 
-# LUCID_IMAGE_CONFIG: (runtime)
+# LUCID_IMAGE_CONFIG: (runtime) — cookie + paths match Dockerfile.tor-proxy-02 / 02_network_security/tunnels/*.py
 ENV CONTROL_HOST=tor-proxy \
     CONTROL_PORT=9051 \
-    COOKIE_FILE=/app/run/lucid/tor/control_auth_cookie \
+    COOKIE_FILE_SHARED=/app/run/lucid/onion/control_auth_cookie \
+    COOKIE_FILE=/app/var/lib/tor/control_auth_cookie \
     ONION_PORTS="80 api-gateway:8080" \
-    WRITE_ENV=/app/run/lucid/tunnels/.onion.env \
+    WRITE_ENV=/app/run/lucid/onion/.onion.env \
+    METRICS_JSON_PATH=/app/run/lucid/tunnel/metrics.json \
     ROTATE_INTERVAL=0 \
     TUNNEL_PORT=7000 \
     TUNNEL_MODE=client \
@@ -369,6 +390,8 @@ COPY --from=tunnel-builder --chown=65532:65532 /build/configs/ /app/configs/
 COPY --from=tunnel-builder --chown=65532:65532 /build/scripts/ /app/scripts/
 COPY --from=tunnel-builder --chown=65532:65532 /build/service_configs/ /app/service_configs/
 COPY --from=tunnel-builder --chown=65532:65532 /build/service_mesh/ /app/service_mesh/
+COPY --from=tunnel-builder --chown=65532:65532 /build/infrastructure/ /app/infrastructure/
+COPY --from=tunnel-builder --chown=65532:65532 /build/run/lucid/ /app/run/lucid/
 # LUCID_RUNTIME_COPY_FROM_BUILD_END
 
 # LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
@@ -378,21 +401,16 @@ COPY --from=tunnel-builder --chown=65532:65532 /usr/lib/*/libssl.so* /app/usr/li
 COPY --from=tunnel-builder --chown=65532:65532 /usr/lib/*/ossl-modules/ /app/usr/lib/
 COPY --from=tunnel-builder --chown=65532:65532 /usr/lib/*/libcurl.so* /app/usr/lib/
 COPY --from=tunnel-builder --chown=65532:65532 /bin/ /app/bin/
-COPY --from=tunnel-builder --chown=65532:65532 /dev/null/ /app/dev/null/
-COPY --from=tunnel-builder --chown=65532:65532 /dev/null)"/ /app/dev/null)"/
 COPY --from=tunnel-builder --chown=65532:65532 /etc/ssl/ /app/etc/ssl/
 COPY --from=tunnel-builder --chown=65532:65532 /usr/bin/ /app/usr/bin/
 COPY --from=tunnel-builder --chown=65532:65532 /usr/lib/python3/dist-packages/ /app/usr/lib/python3/dist-packages/
 # LUCID_RUNTIME_COPY_FROM_BUILDER_APT_END
-# LUCID_RUNTIME_COPY_FROM_BUILD_BEGIN
-# Generated: same directory set as LUCID_X_FILES_SKELETON (./ under WORKDIR /build).
-COPY --from=tunnel-builder --chown=65532:65532 /build/server/ /app/server/
-COPY --from=tunnel-builder --chown=65532:65532 /build/sessions/ /app/sessions/
+# Canonical entrypoint path (matches x-lucid headers in 02_network_security/tunnels/*.py)
 RUN ["/app/usr/bin/python3.11", "-c", "import os, sys; \
-sys.path.insert(0, '/app/tunnels'); \
-entrypoint_path = '/app/tunnels/entrypoint.py'; \
-assert os.path.isfile(entrypoint_path), 'CRITICAL: /app/tunnels/entrypoint.py missing'; \
-import entrypoint; import tunnel_metrics; import tunnel_status; \
+ep = '/app/02_network_security/tunnels/entrypoint.py'; \
+sys.path.insert(0, '/app/02_network_security/tunnels'); \
+assert os.path.isfile(ep), 'CRITICAL: ' + ep + ' missing'; \
+import tunnel_metrics; import tunnel_status; \
 print('✅ All tunnel-tools modules verified')"]
 
 
@@ -412,4 +430,4 @@ USER 65532:65532
 
 
 ENTRYPOINT ["/app/usr/bin/tini", "--"]
-CMD ["/app/usr/bin/python3.11", "/app/tunnels/entrypoint.py"]
+CMD ["/app/usr/bin/python3.11", "/app/02_network_security/tunnels/entrypoint.py"]

@@ -1,4 +1,6 @@
 # syntax=docker/dockerfile:1.5
+# File: infrastructure/containers/blockchain/Dockerfile.data
+#
 # LUCID DATA CHAIN — Distroless Python (aligned with 03_api_gateway/Dockerfile)
 # Image: pickme/lucid-data-chain:latest-arm64
 # Build context: repository root (.)
@@ -596,7 +598,7 @@ COPY infrastructure/containers/services/x_lucid_cluster_calibration/allocation_m
 COPY infrastructure/containers/services/x_lucid_cluster_calibration/core-cluster-host-alignment.yml ./infrastructure/containers/services/x_lucid_cluster_calibration/core-cluster-host-alignment.yml
 COPY infrastructure/service_mesh/config/service-mesh.yaml ./infrastructure/service_mesh/config/service-mesh.yaml
 COPY infrastructure/service_mesh/service_mesh_translator.py ./infrastructure/service_mesh/service_mesh_translator.py
-COPY service_mesh/service_mesh_translator.py ./service_mesh/service_mesh_translator.py
+COPY infrastructure/service_mesh/service_mesh_translator.py ./service_mesh/service_mesh_translator.py
 COPY sessions/integration/blockchain_client.py ./sessions/integration/blockchain_client.py
 COPY src/api/services/blockchain_service.py ./src/api/services/blockchain_service.py
 COPY tests/security/test_tron_isolation.py ./tests/security/test_tron_isolation.py

@@ -1,4 +1,5 @@
 # syntax=docker/dockerfile:1.5
+# Operational alignment: infrastructure/containers/tor/Dockerfile.tor-proxy-02 (repo-root context, LUCID_* / PUBLIC_TOR_IP, /app/bin/tini).
 # LUCID GOVERNOR (lucid-gov) — Distroless Python (aligned with infrastructure/containers/node/Dockerfile.node-worker)
 # Image: pickme/lucid-governor:latest-arm64
 # Build context: repository root (.)
@@ -404,7 +405,6 @@ COPY --from=builder --chown=65532:65532 /usr/lib/*/ossl-modules/ /app/usr/lib/
 COPY --from=builder --chown=65532:65532 /usr/lib/*/libcurl.so* /app/usr/lib/
 COPY --from=builder --chown=65532:65532 /app-dirs/ /app/app-dirs/
 COPY --from=builder --chown=65532:65532 /bin/ /app/bin/
-COPY --from=builder --chown=65532:65532 /dev/null/ /app/dev/null/
 COPY --from=builder --chown=65532:65532 /etc/ssl/ /app/etc/ssl/
 COPY --from=builder --chown=65532:65532 /usr/bin/ /app/usr/bin/
 COPY --from=builder --chown=65532:65532 /usr/lib/python3/dist-packages/ /app/usr/lib/python3/dist-packages/
@@ -430,6 +430,8 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
 
 USER 65532:65532
 
-ENTRYPOINT ["/app/usr/bin/tini", "--"]
+COPY --from=builder --chown=65532:65532 /usr/bin/tini /app/bin/tini
+
+ENTRYPOINT ["/app/bin/tini", "--"]
 
 CMD ["/app/usr/bin/python3.11", "-m", "common.governance.lucid_governor"]

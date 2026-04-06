@@ -1,4 +1,6 @@
 # syntax=docker/dockerfile:1.5
+# File: infrastructure/containers/auth/Dockerfile.lucid-gov
+#
 # LUCID GOVERNOR (lucid-gov) — Distroless Python (aligned with infrastructure/containers/node/Dockerfile.node-worker)
 # Image: pickme/lucid-governor:latest-arm64
 # Build context: repository root (.)

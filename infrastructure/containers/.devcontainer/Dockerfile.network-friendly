@@ -1,6 +1,12 @@
+# syntax=docker/dockerfile:1.5
+# File: infrastructure/containers/.devcontainer/Dockerfile.network-friendly
+#
 # Multi-stage Dockerfile for Lucid RDP Development Environment
 # Network-friendly version with fallback base images and retry logic
 # Target: Raspberry Pi 5 (ARM64) with full development stack
+#
+# Build (repository root = context):
+#   docker build -f infrastructure/containers/.devcontainer/Dockerfile.network-friendly -t lucid/devcontainer-network-friendly:latest .
 
 # Stage 1: Base development environment with network-friendly configuration
 FROM python:3.12-slim AS base

@@ -1,4 +1,6 @@
 # syntax=docker/dockerfile:1.5
+# File: infrastructure/containers/gui/Dockerfile.gui-hardware-manager
+#
 
 ARG BUILD_DATE=
 ARG VCS_REF=

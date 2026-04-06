@@ -1,4 +1,6 @@
 # syntax=docker/dockerfile:1.5
+# File: infrastructure/containers/sessions/Dockerfile.api
+#
 # LUCID SESSION API - Distroless Python service
 # Config bake aligned with infrastructure/containers/node/Dockerfile.node-system-gateway
 #   (services tree + host-config.yml under /app/service_configs and /app/host).
@@ -450,7 +452,7 @@ COPY RDP/session_controller/config.py ./RDP/session_controller/config.py
 COPY RDP/session_controller/schema_validator.py ./RDP/session_controller/schema_validator.py
 COPY scripts/validation/repair-validation-failures.py ./scripts/validation/repair-validation-failures.py
 COPY scripts/validation/validate-electron-gui-alignment.py ./scripts/validation/validate-electron-gui-alignment.py
-COPY service_mesh/service_mesh_translator.py ./service_mesh/service_mesh_translator.py
+COPY infrastructure/service_mesh/service_mesh_translator.py ./service_mesh/service_mesh_translator.py
 COPY sessions/api/config.py ./sessions/api/config.py
 COPY sessions/api/entrypoint.py ./sessions/api/entrypoint.py
 COPY sessions/api/main.py ./sessions/api/main.py

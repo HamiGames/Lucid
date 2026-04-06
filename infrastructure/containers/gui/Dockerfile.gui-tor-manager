@@ -1,4 +1,6 @@
 # syntax=docker/dockerfile:1.5
+# File: infrastructure/containers/gui/Dockerfile.gui-tor-manager
+#
 # Multi-stage build for gui_tor_manager following dockerfile-design.md and Dockerfile-copy-pattern.md
 # ===========================================================================================
 

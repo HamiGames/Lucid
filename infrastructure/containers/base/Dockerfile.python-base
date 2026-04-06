@@ -1,4 +1,6 @@
 # syntax=docker/dockerfile:1.5
+# File: infrastructure/containers/base/Dockerfile.python-base
+#
 # LUCID PYTHON BASE — Distroless Python 3.11 foundation layer (pickme/lucid-base:python-distroless-arm64 pattern)
 # Build context: repository root (.)
 #

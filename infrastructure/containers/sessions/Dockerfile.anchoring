@@ -1,10 +1,13 @@
-# blockchain/Dockerfile.anchoring
+# syntax=docker/dockerfile:1.5
+# File: infrastructure/containers/sessions/Dockerfile.anchoring
+#
 # LUCID SESSION ANCHORING - SPEC-1B Implementation
 # Config bake aligned with infrastructure/containers/node/Dockerfile.node-system-gateway.
 # Distroless FastAPI service for Lucid session anchoring
 # Build context: repository root
-
-# syntax=docker/dockerfile:1.5
+#
+# Build (repository root = context):
+#   docker build -f infrastructure/containers/sessions/Dockerfile.anchoring -t pickme/lucid-session-anchoring:latest-arm64 .
 
 ARG BUILD_DATE=
 ARG VCS_REF=

@@ -1,4 +1,6 @@
 # syntax=docker/dockerfile:1.5
+# File: infrastructure/docker/distroless/base/Dockerfile.base
+# Operational alignment: infrastructure/containers/tor/Dockerfile.tor-proxy-02 (repo-root context, LUCID_* / PUBLIC_TOR_IP, /app/bin/tini).
 # LUCID DISTROLESS BASE — pickme/lucid-base:latest-arm64 (foundation / strap image)
 # Build context: repository root (.)
 #
@@ -6,11 +8,14 @@
 # Runtime layout: infrastructure/containers/services/container-runtime-layout.yml → lucid_services_config_root: /app/service_configs
 # Mirror host registry (compat): /app/configs/host-config.yml
 
-ARG BUILD_DATE
-ARG VCS_REF
+ARG BUILD_DATE=
+ARG VCS_REF=
 ARG VERSION=1.0.0
 ARG TARGETPLATFORM=linux/arm64
 ARG BUILDPLATFORM=linux/amd64
+ARG PUBLIC_TOR_IP=109.70.100.1
+ARG LUCID_INTERNAL_NETWORK_NAME=lucid-pi-network
+ARG LUCID_TOR_EGRESS_NETWORK_NAME=lucid-tor-egress-network
 ARG PYTHON_VERSION=3.11
 
 ############################
@@ -45,10 +50,14 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 RUN python -m venv /opt/venv && \
     /opt/venv/bin/pip install --upgrade pip wheel setuptools
 
-
+COPY infrastructure/docker/distroless/base/requirements-minimal.txt ./requirements-minimal.txt
 
 RUN --mount=type=cache,target=/root/.cache/pip \
-    /opt/venv/bin/pip install --no-cache-dir --no-index --find-links /build/wheels --no-cache-dir --prefer-binary -r requirements-minimal.txt
+    mkdir -p /build/wheels && \
+    /opt/venv/bin/pip wheel --no-cache-dir --wheel-dir /build/wheels -r requirements-minimal.txt
+
+RUN --mount=type=cache,target=/root/.cache/pip \
+    /opt/venv/bin/pip install --no-cache-dir --no-index --find-links /build/wheels --prefer-binary -r requirements-minimal.txt
 # LUCID_X_FILES_SKELETON_BEGIN
 # Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
 RUN set -eux; \
@@ -1067,12 +1076,6 @@ RUN cat <<'EOF' > /opt/lucid-base/scripts/lucid_base_bootstrap.py
 import os
 import sys
 import time
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1 \
-    PIP_PREFER_BINARY=1 \
-    DEBIAN_FRONTEND=noninteractive
 
 from pathlib import Path
 
@@ -1145,16 +1148,15 @@ LABEL maintainer="Lucid Development Team" \
       com.lucid.env.config=".env.foundation,.env.core,.env.distroless" \
       org.opencontainers.image.source="https://github.com/HamiGames/Lucid" \
       com.lucid.tor.bootstrap="true" \
-      com.lucid.deployment.path="/mnt/myssd/Lucid/Lucid"
-
-# lucid_services_config_root (container-runtime-layout.yml); x-lucid-file-path in host-config.yml \
+      com.lucid.deployment.path="/mnt/myssd/Lucid/Lucid" \
       com.lucid.service_id="com.lucid.dockerfile.v1.54a61bd53646289d.infrastructure.docker.distroless.base.Dockerfile.base" \
       onion.lucid.service_id="lucid-54a61bd53646289d-infrastructure-docker-di" \
-      org.lucid.service_id="org.lucid.dockerfile.v1.54a61bd53646289d:infrastructure/docker/distroless/base/Dockerfile.base" \
+      org.lucid.service_id="org.lucid.dockerfile.v1.54a61bd53646289d:infrastructure/docker/distroless/base/Dockerfile.base"
+
 ENV     PUBLIC_TOR_IP="${PUBLIC_TOR_IP}" \
     LUCID_INTERNAL_NETWORK_NAME="${LUCID_INTERNAL_NETWORK_NAME}" \
     LUCID_TOR_EGRESS_NETWORK_NAME="${LUCID_TOR_EGRESS_NETWORK_NAME}" \
-    PATH="/opt/venv/bin:/usr/local/bin:/usr/bin:/bin" \
+    PATH="/app/bin:/opt/venv/bin:/usr/local/bin:/usr/bin:/bin" \
     PYTHONUNBUFFERED="1" \
     PYTHONDONTWRITEBYTECODE="1" \
     PYTHONPATH="/app:/opt/venv/lib/python3.11/site-packages" \
@@ -1194,23 +1196,18 @@ COPY --from=builder --chown=65532:65532 /usr/lib/*/libssl.so* /app/usr/lib/
 COPY --from=builder --chown=65532:65532 /usr/lib/*/ossl-modules/ /app/usr/lib/
 COPY --from=builder --chown=65532:65532 /usr/lib/*/libcurl.so* /app/usr/lib/
 COPY --from=builder --chown=65532:65532 /bin/ /app/bin/
-COPY --from=builder --chown=65532:65532 /dev/null/ /app/dev/null/
 COPY --from=builder --chown=65532:65532 /etc/ssl/ /app/etc/ssl/
 COPY --from=builder --chown=65532:65532 /opt/lucid-base/scripts/ /app/opt/lucid-base/scripts/
 COPY --from=builder --chown=65532:65532 /usr/bin/ /app/usr/bin/
+COPY --from=builder --chown=65532:65532 /opt/venv /opt/venv
 # LUCID_RUNTIME_COPY_FROM_BUILDER_APT_END
-# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
-# Generated: apt + RUN scaffold (mkdir/printf/touch/chown) -> FHS (not ./ or /build/; lib_search_and_inject.py).
-RUN ls -la /opt/lucid-base/scripts/lucid_base_bootstrap.py
 
-# Canonical registry + packaged service YAML (container-runtime-layout.yml policy)
-USER 65532:65532
-
-ENTRYPOINT ["python3", "/opt/lucid-base/scripts/lucid_base_bootstrap.py"]
-CMD []
 COPY configs/docker/ ./configs/docker/
 COPY infrastructure/containers/base/docker-compose.base.yml ./configs/operations/docker-compose.base.yml
 
-############################
-# Stage 2 – Runtime (Distroless Python)
-############################
+COPY --from=builder --chown=65532:65532 /usr/bin/tini /app/bin/tini
+
+USER 65532:65532
+
+ENTRYPOINT ["/app/bin/tini", "--", "/opt/venv/bin/python3", "/app/opt/lucid-base/scripts/lucid_base_bootstrap.py"]
+CMD []

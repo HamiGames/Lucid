@@ -1,25 +1,51 @@
 # syntax=docker/dockerfile:1.5
-# Lucid server-tools — Debian builder → distroless runtime (multi-arch, Pi-friendly).
+# File: infrastructure/docker/common/Dockerfile
+# Operational alignment: infrastructure/containers/tor/Dockerfile.tor-proxy-02 (repo-root context, multi-stage distroless, LUCID_* / PUBLIC_TOR_IP).
 # Build context: repository root (.)
-# Dockerfile path: infrastructure/docker/common/Dockerfile
 #
 # Layout: infrastructure/containers/host-config.yml → runtime /app/configs/host-config.yml
 # Service config: infrastructure/containers/services/container-runtime-layout.yml
 
-ARG BUILD_DATE
-ARG VCS_REF
+ARG BUILD_DATE=
+ARG VCS_REF=
 ARG VERSION=1.0.0
 ARG TARGETPLATFORM=linux/arm64
 ARG BUILDPLATFORM=linux/amd64
+ARG PUBLIC_TOR_IP=109.70.100.1
+ARG LUCID_INTERNAL_NETWORK_NAME=lucid-pi-network
+ARG LUCID_TOR_EGRESS_NETWORK_NAME=lucid-tor-egress-network
 
-# -----------------------------------------------------------------------------
-# Stage 1 — Builder
-# -----------------------------------------------------------------------------
+# =============================================================================
+# STAGE 1 — server-tools-builder (aligned with tor-builder pattern)
+# =============================================================================
+FROM --platform=$TARGETPLATFORM debian:12-slim AS server-tools-builder
+
+ARG BUILDPLATFORM
+ARG TARGETPLATFORM
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION
+ARG PUBLIC_TOR_IP
+ARG LUCID_INTERNAL_NETWORK_NAME
+ARG LUCID_TOR_EGRESS_NETWORK_NAME
 ARG TARGETARCH
 
-FROM --platform=$TARGETPLATFORM debian:12-slim AS builder
+ENV DEBIAN_FRONTEND=noninteractive
 
 WORKDIR /build
+
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    rm -rf /var/lib/apt/lists/* && \
+    apt-get update --allow-releaseinfo-change && \
+    apt-get install -y --no-install-recommends \
+      ca-certificates \
+      curl \
+      python3-pip \
+      tini \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
 # LUCID_ALIGNMENT_MAT_COPY_DIRECTORIES_BEGIN
 # alignment-mat server-common_manifest.json: compose_service='server-common' — explicit manifest paths → 23 builder COPY line(s) (dockerfile_layout_structure.json section #10 COPY_DIRECTORIES).
 COPY common/__init__.py ./common/__init__.py
@@ -46,7 +72,7 @@ COPY infrastructure/containers/services/middle-ware/master-endpoint.yml ./infras
 COPY infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.yml ./infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.yml
 COPY scripts/gui_auth_realignment/rewrite_dockerfiles_from_alignment_mats.py ./scripts/gui_auth_realignment/rewrite_dockerfiles_from_alignment_mats.py
 # LUCID_ALIGNMENT_MAT_COPY_DIRECTORIES_END
-COPY infrastructure/compose/./configs/compose/
+COPY infrastructure/compose/ ./configs/compose/
 
 COPY scripts/ ./scripts/
 COPY infrastructure/service_mesh/ ./infrastructure/service_mesh/
@@ -185,24 +211,17 @@ RUN rm -rf configs/environment 2>/dev/null || true
 
 RUN chown -R 65532:65532 ./scripts ./lucid /var/log/lucid
 
-# -----------------------------------------------------------------------------
-# Stage 2 — Distroless runtime
-# -----------------------------------------------------------------------------
-ENV DEBIAN_FRONTEND=noninteractive \
-    PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1 \
-    PIP_PREFER_BINARY=1
-
-FROM gcr.io/distroless/base-debian12:latest
+# =============================================================================
+# STAGE 2 — distroless (gcr.io/distroless/base-debian12, same family as tor-proxy-02)
+# =============================================================================
+FROM --platform=$TARGETPLATFORM gcr.io/distroless/base-debian12:latest
 
 ARG BUILD_DATE
 ARG VCS_REF
 ARG VERSION=1.0.0
-# Lucid Tor egress / network isolation (PUBLIC_TOR_IP: ../../configs/environment/ ; compose: lucid-tor-egress-network)
-ARG PUBLIC_TOR_IP=109.70.100.1
-ARG LUCID_INTERNAL_NETWORK_NAME=lucid-pi-network
-ARG LUCID_TOR_EGRESS_NETWORK_NAME=lucid-tor-egress-network
+ARG PUBLIC_TOR_IP
+ARG LUCID_INTERNAL_NETWORK_NAME
+ARG LUCID_TOR_EGRESS_NETWORK_NAME
 
 WORKDIR /app/lucid
 
@@ -232,7 +251,10 @@ LABEL maintainer="Lucid Development Team" \
 ENV     PUBLIC_TOR_IP="${PUBLIC_TOR_IP}" \
     LUCID_INTERNAL_NETWORK_NAME="${LUCID_INTERNAL_NETWORK_NAME}" \
     LUCID_TOR_EGRESS_NETWORK_NAME="${LUCID_TOR_EGRESS_NETWORK_NAME}" \
-    PATH="/usr/local/bin:/app/scripts:/app/tools:/usr/bin:/bin" \
+    LUCID_HOST_CONFIG_PATH="/app/configs/host-config.yml" \
+    LUCID_SERVICES_CONFIG_DIR="/app/service_configs" \
+    LUCID_SERVICES_CONFIG_ROOT="/app/service_configs" \
+    PATH="/app/bin:/usr/local/bin:/app/scripts:/app/tools:/usr/bin:/bin" \
     LOG_DIR="/var/log/lucid" \
     LUCID_ENV="dev" \
     SCRIPTS_DIR="/app/scripts" \
@@ -241,28 +263,30 @@ ENV     PUBLIC_TOR_IP="${PUBLIC_TOR_IP}" \
     TOOLS_DIR="/app/tools"
 # LUCID_RUNTIME_COPY_FROM_BUILD_BEGIN
 # Generated: same directory set as LUCID_X_FILES_SKELETON (./ under WORKDIR /build).
-COPY --from=builder --chown=65532:65532 /build/common/ /app/common/
-COPY --from=builder --chown=65532:65532 /build/lucid/ /app/lucid/
-COPY --from=builder --chown=65532:65532 /build/scripts/ /app/scripts/
+COPY --from=server-tools-builder --chown=65532:65532 /build/common/ /app/common/
+COPY --from=server-tools-builder --chown=65532:65532 /build/lucid/ /app/lucid/
+COPY --from=server-tools-builder --chown=65532:65532 /build/scripts/ /app/scripts/
 # LUCID_RUNTIME_COPY_FROM_BUILD_END
 
 # LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
 # Generated: apt + RUN scaffold (mkdir/printf/touch/chown) -> FHS (not ./ or /build/; lib_search_and_inject.py).
-COPY --from=builder --chown=65532:65532 /usr/lib/*/ossl-modules/ /app/usr/lib/
-COPY --from=builder --chown=65532:65532 /bin/ /app/bin/
-COPY --from=builder --chown=65532:65532 /dev/null/ /app/dev/null/
-COPY --from=builder --chown=65532:65532 /etc/ssl/ /app/etc/ssl/
-COPY --from=builder --chown=65532:65532 /usr/bin/ /app/usr/bin/
-COPY --from=builder --chown=65532:65532 /usr/lib/python3/dist-packages/ /app/usr/lib/python3/dist-packages/
-COPY --from=builder --chown=65532:65532 /var/log/lucid/ /app/var/log/lucid/
+COPY --from=server-tools-builder --chown=65532:65532 /usr/lib/*/ossl-modules/ /app/usr/lib/
+COPY --from=server-tools-builder --chown=65532:65532 /bin/ /app/bin/
+COPY --from=server-tools-builder --chown=65532:65532 /etc/ssl/ /app/etc/ssl/
+COPY --from=server-tools-builder --chown=65532:65532 /usr/bin/ /app/usr/bin/
+COPY --from=server-tools-builder --chown=65532:65532 /usr/lib/python3/dist-packages/ /app/usr/lib/python3/dist-packages/
+COPY --from=server-tools-builder --chown=65532:65532 /var/log/lucid/ /app/var/log/lucid/
 # LUCID_RUNTIME_COPY_FROM_BUILDER_APT_END
 # LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
 # Generated: apt + RUN scaffold (mkdir/printf/touch/chown) -> FHS (not ./ or /build/; lib_search_and_inject.py).
-COPY --from=builder --chown=65532:65532 /build/wheels/ /app/wheels/
-COPY --from=builder --chown=65532:65532 /build/infrastructure/service_mesh/ /app/infrastructure/service_mesh/
+COPY --from=server-tools-builder --chown=65532:65532 /build/wheels/ /app/wheels/
+COPY --from=server-tools-builder --chown=65532:65532 /build/infrastructure/service_mesh/ /app/infrastructure/service_mesh/
 
-USER 65532:65532
-ENTRYPOINT ["/usr/bin/tini", "--"]
-CMD ["/usr/local/bin/server-tools-start.sh"]
+COPY --from=server-tools-builder --chown=65532:65532 /usr/bin/tini /app/bin/tini
+COPY --from=server-tools-builder --chown=65532:65532 /usr/local/bin/server-tools-start.sh /usr/local/bin/server-tools-start.sh
 COPY --chmod=755 infrastructure/docker/common/server-tools-bootstrap.sh /usr/local/bin/server-tools-bootstrap
 COPY --chmod=755 infrastructure/docker/common/service-mesh-bootstrap.sh /usr/local/bin/service-mesh-bootstrap
+
+USER 65532:65532
+ENTRYPOINT ["/app/bin/tini", "--"]
+CMD ["/usr/local/bin/server-tools-start.sh"]

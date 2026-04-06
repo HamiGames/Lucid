@@ -1,4 +1,6 @@
 # syntax=docker/dockerfile:1.5
+# File: infrastructure/containers/payment_systems/Dockerfile.on-system-chain-client
+#
 # LUCID ON-SYSTEM CHAIN CLIENT — Distroless Python (payment / anchoring plane)
 # Path: infrastructure/containers/payment_systems/Dockerfile.on-system-chain-client
 # Build context: repository root (.)

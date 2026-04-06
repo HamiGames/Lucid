@@ -1,4 +1,6 @@
 # syntax=docker/dockerfile:1.5
+# File: infrastructure/containers/rdp/Dockerfile.rdp-controller
+#
 
 # LUCID RDP CONTROLLER - Distroless Container
 # Aligned with dockerfile-design.md, master-docker-design.md

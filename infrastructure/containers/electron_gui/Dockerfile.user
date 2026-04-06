@@ -1,10 +1,12 @@
 # syntax=docker/dockerfile:1.5
+# File: infrastructure/containers/electron_gui/Dockerfile.user
+#
 # Lucid electron_gui User - Distroless Package
 # Target Platform: Raspberry Pi (linux/arm64)
 # Network: lucid-pi-network (172.20.0.0/16)
 # Date: 2025-01-24
-# Build Context: Project root (/mnt/myssd/Lucid/Lucid)
-# Build Command: docker build -f electron_gui/distroless/Dockerfile.user -t pickme/lucid-user-interface:latest-arm64 .
+# Build (repository root = context):
+#   docker build -f infrastructure/containers/electron_gui/Dockerfile.user -t pickme/lucid-user-interface:latest-arm64 .
 
 ARG BUILDPLATFORM=linux/amd64
 ARG TARGETPLATFORM=linux/arm64

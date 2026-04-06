@@ -1,4 +1,6 @@
 # syntax=docker/dockerfile:1.5
+# File: infrastructure/containers/payment_systems/Dockerfile.wallet
+#
 # LUCID WALLET MANAGER (TRON) — Distroless Python (aligned with 03_api_gateway/Dockerfile + blockchain/Dockerfile.data)
 # Image: pickme/lucid-wallet-manager:latest-arm64
 # Build context: repository root (.)
@@ -428,7 +430,7 @@ COPY payment_systems/tron/services/wallet_manager.py ./payment_systems/tron/serv
 COPY payment_systems/tron/services/wallet_operations.py ./payment_systems/tron/services/wallet_operations.py
 COPY payment_systems/tron/wallet_manager_entrypoint.py ./payment_systems/tron/wallet_manager_entrypoint.py
 COPY payment_systems/tron/wallet_manager_main.py ./payment_systems/tron/wallet_manager_main.py
-COPY service_mesh/service_mesh_translator.py ./service_mesh/service_mesh_translator.py
+COPY infrastructure/service_mesh/service_mesh_translator.py ./service_mesh/service_mesh_translator.py
 COPY tests/security/test_tron_isolation.py ./tests/security/test_tron_isolation.py
 COPY tests/validation/test_all_containers_running.py ./tests/validation/test_all_containers_running.py
 COPY tests/validation/test_all_services_healthy.py ./tests/validation/test_all_services_healthy.py

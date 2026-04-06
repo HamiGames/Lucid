@@ -1,4 +1,6 @@
 # syntax=docker/dockerfile:1.5
+# File: infrastructure/containers/blockchain/Dockerfile.chain-to-pay
+#
 # LUCID blockchain-TO-PAY GATEWAY — Distroless HTTP bridge (data-blockchain, consensus, session-chunk, tron-payment)
 # Structure aligned with infrastructure/containers/node/Dockerfile.node-system-gateway
 # Image: pickme/lucid-blockchain-to-pay:latest-arm64 | Listen: 8114 | Health: GET /health

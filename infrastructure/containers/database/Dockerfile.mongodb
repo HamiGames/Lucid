@@ -1,4 +1,6 @@
 # syntax=docker/dockerfile:1.5
+# File: infrastructure/containers/database/Dockerfile.mongodb
+#
 # LUCID MONGODB — Distroless Python + mongod/mongosh
 # Rewritten to follow 03_api_gateway/Dockerfile (ARGs, markers, /build export, /app runtime, tini, USER 65532)
 # Image: pickme/lucid-mongodb:latest-arm64
@@ -17,11 +19,8 @@ ARG DEBIAN_MULTIARCH=aarch64-linux-gnu
 ############################
 # Stage 1 – Builder (MongoDB binaries + export tree under /build)
 ############################
-ARG BUILDPLATFORM
-ARG TARGETPLATFORM
-ARG PYTHON_VERSION=3.12-slim
-ARG DEBIAN_MULTIARCH=latest
-
+# Use global ARG TARGETPLATFORM/BUILDPLATFORM (lines above); do not redeclare bare ARG here —
+# that yields empty TARGETPLATFORM with plain docker build and breaks FROM --platform=.
 FROM --platform=$TARGETPLATFORM mongo:7.0 AS builder
 
 WORKDIR /build
@@ -511,7 +510,7 @@ COPY RDP/resource_monitor/config.py ./RDP/resource_monitor/config.py
 COPY RDP/server_manager/config.py ./RDP/server_manager/config.py
 COPY RDP/session_controller/config.py ./RDP/session_controller/config.py
 COPY RDP/xrdp/config.py ./RDP/xrdp/config.py
-COPY service_mesh/service_mesh_translator.py ./service_mesh/service_mesh_translator.py
+COPY infrastructure/service_mesh/service_mesh_translator.py ./service_mesh/service_mesh_translator.py
 COPY sessions/api/config.py ./sessions/api/config.py
 COPY sessions/api/session_api.py ./sessions/api/session_api.py
 COPY sessions/pipeline/config.py ./sessions/pipeline/config.py

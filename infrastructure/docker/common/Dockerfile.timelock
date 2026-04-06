@@ -1,4 +1,5 @@
 # syntax=docker/dockerfile:1.5
+# Operational alignment: infrastructure/containers/tor/Dockerfile.tor-proxy-02 (repo-root context, LUCID_* / PUBLIC_TOR_IP, /app/bin/tini).
 # Lucid Timelock — SPEC-3 (distroless Python).
 # Build context: repository root (.)
 # Dockerfile path: infrastructure/docker/common/Dockerfile.timelock
@@ -373,6 +374,8 @@ EXPOSE 8109
 
 USER 65532:65532
 
-ENTRYPOINT ["/app/usr/bin/tini", "--"]
+COPY --from=builder --chown=65532:65532 /usr/bin/tini /app/bin/tini
+
+ENTRYPOINT ["/app/bin/tini", "--"]
 
 CMD ["/app/usr/bin/python3.11", "/app/common/governance/timelock.py"]

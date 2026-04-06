@@ -1,5 +1,6 @@
 # syntax=docker/dockerfile:1.5
-# infrastructure/containers/database/Dockerfile.database-overlord
+# File: infrastructure/containers/database/Dockerfile.database-overlord
+#
 # LUCID DATABASE OVERLORD — Distroless Python 3.11
 # Hosts templates and HTTP API for database env orchestration.
 # API: http://database-overlord:8120/api/v1/database/overlord
@@ -15,9 +16,7 @@ ARG BUILDPLATFORM=linux/amd64
 ############################
 # Stage 1 – Builder
 ############################
-ARG BUILDPLATFORM
-ARG TARGETPLATFORM
-
+# Use global ARG TARGETPLATFORM (lines above); bare ARG before FROM can be empty.
 FROM --platform=$TARGETPLATFORM python:3.11-slim-bookworm AS builder
 
 WORKDIR /build/overlord
@@ -213,7 +212,7 @@ COPY infrastructure/containers/services/x_lucid_cluster_calibration/allocation_m
 COPY infrastructure/containers/services/x_lucid_cluster_calibration/database-cluster-host-alignment.yml ./infrastructure/containers/services/x_lucid_cluster_calibration/database-cluster-host-alignment.yml
 COPY infrastructure/service_mesh/service_mesh_translator.py ./infrastructure/service_mesh/service_mesh_translator.py
 COPY repair_dockerfile_standardization.py ./repair_dockerfile_standardization.py
-COPY service_mesh/service_mesh_translator.py ./service_mesh/service_mesh_translator.py
+COPY infrastructure/service_mesh/service_mesh_translator.py ./service_mesh/service_mesh_translator.py
 # LUCID_ALIGNMENT_MAT_COPY_DIRECTORIES_END
 # LUCID_X_FILES_SKELETON_BEGIN
 # Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY

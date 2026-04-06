@@ -1,4 +1,6 @@
 # syntax=docker/dockerfile:1.5
+# File: infrastructure/containers/payment_systems/Dockerfile.payment-gateway
+#
 # LUCID PAYMENT SYSTEM GATEWAY — Distroless Python (payment plane entry/orchestration)
 # Path: infrastructure/containers/payment_systems/Dockerfile.payment-gateway
 # Build context: repository root (.)

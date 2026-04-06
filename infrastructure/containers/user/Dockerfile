@@ -1,4 +1,6 @@
 # syntax=docker/dockerfile:1.5
+# File: infrastructure/containers/user/Dockerfile
+#
 # LUCID API GATEWAY - Distroless Python Service
 # Aligned with dockerfile-design.md and Dockerfile-copy-pattern.md
 # Image: pickme/lucid-api-gateway:latest-arm64
@@ -984,7 +986,7 @@ COPY scripts/validation/repair-validation-failures.py ./scripts/validation/repai
 COPY scripts/validation/validate-electron-gui-alignment.py ./scripts/validation/validate-electron-gui-alignment.py
 COPY scripts/validation/validate-python-build-alignment.py ./scripts/validation/validate-python-build-alignment.py
 COPY server/host_context.py ./server/host_context.py
-COPY service_mesh/service_mesh_translator.py ./service_mesh/service_mesh_translator.py
+COPY infrastructure/service_mesh/service_mesh_translator.py ./service_mesh/service_mesh_translator.py
 COPY sessions/api/config.py ./sessions/api/config.py
 COPY sessions/pipeline/config.py ./sessions/pipeline/config.py
 COPY sessions/pipeline/integration/api_gateway_client.py ./sessions/pipeline/integration/api_gateway_client.py

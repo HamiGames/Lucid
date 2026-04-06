@@ -1,4 +1,6 @@
 # syntax=docker/dockerfile:1.5
+# File: infrastructure/containers/server/Dockerfile
+#
 # LUCID SERVER CORE — Distroless Python (shared server-tier foundation)
 # Aligned with 03_api_gateway/Dockerfile (builder wheels, /app runtime layout, tini)
 # Image: pickme/lucid-server-core:latest-arm64
@@ -218,7 +220,7 @@ COPY infrastructure/service_mesh/service_mesh_translator.py ./infrastructure/ser
 COPY server/__init__.py ./server/__init__.py
 COPY server/host_context.py ./server/host_context.py
 COPY server/run_server.py ./server/run_server.py
-COPY service_mesh/service_mesh_translator.py ./service_mesh/service_mesh_translator.py
+COPY infrastructure/service_mesh/service_mesh_translator.py ./service_mesh/service_mesh_translator.py
 # LUCID_ALIGNMENT_MAT_COPY_DIRECTORIES_END
 # LUCID_X_FILES_SKELETON_BEGIN
 # Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY

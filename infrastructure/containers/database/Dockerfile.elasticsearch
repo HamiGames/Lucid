@@ -1,4 +1,6 @@
 # syntax=docker/dockerfile:1.5
+# File: infrastructure/containers/database/Dockerfile.elasticsearch
+#
 # LUCID Elasticsearch - Distroless Java 17 + Elasticsearch 8.x
 # Design aligned with 03_api_gateway/Dockerfile (syntax, ARGs, stage headers, labels, verification, health timing, USER 65532, tini)
 # Builder: official Elasticsearch image (correct base for ES binaries, plugins, and keystore creation)
@@ -14,9 +16,7 @@ ARG BUILDPLATFORM=linux/amd64
 ############################
 # Stage 1 – Elasticsearch builder
 ############################
-ARG BUILDPLATFORM
-ARG TARGETPLATFORM
-
+# Use global ARG TARGETPLATFORM (lines above); bare ARG TARGETPLATFORM before FROM can be empty.
 FROM --platform=$TARGETPLATFORM elasticsearch:8.11.0 AS es-builder
 
 WORKDIR /build

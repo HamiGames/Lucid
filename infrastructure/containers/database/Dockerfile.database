@@ -1,5 +1,6 @@
 # syntax=docker/dockerfile:1.5
-# infrastructure/containers/database/Dockerfile.database
+# File: infrastructure/containers/database/Dockerfile.database
+#
 # LUCID DATABASE TOOLING - Distroless Python service
 # Aligned with 03_api_gateway/Dockerfile layout and dockerfile-design patterns
 # Build context: project root (prefixed paths)
@@ -16,10 +17,7 @@ ARG PYTHON_VERSION=3.11
 ############################
 # Stage 1 – Builder
 ############################
-ARG BUILDPLATFORM
-ARG TARGETPLATFORM
-ARG PYTHON_VERSION=3.12-slim
-
+# Use global ARG TARGETPLATFORM (lines above); bare ARG before FROM can be empty.
 FROM --platform=$TARGETPLATFORM python:3.11-slim-bookworm AS builder
 
 WORKDIR /build

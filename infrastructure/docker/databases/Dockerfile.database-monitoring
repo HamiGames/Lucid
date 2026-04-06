@@ -1,4 +1,5 @@
 # syntax=docker/dockerfile:1.5
+# Operational alignment: infrastructure/containers/tor/Dockerfile.tor-proxy-02 (repo-root context, LUCID_* / PUBLIC_TOR_IP, /app/bin/tini).
 # configs/docker/databases/Dockerfile.database-monitoring
 # Aligned with 03_api_gateway/Dockerfile: repository-root context, python3.11 wheels, /app/usr layout, tini, distroless.
 # host-config.yml: mongodb_monitoring → service_name mongodb-monitoring, port 27018 (+ lucid-mongodb / lucid-redis for operations).
@@ -83,9 +84,9 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     mkdir -p /build/wheels && \
     pip install --upgrade pip setuptools wheel && \
     pip --version && \
-    /app/usr/bin/python3.11 -m wheel version
+    python3.11 -m wheel version
 
-RUN /app/usr/bin/python3.11 -m pip wheel --no-cache-dir --wheel-dir /build/wheels -r ./requirements.txt
+RUN python3.11 -m pip wheel --no-cache-dir --wheel-dir /build/wheels -r ./requirements.txt
 # LUCID_X_FILES_SKELETON_BEGIN
 # Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
 RUN set -eux; \
@@ -275,7 +276,6 @@ COPY --from=builder --chown=65532:65532 /usr/lib/*/libssl.so* /app/usr/lib/
 COPY --from=builder --chown=65532:65532 /usr/lib/*/ossl-modules/ /app/usr/lib/
 COPY --from=builder --chown=65532:65532 /usr/lib/*/libcurl.so* /app/usr/lib/
 COPY --from=builder --chown=65532:65532 /bin/ /app/bin/
-COPY --from=builder --chown=65532:65532 /dev/null/ /app/dev/null/
 COPY --from=builder --chown=65532:65532 /etc/ssl/ /app/etc/ssl/
 COPY --from=builder --chown=65532:65532 /usr/bin/ /app/usr/bin/
 COPY --from=builder --chown=65532:65532 /usr/local/bin/ /app/usr/local/bin/
@@ -304,6 +304,8 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
 
 USER 65532:65532
 
-ENTRYPOINT ["/app/usr/bin/tini", "--"]
+COPY --from=builder --chown=65532:65532 /usr/bin/tini /app/bin/tini
+
+ENTRYPOINT ["/app/bin/tini", "--"]
 
 CMD ["/app/usr/bin/python3.11", "-m", "database.services.monitoring.main"]

@@ -1,4 +1,6 @@
 # syntax=docker/dockerfile:1.5
+# File: infrastructure/containers/sessions/Dockerfile.session-systems-control
+#
 # LUCID SESSION SYSTEMS CONTROL - Distroless Python Service
 # Config bake aligned with infrastructure/containers/node/Dockerfile.node-system-gateway.
 # Supervises session stack services listed in docker-compose.session-images.yml

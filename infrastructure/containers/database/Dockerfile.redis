@@ -1,4 +1,6 @@
 # syntax=docker/dockerfile:1.5
+# File: infrastructure/containers/database/Dockerfile.redis
+#
 # LUCID Redis - Distroless Python + redis-server
 # Design aligned with 03_api_gateway/Dockerfile (stages, ARGs, markers, labels, /app layout, tini, 65532)
 # Builder: official Redis image (correct base for redis-server / redis-cli binaries)
@@ -13,9 +15,7 @@ ARG BUILDPLATFORM=linux/amd64
 ############################
 # Stage 1 – Builder (Redis + Python deps for entrypoint/healthcheck)
 ############################
-ARG BUILDPLATFORM
-ARG TARGETPLATFORM
-
+# Use global ARG TARGETPLATFORM (lines above); bare ARG TARGETPLATFORM before FROM can be empty.
 FROM --platform=$TARGETPLATFORM redis:7.2 AS redis-builder
 
 WORKDIR /build

@@ -1,4 +1,6 @@
 # syntax=docker/dockerfile:1.5
+# File: infrastructure/containers/admin/Dockerfile.params-registry
+#
 # LUCID PARAMS REGISTRY — Distroless Python Service
 # Aligned with 03_api_gateway/Dockerfile (wheels, markers, /app/usr layout, tini)
 # host-config: admin-params-registry; ops: infrastructure/containers/admin/docker-compose.admin.yml

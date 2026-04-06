@@ -1,15 +1,31 @@
+# syntax=docker/dockerfile:1.5
+# File: infrastructure/docker/vm/Dockerfile.vm-manager
+# Operational alignment: infrastructure/containers/tor/Dockerfile.tor-proxy-02 (repo-root context, LUCID_* / PUBLIC_TOR_IP, /app/bin/tini).
 # LUCID RDP VM Manager - Virtual Machine Orchestration
-# SPEC-4 Compliant: VM lifecycle management, resource allocation, isolation
 #
 # Layout registry: infrastructure/containers/host-config.yml → canonical runtime /app/configs/host-config.yml
-# Service config root: infrastructure/containers/services/container-runtime-layout.yml (lucid_services_config_root: /app/service_configs)
-# Path equivalences: x-files-listing.txt (repository root)
 
+ARG BUILD_DATE=
+ARG VCS_REF=
+ARG VERSION=1.0.0
+ARG TARGETPLATFORM=linux/arm64
+ARG BUILDPLATFORM=linux/amd64
+ARG PUBLIC_TOR_IP=109.70.100.1
+ARG LUCID_INTERNAL_NETWORK_NAME=lucid-pi-network
+ARG LUCID_TOR_EGRESS_NETWORK_NAME=lucid-tor-egress-network
+
+FROM --platform=$TARGETPLATFORM python:3.11-slim-bookworm AS builder
+
+ARG BUILDPLATFORM
+ARG TARGETPLATFORM
 ARG BUILD_DATE
 ARG VCS_REF
-ARG VERSION=1.0.0
+ARG VERSION
+ARG PUBLIC_TOR_IP
+ARG LUCID_INTERNAL_NETWORK_NAME
+ARG LUCID_TOR_EGRESS_NETWORK_NAME
 
-FROM python:3.11-slim-bookworm AS builder
+ENV DEBIAN_FRONTEND=noninteractive
 
 WORKDIR /build
 
@@ -208,12 +224,14 @@ RUN rm -rf configs/environment 2>/dev/null || true
 RUN mkdir -p ./data/vm/{templates,instances,images}
 RUN chmod 755 ./data/vm
 
-# VM management configuration
-FROM gcr.io/distroless/python3-debian12:latest
+FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12:latest
 
 ARG BUILD_DATE
 ARG VCS_REF
-ARG VERSION=1.0.0
+ARG VERSION
+ARG PUBLIC_TOR_IP
+ARG LUCID_INTERNAL_NETWORK_NAME
+ARG LUCID_TOR_EGRESS_NETWORK_NAME
 
 WORKDIR /app
 
@@ -237,7 +255,13 @@ LABEL maintainer="Lucid Development Team" \
       onion.lucid.service_id="lucid-4c55d8feaf895eae-infrastructure-docker-vm" \
       org.lucid.service_id="org.lucid.dockerfile.v1.4c55d8feaf895eae:infrastructure/docker/vm/Dockerfile.vm-manager" \
 
-ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
+ENV PUBLIC_TOR_IP="${PUBLIC_TOR_IP}" \
+    LUCID_INTERNAL_NETWORK_NAME="${LUCID_INTERNAL_NETWORK_NAME}" \
+    LUCID_TOR_EGRESS_NETWORK_NAME="${LUCID_TOR_EGRESS_NETWORK_NAME}" \
+    LUCID_HOST_CONFIG_PATH="/app/configs/host-config.yml" \
+    LUCID_SERVICES_CONFIG_DIR="/app/service_configs" \
+    LUCID_SERVICES_CONFIG_ROOT="/app/service_configs" \
+    PATH=/app/bin:/app/usr/local/bin:/app/usr/bin:$PATH \
     PYTHONUNBUFFERED="1" \
     PYTHONDONTWRITEBYTECODE="1" \
     PYTHONPATH="/app:/app/usr/local/lib/python3.11/site-packages" \
@@ -260,26 +284,24 @@ COPY --from=builder --chown=65532:65532 /usr/lib/*/libssl.so* /app/usr/lib/
 COPY --from=builder --chown=65532:65532 /usr/lib/*/ossl-modules/ /app/usr/lib/
 COPY --from=builder --chown=65532:65532 /usr/lib/*/libcurl.so* /app/usr/lib/
 COPY --from=builder --chown=65532:65532 /bin/ /app/bin/
-COPY --from=builder --chown=65532:65532 /dev/null/ /app/dev/null/
 COPY --from=builder --chown=65532:65532 /etc/ssl/ /app/etc/ssl/
 COPY --from=builder --chown=65532:65532 /usr/bin/ /app/usr/bin/
 # LUCID_RUNTIME_COPY_FROM_BUILDER_APT_END
 # LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
 # Generated: apt + RUN scaffold (mkdir/printf/touch/chown) -> FHS (not ./ or /build/; lib_search_and_inject.py).
-COPY --from=base /build/wheels /app/wheels
-COPY --from=base /build/app /app/app
-COPY --from=base /build/configs /app/configs
-COPY --from=base /build/vm /app/vm
-COPY --from=base /build/gui_hardware_manager /app/gui_hardware_manager
-COPY --from=base /build/service_manager /app/service_manager
+COPY --from=builder /build/wheels /app/wheels
+COPY --from=builder /build/app /app/app
+COPY --from=builder /build/configs /app/configs
+COPY --from=builder /build/vm /app/vm
+COPY --from=builder /build/gui_hardware_manager /app/gui_hardware_manager
+COPY --from=builder /build/service_manager /app/service_manager
 
+COPY --from=builder --chown=65532:65532 /usr/bin/tini /app/bin/tini
 
-# Health check
 EXPOSE 8285
 
-# Entry point
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
     CMD ["/app/usr/bin/python3.11", "-c", "import libvirt; conn = libvirt.open('qemu:///system'); conn.close()"]
 
-# Expose VM management API
+ENTRYPOINT ["/app/bin/tini", "--"]
 CMD ["/app/usr/bin/python3.11", "-m", "vm.vm_manager"]

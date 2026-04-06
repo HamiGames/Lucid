@@ -1,4 +1,6 @@
 # syntax=docker/dockerfile:1.5
+# File: infrastructure/containers/sessions/Dockerfile.session-pipeline-manager
+#
 # LUCID SESSION PIPELINE MANAGER - Distroless Python Service
 # Config bake aligned with infrastructure/containers/node/Dockerfile.node-system-gateway.
 # creates session-pipeline-manager service

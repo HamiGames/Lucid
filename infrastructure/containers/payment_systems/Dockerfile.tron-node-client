@@ -1,4 +1,6 @@
 # syntax=docker/dockerfile:1.5
+# File: infrastructure/containers/payment_systems/Dockerfile.tron-node-client
+#
 # LUCID TRON NODE CLIENT — Distroless Python (TRON RPC / node edge on payment plane)
 # Path: infrastructure/containers/payment_systems/Dockerfile.tron-node-client
 # Build context: repository root (.)

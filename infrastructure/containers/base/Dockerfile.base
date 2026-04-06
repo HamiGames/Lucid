@@ -1,4 +1,6 @@
 # syntax=docker/dockerfile:1.5
+# File: infrastructure/containers/base/Dockerfile.base
+#
 # LUCID DISTROLESS BASE — pickme/lucid-base:latest-arm64 (foundation / strap image)
 # Build context: repository root (.)
 #

@@ -1,4 +1,6 @@
 # syntax=docker/dockerfile:1.5
+# File: infrastructure/containers/server/Dockerfile.service-mesh-controller
+#
 # LUCID SERVICE MESH CONTROLLER – Distroless Python (structure aligned with 03_api_gateway/Dockerfile)
 # Image: pickme/lucid-service-mesh-controller:latest-arm64
 #
@@ -219,7 +221,7 @@ COPY infrastructure/containers/services/x_lucid_cluster_calibration/core-cluster
 COPY infrastructure/service_mesh/config/service-mesh.yaml ./infrastructure/service_mesh/config/service-mesh.yaml
 COPY infrastructure/service_mesh/service_mesh_translator.py ./infrastructure/service_mesh/service_mesh_translator.py
 COPY infrastructure/service_mesh/sidecar/envoy/config/cluster.yaml ./infrastructure/service_mesh/sidecar/envoy/config/cluster.yaml
-COPY service_mesh/service_mesh_translator.py ./service_mesh/service_mesh_translator.py
+COPY infrastructure/service_mesh/service_mesh_translator.py ./service_mesh/service_mesh_translator.py
 COPY infrastructure/service_mesh/verify_runtime.py /build/tmp/verify_runtime.py
 
 RUN mkdir -p /var /var/cache /var/cache/apt /var/lib /var/lib/apt && \

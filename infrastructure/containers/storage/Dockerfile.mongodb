@@ -1,4 +1,6 @@
 # syntax=docker/dockerfile:1.5
+# File: infrastructure/containers/storage/Dockerfile.mongodb
+#
 # LUCID STORAGE PLANE — MongoDB WiredTiger files on attached capacity (/data/db, journal).
 # Purpose here: durable document store bytes on volume. Access control, indexing strategy,
 # and application schema evolution belong to the database / application layers.

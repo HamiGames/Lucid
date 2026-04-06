@@ -1,4 +1,6 @@
 # syntax=docker/dockerfile:1.5
+# File: infrastructure/containers/payment_systems/Dockerfile.tron-payment-service
+#
 # LUCID TRON PAYMENT SERVICE — Distroless Python (aggregated TRON payment API on payment plane)
 # Path: infrastructure/containers/payment_systems/Dockerfile.tron-payment-service
 # Build context: repository root (.)
@@ -256,7 +258,7 @@ COPY payment_systems/tron/models/payout.py ./payment_systems/tron/models/payout.
 COPY payment_systems/tron/models/transaction.py ./payment_systems/tron/models/transaction.py
 COPY payment_systems/tron/models/wallet.py ./payment_systems/tron/models/wallet.py
 COPY payment_systems/tron/tron_payment_service.py ./payment_systems/tron/tron_payment_service.py
-COPY service_mesh/service_mesh_translator.py ./service_mesh/service_mesh_translator.py
+COPY infrastructure/service_mesh/service_mesh_translator.py ./service_mesh/service_mesh_translator.py
 # LUCID_ALIGNMENT_MAT_COPY_DIRECTORIES_END
 # LUCID_X_FILES_SKELETON_BEGIN
 # Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY

@@ -1,4 +1,6 @@
 # syntax=docker/dockerfile:1.5
+# File: infrastructure/containers/blockchain/Dockerfile.block-manager
+#
 # LUCID BLOCK MANAGER — Distroless Python (aligned with 03_api_gateway/Dockerfile)
 # Image: pickme/lucid-block-manager:latest-arm64
 # Build context: repository root (.)
@@ -309,7 +311,7 @@ COPY infrastructure/containers/services/x_lucid_cluster_calibration/payment-clus
 COPY infrastructure/service_mesh/config/service-mesh.yaml ./infrastructure/service_mesh/config/service-mesh.yaml
 COPY infrastructure/service_mesh/service_mesh_translator.py ./infrastructure/service_mesh/service_mesh_translator.py
 COPY repair_dockerfile_standardization.py ./repair_dockerfile_standardization.py
-COPY service_mesh/service_mesh_translator.py ./service_mesh/service_mesh_translator.py
+COPY infrastructure/service_mesh/service_mesh_translator.py ./service_mesh/service_mesh_translator.py
 COPY tests/integration/blockchain-integration/test_blockchain_core_operations.py ./tests/integration/blockchain-integration/test_blockchain_core_operations.py
 COPY tests/integration/phase2/test_gateway_blockchain.py ./tests/integration/phase2/test_gateway_blockchain.py
 COPY tests/security/test_tron_isolation.py ./tests/security/test_tron_isolation.py

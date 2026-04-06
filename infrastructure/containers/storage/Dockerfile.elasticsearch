@@ -1,4 +1,6 @@
 # syntax=docker/dockerfile:1.5
+# File: infrastructure/containers/storage/Dockerfile.elasticsearch
+#
 # LUCID STORAGE PLANE — Elasticsearch indices and translog on attached volumes (path.data / path.logs).
 # Purpose here: searchable byte structures on durable disk. Cluster topology and index templates
 # are operational/database concerns layered above raw capacity.

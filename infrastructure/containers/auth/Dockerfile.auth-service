@@ -1,4 +1,6 @@
 # syntax=docker/dockerfile:1.5
+# File: infrastructure/containers/auth/Dockerfile.auth-service
+#
 # LUCID AUTH SERVICE — Distroless Python (aligned with infrastructure/containers/node/Dockerfile.node-worker)
 # Image: pickme/lucid-auth-service:latest-arm64
 # Build context: repository root (.)
@@ -551,7 +553,7 @@ COPY scripts/gui_auth_realignment/align_tor_tunnel_gui_systems.py ./scripts/gui_
 COPY scripts/gui_auth_realignment/generate_alignment_service_bundles.py ./scripts/gui_auth_realignment/generate_alignment_service_bundles.py
 COPY scripts/gui_auth_realignment/step_check_called_services.py ./scripts/gui_auth_realignment/step_check_called_services.py
 COPY scripts/gui_auth_realignment/step_check_script_edges.py ./scripts/gui_auth_realignment/step_check_script_edges.py
-COPY service_mesh/service_mesh_translator.py ./service_mesh/service_mesh_translator.py
+COPY infrastructure/service_mesh/service_mesh_translator.py ./service_mesh/service_mesh_translator.py
 COPY sessions/pipeline/config.py ./sessions/pipeline/config.py
 COPY sessions/pipeline/integration/auth_service_client.py ./sessions/pipeline/integration/auth_service_client.py
 COPY sessions/processor/config.py ./sessions/processor/config.py

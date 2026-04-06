@@ -1,4 +1,6 @@
 # syntax=docker/dockerfile:1.5
+# File: infrastructure/docker/distroless/gui/Dockerfile.gui
+# Operational alignment: infrastructure/containers/tor/Dockerfile.tor-proxy-02 (repo-root context, LUCID_* / PUBLIC_TOR_IP).
 # LUCID ELECTRON GUI STRAP - Distroless bundle image (Node tarballs + strap script)
 # Structure aligned with 03_api_gateway/Dockerfile (ARG order, LABELs, platform-aware FROMs)
 # Content aligned with configs/docker/distroless/gui/Dockerfile.gui
@@ -236,7 +238,6 @@ COPY --from=strapper --chown=65532:65532 /build/scripts/ /app/scripts/
 # LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
 # Generated: apt + RUN scaffold (mkdir/printf/touch/chown) -> FHS (not ./ or /build/; lib_search_and_inject.py).
 COPY --from=strapper --chown=65532:65532 /bin/ /app/bin/
-COPY --from=strapper --chown=65532:65532 /dev/null/ /app/dev/null/
 COPY --from=strapper --chown=65532:65532 /usr/bin/ /app/usr/bin/
 COPY --from=strapper --chown=65532:65532 /usr/local/bin/ /app/usr/local/bin/
 COPY --from=strapper --chown=65532:65532 /usr/local/lib/ /app/usr/local/lib/

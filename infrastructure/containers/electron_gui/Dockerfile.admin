@@ -1,10 +1,13 @@
 # syntax=docker/dockerfile:1.5
+# File: infrastructure/containers/electron_gui/Dockerfile.admin
+#
 # LUCID ELECTRON GUI ADMIN - Distroless Node Service
 # Aligned with dockerfile-design.md and Dockerfile-copy-pattern.md
 # Image: pickme/lucid-admin-interface:latest-arm64
 # Ports: 8120, 8100
 # Build context: repository root (paths COPY electron_gui/... relative to Lucid root)
-# Build: docker build -f infrastructure/containers/electron_gui/Dockerfile.admin -t pickme/lucid-admin-interface:latest-arm64 .
+# Build (repository root = context):
+#   docker build -f infrastructure/containers/electron_gui/Dockerfile.admin -t pickme/lucid-admin-interface:latest-arm64 .
 
 ARG BUILD_DATE=
 ARG VCS_REF=

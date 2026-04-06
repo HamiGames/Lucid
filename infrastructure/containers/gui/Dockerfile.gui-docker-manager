@@ -1,4 +1,6 @@
 # syntax=docker/dockerfile:1.5
+# File: infrastructure/containers/gui/Dockerfile.gui-docker-manager
+#
 # LUCID GUI Docker Manager Service - Distroless Python Container
 # Aligned with dockerfile-design.md and Dockerfile-copy-pattern.md
 # Image: pickme/lucid-gui-docker-manager:latest-arm64
