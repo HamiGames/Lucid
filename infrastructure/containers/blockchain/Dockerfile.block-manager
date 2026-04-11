@@ -282,9 +282,9 @@ COPY configs/container/blockchain/docker-compose.manager.yml ./configs/container
 COPY configs/container/node/docker-compose.node-data-system.yml ./configs/container/node/docker-compose.node-data-system.yml
 COPY configs/docker/docker-compose.all.yml ./configs/docker/docker-compose.all.yml
 COPY configs/docker/docker-compose.core.yml ./configs/docker/docker-compose.core.yml
-COPY service_configs/blockchain-core.yml ./service_configs/blockchain-core.yml
-COPY service_configs/gui-docker-manager-service-groups.yml ./service_configs/gui-docker-manager-service-groups.yml
-COPY service_configs/gui-docker-manager.yml ./service_configs/gui-docker-manager.yml
+COPY infrastructure/containers/services/blockchain/blockchain-core.yml ./service_configs/blockchain-core.yml
+COPY infrastructure/containers/services/gui/gui-docker-manager-service-groups.yml ./service_configs/gui-docker-manager-service-groups.yml
+COPY infrastructure/containers/services/gui/gui-docker-manager.yml ./service_configs/gui-docker-manager.yml
 COPY configs/x-files.json ./configs/x-files.json
 COPY infrastructure/containers/_align_dockerfile_lucid_metadata.py ./infrastructure/containers/_align_dockerfile_lucid_metadata.py
 COPY infrastructure/containers/blockchain/config/blockchain-endpoints.yml ./infrastructure/containers/blockchain/config/blockchain-endpoints.yml
@@ -322,15 +322,15 @@ COPY tests/validation/test_all_services_healthy.py ./tests/validation/test_all_s
 # LUCID_X_FILES_SKELETON_BEGIN
 # Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
 COPY blockchain/ ./blockchain/
-COPY blockchain/docker-compose.block-system.yml ./configs/docker-compose.block-system.yaml
-COPY blockchain/docker-compose.chain.yml ./configs/docker-compose.chain.yaml
-COPY blockchain/docker-compose.manager.yml ./configs/docker-compose.manager.yaml
+COPY infrastructure/containers/blockchain/docker-compose.block-system.yml ./configs/docker-compose.block-system.yaml
+COPY infrastructure/containers/blockchain/docker-compose.chain.yml ./configs/docker-compose.chain.yaml
+COPY infrastructure/containers/blockchain/docker-compose.manager.yml ./configs/docker-compose.manager.yaml
 
-COPY infrastructure/containers/blockchain/config/block-pay.yml ./blockchain/config/block-pay.yml
-COPY blockchain/config/blockchain-endpoints.yml ./blockchain/config/blockchain-endpoints.yml
-COPY blockchain/config/openssl-api.yml ./blockchain/config/openssl-api.yml
-COPY blockchain/config/chain-to-pay.connections.json ./configs/chain-to-pay.connections.json
-COPY blockchain/chain-to-pay ./blockchain/chain-to-pay/
+COPY infrastructure/containers/blockchain/config/block-pay-endpoints.yml ./blockchain/config/block-pay.yml
+COPY infrastructure/containers/blockchain/config/blockchain-endpoints.yml ./blockchain/config/blockchain-endpoints.yml
+COPY infrastructure/containers/blockchain/config/openssl-api.yml ./blockchain/config/openssl-api.yml
+COPY infrastructure/containers/blockchain/config/chain-to-pay.connections.json ./configs/chain-to-pay.connections.json
+COPY infrastructure/containers/blockchain/chain-to-pay ./blockchain/chain-to-pay/
 
 
 

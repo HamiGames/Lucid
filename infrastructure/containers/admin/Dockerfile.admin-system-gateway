@@ -246,7 +246,7 @@ RUN set -eux; \
 # LUCID_ALIGNMENT_MAT_COPY_DIRECTORIES_BEGIN
 # alignment-mat admin-system-gateway_manifest.json: compose_service='admin-system-gateway' — explicit manifest paths → 49 builder COPY line(s) (dockerfile_layout_structure.json section #10 COPY_DIRECTORIES).
 COPY _gen_host_config.py ./_gen_host_config.py
-COPY admin/config/load_host_config.py ./admin/config/load_host_config.py
+COPY infrastructure/containers/admin/config/load_host_config.py ./admin/config/load_host_config.py
 COPY common/__init__.py ./common/__init__.py
 COPY common/contact_profile_env.py ./common/contact_profile_env.py
 COPY common/governance/__init__.py ./common/governance/__init__.py
@@ -295,14 +295,14 @@ COPY infrastructure/service_mesh/service_mesh_translator.py ./infrastructure/ser
 # Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
 
 
-COPY admin/config/openssl-api.yml /build/node/config/openssl-api.yml
-COPY admin/config/admin-system-gateway.connections.json /build/node/config/connections.json
-COPY admin/admin-system-gateway/entrypoint.py /build/node/entrypoint.py
-COPY admin/admin-system-gateway/verify_runtime.py /build/tmp/verify_runtime.py
+COPY infrastructure/containers/admin/config/openssl-api.yml /build/node/config/openssl-api.yml
+COPY infrastructure/containers/admin/config/admin-system-gateway.connections.json /build/node/config/connections.json
+COPY infrastructure/containers/admin/admin-system-gateway/entrypoint.py /build/node/entrypoint.py
+COPY infrastructure/containers/admin/admin-system-gateway/verify_runtime.py /build/tmp/verify_runtime.py
 COPY admin/ ./admin/
 
 
-COPY admin/docker-compose.admin.yml /build/service_configs/docker-compose.admin.yml
+COPY infrastructure/containers/admin/docker-compose.admin.yml /build/service_configs/docker-compose.admin.yml
 
 RUN rm -rf configs/environment 2>/dev/null || true
 

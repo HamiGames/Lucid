@@ -457,15 +457,15 @@ COPY configs/container/node/docker-compose.node-data-system.yml ./configs/contai
 COPY configs/docker/docker-compose.all.yml ./configs/docker/docker-compose.all.yml
 COPY configs/docker/docker-compose.application.yml ./configs/docker/docker-compose.application.yml
 COPY configs/docker/docker-compose.core.yml ./configs/docker/docker-compose.core.yml
-COPY service_configs/admin-interface.yml ./service_configs/admin-interface.yml
-COPY service_configs/api-gateway.yml ./service_configs/api-gateway.yml
-COPY service_configs/blockchain-core.yml ./service_configs/blockchain-core.yml
-COPY service_configs/gui-docker-manager-service-groups.yml ./service_configs/gui-docker-manager-service-groups.yml
-COPY service_configs/gui-docker-manager.yml ./service_configs/gui-docker-manager.yml
-COPY service_configs/node-management.yml ./service_configs/node-management.yml
-COPY service_configs/service-discovery.yml ./service_configs/service-discovery.yml
-COPY service_configs/service-registry.json ./service_configs/service-registry.json
-COPY service_configs/session-management.yml ./service_configs/session-management.yml
+COPY infrastructure/containers/services/admin/admin-interface.yml ./service_configs/admin-interface.yml
+COPY infrastructure/containers/services/api-gateway.yml ./service_configs/api-gateway.yml
+COPY infrastructure/containers/services/blockchain/blockchain-core.yml ./service_configs/blockchain-core.yml
+COPY infrastructure/containers/services/gui/gui-docker-manager-service-groups.yml ./service_configs/gui-docker-manager-service-groups.yml
+COPY infrastructure/containers/services/gui/gui-docker-manager.yml ./service_configs/gui-docker-manager.yml
+COPY infrastructure/containers/services/node/node-management.yml ./service_configs/node-management.yml
+COPY infrastructure/containers/services/service-discovery.yml ./service_configs/service-discovery.yml
+COPY infrastructure/containers/services/service-registry.json ./service_configs/service-registry.json
+COPY infrastructure/containers/services/sessions/session-management.yml ./service_configs/session-management.yml
 COPY configs/x-files.json ./configs/x-files.json
 COPY gui_api_bridge/gui_api_bridge/config.py ./gui_api_bridge/gui_api_bridge/config.py
 COPY gui_api_bridge/gui_api_bridge/gui_api_bridge_service.py ./gui_api_bridge/gui_api_bridge/gui_api_bridge_service.py
@@ -553,9 +553,9 @@ COPY blockchain/ ./blockchain/
 COPY node/ ./node/
 COPY sessions/ ./sessions/
 COPY blockchain/ ./blockchain/
-COPY blockchain/docker-compose.block-system.yml ./configs/docker-compose.block-system.yaml
-COPY blockchain/docker-compose.chain.yml ./configs/docker-compose.chain.yaml
-COPY blockchain/docker-compose.manager.yml ./configs/docker-compose.manager.yaml
+COPY infrastructure/containers/blockchain/docker-compose.block-system.yml ./configs/docker-compose.block-system.yaml
+COPY infrastructure/containers/blockchain/docker-compose.chain.yml ./configs/docker-compose.chain.yaml
+COPY infrastructure/containers/blockchain/docker-compose.manager.yml ./configs/docker-compose.manager.yaml
 
 
 
@@ -697,4 +697,4 @@ USER 65532:65532
 ENTRYPOINT ["/app/usr/bin/tini", "--"]
 
 CMD ["/app/usr/bin/python3.11", "/app/api/app/entrypoint.py"]
-COPY blockchain/verify_runtime.py /app/verify_runtime.py
+COPY infrastructure/containers/blockchain/verify_runtime.py /app/verify_runtime.py

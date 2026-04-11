@@ -268,7 +268,7 @@ COPY common/tor/tor_manager.py ./common/tor/tor_manager.py
 COPY configs/container/rdp/docker-compose.rdp-system.yml ./configs/container/rdp/docker-compose.rdp-system.yml
 COPY configs/docker/docker-compose.all.yml ./configs/docker/docker-compose.all.yml
 COPY configs/docker/docker-compose.application.yml ./configs/docker/docker-compose.application.yml
-COPY service_configs/gui-docker-manager.yml ./service_configs/gui-docker-manager.yml
+COPY infrastructure/containers/services/gui/gui-docker-manager.yml ./service_configs/gui-docker-manager.yml
 COPY configs/x-files.json ./configs/x-files.json
 COPY infrastructure/containers/apply_lucid_service_ids_to_dockerfiles.py ./infrastructure/containers/apply_lucid_service_ids_to_dockerfiles.py
 COPY infrastructure/containers/config-listings.json ./infrastructure/containers/config-listings.json
@@ -308,7 +308,7 @@ COPY RDP/ ./rdp/
 COPY sessions/ ./sessions/
 COPY infrastructure/service_mesh/ ./service_mesh/
 # Verify integration directory exists and contains required files
-COPY RDP/session-controller/config.yaml ./session_controller/config.yaml
+COPY RDP/session_controller/config.yaml ./session_controller/config.yaml
 
 # Verify config.yaml was copied
 RUN rm -rf configs/environment 2>/dev/null || true

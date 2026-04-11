@@ -275,14 +275,14 @@ COPY tests/unit/blockchain/test_tron_payment_isolation.py ./tests/unit/blockchai
 # Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
 
 COPY blockchain/ ./blockchain/
-COPY blockchain/docker-compose.block-system.yml ./configs/docker-compose.block-system.yaml
-COPY blockchain/docker-compose.chain.yml ./configs/docker-compose.chain.yaml
-COPY blockchain/docker-compose.manager.yml ./configs/docker-compose.manager.yaml
-COPY infrastructure/containers/blockchain/config/block-pay.yml ./blockchain/config/block-pay.yml
-COPY blockchain/config/blockchain-endpoints.yml ./blockchain/config/blockchain-endpoints.yml
-COPY blockchain/config/openssl-api.yml ./blockchain/config/openssl-api.yml
-COPY blockchain/config/chain-to-pay.connections.json ./configs/chain-to-pay.connections.json
-COPY blockchain/chain-to-pay ./blockchain/chain-to-pay/
+COPY infrastructure/containers/blockchain/docker-compose.block-system.yml ./configs/docker-compose.block-system.yaml
+COPY infrastructure/containers/blockchain/docker-compose.chain.yml ./configs/docker-compose.chain.yaml
+COPY infrastructure/containers/blockchain/docker-compose.manager.yml ./configs/docker-compose.manager.yaml
+COPY infrastructure/containers/blockchain/config/block-pay-endpoints.yml ./blockchain/config/block-pay.yml
+COPY infrastructure/containers/blockchain/config/blockchain-endpoints.yml ./blockchain/config/blockchain-endpoints.yml
+COPY infrastructure/containers/blockchain/config/openssl-api.yml ./blockchain/config/openssl-api.yml
+COPY infrastructure/containers/blockchain/config/chain-to-pay.connections.json ./configs/chain-to-pay.connections.json
+COPY infrastructure/containers/blockchain/chain-to-pay ./blockchain/chain-to-pay/
 
 
 # Flatten blockchain/* to /build/* for PYTHONPATH layout; keep /build/blockchain for /app/blockchain (configs, endpoints, entrypoints).
@@ -416,4 +416,4 @@ USER 65532:65532
 ENTRYPOINT ["/app/usr/bin/tini", "--"]
 
 CMD ["/app/usr/bin/python3.11", "/app/api/app/entrypoint.py"]
-COPY blockchain/verify_runtime.py /app/verify_runtime.py
+COPY infrastructure/containers/blockchain/verify_runtime.py /app/verify_runtime.py

@@ -487,18 +487,18 @@ COPY configs/docker/docker-compose.core.yml ./configs/docker/docker-compose.core
 COPY configs/docker/docker-compose.foundation-02.yml ./configs/docker/docker-compose.foundation-02.yml
 COPY configs/docker/docker-compose.foundation.yml ./configs/docker/docker-compose.foundation.yml
 COPY configs/security/sbom-config.yml ./configs/security/sbom-config.yml
-COPY service_configs/admin-interface.yml ./service_configs/admin-interface.yml
-COPY service_configs/api-gateway.yml ./service_configs/api-gateway.yml
-COPY service_configs/auth-service.yml ./service_configs/auth-service.yml
-COPY service_configs/beta-sidecar.yml ./service_configs/beta-sidecar.yml
-COPY service_configs/gui-api-bridge.yml ./service_configs/gui-api-bridge.yml
-COPY service_configs/gui-docker-manager-service-groups.yml ./service_configs/gui-docker-manager-service-groups.yml
-COPY service_configs/gui-docker-manager.yml ./service_configs/gui-docker-manager.yml
-COPY service_configs/gui-hardware-manager.yml ./service_configs/gui-hardware-manager.yml
-COPY service_configs/rdp-services.yml ./service_configs/rdp-services.yml
-COPY service_configs/service-discovery.yml ./service_configs/service-discovery.yml
-COPY service_configs/service-registry.json ./service_configs/service-registry.json
-COPY service_configs/tron-payment.yml ./service_configs/tron-payment.yml
+COPY infrastructure/containers/services/admin/admin-interface.yml ./service_configs/admin-interface.yml
+COPY infrastructure/containers/services/api-gateway.yml ./service_configs/api-gateway.yml
+COPY infrastructure/containers/services/middle-ware/auth-service.yml ./service_configs/auth-service.yml
+COPY infrastructure/containers/services/beta-sidecar.yml ./service_configs/beta-sidecar.yml
+COPY infrastructure/containers/services/gui/gui-api-bridge.yml ./service_configs/gui-api-bridge.yml
+COPY infrastructure/containers/services/gui/gui-docker-manager-service-groups.yml ./service_configs/gui-docker-manager-service-groups.yml
+COPY infrastructure/containers/services/gui/gui-docker-manager.yml ./service_configs/gui-docker-manager.yml
+COPY infrastructure/containers/services/gui/gui-hardware-manager.yml ./service_configs/gui-hardware-manager.yml
+COPY infrastructure/containers/services/rdp/rdp-services.yml ./service_configs/rdp-services.yml
+COPY infrastructure/containers/services/service-discovery.yml ./service_configs/service-discovery.yml
+COPY infrastructure/containers/services/service-registry.json ./service_configs/service-registry.json
+COPY infrastructure/containers/services/payment_services/tron-payment.yml ./service_configs/tron-payment.yml
 COPY database/admin/admin_profile.py ./database/admin/admin_profile.py
 COPY database/mongodb/start_mongodb.py ./database/mongodb/start_mongodb.py
 COPY gui/main.py ./gui/main.py
@@ -564,7 +564,7 @@ COPY tests/validation/test_all_containers_running.py ./tests/validation/test_all
 # LUCID_X_FILES_SKELETON_BEGIN
 # Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
 
-COPY auth/docker-compose.auth.yml ./service_configs/docker-compose.auth.yaml
+COPY infrastructure/containers/auth/docker-compose.auth.yml ./service_configs/docker-compose.auth.yaml
 
 
 

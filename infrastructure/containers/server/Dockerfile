@@ -225,11 +225,7 @@ COPY infrastructure/service_mesh/service_mesh_translator.py ./service_mesh/servi
 # LUCID_X_FILES_SKELETON_BEGIN
 # Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
 
-
-COPY infrastructure/containers/server/docker-compose.server-core.yml ./docker-compose.server-core.yml
-COPY infrastructure/containers/server/docker-compose.server-manager.yml ./docker-compose.server-manager.yml
-
-
+# Stack compose: use docker-compose.server-images.yml / server-external.yml (copied above). No server-core / server-manager files in repo.
 
 RUN rm -rf configs/environment 2>/dev/null || true
 

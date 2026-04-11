@@ -265,8 +265,8 @@ COPY infrastructure/service_mesh/service_mesh_translator.py ./service_mesh/servi
 
 COPY payment_systems/tron/ ./payment_systems/tron/
 
-COPY payment_systems/docker-compose.payment-internal.yml ./configs/docker-compose.payment-internal.yml
-COPY payment_systems/docker-compose.payment-externals.yml ./configs/docker-compose.payment-externals.yml
+COPY infrastructure/containers/payment_systems/docker-compose.payment-internal.yml ./configs/docker-compose.payment-internal.yml
+COPY infrastructure/containers/payment_systems/docker-compose.payment-externals.yml ./configs/docker-compose.payment-externals.yml
 COPT security/ ./security/
 RUN rm -rf configs/environment 2>/dev/null || true
 

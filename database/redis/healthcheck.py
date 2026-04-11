@@ -23,10 +23,9 @@ logger = logging.getLogger('redis-healthcheck')
 def check_redis_health():
     """Check Redis health using redis-py"""
     try:
-        # Get connection parameters from environment (from .env.* files)
-        # Use localhost for healthcheck connections (REDIS_HOST is for binding, not connecting)
-        host = 'lucid-redis'
-        port = int(os.getenv('REDIS_PORT'))
+        # In-container HEALTHCHECK must reach the local redis-server (not the Docker service name).
+        host = os.getenv('REDIS_HEALTHCHECK_HOST', '127.0.0.1')
+        port = int(os.getenv('REDIS_PORT', '6379'))
         password = os.getenv('REDIS_PASSWORD')
         
         # Create Redis client with password from environment

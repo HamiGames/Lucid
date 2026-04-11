@@ -928,7 +928,7 @@ COPY configs/docker/multi-stage/multi-stage-build-config.yml ./configs/docker/mu
 COPY configs/docker/multi-stage/multi-stage-config.yml ./configs/docker/multi-stage/multi-stage-config.yml
 COPY configs/docker/multi-stage/multi-stage-runtime-config.yml ./configs/docker/multi-stage/multi-stage-runtime-config.yml
 COPY configs/docker/multi-stage/multi-stage-testing-config.yml ./configs/docker/multi-stage/multi-stage-testing-config.yml
-COPY service_configs/gui-docker-manager.yml ./service_configs/gui-docker-manager.yml
+COPY infrastructure/containers/services/gui/gui-docker-manager.yml ./service_configs/gui-docker-manager.yml
 COPY configs/x-files.json ./configs/x-files.json
 COPY correct_py_paths_from_x_files_listing.py ./correct_py_paths_from_x_files_listing.py
 COPY database/admin/admin_profile.py ./database/admin/admin_profile.py
@@ -1214,7 +1214,7 @@ USER 65532:65532
 ENTRYPOINT ["python3", "/opt/lucid-base/scripts/lucid_base_bootstrap.py"]
 CMD []
 COPY configs/docker/ ./configs/docker/
-COPY base/docker-compose.base.yml ./configs/operations/docker-compose.base.yml
+COPY infrastructure/containers/base/docker-compose.base.yml ./configs/operations/docker-compose.base.yml
 
 ############################
 # Stage 2 – Runtime (Distroless Python)

@@ -210,7 +210,7 @@ COPY common/tor/tor_manager.py ./common/tor/tor_manager.py
 COPY configs/container/rdp/docker-compose.rdp-system.yml ./configs/container/rdp/docker-compose.rdp-system.yml
 COPY configs/docker/docker-compose.all.yml ./configs/docker/docker-compose.all.yml
 COPY configs/docker/docker-compose.application.yml ./configs/docker/docker-compose.application.yml
-COPY service_configs/rdp-services.yml ./service_configs/rdp-services.yml
+COPY infrastructure/containers/services/rdp/rdp-services.yml ./service_configs/rdp-services.yml
 COPY infrastructure/containers/config-listings.json ./infrastructure/containers/config-listings.json
 COPY infrastructure/containers/host-config.yml ./infrastructure/containers/host-config.yml
 COPY infrastructure/containers/rdp/docker-compose.rdp-system.yml ./infrastructure/containers/rdp/docker-compose.rdp-system.yml
@@ -225,7 +225,7 @@ COPY tests/validation/test_all_containers_running.py ./tests/validation/test_all
 # LUCID_X_FILES_SKELETON_BEGIN
 # Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
 
-COPY rdp/docker-compose.rdp-system.yml /build/configs/docker-compose.rdp-system.yml
+COPY infrastructure/containers/rdp/docker-compose.rdp-system.yml /build/configs/docker-compose.rdp-system.yml
 
 
 COPY RDP/ /build/rdp/

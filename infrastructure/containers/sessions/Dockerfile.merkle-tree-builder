@@ -286,7 +286,7 @@ COPY common/tor/tor_manager.py ./common/tor/tor_manager.py
 COPY configs/container/blockchain/docker-compose.chain.yml ./configs/container/blockchain/docker-compose.chain.yml
 COPY configs/container/blockchain/docker-compose.manager.yml ./configs/container/blockchain/docker-compose.manager.yml
 COPY configs/container/node/docker-compose.node-sessions.yml ./configs/container/node/docker-compose.node-sessions.yml
-COPY service_configs/session-management.yml ./service_configs/session-management.yml
+COPY infrastructure/containers/services/sessions/session-management.yml ./service_configs/session-management.yml
 COPY configs/x-files.json ./configs/x-files.json
 COPY infrastructure/containers/_sync_dockerfile_lucid_env.py ./infrastructure/containers/_sync_dockerfile_lucid_env.py
 COPY infrastructure/containers/blockchain/docker-compose.chain.yml ./infrastructure/containers/blockchain/docker-compose.chain.yml

@@ -51,9 +51,7 @@ RUN set -eux; \
     touch "$d/.keep"; \
   done
 # LUCID_LIB_SKELETON_END
-# LUCID_ALIGNMENT_MAT_COPY_DIRECTORIES_BEGIN
-# alignment-mat lucid-mongodb_manifest.json: compose_service='lucid-mongodb' — manifest py/yml/yaml/json → builder COPY (#10).
-# LUCID_X_FILES_SKELETON_BEGIN
+
 # Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
 RUN set -eux; \
     mkdir -p '.' './common' './configs' './scripts' './service_configs' './common/__pycache__' './common/governance' './common/security' './common/server-tools' './common/templates' './common/tor' './configs/.ssh' './configs/container' './configs/database' './configs/docker' './configs/env' './configs/environment' './configs/integration' './configs/kubernetes' './configs/logging' './configs/pi' './configs/secrets' './configs/security' './configs/tor' './scripts/__pycache__' './scripts/auth_sm_realignment' './scripts/build' './scripts/compliance' './scripts/config' './scripts/contracts' './scripts/database' './scripts/deployment' './scripts/devcontainer' './scripts/docs' './scripts/foundation' './scripts/gui' './scripts/gui_auth_realignment' './scripts/hardware' './scripts/integration' './scripts/lib' './scripts/load' './scripts/logging' './scripts/maintenance' './scripts/migration' './scripts/monitoring' './scripts/network' './scripts/re-build' './scripts/registry' './scripts/secrets' './scripts/security' './scripts/services' './scripts/testing' './scripts/validation' './scripts/verification' './service_configs/mongodb' './common/governance/__pycache__' './common/security/__pycache__' './common/server-tools/__pycache__' './common/tor/__pycache__' './configs/container/admin' './configs/container/auth' './configs/container/base' './configs/container/blockchain' './configs/container/database' './configs/container/electron_gui' './configs/container/gui' './configs/container/node' './configs/container/payment_systems' './configs/container/rdp' './configs/container/server' './configs/container/sessions' './configs/container/storage' './configs/container/tor' './configs/database/elasticsearch' './configs/database/redis' './configs/docker/distroless' './configs/docker/docs' './configs/docker/multi-stage' './configs/pi/ssh' './scripts/auth_sm_realignment/.cache' './scripts/auth_sm_realignment/lib' './scripts/build/__pycache__' './scripts/build/components' './scripts/build/core' './scripts/build/distroless' './scripts/build/utils' './scripts/compliance/distroless' './scripts/compliance/general' './scripts/deployment/devcontainer' './scripts/deployment/distroless' './scripts/deployment/pi' './scripts/deployment/utils' './scripts/gui_auth_realignment/.cache' './scripts/gui_auth_realignment/lib' './scripts/maintenance/cleanup' './scripts/maintenance/optimization' './scripts/maintenance/recovery' './scripts/network/diagnostics' './scripts/network/security' './scripts/network/setup' './scripts/testing/integration' './scripts/testing/unit' './scripts/testing/utils' './scripts/validation/__pycache__' './scripts/verification/__pycache__'; \
@@ -169,6 +167,10 @@ RUN set -eux; \
     done
 # LUCID_X_FILES_SKELETON_END
 COPY common/ ./common/
+COPY database/mongodb/ ./database/mongodb/
+COPY database/config/ ./database/config/
+COPY scripts/database/ ./scripts/database/
+
 COPY configs/container/auth/ ./configs/container/auth/
 COPY configs/container/blockchain/ ./configs/container/blockchain/
 COPY configs/container/database/ ./configs/container/database/
@@ -178,7 +180,7 @@ COPY configs/container/rdp/ ./configs/container/rdp/
 COPY configs/docker/ ./configs/docker/
 COPY configs/integration/ ./configs/integration/
 COPY configs/security/ ./configs/security/
-COPY infrastructure/containers/services/mongodb-monitoring.yml ./service_configs/mongodb/mongodb-monitoring.yml
+COPY infrastructure/containers/services/database/mongodb-monitoring.yml ./service_configs/mongodb/mongodb-monitoring.yml
 COPY . ./infrastructure/containers/services
 COPY infrastructure/service_mesh/config/ ./infrastructure/service_mesh/config/
 # LUCID_ALIGNMENT_MAT_COPY_DIRECTORIES_END
@@ -266,6 +268,6 @@ USER 65532:65532
 ENTRYPOINT ["/app/usr/bin/tini", "--", "/app/usr/bin/mongod"]
 
 CMD ["--config", "/app/etc/mongod.conf"]
-COPY storage/mongod.conf /etc/mongod.conf
+COPY infrastructure/containers/storage/mongod.conf /etc/mongod.conf
 
 VOLUME ["/app/data/db"]

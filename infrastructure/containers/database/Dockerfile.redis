@@ -73,15 +73,32 @@ COPY infrastructure/containers/services/x_lucid_cluster_calibration/allocation_m
 # LUCID_ALIGNMENT_MAT_COPY_DIRECTORIES_END
 COPY infrastructure/docker/ ./infrastructure/docker/
 
-
 RUN rm -rf configs/environment 2>/dev/null || true
 
+# Entry + health scripts and Redis config template (paths expected by database/redis/start-redis.py)
+RUN mkdir -p /build/usr/local/bin /build/etc
+COPY database/redis/start-redis.py /build/usr/local/bin/start-redis.py
+COPY database/redis/healthcheck.py /build/usr/local/bin/redis-healthcheck.py
+COPY configs/database/redis/redis.conf /build/etc/redis.conf.template
 
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    rm -rf /var/lib/apt/lists/* && \
+    apt-get update --allow-releaseinfo-change && \
+    apt-get install -y --no-install-recommends \
+        ca-certificates \
+        python3-pip \
+        tini \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-RUN rm -rf configs/environment 2>/dev/null || true
-
-RUN chmod +x /export/app/usr/local/bin/start-redis.py /export/app/usr/local/bin/redis-healthcheck.py && \
-    test -f /export/app/etc/redis.conf.template
+# redis-py for healthcheck (install into /build/py-site for COPY into distroless)
+RUN python3 -m pip install --no-cache-dir \
+        --target /build/py-site \
+        "redis==5.0.1" \
+    && chmod +x /build/usr/local/bin/start-redis.py /build/usr/local/bin/redis-healthcheck.py \
+    && test -f /build/etc/redis.conf.template \
+    && test -x /usr/local/bin/redis-server \
+    && PYTHONPATH=/build/py-site python3 -c "import redis; print('OK redis py')"
 
 ############################
 # Stage 2 – Runtime (Distroless Python 3.11)
@@ -126,22 +143,28 @@ ENV     PUBLIC_TOR_IP="${PUBLIC_TOR_IP}" \
     REDIS_PASSWORD=${REDIS_PASSWORD} \
     REDIS_MAX_MEMORY="512mb" \
     REDIS_MAX_MEMORY_POLICY="allkeys-lru" \
-    REDIS_PORT=${REDIS_PORT} \
-    REDIS_HOST="lucid-redis" \
-    LD_LIBRARY_PATH=/app/usr/lib/redis-ldd
+    REDIS_PORT=6379 \
+    REDIS_BIND_ADDR=0.0.0.0 \
+    LD_LIBRARY_PATH=/app/lib:/app/usr/lib:/app/usr/local/lib
 # LUCID_RUNTIME_COPY_FROM_BUILD_BEGIN
-# Generated: same directory set as LUCID_X_FILES_SKELETON (./ under WORKDIR /build).
 COPY --from=redis-builder --chown=65532:65532 /build/common/ /app/common/
-# LUCID_RUNTIME_COPY_FROM_BUILD_END
 
-# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
-# Generated: apt + RUN scaffold (mkdir/printf/touch/chown) -> FHS (not ./ or /build/; lib_search_and_inject.py).
-COPY --from=redis-builder --chown=65532:65532 /dev/null/ /app/dev/null/
-# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_END
-# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
-# Generated: apt -> FHS paths only (not ./ or /build/ skeleton; lib_search_and_inject.py).
+# redis-server + dynamic linker + libs from redis:7.2 builder (after apt)
+COPY --from=redis-builder --chown=65532:65532 /etc/ssl/ /app/etc/ssl/
+COPY --from=redis-builder --chown=65532:65532 /bin/ /app/bin/
+COPY --from=redis-builder --chown=65532:65532 /usr/bin/ /app/usr/bin/
+COPY --from=redis-builder --chown=65532:65532 /usr/local/bin/ /app/usr/local/bin/
+COPY --from=redis-builder --chown=65532:65532 /sbin/ /app/sbin/
+COPY --from=redis-builder --chown=65532:65532 /lib/ /app/lib/
+COPY --from=redis-builder --chown=65532:65532 /usr/lib/ /app/usr/lib/
+COPY --from=redis-builder --chown=65532:65532 /usr/local/lib/ /app/usr/local/lib/
+COPY --from=redis-builder --chown=65532:65532 /usr/lib/python3.11/ /app/usr/lib/python3.11/
 
-RUN ["/app/usr/bin/python3.11", "-c", "import os, redis; sp='/app/usr/local/lib/python3.11/site-packages'; assert os.path.isdir(sp) and os.listdir(sp); print('✅ Redis runtime python deps OK')"]
+# Lucid scripts + template (after /usr/local/bin tree so redis-server stays, scripts added/overwritten paths are only our two files)
+COPY --from=redis-builder --chown=65532:65532 /build/usr/local/bin/start-redis.py /app/usr/local/bin/start-redis.py
+COPY --from=redis-builder --chown=65532:65532 /build/usr/local/bin/redis-healthcheck.py /app/usr/local/bin/redis-healthcheck.py
+COPY --from=redis-builder --chown=65532:65532 /build/etc/redis.conf.template /app/etc/redis.conf.template
+COPY --from=redis-builder --chown=65532:65532 /build/py-site/ /app/usr/local/lib/python3.11/site-packages/
 
 EXPOSE 6379
 

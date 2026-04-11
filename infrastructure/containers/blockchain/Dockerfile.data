@@ -566,9 +566,9 @@ COPY configs/container/node/docker-compose.node-gui.yml ./configs/container/node
 COPY configs/container/server/docker-compose.server-external.yml ./configs/container/server/docker-compose.server-external.yml
 COPY configs/docker/docker-compose.all.yml ./configs/docker/docker-compose.all.yml
 COPY configs/docker/docker-compose.core.yml ./configs/docker/docker-compose.core.yml
-COPY service_configs/blockchain-core.yml ./service_configs/blockchain-core.yml
-COPY service_configs/gui-docker-manager-service-groups.yml ./service_configs/gui-docker-manager-service-groups.yml
-COPY service_configs/gui-docker-manager.yml ./service_configs/gui-docker-manager.yml
+COPY infrastructure/containers/services/blockchain/blockchain-core.yml ./service_configs/blockchain-core.yml
+COPY infrastructure/containers/services/gui/gui-docker-manager-service-groups.yml ./service_configs/gui-docker-manager-service-groups.yml
+COPY infrastructure/containers/services/gui/gui-docker-manager.yml ./service_configs/gui-docker-manager.yml
 COPY configs/x-files.json ./configs/x-files.json
 COPY infrastructure/containers/_align_dockerfile_lucid_metadata.py ./infrastructure/containers/_align_dockerfile_lucid_metadata.py
 COPY infrastructure/containers/_sync_dockerfile_lucid_env.py ./infrastructure/containers/_sync_dockerfile_lucid_env.py
@@ -611,12 +611,12 @@ COPY tests/validation/test_all_services_healthy.py ./tests/validation/test_all_s
 
 
 COPY blockchain/ ./blockchain/
-COPY blockchain/config/chain-to-pay.connections.json ./blockchain/config/chain-to-pay.connections.json
-COPY blockchain/config/openssl-api.yml ./blockchain/config/openssl-api.yml
+COPY infrastructure/containers/blockchain/config/chain-to-pay.connections.json ./blockchain/config/chain-to-pay.connections.json
+COPY infrastructure/containers/blockchain/config/openssl-api.yml ./blockchain/config/openssl-api.yml
 COPY blockchain/config ./blockchain/config/
-COPY blockchain/docker-compose.block-system.yml ./configs/docker-compose.block-system.yaml
-COPY blockchain/docker-compose.chain.yml ./configs/docker-compose.chain.yaml
-COPY blockchain/docker-compose.manager.yml ./configs/docker-compose.manager.yaml
+COPY infrastructure/containers/blockchain/docker-compose.block-system.yml ./configs/docker-compose.block-system.yaml
+COPY infrastructure/containers/blockchain/docker-compose.chain.yml ./configs/docker-compose.chain.yaml
+COPY infrastructure/containers/blockchain/docker-compose.manager.yml ./configs/docker-compose.manager.yaml
 COPY sessions/ ./sessions/
 
 

@@ -378,10 +378,10 @@ COPY configs/container/sessions/docker-compose.session-images.yml ./configs/cont
 COPY configs/docker/docker-compose.all.yml ./configs/docker/docker-compose.all.yml
 COPY configs/docker/docker-compose.application.yml ./configs/docker/docker-compose.application.yml
 COPY configs/integration/master-integration-config.yml ./configs/integration/master-integration-config.yml
-COPY service_configs/gui-docker-manager-service-groups.yml ./service_configs/gui-docker-manager-service-groups.yml
-COPY service_configs/gui-docker-manager.yml ./service_configs/gui-docker-manager.yml
-COPY service_configs/service-registry.json ./service_configs/service-registry.json
-COPY service_configs/session-management.yml ./service_configs/session-management.yml
+COPY infrastructure/containers/services/gui/gui-docker-manager-service-groups.yml ./service_configs/gui-docker-manager-service-groups.yml
+COPY infrastructure/containers/services/gui/gui-docker-manager.yml ./service_configs/gui-docker-manager.yml
+COPY infrastructure/containers/services/service-registry.json ./service_configs/service-registry.json
+COPY infrastructure/containers/services/sessions/session-management.yml ./service_configs/session-management.yml
 COPY configs/x-files.json ./configs/x-files.json
 COPY gui_docker_manager/gui_docker_manager/routers/services.py ./gui_docker_manager/gui_docker_manager/routers/services.py
 COPY infrastructure/containers/_sync_dockerfile_lucid_env.py ./infrastructure/containers/_sync_dockerfile_lucid_env.py

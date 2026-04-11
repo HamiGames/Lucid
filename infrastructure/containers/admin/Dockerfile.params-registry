@@ -77,7 +77,7 @@ RUN set -eux; \
   done
 # LUCID_LIB_SKELETON_END
 
-COPY admin/params-registry/requirements.txt ./requirements.txt
+COPY infrastructure/containers/admin/requirements.txt ./requirements.txt
 
 RUN --mount=type=cache,target=/root/.cache/pip \
     mkdir -p /build/wheels && \

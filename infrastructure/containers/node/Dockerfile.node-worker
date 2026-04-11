@@ -331,8 +331,8 @@ COPY infrastructure/service_mesh/service_mesh_translator.py ./service_mesh/servi
 # Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
 
 COPY node/ ./node/
-COPY node/docker-compose.node-sessions.yml ./configs/docker-compose.node-sessions.yml
-COPY node/docker-compose.node-data-system.yml ./configs/docker-compose.node-data-system.yml
+COPY infrastructure/containers/node/docker-compose.node-sessions.yml ./configs/docker-compose.node-sessions.yml
+COPY infrastructure/containers/node/docker-compose.node-data-system.yml ./configs/docker-compose.node-data-system.yml
 RUN printf "LUCID_NODE_WORKER_RUNTIME" > /var/run/.keep && \
     printf "LUCID_NODE_WORKER_LIB" > /var/lib/.keep && \
     chown -R 65532:65532 /var/run /var/lib && chmod 644 /var/run/.keep /var/lib/.keep

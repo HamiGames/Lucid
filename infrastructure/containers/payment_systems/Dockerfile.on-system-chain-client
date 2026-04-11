@@ -253,7 +253,7 @@ COPY infrastructure/containers/services/x_lucid_cluster_calibration/payment-clus
 
 COPY blockchain/chain_client/ /build/app/chain_client/
 
-COPY payment_systems/docker-compose.payment-internal.yml ./configs/docker-compose.payment-internal.yml
+COPY infrastructure/containers/payment_systems/docker-compose.payment-internal.yml ./configs/docker-compose.payment-internal.yml
 
 RUN rm -rf configs/environment 2>/dev/null || true
 

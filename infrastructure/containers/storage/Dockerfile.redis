@@ -20,6 +20,8 @@ ARG TARGETPLATFORM
 
 FROM --platform=$TARGETPLATFORM redis:7.2 AS redis-builder
 
+WORKDIR /build
+
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
     rm -rf /var/lib/apt/lists/* && \
@@ -86,7 +88,7 @@ RUN set -eux; \
       './common' \
       './database' \
       './database/redis' \
-      './databse/config' \
+      './database/config' \
       './infrastructure/containers' \
       './infrastructure/containers/services' \
       './infrastructure/containers/services/database' \
@@ -145,9 +147,20 @@ COPY infrastructure/containers/services/storage/lucid-redis-storage.yml ./infras
 COPY infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.yml ./infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.yml
 # LUCID_ALIGNMENT_MAT_COPY_DIRECTORIES_END
 
-############################
-# Stage 2: distroless runtime (capacity at /data)
-############################
+# Runtime COPY --from uses /build/storage/; keep directory present in builder.
+RUN mkdir -p /build/storage && touch /build/storage/.keep
+
+# Entry + health scripts and Redis config template (paths expected by database/redis/start-redis.py)
+COPY infrastructure/containers/storage/redis.conf /build/etc/redis.conf.template
+RUN mkdir -p /build/usr/local/bin /build/py-site /build/etc && \
+    cp /build/database/redis/start-redis.py /build/usr/local/bin/start-redis.py && \
+    cp /build/database/redis/healthcheck.py /build/usr/local/bin/redis-healthcheck.py && \
+    chmod +x /build/usr/local/bin/start-redis.py /build/usr/local/bin/redis-healthcheck.py && \
+    test -f /build/etc/redis.conf.template && \
+    test -x /usr/local/bin/redis-server && \
+    python3.11 -m pip install --no-cache-dir --target /build/py-site "redis==5.0.1" && \
+    PYTHONPATH=/build/py-site python3.11 -c "import redis; print('OK redis py')"
+
 RUN rm -rf configs/environment 2>/dev/null || true
 
 
@@ -194,6 +207,9 @@ ENV PUBLIC_TOR_IP="${PUBLIC_TOR_IP}" \
     LUCID_INTERNAL_NETWORK_NAME="${LUCID_INTERNAL_NETWORK_NAME}" \
     LUCID_TOR_EGRESS_NETWORK_NAME="${LUCID_TOR_EGRESS_NETWORK_NAME}" \
     PATH="/app/usr/local/bin:/app/usr/bin:/bin" \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONPATH=/app/usr/local/lib/python3.11/site-packages \
     LUCID_HOST_SERVICE_NAME=lucid-redis-storage \
     LUCID_SERVICE_HOST_IP=172.20.10.67 \
     LUCID_SERVICE_HTTP_PATH=http://lucid-redis-storage:6380/app \
@@ -230,6 +246,11 @@ COPY --from=redis-builder --chown=65532:65532 /build/infrastructure/ /app/infras
 COPY --from=redis-builder --chown=65532:65532 /build/scripts/ /app/scripts/
 COPY --from=redis-builder --chown=65532:65532 /build/storage/ /app/storage/
 
+# Lucid entrypoint + healthcheck (after FHS COPY so redis-server remains; only these paths are ours)
+COPY --from=redis-builder --chown=65532:65532 /build/usr/local/bin/start-redis.py /app/usr/local/bin/start-redis.py
+COPY --from=redis-builder --chown=65532:65532 /build/usr/local/bin/redis-healthcheck.py /app/usr/local/bin/redis-healthcheck.py
+COPY --from=redis-builder --chown=65532:65532 /build/etc/redis.conf.template /app/etc/redis.conf.template
+COPY --from=redis-builder --chown=65532:65532 /build/py-site/ /app/usr/local/lib/python3.11/site-packages/
 
 # LUCID_RUNTIME_COPY_FROM_BUILD_END
 # LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
@@ -237,13 +258,12 @@ COPY --from=redis-builder --chown=65532:65532 /build/storage/ /app/storage/
 EXPOSE 6380
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-  CMD ["/app/usr/bin/python3", "-c", "import socket; s=socket.socket(); s.settimeout(2); r=s.connect_ex(('127.0.0.1', 6379)); s.close(); exit(0 if r==0 else 1)"]
+  CMD ["/app/usr/bin/python3.11", "/app/usr/local/bin/redis-healthcheck.py"]
 
 USER 65532:65532
 
-ENTRYPOINT ["/usr/bin/tini", "--", "/usr/local/bin/redis-server"]
+ENTRYPOINT ["/app/usr/bin/tini", "--"]
 
-CMD ["/app/etc/redis/redis.conf"]
-COPY storage/redis.conf /app/etc/redis/redis.conf
+CMD ["/app/usr/bin/python3.11", "/app/usr/local/bin/start-redis.py"]
 
 VOLUME ["/app/redis/storage/data"]

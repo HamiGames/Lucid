@@ -196,10 +196,10 @@ COPY configs/docker/docker-compose.all.yml ./configs/docker/docker-compose.all.y
 COPY configs/docker/docker-compose.core.yml ./configs/docker/docker-compose.core.yml
 COPY configs/docker/docker-compose.foundation-02.yml ./configs/docker/docker-compose.foundation-02.yml
 COPY configs/docker/docker-compose.foundation.yml ./configs/docker/docker-compose.foundation.yml
-COPY service_configs/beta-sidecar.yml ./service_configs/beta-sidecar.yml
-COPY service_configs/gui-api-bridge.yml ./service_configs/gui-api-bridge.yml
-COPY service_configs/gui-docker-manager.yml ./service_configs/gui-docker-manager.yml
-COPY service_configs/service-discovery.yml ./service_configs/service-discovery.yml
+COPY infrastructure/containers/services/beta-sidecar.yml ./service_configs/beta-sidecar.yml
+COPY infrastructure/containers/services/gui/gui-api-bridge.yml ./service_configs/gui-api-bridge.yml
+COPY infrastructure/containers/services/gui/gui-docker-manager.yml ./service_configs/gui-docker-manager.yml
+COPY infrastructure/containers/services/service-discovery.yml ./service_configs/service-discovery.yml
 COPY infrastructure/containers/_sync_dockerfile_lucid_env.py ./infrastructure/containers/_sync_dockerfile_lucid_env.py
 COPY infrastructure/containers/config-listings.json ./infrastructure/containers/config-listings.json
 COPY infrastructure/containers/dockerfile_recalibration_map.json ./infrastructure/containers/dockerfile_recalibration_map.json

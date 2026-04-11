@@ -55,8 +55,9 @@ class RedisDistroless:
         
         max_memory = os.getenv('REDIS_MAX_MEMORY', '512mb')
         max_memory_policy = os.getenv('REDIS_MAX_MEMORY_POLICY', 'allkeys-lru')
-        port = os.getenv('REDIS_PORT')
-        host = os.getenv('REDIS_HOST')
+        # --bind is a listen address (use 0.0.0.0 in containers). REDIS_HOST is often the service DNS name — not valid for bind.
+        port = os.getenv('REDIS_PORT', '6379')
+        host = os.getenv('REDIS_BIND_ADDR', '0.0.0.0')
         
         # Build command using template config and override with command-line args
         cmd = [

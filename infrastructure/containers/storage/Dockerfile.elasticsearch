@@ -205,7 +205,7 @@ USER 65532:65532
 ENTRYPOINT ["/app/usr/bin/tini", "--", "/app/usr/share/elasticsearch/bin/elasticsearch"]
 
 CMD []
-COPY storage/elasticsearch.yml /usr/share/elasticsearch/config/elasticsearch.yml
+COPY infrastructure/containers/storage/elasticsearch.yml /usr/share/elasticsearch/config/elasticsearch.yml
 
 
 

@@ -67,7 +67,7 @@ RUN set -eux; \
   done
 # LUCID_LIB_SKELETON_END
 
-COPY overlord/runtime/requirements.txt /build/overlord/requirements.txt
+COPY infrastructure/containers/overlord/runtime/requirements.txt /build/overlord/requirements.txt
 
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --upgrade pip wheel setuptools
@@ -191,8 +191,8 @@ COPY infrastructure/service_mesh/service_mesh_translator.py ./service_mesh/servi
 # LUCID_X_FILES_SKELETON_BEGIN
 # Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
 
-COPY overlord/runtime/app.py ./overlord/app.py
-COPY overlord/runtime/trigger_engine.py ./overlord/trigger_engine.py
+COPY infrastructure/containers/overlord/runtime/app.py ./overlord/app.py
+COPY infrastructure/containers/overlord/runtime/trigger_engine.py ./overlord/trigger_engine.py
 
 
 

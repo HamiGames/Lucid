@@ -50,7 +50,7 @@ RUN set -eux; \
   done
 # LUCID_LIB_SKELETON_END
 
-COPY overlord/runtime/requirements.txt ./requirements.txt
+COPY infrastructure/containers/overlord/runtime/requirements.txt ./requirements.txt
 
 
 

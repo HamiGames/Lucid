@@ -427,13 +427,13 @@ COPY configs/container/node/docker-compose.node-sessions.yml ./configs/container
 COPY configs/container/sessions/docker-compose.session-images.yml ./configs/container/sessions/docker-compose.session-images.yml
 COPY configs/docker/docker-compose.all.yml ./configs/docker/docker-compose.all.yml
 COPY configs/docker/docker-compose.core.yml ./configs/docker/docker-compose.core.yml
-COPY service_configs/admin-interface.yml ./service_configs/admin-interface.yml
-COPY service_configs/api-gateway.yml ./service_configs/api-gateway.yml
-COPY service_configs/beta-sidecar.yml ./service_configs/beta-sidecar.yml
-COPY service_configs/blockchain-core.yml ./service_configs/blockchain-core.yml
-COPY service_configs/gui-docker-manager-service-groups.yml ./service_configs/gui-docker-manager-service-groups.yml
-COPY service_configs/gui-docker-manager.yml ./service_configs/gui-docker-manager.yml
-COPY service_configs/session-management.yml ./service_configs/session-management.yml
+COPY infrastructure/containers/services/admin/admin-interface.yml ./service_configs/admin-interface.yml
+COPY infrastructure/containers/services/api-gateway.yml ./service_configs/api-gateway.yml
+COPY infrastructure/containers/services/beta-sidecar.yml ./service_configs/beta-sidecar.yml
+COPY infrastructure/containers/services/blockchain/blockchain-core.yml ./service_configs/blockchain-core.yml
+COPY infrastructure/containers/services/gui/gui-docker-manager-service-groups.yml ./service_configs/gui-docker-manager-service-groups.yml
+COPY infrastructure/containers/services/gui/gui-docker-manager.yml ./service_configs/gui-docker-manager.yml
+COPY infrastructure/containers/services/sessions/session-management.yml ./service_configs/session-management.yml
 COPY configs/x-files.json ./configs/x-files.json
 COPY infrastructure/containers/_sync_dockerfile_lucid_env.py ./infrastructure/containers/_sync_dockerfile_lucid_env.py
 COPY infrastructure/containers/blockchain/config/blockchain-endpoints.yml ./infrastructure/containers/blockchain/config/blockchain-endpoints.yml
@@ -493,7 +493,7 @@ COPY blockchain/deployment/        ./deployment/
 COPY blockchain/chain_client/      ./chain_client/
 COPY blockchain/evm/               ./evm/
 COPY blockchain/on_system_chain/   ./on_system_chain/
-COPY blockchain/verify_runtime.py ./
+COPY infrastructure/containers/blockchain/verify_runtime.py ./
 
 ############################
 # Stage 2 – Runtime

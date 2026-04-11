@@ -371,9 +371,9 @@ COPY infrastructure/service_mesh/service_mesh_translator.py ./service_mesh/servi
 
 COPY scripts/ ./scripts/
 
-COPY auth/docker-compose.auth.yml ./service_configs/auth/docker-compose.auth.yml
-COPY server/docker-compose.server-external.yml ./service_configs/server/docker-compose.server-external.yml
-COPY server/docker-compose.server-images.yml ./service_configs/server/docker-compose.server-images.yml
+COPY infrastructure/containers/auth/docker-compose.auth.yml ./service_configs/auth/docker-compose.auth.yml
+COPY infrastructure/containers/server/docker-compose.server-external.yml ./service_configs/server/docker-compose.server-external.yml
+COPY infrastructure/containers/server/docker-compose.server-images.yml ./service_configs/server/docker-compose.server-images.yml
 
 # Handler trees: orchestration API + all server subsystems shipped in this image
 

@@ -247,7 +247,7 @@ COPY common/tor/tor_manager.py ./common/tor/tor_manager.py
 COPY configs/container/tor/docker-compose.proxy-systems.yml ./configs/container/tor/docker-compose.proxy-systems.yml
 COPY configs/docker/docker-compose.core.yml ./configs/docker/docker-compose.core.yml
 COPY configs/gui-alignment/gui-tor-manager.json ./configs/gui-alignment/gui-tor-manager.json
-COPY service_configs/gui-docker-manager.yml ./service_configs/gui-docker-manager.yml
+COPY infrastructure/containers/services/gui/gui-docker-manager.yml ./service_configs/gui-docker-manager.yml
 COPY infrastructure/containers/.devcontainer/devcontainer.yaml ./infrastructure/containers/.devcontainer/devcontainer.yaml
 COPY infrastructure/containers/_align_dockerfile_lucid_metadata.py ./infrastructure/containers/_align_dockerfile_lucid_metadata.py
 COPY infrastructure/containers/_sync_dockerfile_lucid_env.py ./infrastructure/containers/_sync_dockerfile_lucid_env.py

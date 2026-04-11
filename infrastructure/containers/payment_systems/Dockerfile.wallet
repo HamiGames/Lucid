@@ -377,10 +377,10 @@ COPY configs/container/payment_systems/docker-compose.payment-internal.yml ./con
 COPY configs/container/server/docker-compose.server-external.yml ./configs/container/server/docker-compose.server-external.yml
 COPY configs/docker/docker-compose.all.yml ./configs/docker/docker-compose.all.yml
 COPY configs/docker/docker-compose.support.yml ./configs/docker/docker-compose.support.yml
-COPY service_configs/beta-sidecar.yml ./service_configs/beta-sidecar.yml
-COPY service_configs/gui-docker-manager.yml ./service_configs/gui-docker-manager.yml
-COPY service_configs/service-discovery.yml ./service_configs/service-discovery.yml
-COPY service_configs/tron-payment.yml ./service_configs/tron-payment.yml
+COPY infrastructure/containers/services/beta-sidecar.yml ./service_configs/beta-sidecar.yml
+COPY infrastructure/containers/services/gui/gui-docker-manager.yml ./service_configs/gui-docker-manager.yml
+COPY infrastructure/containers/services/service-discovery.yml ./service_configs/service-discovery.yml
+COPY infrastructure/containers/services/payment_services/tron-payment.yml ./service_configs/tron-payment.yml
 COPY configs/x-files.json ./configs/x-files.json
 COPY infrastructure/containers/_align_dockerfile_lucid_metadata.py ./infrastructure/containers/_align_dockerfile_lucid_metadata.py
 COPY infrastructure/containers/_sync_dockerfile_lucid_env.py ./infrastructure/containers/_sync_dockerfile_lucid_env.py
@@ -438,8 +438,8 @@ COPY wallet/wallet_manager.py ./wallet/wallet_manager.py
 COPY wallet/walletd/hardware_wallet.py ./wallet/walletd/hardware_wallet.py
 # LUCID_ALIGNMENT_MAT_COPY_DIRECTORIES_END
 
-COPY payment_systems/docker-compose.payment-internal.yml /build/configs/docker-compose.payment-internal.yml
-COPY payment_systems/docker-compose.payment-externals.yml /build/configs/docker-compose.payment-externals.yml
+COPY infrastructure/containers/payment_systems/docker-compose.payment-internal.yml /build/configs/docker-compose.payment-internal.yml
+COPY infrastructure/containers/payment_systems/docker-compose.payment-externals.yml /build/configs/docker-compose.payment-externals.yml
 
 COPY payment_systems/tron/ ./tron/
 

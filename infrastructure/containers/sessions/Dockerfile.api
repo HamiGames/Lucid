@@ -398,11 +398,11 @@ COPY configs/container/server/docker-compose.server-external.yml ./configs/conta
 COPY configs/container/sessions/docker-compose.session-images.yml ./configs/container/sessions/docker-compose.session-images.yml
 COPY configs/docker/docker-compose.all.yml ./configs/docker/docker-compose.all.yml
 COPY configs/docker/docker-compose.application.yml ./configs/docker/docker-compose.application.yml
-COPY service_configs/gui-api-bridge.yml ./service_configs/gui-api-bridge.yml
-COPY service_configs/gui-docker-manager.yml ./service_configs/gui-docker-manager.yml
-COPY service_configs/rdp-services.yml ./service_configs/rdp-services.yml
-COPY service_configs/service-discovery.yml ./service_configs/service-discovery.yml
-COPY service_configs/session-management.yml ./service_configs/session-management.yml
+COPY infrastructure/containers/services/gui/gui-api-bridge.yml ./service_configs/gui-api-bridge.yml
+COPY infrastructure/containers/services/gui/gui-docker-manager.yml ./service_configs/gui-docker-manager.yml
+COPY infrastructure/containers/services/rdp/rdp-services.yml ./service_configs/rdp-services.yml
+COPY infrastructure/containers/services/service-discovery.yml ./service_configs/service-discovery.yml
+COPY infrastructure/containers/services/sessions/session-management.yml ./service_configs/session-management.yml
 COPY configs/x-files.json ./configs/x-files.json
 COPY gui_api_bridge/gui_api_bridge/config.py ./gui_api_bridge/gui_api_bridge/config.py
 COPY gui_api_bridge/gui_api_bridge/gui_api_bridge_service.py ./gui_api_bridge/gui_api_bridge/gui_api_bridge_service.py

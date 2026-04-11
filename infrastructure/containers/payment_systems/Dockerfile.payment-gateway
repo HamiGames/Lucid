@@ -201,7 +201,7 @@ COPY repair_dockerfile_standardization.py ./repair_dockerfile_standardization.py
 # LUCID_IMAGE_CONFIG: (builder)
 
 
-COPY payment_systems/docker-compose.payment-externals.yml ./configs/docker-compose.payment-externals.yml
+COPY infrastructure/containers/payment_systems/docker-compose.payment-externals.yml ./configs/docker-compose.payment-externals.yml
 
 RUN rm -rf configs/environment 2>/dev/null || true
 

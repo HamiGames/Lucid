@@ -53,7 +53,7 @@ RUN set -eux; \
   done
 # LUCID_LIB_SKELETON_END
 
-COPY overlord/runtime/requirements.txt ./requirements.txt
+COPY infrastructure/containers/overlord/runtime/requirements.txt ./requirements.txt
 
 
 
@@ -142,7 +142,7 @@ COPY common/tor/onion_service.py ./common/tor/onion_service.py
 COPY common/tor/socks_proxy.py ./common/tor/socks_proxy.py
 COPY common/tor/tor_manager.py ./common/tor/tor_manager.py
 COPY configs/container/node/docker-compose.node-sessions.yml ./configs/container/node/docker-compose.node-sessions.yml
-COPY service_configs/session-management.yml ./service_configs/session-management.yml
+COPY infrastructure/containers/services/sessions/session-management.yml ./service_configs/session-management.yml
 COPY infrastructure/containers/config-listings.json ./infrastructure/containers/config-listings.json
 COPY infrastructure/containers/dockerfile_layout_run_report.json ./infrastructure/containers/dockerfile_layout_run_report.json
 COPY infrastructure/containers/dockerfile_recalibration_map.json ./infrastructure/containers/dockerfile_recalibration_map.json
@@ -163,7 +163,7 @@ COPY infrastructure/containers/services/x_lucid_cluster_calibration/processing-c
 # Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
 
 
-COPY overlord/runtime/app.py ./app.py
+COPY infrastructure/containers/overlord/runtime/app.py ./app.py
 
 
 

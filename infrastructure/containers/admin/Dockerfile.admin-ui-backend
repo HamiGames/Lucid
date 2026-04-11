@@ -199,7 +199,7 @@ RUN set -eux; \
 # LUCID_ALIGNMENT_MAT_COPY_DIRECTORIES_BEGIN
 # alignment-mat admin-ui-backend_manifest.json: compose_service='admin-ui-backend' — explicit manifest paths → 45 builder COPY line(s) (dockerfile_layout_structure.json section #10 COPY_DIRECTORIES).
 COPY _gen_host_config.py ./_gen_host_config.py
-COPY admin/config/load_host_config.py ./admin/config/load_host_config.py
+COPY infrastructure/containers/admin/config/load_host_config.py ./admin/config/load_host_config.py
 COPY build_master_env_config.py ./build_master_env_config.py
 COPY common/__init__.py ./common/__init__.py
 COPY common/contact_profile_env.py ./common/contact_profile_env.py
@@ -273,7 +273,7 @@ COPY infrastructure/containers/services/x_lucid_cluster_calibration/core-cluster
 COPY admin/ ./admin/
 
 
-COPY admin/docker-compose.admin.yml ./configs/docker-compose.admin.yml
+COPY infrastructure/containers/admin/docker-compose.admin.yml ./configs/docker-compose.admin.yml
 
 RUN rm -rf configs/environment 2>/dev/null || true
 

@@ -82,7 +82,7 @@ RUN set -eux; \
 RUN apt-get remove -y rustc cargo && rm -rf /root/.cargo /root/.rustup && \
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
 
-COPY overlord/runtime/requirements.txt ./overlord-requirements.txt
+COPY infrastructure/containers/overlord/runtime/requirements.txt ./overlord-requirements.txt
 RUN --mount=type=cache,target=/root/.cache/pip \
     mkdir -p /build/wheels && \
     printf "LUCID_ADMIN_OVERLORD_WHEELS_$(date +%s)" > /build/wheels/.keep && \
@@ -314,7 +314,7 @@ COPY scripts/gui_auth_realignment/list_service_files_by_name.py ./scripts/gui_au
 # Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
 COPY scripts/ ./scripts/
 
-COPY overlord/runtime/app.py ./admin/overlord/app.py
+COPY infrastructure/containers/overlord/runtime/app.py ./admin/overlord/app.py
 COPY database/ ./database/
 
 RUN printf "LUCID_ADMIN_OVERLORD_RUNTIME_DIRECTORY" > /var/run/.keep && \

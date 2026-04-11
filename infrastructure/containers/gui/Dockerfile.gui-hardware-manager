@@ -296,11 +296,11 @@ COPY configs/container/gui/docker-compose.user-gui.yml ./configs/container/gui/d
 COPY configs/docker/docker-compose.gui-integration.yml ./configs/docker/docker-compose.gui-integration.yml
 COPY configs/gui-alignment/gui-hardware-manager.json ./configs/gui-alignment/gui-hardware-manager.json
 COPY configs/gui-alignment/gui-services.json ./configs/gui-alignment/gui-services.json
-COPY service_configs/gui-docker-manager-service-groups.yml ./service_configs/gui-docker-manager-service-groups.yml
-COPY service_configs/gui-hardware-manager.yml ./service_configs/gui-hardware-manager.yml
-COPY service_configs/gui-services.json ./service_configs/gui-services.json
-COPY service_configs/service-discovery.yml ./service_configs/service-discovery.yml
-COPY service_configs/service-registry.json ./service_configs/service-registry.json
+COPY infrastructure/containers/services/gui/gui-docker-manager-service-groups.yml ./service_configs/gui-docker-manager-service-groups.yml
+COPY infrastructure/containers/services/gui/gui-hardware-manager.yml ./service_configs/gui-hardware-manager.yml
+COPY configs/services/gui-services.json ./service_configs/gui-services.json
+COPY infrastructure/containers/services/service-discovery.yml ./service_configs/service-discovery.yml
+COPY infrastructure/containers/services/service-registry.json ./service_configs/service-registry.json
 COPY configs/x-files.json ./configs/x-files.json
 COPY gui_hardware_manager/__init__.py ./gui_hardware_manager/__init__.py
 COPY gui_hardware_manager/gui_hardware_manager/config.py ./gui_hardware_manager/gui_hardware_manager/config.py

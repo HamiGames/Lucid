@@ -1,11 +1,15 @@
 #!/usr/bin/env bash
 # Path: scripts/docker-smoke-test.sh
 # Lucid Dockerfile / compose static smoke checks (no Docker required by default).
-# Optional: --test-build / --test-compose when a working Docker daemon is available.
+# Optional: --test-build / --build-check / --test-compose when Docker is available.
+# With --test-build, failed builds print the last lines of docker output (not swallowed).
 #
 # Terminal DIR: run from repository root (Lucid/), e.g.:
 #   bash scripts/docker-smoke-test.sh
 #   bash scripts/docker-smoke-test.sh -v
+#   bash scripts/docker-smoke-test.sh -x          # same COPY assumptions as: docker build -f ... .
+#   bash scripts/docker-smoke-test.sh -b          # full build; see logs on failure
+#   bash scripts/docker-smoke-test.sh -k          # docker build --check (Docker 27+)
 
 # No -e: errexit is brittle here (CI redirects, optional tools); failures are tracked explicitly.
 set -uo pipefail
@@ -27,14 +31,19 @@ log_verbose() {
 
 VERBOSE=false
 TEST_BUILD=false
+TEST_BUILD_CHECK=false
 TEST_COMPOSE=false
 # COPY path checks against repo root are noisy (generated assets, optional trees); opt in with --strict-copy
 STRICT_COPY=false
 # Fail on bare ARG TARGETPLATFORM after defaulted ARG (plain docker build risk); opt in with --strict-platform
 STRICT_PLATFORM=false
+# With --test-build: stream full docker build output (very noisy)
+BUILD_LOG_FULL=false
 PASSED_TESTS=()
 FAILED_TESTS=()
 SKIPPED_TESTS=()
+# Populated when --strict-copy: each "rel_path_dockerfile|missing_src"
+COPY_FAILURE_LINES=()
 
 SCRIPT_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # Prefer cwd when it looks like the repo; else parent of scripts/

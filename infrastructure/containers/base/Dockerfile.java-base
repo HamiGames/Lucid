@@ -219,7 +219,7 @@ COPY scripts/gui_auth_realignment/rewrite_dockerfiles_from_alignment_mats.py ./s
 COPY configs/ ./configs/
 COPY scripts/ ./scripts/
 
-COPY base/docker-compose.base.yml ./service_configs/docker-compose.base.yml
+COPY infrastructure/containers/base/docker-compose.base.yml ./service_configs/docker-compose.base.yml
 
 ############################
 # Stage 2 – Runtime (Distroless Java 17)
