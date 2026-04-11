@@ -475,7 +475,7 @@ COPY sessions/ ./sessions/
 
 COPY service_configs/kubernetes/01_configmaps/database-config.yaml /build/configs/database-config.yaml
 COPY service_configs/kubernetes/01_configmaps/api-gateway-config.yaml /build/configs/api-gateway-config.yaml
-COPY admin/docker-compose.admin.yml /build/service_configs/docker-compose.admin.yml
+COPY admin/docker-compose.admin.yml /build/infrastructure/containers/services/docker-compose.admin.yml
 
 RUN rm -rf configs/environment 2>/dev/null || true
 
@@ -496,7 +496,7 @@ RUN printf "LUCID_ADMIN_GATEWAY_PACKAGES_$(date +%s)" > /usr/local/lib/python3.1
     chown 65532:65532 /usr/local/lib/python3.11/site-packages/.lucid-marker
 
 RUN python3.11 -c "import yaml; yaml.safe_load('x: 1'); print('✅ PyYAML OK')"
-RUN chown -R 65532:65532 /build/host/host-config.yml /build/service_configs/container-runtime-layout.yml \
+RUN chown -R 65532:65532 /build/host/host-config.yml /build/infrastructure/containers/services/container-runtime-layout.yml \
     /build/configs/database-config.yaml /build/configs/api-gateway-config.yaml \
     /build/node /build/tmp && \
     python3.11 -m py_compile /build/node/entrypoint.py /build/tmp/verify_runtime.py
@@ -594,7 +594,7 @@ COPY --from=builder --chown=65532:65532 /build/configs/ /app/configs/
 COPY --from=builder --chown=65532:65532 /build/node/ /app/node/
 COPY --from=builder --chown=65532:65532 /build/scripts/ /app/scripts/
 COPY --from=builder --chown=65532:65532 /build/server/ /app/server/
-COPY --from=builder --chown=65532:65532 /build/service_configs/ /app/service_configs/
+COPY --from=builder --chown=65532:65532 /build/infrastructure/containers/services/ /app/service_configs/
 COPY --from=builder --chown=65532:65532 /build/sessions/ /app/sessions/
 COPY --from=builder --chown=65532:65532 /build/tmp/ /app/tmp/
 # LUCID_RUNTIME_COPY_FROM_BUILD_END

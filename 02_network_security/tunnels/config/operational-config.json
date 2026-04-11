@@ -1,6 +1,42 @@
 {
-  "version": "1.0.0",
-  "description": "Tunnel Tools Operational Configuration",
+  "version": "2.1.0",
+  "description": "Tunnel Tools Operational Configuration — Multi-service support aligned with Dockerfile.tor-proxy-02 (/app layout)",
+  "service_name": "tunnel-tools",
+  "compatible_services": [
+    "tunnel-tools",
+    "tor-proxy",
+    "tor-socks",
+    "api-gateway",
+    "lucid-auth-service",
+    "rdp-server-manager-http",
+    "rdp-controller-http",
+    "service-mesh-controller",
+    "server-core-system",
+    "server",
+    "server-manager",
+    "server-controller"
+  ],
+  "paths": {
+    "service_bin": "/app/02_network_security/[service]/scripts/[script_name]",
+    "service_config": "/app/service_configs/[service_name].yml",
+    "tor_binary": "/app/bin/tor",
+    "tor_config": "/app/run/lucid/tor/torrc",
+    "tor_control_socket": "/app/var/lib/tor/control",
+    "tor_data_dir": "/app/var/lib/tor",
+    "tor_log_file": "/app/run/lucid/tor/log/tor.log",
+    "tor_onion_service_dir": "/app/run/lucid/onion",
+    "tor_seed_dir": "/app/var/lib/tor/seed",
+    "geoip_dir": "/app/opt/share/tor",
+    "scripts_dir": "/app/02_network_security/[service]/scripts",
+    "bin_helpers": "/app/bin",
+    "bash_binary": "/app/bin/bash",
+    "tini_binary": "/app/bin/tini",
+    "python_binary": "/app/usr/bin/python3.11",
+    "metrics_file": "/app/run/lucid/[service]/metrics.json",
+    "onion_env_file": "/app/run/lucid/onion/.onion.env",
+    "lucid_config_path": "/app/configs/host-config.yml",
+    "lucid_services_config_dir": "/app/service_configs"
+  },
   "operations": {
     "create_onion": {
       "enabled": true,
@@ -163,13 +199,260 @@
           "cooldown_seconds": 180
         }
       ]
+    },
+    "performance": {
+      "connection_timeout_seconds": 10,
+      "command_timeout_seconds": 30,
+      "max_retries": 3,
+      "retry_delay_seconds": 5
     }
   },
-  "performance": {
-    "connection_timeout_seconds": 10,
-    "command_timeout_seconds": 30,
-    "max_retries": 3,
-    "retry_delay_seconds": 5
+  "service_specific_config": {
+    "description": "Service-specific overrides for different Lucid services",
+    "notes": "Each service can override default paths and enable/disable specific operations",
+    "tunnel-tools": {
+      "service_name": "tunnel-tools",
+      "description": "Tunnel management and monitoring tools service",
+      "paths_override": {
+        "service_scripts_dir": "/app/02_network_security/tunnels/scripts",
+        "service_config_file": "/app/service_configs/tunnel-tools.yml"
+      },
+      "operations_enabled": {
+        "create_onion": true,
+        "rotate_onion": true,
+        "verify_tunnel": true,
+        "refresh_tunnel": true,
+        "teardown_tunnel": true,
+        "list_tunnels": true,
+        "tunnel_status": true
+      },
+      "monitoring_enabled": {
+        "tunnel_reachability": true,
+        "tor_connection": true,
+        "metrics": true
+      },
+      "expose": {
+        "ports": [7000]
+      }
+    },
+    "tor-proxy": {
+      "service_name": "tor-proxy",
+      "description": "Tor SOCKS proxy service",
+      "paths_override": {
+        "service_scripts_dir": "/app/02_network_security/tor/scripts",
+        "service_config_file": "/app/service_configs/tor-socks.yml",
+        "tor_binary": "/app/bin/tor",
+        "tor_config": "/app/run/lucid/tor/torrc"
+      },
+      "operations_enabled": {
+        "create_onion": false,
+        "rotate_onion": false,
+        "verify_tunnel": false,
+        "refresh_tunnel": false,
+        "teardown_tunnel": false,
+        "list_tunnels": false,
+        "tunnel_status": false
+      },
+      "monitoring_enabled": {
+        "tor_connection": true,
+        "metrics": false
+      },
+      "expose": {
+        "ports": [9050, 9051]
+      }
+    },
+    "tor-socks": {
+      "service_name": "tor-socks",
+      "description": "Tor SOCKS service (service mesh component)",
+      "paths_override": {
+        "service_config_file": "/app/service_configs/tor/tor-socks.yml"
+      },
+      "operations_enabled": {
+        "create_onion": false,
+        "rotate_onion": false,
+        "verify_tunnel": false,
+        "refresh_tunnel": false,
+        "teardown_tunnel": false,
+        "list_tunnels": false,
+        "tunnel_status": false
+      },
+      "monitoring_enabled": {
+        "tor_connection": true
+      },
+      "expose": {
+        "ports": [9050, 9051]
+      }
+    },
+    "api-gateway": {
+      "service_name": "api-gateway",
+      "description": "API Gateway service",
+      "operations_enabled": {
+        "create_onion": false,
+        "rotate_onion": false,
+        "verify_tunnel": false,
+        "refresh_tunnel": false,
+        "teardown_tunnel": false,
+        "list_tunnels": false,
+        "tunnel_status": false
+      },
+      "monitoring_enabled": {
+        "metrics": true
+      },
+      "expose": {
+        "ports": [8080]
+      }
+    },
+    "lucid-auth-service": {
+      "service_name": "lucid-auth-service",
+      "description": "Lucid Authentication service",
+      "operations_enabled": {
+        "create_onion": false,
+        "rotate_onion": false,
+        "verify_tunnel": false,
+        "refresh_tunnel": false,
+        "teardown_tunnel": false,
+        "list_tunnels": false,
+        "tunnel_status": false
+      },
+      "monitoring_enabled": {
+        "metrics": true
+      },
+      "expose": {
+        "ports": [8113]
+      }
+    },
+    "rdp-server-manager-http": {
+      "service_name": "rdp-server-manager-http",
+      "description": "RDP Server Manager HTTP service",
+      "operations_enabled": {
+        "create_onion": false,
+        "rotate_onion": false,
+        "verify_tunnel": false,
+        "refresh_tunnel": false,
+        "teardown_tunnel": false,
+        "list_tunnels": false,
+        "tunnel_status": false
+      },
+      "monitoring_enabled": {
+        "metrics": true
+      },
+      "expose": {
+        "ports": [28120]
+      }
+    },
+    "rdp-controller-http": {
+      "service_name": "rdp-controller-http",
+      "description": "RDP Controller HTTP service",
+      "operations_enabled": {
+        "create_onion": false,
+        "rotate_onion": false,
+        "verify_tunnel": false,
+        "refresh_tunnel": false,
+        "teardown_tunnel": false,
+        "list_tunnels": false,
+        "tunnel_status": false
+      },
+      "monitoring_enabled": {
+        "metrics": true
+      },
+      "expose": {
+        "ports": [28121]
+      }
+    },
+    "service-mesh-controller": {
+      "service_name": "service-mesh-controller",
+      "description": "Service Mesh Controller",
+      "operations_enabled": {
+        "create_onion": false,
+        "rotate_onion": false,
+        "verify_tunnel": false,
+        "refresh_tunnel": false,
+        "teardown_tunnel": false,
+        "list_tunnels": false,
+        "tunnel_status": false
+      },
+      "monitoring_enabled": {
+        "metrics": true
+      },
+      "expose": {
+        "ports": [19091]
+      }
+    },
+    "server-core-system": {
+      "service_name": "server-core-system",
+      "description": "Server Core System",
+      "operations_enabled": {
+        "create_onion": false,
+        "rotate_onion": false,
+        "verify_tunnel": false,
+        "refresh_tunnel": false,
+        "teardown_tunnel": false,
+        "list_tunnels": false,
+        "tunnel_status": false
+      },
+      "monitoring_enabled": {
+        "metrics": true
+      },
+      "expose": {
+        "ports": [8081]
+      }
+    },
+    "server": {
+      "service_name": "server",
+      "description": "Server service",
+      "operations_enabled": {
+        "create_onion": false,
+        "rotate_onion": false,
+        "verify_tunnel": false,
+        "refresh_tunnel": false,
+        "teardown_tunnel": false,
+        "list_tunnels": false,
+        "tunnel_status": false
+      },
+      "monitoring_enabled": {
+        "metrics": true
+      },
+      "expose": {
+        "ports": [8120]
+      }
+    },
+    "server-manager": {
+      "service_name": "server-manager",
+      "description": "Server Manager service",
+      "operations_enabled": {
+        "create_onion": false,
+        "rotate_onion": false,
+        "verify_tunnel": false,
+        "refresh_tunnel": false,
+        "teardown_tunnel": false,
+        "list_tunnels": false,
+        "tunnel_status": false
+      },
+      "monitoring_enabled": {
+        "metrics": true
+      },
+      "expose": {
+        "ports": [28120]
+      }
+    },
+    "server-controller": {
+      "service_name": "server-controller",
+      "description": "Server Controller service",
+      "operations_enabled": {
+        "create_onion": false,
+        "rotate_onion": false,
+        "verify_tunnel": false,
+        "refresh_tunnel": false,
+        "teardown_tunnel": false,
+        "list_tunnels": false,
+        "tunnel_status": false
+      },
+      "monitoring_enabled": {
+        "metrics": true
+      },
+      "expose": {
+        "ports": [28121]
+      }
+    }
   }
 }
-

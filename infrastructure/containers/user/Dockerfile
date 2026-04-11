@@ -50,27 +50,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # LUCID_LIB_SKELETON_BEGIN
-# Generated: FHS dirs for builder (from final-stage COPY --from, excluding /build/ sources;
-# ancestor dirs collapsed; see collect_skeleton_paths_from_dockerfile).
-RUN set -eux; \
-  mkdir -p \
-    '/bin' \
-    '/etc/ssl' \
-    '/usr/bin' \
-    '/usr/lib' \
-    '/etc/ssl/certs' \
-    '/usr/lib/python3/dist-packages'; \
-  for d in \
-    '/bin' \
-    '/etc/ssl' \
-    '/usr/bin' \
-    '/usr/lib' \
-    '/etc/ssl/certs' \
-    '/usr/lib/python3/dist-packages'; \
-  do \
-    printf 'LUCID_LIB_SKELETON_%s' "$(date +%s)" > "$d/.keep"; \
-    touch "$d/.keep"; \
-  done
+# (no non-/build/ FHS COPY --from paths under /app/ found; no directories to create.)
 # LUCID_LIB_SKELETON_END
 
 

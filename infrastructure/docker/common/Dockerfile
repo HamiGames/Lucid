@@ -72,7 +72,7 @@ COPY infrastructure/containers/services/middle-ware/master-endpoint.yml ./infras
 COPY infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.yml ./infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.yml
 COPY scripts/gui_auth_realignment/rewrite_dockerfiles_from_alignment_mats.py ./scripts/gui_auth_realignment/rewrite_dockerfiles_from_alignment_mats.py
 # LUCID_ALIGNMENT_MAT_COPY_DIRECTORIES_END
-COPY infrastructure/compose/ ./configs/compose/
+COPY infrastructure/compose/ ./infrastructure/compose/compose/
 
 COPY scripts/ ./scripts/
 COPY infrastructure/service_mesh/ ./infrastructure/service_mesh/
@@ -98,10 +98,11 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 # LUCID_X_FILES_SKELETON_BEGIN
 # Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
 RUN set -eux; \
-    mkdir -p '.' './common' './lucid' './scripts' './common/__pycache__' './common/governance' './common/security' './common/server-tools' './common/templates' './common/tor' './lucid/scripts' './scripts/__pycache__' './scripts/auth_sm_realignment' './scripts/build' './scripts/compliance' './scripts/config' './scripts/contracts' './scripts/database' './scripts/deployment' './scripts/devcontainer' './scripts/docs' './scripts/foundation' './scripts/gui' './scripts/gui_auth_realignment' './scripts/hardware' './scripts/integration' './scripts/lib' './scripts/load' './scripts/logging' './scripts/maintenance' './scripts/migration' './scripts/monitoring' './scripts/network' './scripts/re-build' './scripts/registry' './scripts/secrets' './scripts/security' './scripts/services' './scripts/testing' './scripts/validation' './scripts/verification' './common/governance/__pycache__' './common/security/__pycache__' './common/server-tools/__pycache__' './common/tor/__pycache__' './lucid/scripts/db-backup.sh' './lucid/scripts/health-check.sh' './lucid/scripts/network-test.sh' './scripts/auth_sm_realignment/.cache' './scripts/auth_sm_realignment/lib' './scripts/build/__pycache__' './scripts/build/components' './scripts/build/core' './scripts/build/distroless' './scripts/build/utils' './scripts/compliance/distroless' './scripts/compliance/general' './scripts/deployment/devcontainer' './scripts/deployment/distroless' './scripts/deployment/pi' './scripts/deployment/utils' './scripts/gui_auth_realignment/.cache' './scripts/gui_auth_realignment/lib' './scripts/maintenance/cleanup' './scripts/maintenance/optimization' './scripts/maintenance/recovery' './scripts/network/diagnostics' './scripts/network/security' './scripts/network/setup' './scripts/testing/integration' './scripts/testing/unit' './scripts/testing/utils' './scripts/validation/__pycache__' './scripts/verification/__pycache__'; \
+    mkdir -p '.' './common' './configs' './lucid' './scripts' './common/__pycache__' './common/governance' './common/security' './common/server-tools' './common/templates' './common/tor' './configs/.ssh' './configs/compose' './configs/container' './configs/database' './configs/docker' './configs/env' './configs/environment' './configs/integration' './configs/kubernetes' './configs/logging' './configs/pi' './configs/secrets' './configs/security' './configs/tor' './lucid/scripts' './scripts/__pycache__' './scripts/auth_sm_realignment' './scripts/build' './scripts/compliance' './scripts/config' './scripts/contracts' './scripts/database' './scripts/deployment' './scripts/devcontainer' './scripts/docs' './scripts/foundation' './scripts/gui' './scripts/gui_auth_realignment' './scripts/hardware' './scripts/integration' './scripts/lib' './scripts/load' './scripts/logging' './scripts/maintenance' './scripts/migration' './scripts/monitoring' './scripts/network' './scripts/re-build' './scripts/registry' './scripts/secrets' './scripts/security' './scripts/services' './scripts/testing' './scripts/validation' './scripts/verification' './common/governance/__pycache__' './common/security/__pycache__' './common/server-tools/__pycache__' './common/tor/__pycache__' './configs/container/admin' './configs/container/auth' './configs/container/base' './configs/container/blockchain' './configs/container/database' './configs/container/electron_gui' './configs/container/gui' './configs/container/node' './configs/container/payment_systems' './configs/container/rdp' './configs/container/server' './configs/container/sessions' './configs/container/storage' './configs/container/tor' './configs/database/elasticsearch' './configs/database/redis' './configs/docker/distroless' './configs/docker/docs' './configs/docker/multi-stage' './configs/pi/ssh' './lucid/scripts/db-backup.sh' './lucid/scripts/health-check.sh' './lucid/scripts/network-test.sh' './scripts/auth_sm_realignment/.cache' './scripts/auth_sm_realignment/lib' './scripts/build/__pycache__' './scripts/build/components' './scripts/build/core' './scripts/build/distroless' './scripts/build/utils' './scripts/compliance/distroless' './scripts/compliance/general' './scripts/deployment/devcontainer' './scripts/deployment/distroless' './scripts/deployment/pi' './scripts/deployment/utils' './scripts/gui_auth_realignment/.cache' './scripts/gui_auth_realignment/lib' './scripts/maintenance/cleanup' './scripts/maintenance/optimization' './scripts/maintenance/recovery' './scripts/network/diagnostics' './scripts/network/security' './scripts/network/setup' './scripts/testing/integration' './scripts/testing/unit' './scripts/testing/utils' './scripts/validation/__pycache__' './scripts/verification/__pycache__'; \
     for d in \
       '.' \
       './common' \
+      './configs' \
       './lucid' \
       './scripts' \
       './common/__pycache__' \
@@ -110,6 +111,20 @@ RUN set -eux; \
       './common/server-tools' \
       './common/templates' \
       './common/tor' \
+      './configs/.ssh' \
+      './configs/compose' \
+      './configs/container' \
+      './configs/database' \
+      './configs/docker' \
+      './configs/env' \
+      './configs/environment' \
+      './configs/integration' \
+      './configs/kubernetes' \
+      './configs/logging' \
+      './configs/pi' \
+      './configs/secrets' \
+      './configs/security' \
+      './configs/tor' \
       './lucid/scripts' \
       './scripts/__pycache__' \
       './scripts/auth_sm_realignment' \
@@ -145,6 +160,26 @@ RUN set -eux; \
       './common/security/__pycache__' \
       './common/server-tools/__pycache__' \
       './common/tor/__pycache__' \
+      './configs/container/admin' \
+      './configs/container/auth' \
+      './configs/container/base' \
+      './configs/container/blockchain' \
+      './configs/container/database' \
+      './configs/container/electron_gui' \
+      './configs/container/gui' \
+      './configs/container/node' \
+      './configs/container/payment_systems' \
+      './configs/container/rdp' \
+      './configs/container/server' \
+      './configs/container/sessions' \
+      './configs/container/storage' \
+      './configs/container/tor' \
+      './configs/database/elasticsearch' \
+      './configs/database/redis' \
+      './configs/docker/distroless' \
+      './configs/docker/docs' \
+      './configs/docker/multi-stage' \
+      './configs/pi/ssh' \
       './lucid/scripts/db-backup.sh' \
       './lucid/scripts/health-check.sh' \
       './lucid/scripts/network-test.sh' \
@@ -264,6 +299,7 @@ ENV     PUBLIC_TOR_IP="${PUBLIC_TOR_IP}" \
 # LUCID_RUNTIME_COPY_FROM_BUILD_BEGIN
 # Generated: same directory set as LUCID_X_FILES_SKELETON (./ under WORKDIR /build).
 COPY --from=server-tools-builder --chown=65532:65532 /build/common/ /app/common/
+COPY --from=server-tools-builder --chown=65532:65532 /build/configs/ /app/configs/
 COPY --from=server-tools-builder --chown=65532:65532 /build/lucid/ /app/lucid/
 COPY --from=server-tools-builder --chown=65532:65532 /build/scripts/ /app/scripts/
 # LUCID_RUNTIME_COPY_FROM_BUILD_END

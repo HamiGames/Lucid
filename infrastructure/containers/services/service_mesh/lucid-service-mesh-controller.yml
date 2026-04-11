@@ -17,6 +17,9 @@ x-lucid-calibration:
   bundle_repo_path: infrastructure/containers/services/service_mesh/lucid-service-mesh-controller.yml
   bundle_container_path: /app/infrastructure/containers/services/service_mesh/lucid-service-mesh-controller.yml
   alignment_manifest_tool: scripts/gui_auth_realignment/list_service_files_by_name.py
+  # Docker host paths: set in compose (not here). Use LUCID_REPO_ROOT or PROJECT_ROOT so bind mounts
+  # resolve to {project_root}/infrastructure/service-mesh/config, {project_root}/logs/service-mesh, etc.
+  # See configs/docker/docker-compose.foundation.yml and configs/docker/docker-compose.foundation-02.yml.
 
 compose_service: "lucid-service-mesh-controller"
 associated_needles:

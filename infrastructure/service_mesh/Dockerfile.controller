@@ -249,7 +249,7 @@ COPY --from=builder --chown=65532:65532 /build/api/ /app/api/
 COPY --from=builder --chown=65532:65532 /build/config/ /app/config/
 COPY --from=builder --chown=65532:65532 /build/sessions/ /app/sessions/
 COPY --from=builder --chown=65532:65532 /build/infrastructure/service_mesh/ /app/infrastructure/service_mesh
-COPY --from=builder --chown=65532:65532 /build/service_configs/kubernetes/ /app/infrastructure/containers/services/kubernetes/
+COPY --from=builder --chown=65532:65532 /build/infrastructure/containers/services/kubernetes/ /app/infrastructure/containers/services/kubernetes/
 COPY --from=builder --chown=65532:65532 /build/src/gui/ /app/src/gui/
 COPY --from=builder --chown=65532:65532 /build/electron_gui/ /app/electron_gui/
 COPY --from=builder --chown=65532:65532 /build/gui/ /app/gui/
@@ -325,7 +325,7 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
 USER 65532:65532
 ENTRYPOINT ["/app/usr/bin/tini", "--"]
 CMD ["/app/usr/bin/python3.11", "-m", "service_mesh.controller.main"]
-COPY infrastructure/service_mesh/ ./service_mesh/
+COPY infrastructure/service_mesh/ ./infrastructure/service_mesh/
 COPY scripts/ ./scripts/
 COPY common/ ./common/
 COPY node/ ./node/

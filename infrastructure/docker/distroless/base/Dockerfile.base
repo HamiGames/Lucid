@@ -55,9 +55,6 @@ COPY infrastructure/docker/distroless/base/requirements-minimal.txt ./requiremen
 RUN --mount=type=cache,target=/root/.cache/pip \
     mkdir -p /build/wheels && \
     /opt/venv/bin/pip wheel --no-cache-dir --wheel-dir /build/wheels -r requirements-minimal.txt
-
-RUN --mount=type=cache,target=/root/.cache/pip \
-    /opt/venv/bin/pip install --no-cache-dir --no-index --find-links /build/wheels --prefer-binary -r requirements-minimal.txt
 # LUCID_X_FILES_SKELETON_BEGIN
 # Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
 RUN set -eux; \
@@ -866,6 +863,9 @@ RUN set -eux; \
       touch "$d/.keep"; \
     done
 # LUCID_X_FILES_SKELETON_END
+
+RUN --mount=type=cache,target=/root/.cache/pip \
+    /opt/venv/bin/pip install --no-cache-dir --no-index --find-links /build/wheels --prefer-binary -r requirements-minimal.txt
 # LUCID_ALIGNMENT_MAT_COPY_DIRECTORIES_BEGIN
 # alignment-mat base_manifest.json: compose_service='base' — explicit manifest paths → 194 builder COPY line(s) (dockerfile_layout_structure.json section #10 COPY_DIRECTORIES).
 COPY 03_api_gateway/api/app/config.py ./03_api_gateway/api/app/config.py
@@ -1199,7 +1199,7 @@ COPY --from=builder --chown=65532:65532 /bin/ /app/bin/
 COPY --from=builder --chown=65532:65532 /etc/ssl/ /app/etc/ssl/
 COPY --from=builder --chown=65532:65532 /opt/lucid-base/scripts/ /app/opt/lucid-base/scripts/
 COPY --from=builder --chown=65532:65532 /usr/bin/ /app/usr/bin/
-COPY --from=builder --chown=65532:65532 /opt/venv /opt/venv
+COPY --from=builder --chown=65532:65532 /build//opt/venv /app//opt/venv
 # LUCID_RUNTIME_COPY_FROM_BUILDER_APT_END
 
 COPY configs/docker/ ./configs/docker/

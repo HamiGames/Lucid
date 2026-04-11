@@ -4041,7 +4041,7 @@
           "severity": "error",
           "code": "COPY_MISSING",
           "message": "COPY source not found relative to context 'infrastructure/containers/admin': infrastructure/containers/admin/docker-compose.admin.yml",
-          "instruction": "COPY infrastructure/containers/admin/docker-compose.admin.yml /build/service_configs/docker-compose.admin.yml"
+          "instruction": "COPY infrastructure/containers/admin/docker-compose.admin.yml /build/infrastructure/containers/services/docker-compose.admin.yml"
         },
         {
           "line": 454,
@@ -7818,7 +7818,7 @@
           "severity": "error",
           "code": "COPY_MISSING",
           "message": "COPY source not found relative to context 'infrastructure/containers/database': infrastructure/compose/",
-          "instruction": "COPY infrastructure/compose/ ./configs/compose/"
+          "instruction": "COPY infrastructure/compose/ ./infrastructure/compose/compose/"
         },
         {
           "line": 357,
@@ -7839,7 +7839,7 @@
           "severity": "error",
           "code": "COPY_MISSING",
           "message": "COPY source not found relative to context 'infrastructure/containers/database': infrastructure/service_mesh/",
-          "instruction": "COPY infrastructure/service_mesh/ ./service_mesh/"
+          "instruction": "COPY infrastructure/service_mesh/ ./infrastructure/service_mesh/"
         },
         {
           "line": 363,
@@ -8013,7 +8013,7 @@
           "severity": "error",
           "code": "COPY_MISSING",
           "message": "COPY source not found relative to context 'infrastructure/containers/database': infrastructure/compose/",
-          "instruction": "COPY infrastructure/compose/ ./configs/compose/"
+          "instruction": "COPY infrastructure/compose/ ./infrastructure/compose/compose/"
         },
         {
           "line": 249,
@@ -8062,7 +8062,7 @@
           "severity": "error",
           "code": "COPY_MISSING",
           "message": "COPY source not found relative to context 'infrastructure/containers/database': infrastructure/containers/database/mongod.conf",
-          "instruction": "COPY infrastructure/containers/database/mongod.conf /build/service_configs/database/mongod.conf"
+          "instruction": "COPY infrastructure/containers/database/mongod.conf /build/infrastructure/containers/services/database/mongod.conf"
         },
         {
           "line": 262,
@@ -10280,7 +10280,7 @@
           "severity": "error",
           "code": "COPY_MISSING",
           "message": "COPY source not found relative to context 'infrastructure/containers/gui': infrastructure/containers/tor/docker-compose.proxy-systems.yml",
-          "instruction": "COPY infrastructure/containers/tor/docker-compose.proxy-systems.yml /build/service_configs/tor/docker-compose.proxy-systems.yml"
+          "instruction": "COPY infrastructure/containers/tor/docker-compose.proxy-systems.yml /build/infrastructure/containers/services/tor/docker-compose.proxy-systems.yml"
         },
         {
           "line": 250,
@@ -11360,14 +11360,14 @@
           "severity": "error",
           "code": "COPY_MISSING",
           "message": "COPY source not found relative to context 'infrastructure/containers/node': infrastructure/containers/node/config/node-system-gateway.connections.json",
-          "instruction": "COPY infrastructure/containers/node/config/node-system-gateway.connections.json /build/service_configs/node/config/node-system-gateway.connections.json"
+          "instruction": "COPY infrastructure/containers/node/config/node-system-gateway.connections.json /build/infrastructure/containers/services/node/config/node-system-gateway.connections.json"
         },
         {
           "line": 289,
           "severity": "error",
           "code": "COPY_MISSING",
           "message": "COPY source not found relative to context 'infrastructure/containers/node': infrastructure/containers/node/config/openssl-api.yml",
-          "instruction": "COPY infrastructure/containers/node/config/openssl-api.yml /build/service_configs/node/config/openssl-api.yml"
+          "instruction": "COPY infrastructure/containers/node/config/openssl-api.yml /build/infrastructure/containers/services/node/config/openssl-api.yml"
         },
         {
           "line": 290,
@@ -12822,7 +12822,7 @@
           "severity": "error",
           "code": "COPY_MISSING",
           "message": "COPY source not found relative to context 'infrastructure/containers/rdp': infrastructure/service_mesh/",
-          "instruction": "COPY infrastructure/service_mesh/ ./service_mesh/"
+          "instruction": "COPY infrastructure/service_mesh/ ./infrastructure/service_mesh/"
         },
         {
           "line": 332,
@@ -14196,7 +14196,7 @@
           "severity": "error",
           "code": "COPY_MISSING",
           "message": "COPY source not found relative to context 'infrastructure/containers/server': infrastructure/service_mesh/",
-          "instruction": "COPY infrastructure/service_mesh/ ./service_mesh/"
+          "instruction": "COPY infrastructure/service_mesh/ ./infrastructure/service_mesh/"
         },
         {
           "line": 713,
@@ -16592,7 +16592,7 @@
           "severity": "error",
           "code": "COPY_MISSING",
           "message": "COPY source not found relative to context 'infrastructure/containers/storage': infrastructure/containers/storage/redis.conf",
-          "instruction": "COPY infrastructure/containers/storage/redis.conf /build/service_configs/storage/redis.conf"
+          "instruction": "COPY infrastructure/containers/storage/redis.conf /build/infrastructure/containers/services/storage/redis.conf"
         },
         {
           "line": 226,
@@ -18089,7 +18089,7 @@
           "severity": "error",
           "code": "COPY_MISSING",
           "message": "COPY source not found relative to context 'infrastructure/docker/common': infrastructure/service_mesh/",
-          "instruction": "COPY infrastructure/service_mesh/ ./service_mesh/"
+          "instruction": "COPY infrastructure/service_mesh/ ./infrastructure/service_mesh/"
         },
         {
           "line": 605,
@@ -18479,7 +18479,7 @@
           "severity": "error",
           "code": "COPY_MISSING",
           "message": "COPY source not found relative to context 'infrastructure/docker/databases': infrastructure/service_mesh/",
-          "instruction": "COPY infrastructure/service_mesh/ ./service_mesh/"
+          "instruction": "COPY infrastructure/service_mesh/ ./infrastructure/service_mesh/"
         },
         {
           "line": 298,
@@ -18625,7 +18625,7 @@
           "severity": "error",
           "code": "COPY_MISSING",
           "message": "COPY source not found relative to context 'infrastructure/docker/databases': infrastructure/compose/",
-          "instruction": "COPY infrastructure/compose/ ./configs/compose/"
+          "instruction": "COPY infrastructure/compose/ ./infrastructure/compose/compose/"
         },
         {
           "line": 367,
@@ -19153,7 +19153,7 @@
           "severity": "error",
           "code": "COPY_MISSING",
           "message": "COPY source not found relative to context 'infrastructure/docker/multi-stage': infrastructure/service_mesh/",
-          "instruction": "COPY infrastructure/service_mesh/ ./service_mesh/"
+          "instruction": "COPY infrastructure/service_mesh/ ./infrastructure/service_mesh/"
         },
         {
           "line": 198,
@@ -19619,7 +19619,7 @@
           "severity": "error",
           "code": "COPY_MISSING",
           "message": "COPY source not found relative to context 'infrastructure/docker/vm': infrastructure/service_mesh/",
-          "instruction": "COPY infrastructure/service_mesh/ ./service_mesh/"
+          "instruction": "COPY infrastructure/service_mesh/ ./infrastructure/service_mesh/"
         },
         {
           "line": 219,
@@ -19723,7 +19723,7 @@
           "severity": "error",
           "code": "COPY_MISSING",
           "message": "COPY source not found relative to context 'infrastructure/docker/vm': infrastructure/service_mesh/",
-          "instruction": "COPY infrastructure/service_mesh/ ./service_mesh/"
+          "instruction": "COPY infrastructure/service_mesh/ ./infrastructure/service_mesh/"
         },
         {
           "line": 236,
@@ -20106,7 +20106,7 @@
           "severity": "error",
           "code": "COPY_MISSING",
           "message": "COPY source not found relative to context 'infrastructure/docker/wallet': infrastructure/service_mesh/",
-          "instruction": "COPY infrastructure/service_mesh/ ./service_mesh/"
+          "instruction": "COPY infrastructure/service_mesh/ ./infrastructure/service_mesh/"
         },
         {
           "line": 574,
@@ -20412,7 +20412,7 @@
           "severity": "error",
           "code": "COPY_MISSING",
           "message": "COPY source not found relative to context 'infrastructure/service_mesh': infrastructure/service_mesh/",
-          "instruction": "COPY infrastructure/service_mesh/ ./service_mesh/"
+          "instruction": "COPY infrastructure/service_mesh/ ./infrastructure/service_mesh/"
         },
         {
           "line": 180,

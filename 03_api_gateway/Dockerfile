@@ -358,7 +358,7 @@ COPY --from=builder --chown=65532:65532 /build/wheels/         /app/wheels/
 COPY --from=builder --chown=65532:65532 /build/common/__init__.py         /app/common/__init__.py
 COPY --from=builder --chown=65532:65532 /build/common/tor/         /app/common/tor/
 #kubernetes configmaps
-COPY --from=builder --chown=65532:65532 /build/service_configs/kubernetes/api-gateway-config.yaml     /app/infrastructure/containers/services/kubernetes/api-gateway-config.yaml
+COPY --from=builder --chown=65532:65532 /build/infrastructure/containers/services/kubernetes/api-gateway-config.yaml     /app/infrastructure/containers/services/kubernetes/api-gateway-config.yaml
 COPY --from=builder --chown=65532:65532 /build/api/app/            /app/api/app/
 COPY --from=builder --chown=65532:65532 /build/api/app/middleware/ /app/api/app/middleware/
 COPY --from=builder --chown=65532:65532 /build/api/app/utils/ /app/api/app/utils/

@@ -468,7 +468,7 @@ COPY admin/admin-system-gateway/verify_runtime.py /build/tmp/verify_runtime.py
 COPY admin/ ./admin/
 
 
-COPY admin/docker-compose.admin.yml /build/service_configs/docker-compose.admin.yml
+COPY admin/docker-compose.admin.yml /build/infrastructure/containers/services/docker-compose.admin.yml
 
 RUN rm -rf configs/environment 2>/dev/null || true
 
@@ -489,7 +489,7 @@ RUN printf "LUCID_ADMIN_GATEWAY_PACKAGES_$(date +%s)" > /usr/local/lib/python3.1
     chown 65532:65532 /usr/local/lib/python3.11/site-packages/.lucid-marker
 
 RUN python3.11 -c "import yaml; yaml.safe_load('x: 1'); print('✅ PyYAML OK')"
-RUN chown -R 65532:65532 /build/host/host-config.yml /build/service_configs/container-runtime-layout.yml \
+RUN chown -R 65532:65532 /build/host/host-config.yml /build/infrastructure/containers/services/container-runtime-layout.yml \
     /build/configs/database-config.yaml /build/configs/api-gateway-config.yaml \
     /build/node /build/tmp && \
     python3.11 -m py_compile /build/node/entrypoint.py /build/tmp/verify_runtime.py

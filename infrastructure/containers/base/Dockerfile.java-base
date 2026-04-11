@@ -159,25 +159,7 @@ RUN set -eux; \
     done
 # LUCID_X_FILES_SKELETON_END
 # LUCID_LIB_SKELETON_BEGIN
-# Generated: FHS dirs for builder (from final-stage COPY --from, excluding /build/ sources;
-# ancestor dirs collapsed; see collect_skeleton_paths_from_dockerfile).
-RUN set -eux; \
-  mkdir -p \
-    '/etc/ssl' \
-    '/usr/bin' \
-    '/usr/lib' \
-    '/var/lib' \
-    '/var/run'; \
-  for d in \
-    '/etc/ssl' \
-    '/usr/bin' \
-    '/usr/lib' \
-    '/var/lib' \
-    '/var/run'; \
-  do \
-    printf 'LUCID_LIB_SKELETON_%s' "$(date +%s)" > "$d/.keep"; \
-    touch "$d/.keep"; \
-  done
+# (no non-/build/ FHS COPY --from paths under /app/ found; no directories to create.)
 # LUCID_LIB_SKELETON_END
 # LUCID_ALIGNMENT_MAT_COPY_DIRECTORIES_BEGIN
 # alignment-mat java-base_manifest.json: compose_service='java-base' — explicit manifest paths → 34 builder COPY line(s) (dockerfile_layout_structure.json section #10 COPY_DIRECTORIES).
@@ -312,9 +294,6 @@ COPY --from=jdk-builder --chown=65532:65532 /usr/bin/ /app/usr/bin/
 COPY --from=jdk-builder --chown=65532:65532 /var/lib/ /app/var/lib/
 COPY --from=jdk-builder --chown=65532:65532 /var/run/ /app/var/run/
 # LUCID_RUNTIME_COPY_FROM_BUILDER_APT_END
-
-
-
 # LUCID_RUNTIME_COPY_FROM_BUILD_END
 # LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
 # Generated: apt + RUN scaffold (mkdir/printf/touch/chown) -> FHS (not ./ or /build/; lib_search_and_inject.py).

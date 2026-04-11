@@ -1,6 +1,4 @@
 # syntax=docker/dockerfile:1.5
-# File: infrastructure/containers/server/Dockerfile.service-mesh-controller
-#
 # LUCID SERVICE MESH CONTROLLER – Distroless Python (structure aligned with 03_api_gateway/Dockerfile)
 # Image: pickme/lucid-service-mesh-controller:latest-arm64
 #
@@ -54,25 +52,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 # LUCID_LIB_SKELETON_BEGIN
-# Generated: FHS dirs for builder (from final-stage COPY --from, excluding /build/ sources;
-# ancestor dirs collapsed; see collect_skeleton_paths_from_dockerfile).
-RUN set -eux; \
-  mkdir -p \
-    '/bin' \
-    '/etc/ssl' \
-    '/usr/bin' \
-    '/usr/lib' \
-    '/usr/lib/python3/dist-packages'; \
-  for d in \
-    '/bin' \
-    '/etc/ssl' \
-    '/usr/bin' \
-    '/usr/lib' \
-    '/usr/lib/python3/dist-packages'; \
-  do \
-    printf 'LUCID_LIB_SKELETON_%s' "$(date +%s)" > "$d/.keep"; \
-    touch "$d/.keep"; \
-  done
+# (no non-/build/ FHS COPY --from paths under /app/ found; no directories to create.)
 # LUCID_LIB_SKELETON_END
 # LUCID_RUST_INSTALL_BEGIN
 RUN apt-get remove -y rustc cargo && \
@@ -91,10 +71,10 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     echo "pip toolchain upgrade complete" && \
     ls -lh /build/wheels/ | head -20 && \
     echo "total wheels: $(ls -1 /build/wheels/ | wc -l)"
-
+# LUCID_X_FILES_SKELETON_BEGIN
 # Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
 RUN set -eux; \
-    mkdir -p '.' './common' './configs' './service_configs' './service_mesh' './tmp' './common/__pycache__' './common/governance' './common/security' './common/server-tools' './common/templates' './common/tor' './configs/.ssh' './configs/container' './configs/database' './configs/docker' './configs/env' './configs/environment' './configs/integration' './configs/kubernetes' './configs/logging' './configs/pi' './configs/secrets' './configs/security' './configs/tor' './service_mesh/__pycache__' './service_mesh/communication' './service_mesh/config' './service_mesh/controller' './service_mesh/discovery' './service_mesh/docs' './service_mesh/security' './service_mesh/sidecar' './common/governance/__pycache__' './common/security/__pycache__' './common/server-tools/__pycache__' './common/tor/__pycache__' './configs/container/admin' './configs/container/auth' './configs/container/base' './configs/container/blockchain' './configs/container/database' './configs/container/electron_gui' './configs/container/gui' './configs/container/node' './configs/container/payment_systems' './configs/container/rdp' './configs/container/server' './configs/container/sessions' './configs/container/storage' './configs/container/tor' './configs/database/elasticsearch' './configs/database/redis' './configs/docker/distroless' './configs/docker/docs' './configs/docker/multi-stage' './configs/pi/ssh' './service_mesh/communication/__pycache__' './service_mesh/config/policies' './service_mesh/config/services' './service_mesh/controller/__pycache__' './service_mesh/discovery/__pycache__' './service_mesh/security/__pycache__' './service_mesh/sidecar/envoy' './service_mesh/sidecar/proxy' './service_mesh/sidecar/envoy/__pycache__' './service_mesh/sidecar/envoy/config' './service_mesh/sidecar/proxy/__pycache__'; \
+    mkdir -p '.' './common' './configs' './service_configs' './service_mesh' './tmp' './var' './common/__pycache__' './common/governance' './common/security' './common/server-tools' './common/templates' './common/tor' './configs/.ssh' './configs/container' './configs/database' './configs/docker' './configs/env' './configs/environment' './configs/integration' './configs/kubernetes' './configs/logging' './configs/pi' './configs/secrets' './configs/security' './configs/tor' './service_mesh/__pycache__' './service_mesh/communication' './service_mesh/config' './service_mesh/controller' './service_mesh/discovery' './service_mesh/security' './service_mesh/sidecar' './var/cache' './var/lib' './var/log' './var/run' './common/governance/__pycache__' './common/security/__pycache__' './common/server-tools/__pycache__' './common/tor/__pycache__' './configs/container/admin' './configs/container/auth' './configs/container/base' './configs/container/blockchain' './configs/container/database' './configs/container/electron_gui' './configs/container/gui' './configs/container/node' './configs/container/payment_systems' './configs/container/rdp' './configs/container/server' './configs/container/sessions' './configs/container/storage' './configs/container/tor' './configs/database/elasticsearch' './configs/database/redis' './configs/docker/distroless' './configs/docker/docs' './configs/docker/multi-stage' './configs/pi/ssh' './service_mesh/communication/__pycache__' './service_mesh/config/policies' './service_mesh/config/services' './service_mesh/controller/__pycache__' './service_mesh/discovery/__pycache__' './service_mesh/security/__pycache__' './service_mesh/sidecar/envoy' './service_mesh/sidecar/proxy' './var/lib/apt' './service_mesh/sidecar/envoy/__pycache__' './service_mesh/sidecar/envoy/config' './service_mesh/sidecar/proxy/__pycache__'; \
     for d in \
       '.' \
       './common' \
@@ -102,6 +82,7 @@ RUN set -eux; \
       './service_configs' \
       './service_mesh' \
       './tmp' \
+      './var' \
       './common/__pycache__' \
       './common/governance' \
       './common/security' \
@@ -126,9 +107,12 @@ RUN set -eux; \
       './service_mesh/config' \
       './service_mesh/controller' \
       './service_mesh/discovery' \
-      './service_mesh/docs' \
       './service_mesh/security' \
       './service_mesh/sidecar' \
+      './var/cache' \
+      './var/lib' \
+      './var/log' \
+      './var/run' \
       './common/governance/__pycache__' \
       './common/security/__pycache__' \
       './common/server-tools/__pycache__' \
@@ -161,6 +145,7 @@ RUN set -eux; \
       './service_mesh/security/__pycache__' \
       './service_mesh/sidecar/envoy' \
       './service_mesh/sidecar/proxy' \
+      './var/lib/apt' \
       './service_mesh/sidecar/envoy/__pycache__' \
       './service_mesh/sidecar/envoy/config' \
       './service_mesh/sidecar/proxy/__pycache__' \
@@ -196,10 +181,10 @@ COPY configs/docker/docker-compose.all.yml ./configs/docker/docker-compose.all.y
 COPY configs/docker/docker-compose.core.yml ./configs/docker/docker-compose.core.yml
 COPY configs/docker/docker-compose.foundation-02.yml ./configs/docker/docker-compose.foundation-02.yml
 COPY configs/docker/docker-compose.foundation.yml ./configs/docker/docker-compose.foundation.yml
-COPY infrastructure/containers/services/beta-sidecar.yml ./service_configs/beta-sidecar.yml
-COPY infrastructure/containers/services/gui/gui-api-bridge.yml ./service_configs/gui-api-bridge.yml
-COPY infrastructure/containers/services/gui/gui-docker-manager.yml ./service_configs/gui-docker-manager.yml
-COPY infrastructure/containers/services/service-discovery.yml ./service_configs/service-discovery.yml
+COPY service_configs/beta-sidecar.yml ./service_configs/beta-sidecar.yml
+COPY service_configs/gui-api-bridge.yml ./service_configs/gui-api-bridge.yml
+COPY service_configs/gui-docker-manager.yml ./service_configs/gui-docker-manager.yml
+COPY service_configs/service-discovery.yml ./service_configs/service-discovery.yml
 COPY infrastructure/containers/_sync_dockerfile_lucid_env.py ./infrastructure/containers/_sync_dockerfile_lucid_env.py
 COPY infrastructure/containers/config-listings.json ./infrastructure/containers/config-listings.json
 COPY infrastructure/containers/dockerfile_recalibration_map.json ./infrastructure/containers/dockerfile_recalibration_map.json
@@ -221,23 +206,25 @@ COPY infrastructure/containers/services/x_lucid_cluster_calibration/core-cluster
 COPY infrastructure/service_mesh/config/service-mesh.yaml ./infrastructure/service_mesh/config/service-mesh.yaml
 COPY infrastructure/service_mesh/service_mesh_translator.py ./infrastructure/service_mesh/service_mesh_translator.py
 COPY infrastructure/service_mesh/sidecar/envoy/config/cluster.yaml ./infrastructure/service_mesh/sidecar/envoy/config/cluster.yaml
-COPY infrastructure/service_mesh/service_mesh_translator.py ./service_mesh/service_mesh_translator.py
+COPY service_mesh/service_mesh_translator.py ./service_mesh/service_mesh_translator.py
 COPY infrastructure/service_mesh/verify_runtime.py /build/tmp/verify_runtime.py
 
-RUN mkdir -p /var /var/cache /var/cache/apt /var/lib /var/lib/apt && \
-    printf "LUCID_APT_GET_INSTALLER_VAR_$""$(date +%s)" > /var/.keep && \
-    printf "LUCID_APT_GET_INSTALLER_VAR_CACHE_$""$(date +%s)" > /var/cache/.keep && \
-    printf "LUCID_APT_GET_INSTALLER_VAR_CACHE_APT_$""$(date +%s)" > /var/cache/apt/.keep && \
-    printf "LUCID_APT_GET_INSTALLER_VAR_LIB_$""$(date +%s)" > /var/lib/.keep && \
-    printf "LUCID_APT_GET_INSTALLER_VAR_lib_APT_$""$(date +%s)" > /var/lib/apt/.keep && \
-    touch /var/.keep /var/cache/.keep /var/cache/apt/.keep /var/lib.keep /var/lib/apt/.keep && \
+
+RUN mkdir -p ./var ./var/cache ./var/cache/apt ./var/lib ./var/lib/apt ./var/run ./run && \
+    printf "LUCID_APT_GET_INSTALLER_VAR_$""$(date +%s)" > ./var/.keep && \
+    printf "LUCID_APT_GET_INSTALLER_VAR_CACHE_$""$(date +%s)" > ./var/cache/.keep && \
+    printf "LUCID_APT_GET_INSTALLER_VAR_RUN_$""$(date +%s)" > ./var/run/.keep && \
+    printf "LUCID_APT_GET_INSTALLER_VAR_RUN_RUN_$""$(date +%s)" > ./run/.keep && \
+    printf "LUCID_APT_GET_INSTALLER_VAR_CACHE_APT_$""$(date +%s)" > ./var/cache/apt/.keep && \
+    printf "LUCID_APT_GET_INSTALLER_VAR_LIB_$""$(date +%s)" > ./var/lib/.keep && \
+    printf "LUCID_APT_GET_INSTALLER_VAR_lib_APT_$""$(date +%s)" > ./var/lib/apt/.keep && \
+    touch ./var/.keep ./var/cache/.keep ./var/cache/apt/.keep ./var/lib.keep ./var/lib/apt/.keep && \
     echo "lib directories created"
 # lib directories created
-
-RUN install -o 65532 -g 65532 -m 644 /app/var/ /app/lib/ /app/usr/ /app/bin/ /app/etc/ /app/run/ && \
-    echo "essential directories installed"
-
-
+COPY  /var/cache/ /build//var/cache/
+COPY  /var/lib/ /build//var/lib/
+COPY  /var/lib/apt/ /build//var/lib/apt/
+COPY  /var/run/ /build//var/run/
 
 ############################
 # Stage 2 – Runtime (distroless)
@@ -366,6 +353,7 @@ COPY --from=builder --chown=65532:65532 /build/configs/ /app/configs/
 COPY --from=builder --chown=65532:65532 /build/service_configs/ /app/service_configs/
 COPY --from=builder --chown=65532:65532 /build/service_mesh/ /app/service_mesh/
 COPY --from=builder --chown=65532:65532 /build/tmp/ /app/tmp/
+COPY --from=builder --chown=65532:65532 /build/var/ /app/var/
 # LUCID_RUNTIME_COPY_FROM_BUILD_END
 
 # LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
@@ -379,12 +367,9 @@ COPY --from=builder --chown=65532:65532 /etc/ssl/ /app/etc/ssl/
 COPY --from=builder --chown=65532:65532 /usr/bin/ /app/usr/bin/
 COPY --from=builder --chown=65532:65532 /usr/lib/python3/dist-packages/ /app/usr/lib/python3/dist-packages/
 COPY --from=builder --chown=65532:65532 /var/ /app/var/
-# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_END
-# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
+
 # Generated: apt + RUN scaffold (mkdir/printf/touch/chown) -> FHS (not ./ or /build/; lib_search_and_inject.py).
 COPY --from=builder /build/wheels/ /app/wheels/
-
-
 
 
 RUN ["/app/usr/bin/python3.11", "-c", \

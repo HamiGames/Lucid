@@ -89,40 +89,20 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 # LUCID_X_FILES_SKELETON_BEGIN
 # Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
 RUN set -eux; \
-    mkdir -p '.' './common' './service_mesh' './common/__pycache__' './common/governance' './common/security' './common/server-tools' './common/templates' './common/tor' './service_mesh/__pycache__' './service_mesh/communication' './service_mesh/config' './service_mesh/controller' './service_mesh/discovery' './service_mesh/docs' './service_mesh/security' './service_mesh/sidecar' './common/governance/__pycache__' './common/security/__pycache__' './common/server-tools/__pycache__' './common/tor/__pycache__' './service_mesh/communication/__pycache__' './service_mesh/config/policies' './service_mesh/config/services' './service_mesh/controller/__pycache__' './service_mesh/discovery/__pycache__' './service_mesh/security/__pycache__' './service_mesh/sidecar/envoy' './service_mesh/sidecar/proxy' './service_mesh/sidecar/envoy/__pycache__' './service_mesh/sidecar/envoy/config' './service_mesh/sidecar/proxy/__pycache__'; \
+    mkdir -p '.' './common' './common/__pycache__' './common/governance' './common/security' './common/server-tools' './common/templates' './common/tor' './common/governance/__pycache__' './common/security/__pycache__' './common/server-tools/__pycache__' './common/tor/__pycache__'; \
     for d in \
       '.' \
       './common' \
-      './service_mesh' \
       './common/__pycache__' \
       './common/governance' \
       './common/security' \
       './common/server-tools' \
       './common/templates' \
       './common/tor' \
-      './service_mesh/__pycache__' \
-      './service_mesh/communication' \
-      './service_mesh/config' \
-      './service_mesh/controller' \
-      './service_mesh/discovery' \
-      './service_mesh/docs' \
-      './service_mesh/security' \
-      './service_mesh/sidecar' \
       './common/governance/__pycache__' \
       './common/security/__pycache__' \
       './common/server-tools/__pycache__' \
       './common/tor/__pycache__' \
-      './service_mesh/communication/__pycache__' \
-      './service_mesh/config/policies' \
-      './service_mesh/config/services' \
-      './service_mesh/controller/__pycache__' \
-      './service_mesh/discovery/__pycache__' \
-      './service_mesh/security/__pycache__' \
-      './service_mesh/sidecar/envoy' \
-      './service_mesh/sidecar/proxy' \
-      './service_mesh/sidecar/envoy/__pycache__' \
-      './service_mesh/sidecar/envoy/config' \
-      './service_mesh/sidecar/proxy/__pycache__' \
     ; do \
       printf 'LUCID_X_FILES_SKELETON_%s' "$(date +%s)" > "$d/.keep"; \
       touch "$d/.keep"; \
@@ -158,7 +138,7 @@ COPY infrastructure/containers/services/vm/vm-orchestrator.yml ./infrastructure/
 COPY infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.json ./infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.json
 COPY infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.yml ./infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.yml
 # LUCID_ALIGNMENT_MAT_COPY_DIRECTORIES_END
-COPY infrastructure/service_mesh/ ./service_mesh/
+COPY infrastructure/service_mesh/ ./infrastructure/service_mesh/
 
 COPY <<EOF /etc/lucid/vm-orchestrator.conf
 [orchestration]
@@ -223,12 +203,11 @@ ENV PUBLIC_TOR_IP="${PUBLIC_TOR_IP}" \
     LUCID_HOST_CONFIG_PATH="/app/configs/host-config.yml" \
     LUCID_SERVICES_CONFIG_DIR="/app/service_configs" \
     LUCID_SERVICES_CONFIG_ROOT="/app/service_configs"
-
 # LUCID_RUNTIME_COPY_FROM_BUILD_BEGIN
 # Generated: same directory set as LUCID_X_FILES_SKELETON (./ under WORKDIR /build).
 COPY --from=builder --chown=65532:65532 /build/common/ /app/common/
-COPY --from=builder --chown=65532:65532 /build/service_mesh/ /app/service_mesh/
 # LUCID_RUNTIME_COPY_FROM_BUILD_END
+
 
 # LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
 # Generated: apt + RUN scaffold (mkdir/printf/touch/chown) -> FHS (not ./ or /build/; lib_search_and_inject.py).

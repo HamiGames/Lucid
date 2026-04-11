@@ -176,7 +176,7 @@ COPY infrastructure/containers/services/x_lucid_cluster_calibration/allocation_m
 # LUCID_ALIGNMENT_MAT_COPY_DIRECTORIES_END
 
 
-COPY infrastructure/compose/ ./configs/compose/
+COPY infrastructure/compose/ ./infrastructure/compose/compose/
 
 ############################
 # Stage 2 – Runtime (Distroless)

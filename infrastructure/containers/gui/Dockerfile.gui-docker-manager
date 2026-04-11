@@ -53,39 +53,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # LUCID_LIB_SKELETON_BEGIN
-# Generated: FHS dirs for builder (from final-stage COPY --from, excluding /build/ sources;
-# ancestor dirs collapsed; see collect_skeleton_paths_from_dockerfile).
-RUN set -eux; \
-  mkdir -p \
-    '/dev' \
-    '/var' \
-    '/etc/ssl' \
-    '/usr/bin' \
-    '/usr/lib' \
-    '/usr/local' \
-    '/var/lib' \
-    '/var/run' \
-    '/etc/ssl/certs' \
-    '/usr/local/bin' \
-    '/usr/lib/python3/dist-packages' \
-    '/usr/local/lib/python3.11'; \
-  for d in \
-    '/dev' \
-    '/var' \
-    '/etc/ssl' \
-    '/usr/bin' \
-    '/usr/lib' \
-    '/usr/local' \
-    '/var/lib' \
-    '/var/run' \
-    '/etc/ssl/certs' \
-    '/usr/local/bin' \
-    '/usr/lib/python3/dist-packages' \
-    '/usr/local/lib/python3.11'; \
-  do \
-    printf 'LUCID_LIB_SKELETON_%s' "$(date +%s)" > "$d/.keep"; \
-    touch "$d/.keep"; \
-  done
+# (no non-/build/ FHS COPY --from paths under /app/ found; no directories to create.)
 # LUCID_LIB_SKELETON_END
 COPY gui_docker_manager/requirements.txt ./requirements.txt
 
@@ -311,7 +279,7 @@ COPY configs/integration/master-integration-config.yml ./configs/integration/mas
 COPY infrastructure/containers/services/beta-sidecar.yml ./service_configs/beta-sidecar.yml
 COPY infrastructure/containers/services/gui/gui-docker-manager-service-groups.yml ./service_configs/gui-docker-manager-service-groups.yml
 COPY infrastructure/containers/services/gui/gui-docker-manager.yml ./service_configs/gui-docker-manager.yml
-COPY configs/services/gui-services.json ./service_configs/gui-services.json
+COPY service_configs/gui-services.json ./service_configs/gui-services.json
 COPY infrastructure/containers/services/service-discovery.yml ./service_configs/service-discovery.yml
 COPY infrastructure/containers/services/service-registry.json ./service_configs/service-registry.json
 COPY configs/x-files.json ./configs/x-files.json

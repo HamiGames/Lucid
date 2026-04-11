@@ -56,6 +56,209 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
+# LUCID_LIB_SKELETON_BEGIN
+# (no non-/build/ FHS COPY --from paths under /app/ found; no directories to create.)
+# LUCID_LIB_SKELETON_END
+
+# LUCID_X_FILES_SKELETON_BEGIN
+# Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
+RUN set -eux; \
+    mkdir -p '.' './common' './configs' './database' './etc' './scripts' './service_configs' './sessions' './storage' './usr' './common/__pycache__' './common/governance' './common/security' './common/server-tools' './common/templates' './common/tor' './configs/.ssh' './configs/container' './configs/database' './configs/docker' './configs/env' './configs/environment' './configs/integration' './configs/kubernetes' './configs/logging' './configs/pi' './configs/secrets' './configs/security' './configs/tor' './database/__pycache__' './database/admin' './database/api' './database/config' './database/elasticsearch' './database/models' './database/mongodb' './database/redis' './database/repositories' './database/schema' './database/schemas' './database/services' './etc/apt' './etc/redis' './etc/redis.conf.template' './etc/ssl' './etc/tor' './scripts/__pycache__' './scripts/build' './scripts/compliance' './scripts/config' './scripts/contracts' './scripts/database' './scripts/deployment' './scripts/devcontainer' './scripts/docs' './scripts/foundation' './scripts/gui' './scripts/hardware' './scripts/integration' './scripts/lib' './scripts/load' './scripts/logging' './scripts/maintenance' './scripts/migration' './scripts/monitoring' './scripts/network' './scripts/registry' './scripts/secrets' './scripts/security' './scripts/services' './scripts/testing' './scripts/validation' './scripts/verification' './sessions/__pycache__' './sessions/api' './sessions/config' './sessions/core' './sessions/encryption' './sessions/integration' './sessions/pipeline' './sessions/processor' './sessions/recorder' './sessions/security' './sessions/session_systems_control' './sessions/storage' './storage/__pycache__' './storage/backups' './storage/cache' './storage/data' './usr/bin' './usr/lib' './usr/local' './usr/sbin' './usr/share' './usr/var' './common/governance/__pycache__' './common/security/__pycache__' './common/server-tools/__pycache__' './common/tor/__pycache__' './configs/container/admin' './configs/container/auth' './configs/container/base' './configs/container/blockchain' './configs/container/database' './configs/container/electron_gui' './configs/container/gui' './configs/container/node' './configs/container/payment_systems' './configs/container/rdp' './configs/container/server' './configs/container/sessions' './configs/container/storage' './configs/container/tor' './configs/database/elasticsearch' './configs/database/redis' './configs/docker/distroless' './configs/docker/docs' './configs/docker/multi-stage' './configs/pi/ssh' './database/admin/__pycache__' './database/api/__pycache__' './database/config/__pycache__' './database/elasticsearch/__pycache__' './database/models/__pycache__' './database/mongodb/__pycache__' './database/redis/__pycache__' './database/repositories/__pycache__' './database/schema/__pycache__' './database/services/__pycache__' './database/services/backup' './database/services/migration' './database/services/monitoring' './etc/apt/apt.conf.d' './etc/ssl/certs' './scripts/build/__pycache__' './scripts/build/components' './scripts/build/distroless' './scripts/compliance/distroless' './scripts/deployment/devcontainer' './scripts/deployment/distroless' './scripts/deployment/pi' './scripts/deployment/utils' './scripts/maintenance/cleanup' './scripts/maintenance/optimization' './scripts/network/setup' './scripts/testing/utils' './scripts/validation/__pycache__' './scripts/verification/__pycache__' './service_configs/kubernetes/03-databases' './sessions/api/__pycache__' './sessions/api/config' './sessions/api/integration' './sessions/core/__pycache__' './sessions/encryption/__pycache__' './sessions/integration/__pycache__' './sessions/pipeline/__pycache__' './sessions/pipeline/integration' './sessions/processor/__pycache__' './sessions/processor/config' './sessions/processor/integration' './sessions/recorder/__pycache__' './sessions/recorder/config' './sessions/recorder/integration' './sessions/security/__pycache__' './sessions/session_systems_control/__pycache__' './sessions/storage/__pycache__' './sessions/storage/config' './storage/backups/configs' './storage/backups/database' './storage/backups/user-data' './storage/cache/build' './storage/cache/docker' './storage/cache/temp' './storage/data/blockchain' './storage/data/logs' './storage/data/sessions' './usr/lib/python3' './usr/local/bin' './usr/local/lib' './usr/share/elasticsearch' './database/services/backup/__pycache__' './database/services/migration/__pycache__' './database/services/monitoring/__pycache__' './sessions/api/integration/__pycache__' './sessions/pipeline/integration/__pycache__' './sessions/processor/integration/__pycache__' './sessions/recorder/integration/__pycache__' './usr/local/lib/python3.11'; \
+    for d in \
+      '.' \
+      './common' \
+      './configs' \
+      './database' \
+      './etc' \
+      './scripts' \
+      './service_configs' \
+      './sessions' \
+      './storage' \
+      './usr' \
+      './common/__pycache__' \
+      './common/governance' \
+      './common/security' \
+      './common/server-tools' \
+      './common/templates' \
+      './common/tor' \
+      './configs/.ssh' \
+      './configs/container' \
+      './configs/database' \
+      './configs/docker' \
+      './configs/env' \
+      './configs/environment' \
+      './configs/integration' \
+      './configs/kubernetes' \
+      './configs/logging' \
+      './configs/pi' \
+      './configs/secrets' \
+      './configs/security' \
+      './configs/tor' \
+      './database/__pycache__' \
+      './database/admin' \
+      './database/api' \
+      './database/config' \
+      './database/elasticsearch' \
+      './database/models' \
+      './database/mongodb' \
+      './database/redis' \
+      './database/repositories' \
+      './database/schema' \
+      './database/schemas' \
+      './database/services' \
+      './etc/apt' \
+      './etc/redis' \
+      './etc/redis.conf.template' \
+      './etc/ssl' \
+      './etc/tor' \
+      './scripts/__pycache__' \
+      './scripts/build' \
+      './scripts/compliance' \
+      './scripts/config' \
+      './scripts/contracts' \
+      './scripts/database' \
+      './scripts/deployment' \
+      './scripts/devcontainer' \
+      './scripts/docs' \
+      './scripts/foundation' \
+      './scripts/gui' \
+      './scripts/hardware' \
+      './scripts/integration' \
+      './scripts/lib' \
+      './scripts/load' \
+      './scripts/logging' \
+      './scripts/maintenance' \
+      './scripts/migration' \
+      './scripts/monitoring' \
+      './scripts/network' \
+      './scripts/registry' \
+      './scripts/secrets' \
+      './scripts/security' \
+      './scripts/services' \
+      './scripts/testing' \
+      './scripts/validation' \
+      './scripts/verification' \
+      './sessions/__pycache__' \
+      './sessions/api' \
+      './sessions/config' \
+      './sessions/core' \
+      './sessions/encryption' \
+      './sessions/integration' \
+      './sessions/pipeline' \
+      './sessions/processor' \
+      './sessions/recorder' \
+      './sessions/security' \
+      './sessions/session_systems_control' \
+      './sessions/storage' \
+      './storage/__pycache__' \
+      './storage/backups' \
+      './storage/cache' \
+      './storage/data' \
+      './usr/bin' \
+      './usr/lib' \
+      './usr/local' \
+      './usr/sbin' \
+      './usr/share' \
+      './usr/var' \
+      './common/governance/__pycache__' \
+      './common/security/__pycache__' \
+      './common/server-tools/__pycache__' \
+      './common/tor/__pycache__' \
+      './configs/container/admin' \
+      './configs/container/auth' \
+      './configs/container/base' \
+      './configs/container/blockchain' \
+      './configs/container/database' \
+      './configs/container/electron_gui' \
+      './configs/container/gui' \
+      './configs/container/node' \
+      './configs/container/payment_systems' \
+      './configs/container/rdp' \
+      './configs/container/server' \
+      './configs/container/sessions' \
+      './configs/container/storage' \
+      './configs/container/tor' \
+      './configs/database/elasticsearch' \
+      './configs/database/redis' \
+      './configs/docker/distroless' \
+      './configs/docker/docs' \
+      './configs/docker/multi-stage' \
+      './configs/pi/ssh' \
+      './database/admin/__pycache__' \
+      './database/api/__pycache__' \
+      './database/config/__pycache__' \
+      './database/elasticsearch/__pycache__' \
+      './database/models/__pycache__' \
+      './database/mongodb/__pycache__' \
+      './database/redis/__pycache__' \
+      './database/repositories/__pycache__' \
+      './database/schema/__pycache__' \
+      './database/services/__pycache__' \
+      './database/services/backup' \
+      './database/services/migration' \
+      './database/services/monitoring' \
+      './etc/apt/apt.conf.d' \
+      './etc/ssl/certs' \
+      './scripts/build/__pycache__' \
+      './scripts/build/components' \
+      './scripts/build/distroless' \
+      './scripts/compliance/distroless' \
+      './scripts/deployment/devcontainer' \
+      './scripts/deployment/distroless' \
+      './scripts/deployment/pi' \
+      './scripts/deployment/utils' \
+      './scripts/maintenance/cleanup' \
+      './scripts/maintenance/optimization' \
+      './scripts/network/setup' \
+      './scripts/testing/utils' \
+      './scripts/validation/__pycache__' \
+      './scripts/verification/__pycache__' \
+      './service_configs/kubernetes/03-databases' \
+      './sessions/api/__pycache__' \
+      './sessions/api/config' \
+      './sessions/api/integration' \
+      './sessions/core/__pycache__' \
+      './sessions/encryption/__pycache__' \
+      './sessions/integration/__pycache__' \
+      './sessions/pipeline/__pycache__' \
+      './sessions/pipeline/integration' \
+      './sessions/processor/__pycache__' \
+      './sessions/processor/config' \
+      './sessions/processor/integration' \
+      './sessions/recorder/__pycache__' \
+      './sessions/recorder/config' \
+      './sessions/recorder/integration' \
+      './sessions/security/__pycache__' \
+      './sessions/session_systems_control/__pycache__' \
+      './sessions/storage/__pycache__' \
+      './sessions/storage/config' \
+      './storage/backups/configs' \
+      './storage/backups/database' \
+      './storage/backups/user-data' \
+      './storage/cache/build' \
+      './storage/cache/docker' \
+      './storage/cache/temp' \
+      './storage/data/blockchain' \
+      './storage/data/logs' \
+      './storage/data/sessions' \
+      './usr/lib/python3' \
+      './usr/local/bin' \
+      './usr/local/lib' \
+      './usr/share/elasticsearch' \
+      './database/services/backup/__pycache__' \
+      './database/services/migration/__pycache__' \
+      './database/services/monitoring/__pycache__' \
+      './sessions/api/integration/__pycache__' \
+      './sessions/pipeline/integration/__pycache__' \
+      './sessions/processor/integration/__pycache__' \
+      './sessions/recorder/integration/__pycache__' \
+      './usr/local/lib/python3.11' \
+    ; do \
+      printf 'LUCID_X_FILES_SKELETON_%s' "$(date +%s)" > "$d/.keep"; \
+      touch "$d/.keep"; \
+    done
+# LUCID_X_FILES_SKELETON_END
+
 RUN apt-get remove -y rustc cargo && rm -rf /root/.cargo /root/.rustup && \
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
 
@@ -79,67 +282,21 @@ RUN set -eux; \
 # LUCID_LIB_SKELETON_END
 # LUCID_ALIGNMENT_MAT_COPY_DIRECTORIES_BEGIN
 # alignment-mat lucid-redis-storage_manifest.json: compose_service='lucid-redis-storage' — explicit manifest paths → 23 builder COPY line(s) (dockerfile_layout_structure.json section #10 COPY_DIRECTORIES).
-# LUCID_X_FILES_SKELETON_BEGIN
-# Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
-RUN set -eux; \
-    mkdir -p '.' './common' './database' './infrastructure' './scripts' './common/__pycache__' './common/governance' './common/security' './common/server-tools' './common/templates' './common/tor' './common/governance/__pycache__' './common/security/__pycache__' './common/server-tools/__pycache__' './common/tor/__pycache__'; \
-    for d in \
-      '.' \
-      './common' \
-      './database' \
-      './database/redis' \
-      './database/config' \
-      './infrastructure/containers' \
-      './infrastructure/containers/services' \
-      './infrastructure/containers/services/database' \
-      './infrastructure/containers/services/middle-ware' \
-      './infrastructure/containers/services/storage' \
-      './infrastructure/containers/services/x_lucid_cluster_calibration' \
-      './scripts' \
-      './scripts/database' \
-      './scripts/database/elasticsearch' \
-      './scripts/database/mongodb' \
-      './scripts/database/redis' \
-      './scripts/database/elasticsearch' \
-      './scripts/database/mongodb' \
-      './scripts/database/redis' \
-      './common/__pycache__' \
-      './common/governance' \
-      './common/security' \
-      './common/server-tools' \
-      './common/templates' \
-      './common/tor' \
-      './common/governance/__pycache__' \
-      './common/security/__pycache__' \
-      './common/server-tools/__pycache__' \
-      './common/tor/__pycache__' \
-    ; do \
-      printf 'LUCID_X_FILES_SKELETON_%s' "$(date +%s)" > "$d/.keep"; \
-      touch "$d/.keep"; \
-    done
-# LUCID_X_FILES_SKELETON_END
 COPY scripts/database/ ./scripts/database/
 COPY database/redis/ ./database/redis/
 COPY database/config/ ./database/config/
-COPY common/__init__.py ./common/__init__.py
-COPY common/contact_profile_env.py ./common/contact_profile_env.py
-COPY common/governance/__init__.py ./common/governance/__init__.py
-COPY common/governance/lucid_governor.py ./common/governance/lucid_governor.py
-COPY common/governance/param_registry.py ./common/governance/param_registry.py
-COPY common/governance/timelock.py ./common/governance/timelock.py
-COPY common/load_host_config.py ./common/load_host_config.py
-COPY common/security/__init__.py ./common/security/__init__.py
-COPY common/security/input_controller.py ./common/security/input_controller.py
-COPY common/security/policy_validator.py ./common/security/policy_validator.py
-COPY common/security/privacy_shield.py ./common/security/privacy_shield.py
-COPY common/security/session_validator.py ./common/security/session_validator.py
-COPY common/security/trust_nothing_engine.py ./common/security/trust_nothing_engine.py
-COPY common/server-tools/__init__.py ./common/server-tools/__init__.py
-COPY common/tor/__init__.py ./common/tor/__init__.py
-COPY common/tor/onion_service.py ./common/tor/onion_service.py
-COPY common/tor/socks_proxy.py ./common/tor/socks_proxy.py
-COPY common/tor/tor_manager.py ./common/tor/tor_manager.py
-COPY infrastructure/containers/services/database/ ./infrastructure/containers/services/database/
+COPY common/ ./common/
+COPY configs/container/database/ ./configs/container/database/
+COPY storage/ ./storage/
+COPY sessions/storage/ ./sessions/storage/
+
+COPY infrastructure/docker/databases/ ./infrastructure/docker/databases/
+COPY infrastructure/docker/common/ ./infrastructure/docker/common/
+COPY infrastructure/service_mesh/communication/ ./infrastructure/service_mesh/
+COPY service_configs/kubernetes/03-databases/ ./service_configs/kubernetes/03-databases/
+COPY sessions/storage/ ./sessions/storage/
+
+COPY infrastructure/containers/storage/redis.conf ./infrastructure/containers/storage/redis.conf
 COPY infrastructure/containers/config-listings.json ./infrastructure/containers/config-listings.json
 COPY infrastructure/containers/host-config.yml ./infrastructure/containers/host-config.yml
 COPY infrastructure/containers/services/middle-ware/master-endpoint.yml ./infrastructure/containers/services/middle-ware/master-endpoint.yml
@@ -148,18 +305,23 @@ COPY infrastructure/containers/services/x_lucid_cluster_calibration/allocation_m
 # LUCID_ALIGNMENT_MAT_COPY_DIRECTORIES_END
 
 # Runtime COPY --from uses /build/storage/; keep directory present in builder.
-RUN mkdir -p /build/storage && touch /build/storage/.keep
+RUN mkdir -p ./usr/local/bin ./etc ./py-site  && \
+    printf "LUCID_REDIS_USR_LOCAL_BIN" > ./usr/local/bin/.keep && \
+    printf "LUCID_REDIS_ETC" > ./etc/.keep && \
+    printf "LUCID_REDIS_PY_SITE" > ./py-site/.keep && \
+    chmod 644 ./usr/local/bin/.keep ./etc/.keep ./py-site/.keep
+
+COPY database/redis/start-redis.py ./usr/local/bin/start-redis.py
+COPY database/redis/healthcheck.py ./usr/local/bin/redis-healthcheck.py
+COPY infrastructure/containers/storage/redis.conf ./etc/redis.conf.template
+
 
 # Entry + health scripts and Redis config template (paths expected by database/redis/start-redis.py)
 COPY infrastructure/containers/storage/redis.conf /build/etc/redis.conf.template
-RUN mkdir -p /build/usr/local/bin /build/py-site /build/etc && \
-    cp /build/database/redis/start-redis.py /build/usr/local/bin/start-redis.py && \
-    cp /build/database/redis/healthcheck.py /build/usr/local/bin/redis-healthcheck.py && \
-    chmod +x /build/usr/local/bin/start-redis.py /build/usr/local/bin/redis-healthcheck.py && \
-    test -f /build/etc/redis.conf.template && \
+RUN test -f ./etc/redis.conf.template && \
     test -x /usr/local/bin/redis-server && \
-    python3.11 -m pip install --no-cache-dir --target /build/py-site "redis==5.0.1" && \
-    PYTHONPATH=/build/py-site python3.11 -c "import redis; print('OK redis py')"
+    python3.11 -m pip install --no-cache-dir --target ./py-site "redis==5.0.1" && \
+    PYTHONPATH=./py-site python3.11 -c "import redis; print('OK redis py')"
 
 RUN rm -rf configs/environment 2>/dev/null || true
 
@@ -217,6 +379,14 @@ ENV PUBLIC_TOR_IP="${PUBLIC_TOR_IP}" \
 # LUCID_RUNTIME_COPY_FROM_BUILD_BEGIN
 # Generated: same directory set as LUCID_X_FILES_SKELETON (./ under WORKDIR /build).
 COPY --from=redis-builder --chown=65532:65532 /build/common/ /app/common/
+COPY --from=redis-builder --chown=65532:65532 /build/configs/ /app/configs/
+COPY --from=redis-builder --chown=65532:65532 /build/database/ /app/database/
+COPY --from=redis-builder --chown=65532:65532 /build/etc/ /app/etc/
+COPY --from=redis-builder --chown=65532:65532 /build/scripts/ /app/scripts/
+COPY --from=redis-builder --chown=65532:65532 /build/service_configs/ /app/service_configs/
+COPY --from=redis-builder --chown=65532:65532 /build/sessions/ /app/sessions/
+COPY --from=redis-builder --chown=65532:65532 /build/storage/ /app/storage/
+COPY --from=redis-builder --chown=65532:65532 /build/usr/ /app/usr/
 # LUCID_RUNTIME_COPY_FROM_BUILD_END
 
 # LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
@@ -241,19 +411,19 @@ COPY --from=redis-builder --chown=65532:65532 /usr/lib/python3.11/ /app/usr/lib/
 COPY --from=redis-builder --chown=65532:65532 /usr/lib/python3.11/site-packages/ /app/usr/lib/python3.11/site-packages/
 # LUCID_RUNTIME_COPY_FROM_BUILDER_APT_END
 # LUCID_IMAGE_CONFIG: (builder)
-COPY --from=redis-builder --chown=65532:65532 /build/database/ /app/database/
 COPY --from=redis-builder --chown=65532:65532 /build/infrastructure/ /app/infrastructure/
-COPY --from=redis-builder --chown=65532:65532 /build/scripts/ /app/scripts/
-COPY --from=redis-builder --chown=65532:65532 /build/storage/ /app/storage/
 
 # Lucid entrypoint + healthcheck (after FHS COPY so redis-server remains; only these paths are ours)
 COPY --from=redis-builder --chown=65532:65532 /build/usr/local/bin/start-redis.py /app/usr/local/bin/start-redis.py
 COPY --from=redis-builder --chown=65532:65532 /build/usr/local/bin/redis-healthcheck.py /app/usr/local/bin/redis-healthcheck.py
 COPY --from=redis-builder --chown=65532:65532 /build/etc/redis.conf.template /app/etc/redis.conf.template
-COPY --from=redis-builder --chown=65532:65532 /build/py-site/ /app/usr/local/lib/python3.11/site-packages/
+COPY --from=redis-builder --chown=65532:65532 /build/py-site/ /app/py-site/
 
-# LUCID_RUNTIME_COPY_FROM_BUILD_END
-# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
+
+COPY --from=redis-builder --chown=65532:65532 /build/usr/local/bin/start-redis.py /app/usr/local/bin/start-redis.py
+COPY --from=redis-builder --chown=65532:65532 /build/usr/local/bin/redis-healthcheck.py /app/usr/local/bin/redis-healthcheck.py
+COPY --from=redis-builder --chown=65532:65532 /build/etc/redis.conf.template /app/etc/redis.conf.template
+
 # Generated: apt + RUN scaffold (mkdir/printf/touch/chown) -> FHS (not ./ or /build/; lib_search_and_inject.py).
 EXPOSE 6380
 

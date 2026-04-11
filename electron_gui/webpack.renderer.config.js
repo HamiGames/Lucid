@@ -8,10 +8,10 @@ module.exports = {
   
   // Entry points for renderer processes
   entry: {
-    admin: './renderer/admin/index.tsx',
-    user: './renderer/user/index.tsx',
-    developer: './renderer/developer/index.tsx',
-    node: './renderer/node/index.tsx',
+    admin: './electron_gui/renderer/admin/index.tsx',
+    user: './electron_gui/renderer/user/index.tsx',
+    developer: './electron_gui/renderer/developer/index.tsx',
+    node: './electron_gui/renderer/node/index.tsx',
   },
   
   // Output configuration
@@ -66,28 +66,28 @@ module.exports = {
     
     // HTML templates for each GUI
     new HtmlWebpackPlugin({
-      template: './renderer/admin/admin.html',
+      template: './electron_gui/renderer/admin/admin.html',
       filename: 'admin/admin.html',
       chunks: ['admin', 'common', 'vendors'],
       inject: 'body',
     }),
     
     new HtmlWebpackPlugin({
-      template: './renderer/user/user.html',
+      template: './electron_gui/renderer/user/user.html',
       filename: 'user/user.html',
       chunks: ['user', 'common', 'vendors'],
       inject: 'body',
     }),
     
     new HtmlWebpackPlugin({
-      template: './renderer/developer/developer.html',
+      template: './electron_gui/renderer/developer/developer.html',
       filename: 'developer/developer.html',
       chunks: ['developer', 'common', 'vendors'],
       inject: 'body',
     }),
     
     new HtmlWebpackPlugin({
-      template: './renderer/node/node.html',
+      template: './electron_gui/renderer/node/node.html',
       filename: 'node/node.html',
       chunks: ['node', 'common', 'vendors'],
       inject: 'body',

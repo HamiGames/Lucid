@@ -21,8 +21,6 @@ FROM --platform=$TARGETPLATFORM elasticsearch:8.11.0 AS es-builder
 
 WORKDIR /build
 
-
-
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
     rm -rf /var/lib/apt/lists/* && \
@@ -51,6 +49,11 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
         openssl \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# LUCID_LIB_SKELETON_BEGIN
+# (no non-/build/ FHS COPY --from paths under /app/ found; no directories to create.)
+# LUCID_LIB_SKELETON_END
+
 # LUCID_X_FILES_SKELETON_BEGIN
 # Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
 RUN set -eux; \
@@ -128,54 +131,143 @@ RUN set -eux; \
       touch "$d/.keep"; \
     done
 # LUCID_X_FILES_SKELETON_END
-# LUCID_ALIGNMENT_MAT_COPY_DIRECTORIES_BEGIN
-# alignment-mat elasticsearch-storage_manifest.json: compose_service='elasticsearch-storage' — explicit manifest paths → 23 builder COPY line(s) (dockerfile_layout_structure.json section #10 COPY_DIRECTORIES).
-COPY common/__init__.py ./common/__init__.py
-COPY common/contact_profile_env.py ./common/contact_profile_env.py
-COPY common/governance/__init__.py ./common/governance/__init__.py
-COPY common/governance/lucid_governor.py ./common/governance/lucid_governor.py
-COPY common/governance/param_registry.py ./common/governance/param_registry.py
-COPY common/governance/timelock.py ./common/governance/timelock.py
-COPY common/load_host_config.py ./common/load_host_config.py
-COPY common/security/__init__.py ./common/security/__init__.py
-COPY common/security/input_controller.py ./common/security/input_controller.py
-COPY common/security/policy_validator.py ./common/security/policy_validator.py
-COPY common/security/privacy_shield.py ./common/security/privacy_shield.py
-COPY common/security/session_validator.py ./common/security/session_validator.py
-COPY common/security/trust_nothing_engine.py ./common/security/trust_nothing_engine.py
-COPY common/server-tools/__init__.py ./common/server-tools/__init__.py
-COPY common/tor/__init__.py ./common/tor/__init__.py
-COPY common/tor/onion_service.py ./common/tor/onion_service.py
-COPY common/tor/socks_proxy.py ./common/tor/socks_proxy.py
-COPY common/tor/tor_manager.py ./common/tor/tor_manager.py
+
+
+
+# lib support skeleton
+RUN set -eux; \
+    mkdir -p '.' './usr' './var' './run' './bin' './local' './dev' './etc' './sbin' './lib' './export' './export/rootfs' './export/rootfs/lib' './export/rootfs/lib64'; \
+    for d in \
+      './usr/var' \
+      './usr/bin' \
+      './usr/lib/*' \
+      './usr/lib/*/libcurl.so*' \
+      './usr/lib/*/libffi.so*' \
+      './usr/lib/*/libssl.so*' \
+      './usr/lib/*/ossl-modules' \
+      './usr/lib/*/libpq.so.5' \
+      './usr/sbin' \
+      './usr/lib' \
+      './dev/null' \
+      './run/lucid' \
+      './bin/bash' \
+      './bin/tini' \
+      './bin/curl' \
+      './bin/jq' \
+      './bin/timeout' \
+      './bin/xxd' \
+      './bin/mawk' \
+      './bin/head' \
+      './bin/cut' \
+      './bin/tr' \
+      './bin/seq' \
+      './bin/ls' \
+      './bin/mkdir' \
+      './bin/rm' \
+      './bin/cp' \
+      './bin/mv' \
+      './usr/lib' \
+      './usr/lib/python3.11' \
+      './usr/share/elasticsearch' \
+      './usr/share/elasticsearch/config' \
+      './usr/share/elasticsearch/data' \
+      './usr/share/elasticsearch/logs' \
+      './usr/share/elasticsearch/plugins' \
+      './usr/share/elasticsearch/modules' \
+      './usr/share/elasticsearch/bin' \
+      './etc/ssl' \
+      './etc/ssl/certs' \
+      './etc/ssl/certs/ca-certificates.crt' \
+      './etc/passwd' \
+      './etc/group' \
+      './etc/host.conf' \
+      './etc/hostname' \
+      './etc/resolv.conf' \
+      './etc/hosts' \
+      './etc/tor' \
+      './etc/tor/torrc' \
+      './etc/tor/configs' \
+      './etc/tor/configs/torrc' \
+      './run/lucid' \
+      './run/lucid/tor' \
+      './run/lucid/tor/configs' \
+      './run/lucid/tor/configs/torrc' \
+      './run/lucid/tor/logs' \
+      './run/lucid/tor/lucid_admin' \
+      './run/lucid/tor/lucid_vm' \
+      './run/lucid/tor/lucid_node' \
+      './run/lucid/tor/lucid_blockchain' \
+      './run/lucid/tor/lucid_server' \
+      './run/lucid/tor/myservice' \
+      './run/lucid/onion' \
+      './run/lucid/onion/lucid_admin' \
+      './run/lucid/onion/lucid_vm' \
+      './run/lucid/onion/lucid_node' \
+      './run/lucid/onion/lucid_blockchain' \
+      './run/lucid/onion/lucid_server' \
+      './run/lucid/onion/myservice' \
+      './run/lucid/tor/lucid_portal' \
+      './run/lucid/tor/lucid_governance' \
+      './run/lucid/tor/lucid_payment' \
+      './run/lucid/tor/lucid_session' \
+      './run/lucid/tor/lucid_rdp' \
+      './run/lucid/tor/lucid_wallet' \
+      './run/lucid/tor/lucid_voting' \
+      './run/lucid/tor/lucid_voting_system' \
+      './run/lucid/tor/lucid_voting_system_admin' \
+      './run/lucid/tunnels' \
+      './run/lucid/tunnel' \
+      './var/log' \
+      './var/data' \
+      './var/run/lucid' \
+      './var/run/lucid/elasticsearch' \
+    ; do \
+      printf 'LUCID_X_FILES_SKELETON_%s' "$(date +%s)" > "$d/.keep"; \
+      touch "$d/.keep"; \
+    done
+# LUCID_X_FILES_SKELETON_END
+
+COPY configs/alignment-mats/ ./configs/alignment-mats/
+COPY configs/database/elasticsearch/ ./configs/database/elasticsearch/
+COPY database/elasticsearch/ ./database/elasticsearch/
+COPY common/ ./common/
 COPY infrastructure/containers/config-listings.json ./infrastructure/containers/config-listings.json
 COPY infrastructure/containers/host-config.yml ./infrastructure/containers/host-config.yml
 COPY infrastructure/containers/services/middle-ware/master-endpoint.yml ./infrastructure/containers/services/middle-ware/master-endpoint.yml
 COPY infrastructure/containers/services/storage/elasticsearch-storage.yml ./infrastructure/containers/services/storage/elasticsearch-storage.yml
 COPY infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.yml ./infrastructure/containers/services/x_lucid_cluster_calibration/allocation_manifest.yml
-# LUCID_ALIGNMENT_MAT_COPY_DIRECTORIES_END
-# LUCID_LIB_SKELETON_BEGIN
-# Generated: FHS dirs for builder (from final-stage COPY --from, excluding /build/ sources;
-# ancestor dirs collapsed; see collect_skeleton_paths_from_dockerfile).
-COPY infrastructure/compose/ ./configs/compose/
+COPY infrastructure/compose/ ./infrastructure/compose/
+COPY infrastructure/service_mesh/communication/ ./infrastructure/service_mesh/communication/
+COPY infrastructure/service_mesh/discovery/ ./infrastructure/service_mesh/discovery/
+COPY infrastructure/service_mesh/sidecar/ ./infrastructure/service_mesh/sidecar/
+COPY configs/all-operation-configs.json ./configs/all-operation-configs.json
+COPY /usr/bin/ /build/usr/bin/
+COPY  /usr/lib/*/ /build//usr/lib/*/
+
+COPY /usr/share/elasticsearch/config/ /build/usr/share/elasticsearch/config/
+COPY /usr/share/elasticsearch/data/ /build/usr/share/elasticsearch/data/
+COPY /usr/share/elasticsearch/logs/ /build/usr/share/elasticsearch/logs/
+COPY /usr/share/elasticsearch/plugins/ /build/usr/share/elasticsearch/plugins/
+COPY /usr/share/elasticsearch/modules/ /build/usr/share/elasticsearch/modules/
+COPY /usr/share/elasticsearch/bin/ /build/usr/share/elasticsearch/bin/
+COPY /etc/ssl/ /build/etc/ssl/
+COPY /etc/ssl/certs/ /build/etc/ssl/certs/
+COPY /etc/ssl/certs/ca-certificates.crt /build/etc/ssl/certs/ca-certificates.crt
+COPY /etc/passwd /build/etc/passwd
+COPY /etc/group /build/etc/group
+COPY /etc/host.conf /build/etc/host.conf
+COPY /etc/hostname /build/etc/hostname
+COPY /etc/resolv.conf /build/etc/resolv.conf
+COPY /etc/hosts /build/etc/hosts
+
+COPY infrastructure/kubernetes/ ./infrastructure/kubernetes/
+COPY sessions/storage/ ./sessions/storage/
+COPY scripts/ ./scripts/
+COPY tools/ ./tools/
+COPY utils/ ./utils/
 
 
-
-
-
-COPY infrastructure/service_mesh/ ./service_mesh/
-COPY infrastructure/docker/ ./infrastructure/docker/
-
-
-
-RUN rm -rf configs/environment 2>/dev/null || true
-
-
-RUN printf "LUCID_ELASTICSEARCH_RUNTIME_DIRECTORY" > /var/run/.keep && \
-    printf "LUCID_ELASTICSEARCH_LIB_DIRECTORY" > /var/lib/.keep && \
-    chmod 644 /var/run/.keep /var/lib/.keep
-
-RUN cat > /usr/share/elasticsearch/config/elasticsearch.yml <<'EOFCONFIG'
+RUN cat > ./usr/share/elasticsearch/config/elasticsearch.yml <<'EOFCONFIG'
 cluster.name: lucid-cluster
 node.name: lucid-node
 discovery.type: single-node
@@ -189,8 +281,8 @@ http.port: 9200
 transport.port: 9300
 EOFCONFIG
 
-RUN /usr/share/elasticsearch/bin/elasticsearch-keystore create && \
-    chown elasticsearch:elasticsearch /usr/share/elasticsearch/config/elasticsearch.keystore && \
+RUN ./usr/share/elasticsearch/bin/elasticsearch-keystore create && \
+    chown elasticsearch:elasticsearch ./usr/share/elasticsearch/config/elasticsearch.keystore && \
     echo "✅ Elasticsearch keystore created during build"
 
 RUN chmod 644 /usr/share/elasticsearch/config/elasticsearch.yml
@@ -205,10 +297,10 @@ RUN test -f /usr/share/elasticsearch/bin/elasticsearch && \
 
 # Export glibc + arch libs for distroless root overlay (multi-arch via dpkg-architecture)
 RUN MULTIARCH=$(dpkg-architecture -qDEB_HOST_MULTIARCH) && \
-    mkdir -p "/export/rootfs/lib/${MULTIARCH}" /export/rootfs/lib64 && \
-    cp -a "/lib/${MULTIARCH}/." "/export/rootfs/lib/${MULTIARCH}/" && \
-    if [ -f /lib/ld-linux-aarch64.so.1 ]; then cp /lib/ld-linux-aarch64.so.1 /export/rootfs/lib/; fi && \
-    if [ -f /lib64/ld-linux-x86-64.so.2 ]; then cp /lib64/ld-linux-x86-64.so.2 /export/rootfs/lib64/; fi && \
+    mkdir -p "/export/rootfs/lib/${MULTIARCH}" >> ./export/rootfs/lib64/.keep && \
+    cp -a "/lib/${MULTIARCH}/." "/export/rootfs/lib/${MULTIARCH}/" >> ./export/rootfs/lib/${MULTIARCH}/.keep && \
+    if [ -f /lib/ld-linux-aarch64.so.1 ]; then cp /lib/ld-linux-aarch64.so.1 ./export/rootfs/lib/ >>./export/rootfs/lib/.keep; fi && \
+    if [ -f /lib64/ld-linux-x86-64.so.2 ]; then cp /lib64/ld-linux-x86-64.so.2 ./export/rootfs/lib64/ >>./export/rootfs/lib64/.keep; fi && \
     echo "✅ Exported dynamic linker layout for ${MULTIARCH}"
 
 ############################
@@ -256,38 +348,28 @@ ENV     PUBLIC_TOR_IP="${PUBLIC_TOR_IP}" \
     LUCID_ELASTICSEARCH_TRANSPORT_HOST_IP=172.20.10.69 \
     LUCID_ELASTICSEARCH_TRANSPORT_SERVICE_PATH=http://lucid-elasticsearch-transport:9300/app
 # LUCID_RUNTIME_COPY_FROM_BUILD_BEGIN
-# Generated: same directory set as LUCID_X_FILES_SKELETON (./ under WORKDIR /build).
+
 COPY --from=es-builder --chown=65532:65532 /build/common/ /app/common/
 COPY --from=es-builder --chown=65532:65532 /build/configs/ /app/configs/
-COPY --from=es-builder --chown=65532:65532 /build/service_mesh/ /app/service_mesh/
-# LUCID_RUNTIME_COPY_FROM_BUILD_END
+COPY --from=es-builder --chown=65532:65532 /build/infrastructure/service_mesh/ /app/infrastructure/service_mesh/
+COPY --from=es-builder --chown=65532:65532 /build/sessions/ /app/sessions/
+COPY --from=es-builder --chown=65532:65532 /build/scripts/ /app/scripts/
+COPY --from=es-builder --chown=65532:65532 /build/tools/ /app/tools/
+COPY --from=es-builder --chown=65532:65532 /build/utils/ /app/utils/
 
-# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
-# Generated: apt + RUN scaffold (mkdir/printf/touch/chown) -> FHS (not ./ or /build/; lib_search_and_inject.py).
-COPY --from=es-builder --chown=root /usr/lib/*/libcurl.so* /app/usr/lib/
-COPY --from=es-builder --chown=root /usr/lib/*/libffi.so* /app/usr/lib/
-COPY --from=es-builder --chown=root /usr/lib/*/libssl.so* /app/usr/lib/
-COPY --from=es-builder --chown=root /usr/lib/*/ossl-modules/ /app/usr/lib/
-COPY --from=es-builder --chown=root /usr/lib/*/libpq.so.5 /app/usr/lib/
-COPY --from=es-builder --chown=root /bin/ /app/bin/
-COPY --from=es-builder --chown=root /dev/null/ /app/dev/null/
-COPY --from=es-builder --chown=root /etc/ssl/ /app/etc/ssl/
-COPY --from=es-builder --chown=root /export/rootfs/lib64/ /app/export/rootfs/lib64/
-COPY --from=es-builder --chown=root /usr/bin/ /app/usr/bin/
-COPY --from=es-builder --chown=root /usr/lib/python3.11/ /app/usr/lib/python3.11/
-COPY --from=es-builder --chown=root /usr/share/elasticsearch/config/ /app/usr/share/elasticsearch/config/
-COPY --from=es-builder --chown=root /var/lib/ /app/var/lib/
-COPY --from=es-builder --chown=root /var/run/ /app/var/run/
-# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_END
+COPY --from=es-builder --chown=root /build/usr/ /app/usr/
+COPY --from=es-builder --chown=root /build/bin/ /app/bin/
+COPY --from=es-builder --chown=root /build/var/ /app/var/
+COPY --from=es-builder --chown=root /build/run/ /app/run/
+COPY --from=es-builder --chown=root /build/bin/ /app/bin/
+COPY --from=es-builder --chown=root /build/etc/ /app/etc/
+COPY --from=es-builder --chown=root /build/dev/ /app/dev/
+COPY --from=es-builder --chown=root /build/export/ /app/export/
+COPY --from=es-builder --chown=root /build/lib/ /app/lib/
+COPY --from=es-builder --chown=root /build/local/ /app/local/
+COPY --from=es-builder --chown=root /build/sbin/ /app/sbin/
 
 
-
-
-
-
-
-
-# Generated: apt + RUN scaffold (mkdir/printf/touch/chown) -> FHS (not ./ or /build/; lib_search_and_inject.py).
 
 RUN test -d /app/usr/share/elasticsearch || { echo "CRITICAL: elasticsearch directory missing"; exit 1; } && \
     test -f /app/usr/share/elasticsearch/bin/elasticsearch || { echo "CRITICAL: elasticsearch binary missing"; exit 1; } && \

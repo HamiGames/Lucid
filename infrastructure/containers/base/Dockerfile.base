@@ -1199,10 +1199,6 @@ COPY --from=builder --chown=65532:65532 /etc/ssl/ /app/etc/ssl/
 COPY --from=builder --chown=65532:65532 /opt/lucid-base/scripts/ /app/opt/lucid-base/scripts/
 COPY --from=builder --chown=65532:65532 /usr/bin/ /app/usr/bin/
 # LUCID_RUNTIME_COPY_FROM_BUILDER_APT_END
-
-
-
-
 # LUCID_RUNTIME_COPY_FROM_BUILD_END
 # LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
 # Generated: apt + RUN scaffold (mkdir/printf/touch/chown) -> FHS (not ./ or /build/; lib_search_and_inject.py).
