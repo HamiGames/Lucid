@@ -65,358 +65,490 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
     && adduser --disabled-password --shell /bin/bash --gecos "" lucid
 
-RUN set -eux; \
-    for bin in /usr/bin/tor /usr/bin/tini; do \
-      missing=$(ldd "$bin" 2>&1 | grep "not found" || true); \
-      if [ -n "$missing" ]; then echo "MISSING in $bin:"; echo "$missing"; exit 1; fi; \
-    done; \
-    if ldd /usr/bin/obfs4proxy 2>&1 | grep -q "not a dynamic"; then :; \
-    else \
-      missing=$(ldd /usr/bin/obfs4proxy 2>&1 | grep "not found" || true); \
-      if [ -n "$missing" ]; then echo "MISSING in obfs4proxy:"; echo "$missing"; exit 1; fi; \
-    fi
+
 
 WORKDIR /build
 
 # LUCID_X_FILES_SKELETON_BEGIN
 RUN set -eux; \
+   mkdir -p /build; \
   for d in \
-    02_network_security/tor/scripts \
-    scripts/lib \
-    configs \
-    infrastructure/containers/services \
-    service_configs/tor \
-    run/lucid/tor/bin \
-    run/lucid/tor/scripts \
-    run/lucid/tor/log \
-    run/lucid/tunnels/scripts \
-    run/lucid/onion \
-    run/lucid/ssl/certs; do \
-    mkdir -p "$d"; printf 'LUCID_X_FILES_%s\n' "$(date +%s)" > "$d/.keep"; \
+    /build/lib \
+    /build/usr \
+    /build/bin \
+    /build/sbin \
+    /build/opt \
+    /build/etc \
+    /build/tmp \
+    /build/var \
+    /build/run \
+    /build/run/lucid \
+    /build/run/lucid/tor \
+    /build/run/lucid/tunnels \
+    /build/run/lucid/onion \
+    /build/run/lucid/ssl \
+    /build/run/lucid/ssl/certs \
+    /build/run/lucid/ssl/private \
+    /build/run/lucid/ssl/public \
+    /build/02_network_security/tor/scripts \
+    /build/scripts/lib \
+    /build/configs \
+    /build/infrastructure/containers/services \
+    /build/service_configs/tor \
+    /build/run/lucid/tor/bin \
+    /build/run/lucid/tor/scripts \
+    /build/run/lucid/tor/log \
+    /build/run/lucid/tunnels/scripts \
+    /build/run/lucid/onion \
+    /build/run/lucid/ssl/certs; do \
+    mkdir -p "/build/${d}"; printf 'LUCID_X_FILES_%s\n' "$(date +%s)" > "/build/${d}/.keep"; \
   done
 # LUCID_X_FILES_SKELETON_END
 
-RUN set -eux; \
-    install -d -o debian-tor -g debian-tor -m 0755 run/lucid \
-    && install -d -o debian-tor -g debian-tor -m 0755 run/lucid/onion \
-    && install -d -o debian-tor -g debian-tor -m 0700 run/lucid/tor \
-    && install -d -o root       -g root       -m 0755 run/lucid/tor/bin \
-    && install -d -o root       -g root       -m 0755 run/lucid/tor/scripts \
-    && printf 'dir=run/lucid/tor/bin\nplatform=lucid-tor-proxy\n' > run/lucid/tor/bin/.keep \
-    && printf 'dir=run/lucid/tor\nplatform=lucid-tor-proxy\n' > run/lucid/tor/.keep \
-    && printf 'dir=run/lucid/onion\nplatform=lucid-tor-proxy\n' > run/lucid/onion/.keep \
-    && printf 'dir=run/lucid\nplatform=lucid-tor-proxy\n' > run/lucid/.keep \
-    && install -d -o root -g root -m 0755 run/lucid/tor/lucid_admin \
-    && install -d -o root -g root -m 0700 run/lucid/tor/lucid_admin/authorized_clients \
-    && printf 'service=lucid_admin\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > run/lucid/tor/lucid_admin/.keep \
-    && printf 'service=lucid_admin\ntype=authorized_clients\nplatform=lucid-tor-proxy\n' > run/lucid/tor/lucid_admin/authorized_clients/.keep \
-    && install -d -o root -g root -m 0755 run/lucid/tor/lucid_vm \
-    && install -d -o root -g root -m 0700 run/lucid/tor/lucid_vm/authorized_clients \
-    && printf 'service=lucid_vm\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > run/lucid/tor/lucid_vm/.keep \
-    && printf 'service=lucid_vm\ntype=authorized_clients\nplatform=lucid-tor-proxy\n' > run/lucid/tor/lucid_vm/authorized_clients/.keep \
-    && install -d -o root -g root -m 0755 run/lucid/tor/lucid_node \
-    && install -d -o root -g root -m 0700 run/lucid/tor/lucid_node/authorized_clients \
-    && printf 'service=lucid_node\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > run/lucid/tor/lucid_node/.keep \
-    && printf 'service=lucid_node\ntype=authorized_clients\nplatform=lucid-tor-proxy\n' > run/lucid/tor/lucid_node/authorized_clients/.keep \
-    && install -d -o root -g root -m 0755 run/lucid/tor/lucid_blockchain \
-    && install -d -o root -g root -m 0700 run/lucid/tor/lucid_blockchain/authorized_clients \
-    && printf 'service=lucid_blockchain\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > run/lucid/tor/lucid_blockchain/.keep \
-    && printf 'service=lucid_blockchain\ntype=authorized_clients\nplatform=lucid-tor-proxy\n' > run/lucid/tor/lucid_blockchain/authorized_clients/.keep \
-    && install -d -o root -g root -m 0755 run/lucid/tor/lucid_governance \
-    && install -d -o root -g root -m 0700 run/lucid/tor/lucid_governance/authorized_clients \
-    && printf 'service=lucid_governance\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > run/lucid/tor/lucid_governance/.keep \
-    && printf 'service=lucid_governance\ntype=authorized_clients\nplatform=lucid-tor-proxy\n' > run/lucid/tor/lucid_governance/authorized_clients/.keep \
-    && install -d -o root -g root -m 0755 run/lucid/tor/lucid_payment \
-    && install -d -o root -g root -m 0700 run/lucid/tor/lucid_payment/authorized_clients \
-    && printf 'service=lucid_payment\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > run/lucid/tor/lucid_payment/.keep \
-    && printf 'service=lucid_payment\ntype=authorized_clients\nplatform=lucid-tor-proxy\n' > run/lucid/tor/lucid_payment/authorized_clients/.keep \
-    && install -d -o root -g root -m 0755 run/lucid/tor/lucid_session \
-    && install -d -o root -g root -m 0700 run/lucid/tor/lucid_session/authorized_clients \
-    && printf 'service=lucid_session\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > run/lucid/tor/lucid_session/.keep \
-    && printf 'service=lucid_session\ntype=authorized_clients\nplatform=lucid-tor-proxy\n' > run/lucid/tor/lucid_session/authorized_clients/.keep \
-    && install -d -o root -g root -m 0755 run/lucid/tor/lucid_rdp \
-    && install -d -o root -g root -m 0700 run/lucid/tor/lucid_rdp/authorized_clients \
-    && printf 'service=lucid_rdp\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > run/lucid/tor/lucid_rdp/.keep \
-    && printf 'service=lucid_rdp\ntype=authorized_clients\nplatform=lucid-tor-proxy\n' > run/lucid/tor/lucid_rdp/authorized_clients/.keep \
-    && install -d -o root -g root -m 0755 run/lucid/tor/lucid_wallet \
-    && install -d -o root -g root -m 0700 run/lucid/tor/lucid_wallet/authorized_clients \
-    && printf 'service=lucid_wallet\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > run/lucid/tor/lucid_wallet/.keep \
-    && printf 'service=lucid_wallet\ntype=authorized_clients\nplatform=lucid-tor-proxy\n' > run/lucid/tor/lucid_wallet/authorized_clients/.keep \
-    && install -d -o root -g root -m 0755 run/lucid/tor/lucid_voting \
-    && install -d -o root -g root -m 0700 run/lucid/tor/lucid_voting/authorized_clients \
-    && printf 'service=lucid_voting\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > run/lucid/tor/lucid_voting/.keep \
-    && printf 'service=lucid_voting\ntype=authorized_clients\nplatform=lucid-tor-proxy\n' > run/lucid/tor/lucid_voting/authorized_clients/.keep \
-    && install -d -o root -g root -m 0755 run/lucid/tor/lucid_voting_system \
-    && install -d -o root -g root -m 0700 run/lucid/tor/lucid_voting_system/authorized_clients \
-    && printf 'service=lucid_voting_system\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > run/lucid/tor/lucid_voting_system/.keep \
-    && printf 'service=lucid_voting_system\ntype=authorized_clients\nplatform=lucid-tor-proxy\n' > run/lucid/tor/lucid_voting_system/authorized_clients/.keep \
-    && install -d -o root -g root -m 0755 run/lucid/tor/lucid_voting_system_admin \
-    && install -d -o root -g root -m 0700 run/lucid/tor/lucid_voting_system_admin/authorized_clients \
-    && printf 'service=lucid_voting_system_admin\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > run/lucid/tor/lucid_voting_system_admin/.keep \
-    && printf 'service=lucid_voting_system_admin\ntype=authorized_clients\nplatform=lucid-tor-proxy\n' > run/lucid/tor/lucid_voting_system_admin/authorized_clients/.keep \
-    && install -d -o root -g root -m 0755 run/lucid/tor/lucid_voting_system_admin_admin \
-    && install -d -o root -g root -m 0700 run/lucid/tor/lucid_voting_system_admin_admin/authorized_clients \
-    && printf 'service=lucid_voting_system_admin_admin\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > run/lucid/tor/lucid_voting_system_admin_admin/.keep \
-    && printf 'service=lucid_voting_system_admin_admin\ntype=authorized_clients\nplatform=lucid-tor-proxy\n' > run/lucid/tor/lucid_voting_system_admin_admin/authorized_clients/.keep \
-    && install -d -o root -g root -m 0755 run/lucid/tor/lucid_server \
-    && install -d -o root -g root -m 0700 run/lucid/tor/lucid_server/authorized_clients \
-    && printf 'service=lucid_server\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > run/lucid/tor/lucid_server/.keep \
-    && printf 'service=lucid_server\ntype=authorized_clients\nplatform=lucid-tor-proxy\n' > run/lucid/tor/lucid_server/authorized_clients/.keep \
-    && install -d -o root -g root -m 0755 run/lucid/tor/myservice \
-    && install -d -o root -g root -m 0700 run/lucid/tor/myservice/authorized_clients \
-    && printf 'service=myservice\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > run/lucid/tor/myservice/.keep \
-    && printf 'service=myservice\ntype=authorized_clients\nplatform=lucid-tor-proxy\n' > run/lucid/tor/myservice/authorized_clients/.keep \
-    && install -d -o root -g root -m 0755 run/lucid/tor/lucid_portal \
-    && install -d -o root -g root -m 0700 run/lucid/tor/lucid_portal/authorized_clients \
-    && printf 'service=lucid_portal\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > run/lucid/tor/lucid_portal/.keep \
-    && printf 'service=lucid_portal\ntype=authorized_clients\nplatform=lucid-tor-proxy\n' > run/lucid/tor/lucid_portal/authorized_clients/.keep \
-    && install -d -o debian-tor -g debian-tor -m 0700 /tmp/lucid/tor \
-    && install -d -o root       -g root       -m 0755 /tmp/lucid/tor/lucid_admin \
-    && printf 'service=lucid_admin\ntype=tmp-scratch\nplatform=lucid-tor-proxy\n' > /tmp/lucid/tor/lucid_admin/.keep \
-    && install -d -o root       -g root       -m 0755 /tmp/lucid/tor/tunnels \
-    && install -d -o debian-tor -g debian-tor -m 0755 tor \
-    && install -d -o debian-tor -g debian-tor -m 0700 var/lib/tor var/lib/tor/hidden_service \
-    && install -d -o debian-tor -g debian-tor -m 0755 var/lib/tor/seed \
-    && install -d -o root       -g root       -m 0755 etc/tor etc/tor/tunnels \
-    && printf 'LUCID_TOR_PROXY_VAR_LIB_TOR\n' > var/lib/tor/.keep \
-    && printf 'LUCID_TOR_PROXY_APP_TOR\n' > tor/.keep \
-    && printf 'LUCID_TOR_PROXY_ETC_TOR\n' > etc/tor/.keep \
-    && install -d -o root -g root -m 0755 opt opt/bin opt/sbin opt/lib opt/share opt/share/tor \
-    && printf 'dir=opt\nplatform=lucid-tor-proxy\n' > opt/.keep \
-    && printf 'dir=opt/bin\nplatform=lucid-tor-proxy\n' > opt/bin/.keep \
-    && printf 'dir=opt/sbin\nplatform=lucid-tor-proxy\n' > opt/sbin/.keep \
-    && printf 'dir=opt/lib\nplatform=lucid-tor-proxy\n' > opt/lib/.keep \
-    && printf 'dir=opt/share/tor\nplatform=lucid-tor-proxy\n' > opt/share/tor/.keep \
-    && chown debian-tor:debian-tor var/lib/tor/.keep tor/.keep run/lucid/.keep run/lucid/onion/.keep run/lucid/tor/.keep run/lucid/tor/bin/.keep
-
-COPY 02_network_security/tor/ ./02_network_security/tor/
-COPY 02_network_security/tunnels/ ./02_network_security/tunnels/
-COPY scripts/lib/lucid-host-config-path.sh ./scripts/lib/lucid-host-config-path.sh
-COPY scripts/lib/lucid-x-file-paths.sh ./scripts/lib/lucid-x-file-paths.sh
-COPY configs/x-files.json ./configs/x-files.json
-COPY infrastructure/containers/host-config.yml ./infrastructure/containers/services/host-config.yml
-COPY infrastructure/containers/host-config.yml ./configs/host-config.yml
-COPY infrastructure/containers/tor/docker-compose.proxy-systems.yml ./service_configs/tor/docker-compose.proxy-systems.yml
-COPY infrastructure/containers/services/tor/tor-operational-layout.yml ./service_configs/tor/tor-operational-layout.yml
-COPY infrastructure/containers/services/tor/tunnel-tools.yml ./service_configs/tor/tunnel-tools.yml
-COPY infrastructure/containers/services/tor/tor-socks.yml ./service_configs/tor/tor-socks.yml
 
 RUN set -eux; \
-    mkdir -p ./lib ./usr ./bin ./sbin ./opt ./etc ./tmp ./var ./run; \
-    for d in \
-      '.' \
-      './lib/usr'\
-      './bin'\
-      './bin/tor'\
-      './bin/obfs4proxy'\
-      './bin/tini'\
-      './bin/busybox'\
-      './bin/cat'\
-      './bin/chmod'\
-      './bin/chown'\
-      './bin/mkdir'\
-      './bin/rm'\
-      './sbin'\
-      './sbin/gosu'\
-      './sbin/tini'\
-      './sbin/busybox'\
-      './sbin/cat'\
-      './sbin/chmod'\
-      './sbin/chown'\
-      './sbin/mkdir'\
-      './sbin/rm'\
-      './sbin/sleep'\
-      './sbin/tail'\
-      './sbin/nc'\
-      './sbin/xxd'\
-      './sbin/curl'\
-      './sbin/jq'\
-      './sbin/head'\
-      './sbin/cut'\
-      './opt'\
-      './opt/lucid'\
-      './opt/lucid/tor'\
-      './opt/lucid/tor/data'\
-      './opt/lucid/tor/bin'\
-      './opt/lucid/tor/log'\
-      './opt/lucid/tor/pid'\
-      './opt/lucid/tor/ssl'\
-      './opt/lucid/tor/onion'\
-      './opt/share'\
-      './opt/share/tor'\
-      './etc'\
-      './etc/tor'\
-      './etc/ssl'\
-      './etc/ssl/certs'\
-      './etc/ssl/private'\
-      './etc/ssl/certs/ca-certificates.crt'\
-      './etc/ssl/private/ca-certificates.key'\
-      './etc/ssl/certs/ca-certificates.crt'\
-      './tmp'\
-      './tmp/lucid'\
-      './tmp/lucid/tor'\
-      './tmp/lucid/tunnels'\
-      './tmp/lucid/onion'\
-      './tmp/lucid/onion/lucid_admin'\
-      './tmp/lucid/onion/lucid_api'\
-      './tmp/lucid/onion/lucid_auth'\
-      './tmp/lucid/onion/lucid_config'\
-      './tmp/lucid/onion/lucid_dev'\
-      './tmp/lucid/onion/lucid_node'\
-      './tmp/lucid/onion/lucid_blockchain'\
-      './tmp/lucid/onion/lucid_governance'\
-      './tmp/lucid/onion/lucid_payment'\
-      './tmp/lucid/onion/lucid_session'\
-      './tmp/lucid/onion/lucid_rdp'\
-      './tmp/lucid/onion/lucid_wallet'\
-      './tmp/lucid/onion/lucid_voting'\
-      './var'\
-      './var/lib'\
-      './var/bin'\
-      './var/sbin'\
-      './var/opt'\
-      './var/etc'\
-      './var/tmp'\
-      './var/var'\
-      './var/lib/tor'\
-      './var/lib/tor/lucid_admin'\
-      './var/lib/tor/lucid_api'\
-      './var/lib/tor/lucid_auth'\
-      './var/lib/tor/lucid_config'\
-      './var/lib/tor/lucid_dev'\
-      './var/lib/tor/lucid_node'\
-      './var/lib/tor/lucid_blockchain'\
-      './var/lib/tor/lucid_governance'\
-      './var/lib/tor/lucid_payment'\
-      './var/lib/tor/lucid_session'\
-      './var/lib/tor/lucid_rdp'\
-      './var/lib/tor/lucid_wallet'\
-      './var/lib/tor/lucid_voting'\
-      './run/lucid'\
-      './run/lucid/tor'\
-      './run/lucid/tunnels'\
-      './run/lucid/onion'\
-      './run/lucid/onion/lucid_admin'\
-      './run/lucid/onion/lucid_api'\
-      './run/lucid/onion/lucid_auth'\
-      './run/lucid/onion/lucid_config'\
-      './run/lucid/onion/lucid_dev'\
-      './run/lucid/onion/lucid_node'\
-      ; do \
-      printf 'LUCID_TOR_PROXY_%s' "$(date +%s)" > "${d}/.keep"; \
-      touch "${d}/.keep"; \
-    done
+    && install -d -o debian-tor -g debian-tor -m 0755 /build; \
+    && printf 'dir=build\nplatform=lucid-tor-proxy\n' > /build/.keep \
+    && install -d -o debian-tor -g debian-tor -m 0755 /build/run; \
+    && printf 'dir=run\nplatform=lucid-tor-proxy\n' > /build/run/.keep \
+    && install -d -o debian-tor -g debian-tor -m 0755 /build/run/lucid; \
+    && printf 'dir=run/lucid\nplatform=lucid-tor-proxy\n' > /build/run/lucid/.keep \
+    && install -d -o debian-tor -g debian-tor -m 0755 /build/run/lucid/onion \
+    && install -d -o debian-tor -g debian-tor -m 0700 /build/run/lucid/tor \
+    && install -d -o root       -g root       -m 0755 /build/run/lucid/tor/bin \
+    && install -d -o root       -g root       -m 0755 /build/run/lucid/tor/scripts \
+    && printf 'dir=run/lucid/tor/bin\nplatform=lucid-tor-proxy\n' > /build/run/lucid/tor/bin/.keep \
+    && printf 'dir=run/lucid/tor\nplatform=lucid-tor-proxy\n' > /build/run/lucid/tor/.keep \
+    && printf 'dir=run/lucid/onion\nplatform=lucid-tor-proxy\n' > /build/run/lucid/onion/.keep \
+    && printf 'dir=run/lucid\nplatform=lucid-tor-proxy\n' > /build/run/lucid/.keep \
+    && install -d -o root -g root -m 0755 /build/run/lucid/tor/lucid_admin \
+    && install -d -o root -g root -m 0700 /build/run/lucid/tor/lucid_admin/authorized_clients \
+    && printf 'service=lucid_admin\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > /build/run/lucid/tor/lucid_admin/.keep \
+    && printf 'service=lucid_admin\ntype=authorized_clients\nplatform=lucid-tor-proxy\n' > /build/run/lucid/tor/lucid_admin/authorized_clients/.keep \
+    && install -d -o root -g root -m 0755 /build/run/lucid/tor/lucid_vm \
+    && install -d -o root -g root -m 0700 /build/run/lucid/tor/lucid_vm/authorized_clients \
+    && printf 'service=lucid_vm\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > /build/run/lucid/tor/lucid_vm/.keep \
+    && printf 'service=lucid_vm\ntype=authorized_clients\nplatform=lucid-tor-proxy\n' > /build/run/lucid/tor/lucid_vm/authorized_clients/.keep \
+    && install -d -o root -g root -m 0755 /build/run/lucid/tor/lucid_node \
+    && install -d -o root -g root -m 0700 /build/run/lucid/tor/lucid_node/authorized_clients \
+    && printf 'service=lucid_node\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > /build/run/lucid/tor/lucid_node/.keep \
+    && printf 'service=lucid_node\ntype=authorized_clients\nplatform=lucid-tor-proxy\n' > /build/run/lucid/tor/lucid_node/authorized_clients/.keep \
+    && install -d -o root -g root -m 0755 /build/run/lucid/tor/lucid_blockchain \
+    && install -d -o root -g root -m 0700 /build/run/lucid/tor/lucid_blockchain/authorized_clients \
+    && printf 'service=lucid_blockchain\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > /build/run/lucid/tor/lucid_blockchain/.keep \
+    && printf 'service=lucid_blockchain\ntype=authorized_clients\nplatform=lucid-tor-proxy\n' > /build/run/lucid/tor/lucid_blockchain/authorized_clients/.keep \
+    && install -d -o root -g root -m 0755 /build/run/lucid/tor/lucid_governance \
+    && install -d -o root -g root -m 0700 /build/run/lucid/tor/lucid_governance/authorized_clients \
+    && printf 'service=lucid_governance\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > /build/run/lucid/tor/lucid_governance/.keep \
+    && printf 'service=lucid_governance\ntype=authorized_clients\nplatform=lucid-tor-proxy\n' > /build/run/lucid/tor/lucid_governance/authorized_clients/.keep \
+    && install -d -o root -g root -m 0755 /build/run/lucid/tor/lucid_payment \
+    && install -d -o root -g root -m 0700 /build/run/lucid/tor/lucid_payment/authorized_clients \
+    && printf 'service=lucid_payment\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > /build/run/lucid/tor/lucid_payment/.keep \
+    && printf 'service=lucid_payment\ntype=authorized_clients\nplatform=lucid-tor-proxy\n' > /build/run/lucid/tor/lucid_payment/authorized_clients/.keep \
+    && install -d -o root -g root -m 0755 /build/run/lucid/tor/lucid_session \
+    && install -d -o root -g root -m 0700 /build/run/lucid/tor/lucid_session/authorized_clients \
+    && printf 'service=lucid_session\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > /build/run/lucid/tor/lucid_session/.keep \
+    && printf 'service=lucid_session\ntype=authorized_clients\nplatform=lucid-tor-proxy\n' > /build/run/lucid/tor/lucid_session/authorized_clients/.keep \
+    && install -d -o root -g root -m 0755 /build/run/lucid/tor/lucid_rdp \
+    && install -d -o root -g root -m 0700 /build/run/lucid/tor/lucid_rdp/authorized_clients \
+    && printf 'service=lucid_rdp\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > /build/run/lucid/tor/lucid_rdp/.keep \
+    && printf 'service=lucid_rdp\ntype=authorized_clients\nplatform=lucid-tor-proxy\n' > /build/run/lucid/tor/lucid_rdp/authorized_clients/.keep \
+    && install -d -o root -g root -m 0755 /build/run/lucid/tor/lucid_wallet \
+    && install -d -o root -g root -m 0700 /build/run/lucid/tor/lucid_wallet/authorized_clients \
+    && printf 'service=lucid_wallet\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > /build/run/lucid/tor/lucid_wallet/.keep \
+    && printf 'service=lucid_wallet\ntype=authorized_clients\nplatform=lucid-tor-proxy\n' > /build/run/lucid/tor/lucid_wallet/authorized_clients/.keep \
+    && install -d -o root -g root -m 0755 /build/run/lucid/tor/lucid_voting \
+    && install -d -o root -g root -m 0700 /build/run/lucid/tor/lucid_voting/authorized_clients \
+    && printf 'service=lucid_voting\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > /build/run/lucid/tor/lucid_voting/.keep \
+    && printf 'service=lucid_voting\ntype=authorized_clients\nplatform=lucid-tor-proxy\n' > /build/run/lucid/tor/lucid_voting/authorized_clients/.keep \
+    && install -d -o root -g root -m 0755 /build/run/lucid/tor/lucid_voting_system \
+    && install -d -o root -g root -m 0700 /build/run/lucid/tor/lucid_voting_system/authorized_clients \
+    && printf 'service=lucid_voting_system\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > /build/run/lucid/tor/lucid_voting_system/.keep \
+    && printf 'service=lucid_voting_system\ntype=authorized_clients\nplatform=lucid-tor-proxy\n' > /build/run/lucid/tor/lucid_voting_system/authorized_clients/.keep \
+    && install -d -o root -g root -m 0755 /build/run/lucid/tor/lucid_voting_system_admin \
+    && install -d -o root -g root -m 0700 /build/run/lucid/tor/lucid_voting_system_admin/authorized_clients \
+    && printf 'service=lucid_voting_system_admin\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > /build/run/lucid/tor/lucid_voting_system_admin/.keep \
+    && printf 'service=lucid_voting_system_admin\ntype=authorized_clients\nplatform=lucid-tor-proxy\n' > /build/run/lucid/tor/lucid_voting_system_admin/authorized_clients/.keep \
+    && install -d -o root -g root -m 0755 /build/run/lucid/tor/lucid_voting_system_admin_admin \
+    && install -d -o root -g root -m 0700 /build/run/lucid/tor/lucid_voting_system_admin_admin/authorized_clients \
+    && printf 'service=lucid_voting_system_admin_admin\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > /build/run/lucid/tor/lucid_voting_system_admin_admin/.keep \
+    && printf 'service=lucid_voting_system_admin_admin\ntype=authorized_clients\nplatform=lucid-tor-proxy\n' > /build/run/lucid/tor/lucid_voting_system_admin_admin/authorized_clients/.keep \
+    && install -d -o root -g root -m 0755 /build/run/lucid/tor/lucid_server \
+    && install -d -o root -g root -m 0700 /build/run/lucid/tor/lucid_server/authorized_clients \
+    && printf 'service=lucid_server\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > /run/lucid/tor/lucid_server/.keep \
+    && printf 'service=lucid_server\ntype=authorized_clients\nplatform=lucid-tor-proxy\n' > /build/run/lucid/tor/lucid_server/authorized_clients/.keep \
+    && install -d -o root -g root -m 0755 /build/run/lucid/tor/myservice \
+    && install -d -o root -g root -m 0700 /build/run/lucid/tor/myservice/authorized_clients \
+    && printf 'service=myservice\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > /build/run/lucid/tor/myservice/.keep \
+    && printf 'service=myservice\ntype=authorized_clients\nplatform=lucid-tor-proxy\n' > /build/run/lucid/tor/myservice/authorized_clients/.keep \
+    && install -d -o root -g root -m 0755 /build/run/lucid/tor/lucid_portal \
+    && install -d -o root -g root -m 0700 /build/run/lucid/tor/lucid_portal/authorized_clients \
+    && printf 'service=lucid_portal\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > /build/run/lucid/tor/lucid_portal/.keep \
+    && printf 'service=lucid_portal\ntype=authorized_clients\nplatform=lucid-tor-proxy\n' > /build/run/lucid/tor/lucid_portal/authorized_clients/.keep \
+    && install -d -o debian-tor -g debian-tor -m 0700 /build/tmp \
+    && install -d -o debian-tor -g debian-tor -m 0700 /build/tmp/lucid \
+    && install -d -o debian-tor -g debian-tor -m 0700 /build/tmp/lucid/tor \
+    && printf 'dir=tmp\nplatform=lucid-tor-proxy\nservice=lucid-tmp\n' > /build/tmp/.keep \
+    && printf 'dir=tmp/lucid\nplatform=lucid-tor-proxy\n' > /build/tmp/lucid/.keep \
+    && printf 'dir=tmp/lucid/tor\nplatform=lucid-tor-proxy\n' > /build/tmp/lucid/tor/.keep \
+    && install -d -o root       -g root       -m 0755 /build/tmp/lucid/tor/lucid_admin \
+    && printf 'service=lucid_admin\ntype=tmp-scratch\nplatform=lucid-tor-proxy\n' > /build/tmp/lucid/tor/lucid_admin/.keep \
+    && install -d -o root       -g root       -m 0755 /build/tmp/lucid/tor/tunnels \
+    && printf 'dir=tmp/lucid/tor/tunnels\nplatform=lucid-tor-proxy\nservice=lucid-tmp\n' > /build/tmp/lucid/tor/tunnels/.keep \
+    && install -d -o debian-tor -g debian-tor -m 0755 /build/tor \
+    && printf 'dir=tor\nplatform=lucid-tor-proxy\n' > /build/tor/.keep\
+    && install -d -o debian-tor -g debian-tor -m 0755 /build/tor/configs \
+    && printf 'dir=tor/configs\nplatform=lucid-tor-proxy\n' > /build/tor/configs/.keep \
+    && chown debian-tor:debian-tor /build/tor/.keep /build/tor/configs/.keep \
+    && install -d -o debian-tor -g debian-tor -m 0755 /build/var \
+    && printf 'dir=var\nplatform=lucid-tor-proxy\n' > /build/var/.keep \
+    && install -d -o debian-tor -g debian-tor -m 0755 /build/var/lib \
+    && install -d -o debian-tor -g debian-tor -m 0755 /build/var/lib/tor \
+    && install -d -o debian-tor -g debian-tor -m 0755 /build/var/lib/tor/hidden_service \
+    && install -d -o debian-tor -g debian-tor -m 0755 /build/var/lib/tor/seed \
+    && printf 'dir=var/lib\nplatform=lucid-tor-proxy\n' > /build/var/lib/.keep \
+    && printf 'dir=var/lib/tor\nplatform=lucid-tor-proxy\n' > /build/var/lib/tor/.keep \
+    && printf 'dir=var/lib/tor/hidden_service\nplatform=lucid-tor-proxy\n' > /build/var/lib/tor/hidden_service/.keep \
+    && printf 'dir=var/lib/tor/seed\nplatform=lucid-tor-proxy\n' > /build/var/lib/tor/seed/.keep \
+    && chown -R debian-tor:debian-tor -m 0755 /build/var/.keep /build/var/lib/.keep /build/var/lib/tor/.keep /build/var/lib/tor/seed/.keep /build/var/lib/tor/hidden_service/.keep \
+    && install -d -o debian-tor -g debian-tor -m 0755 /build/var/run \
+    && install -d -o debian-tor -g debian-tor -m 0755 /build/var/run/lucid \
+    && install -d -o debian-tor -g debian-tor -m 0755 /build/var/run/lucid/tor \
+    && install -d -o debian-tor -g debian-tor -m 0755 /build/var/run/lucid/tunnels \
+    && install -d -o debian-tor -g debian-tor -m 0755 /build/var/run/lucid/onion \
+    && install -d -o debian-tor -g debian-tor -m 0755 /build/var/run/lucid/ssl \
+    && install -d -o debian-tor -g debian-tor -m 0755 /build/var/run/lucid/ssl/certs \
+    && install -d -o debian-tor -g debian-tor -m 0755 /build/var/run/lucid/ssl/private \
+    && install -d -o debian-tor -g debian-tor -m 0755 /build/var/run/lucid/ssl/public \
+    && printf 'dir=var/run/lucid\nplatform=lucid-tor-proxy\n' > /build/var/run/lucid/.keep \
+    && printf 'dir=var/run/lucid/tor\nplatform=lucid-tor-proxy\n' > /build/var/run/lucid/tor/.keep \
+    && printf 'dir=var/run/lucid/tunnels\nplatform=lucid-tor-proxy\n' > /build/var/run/lucid/tunnels/.keep \
+    && printf 'dir=var/run/lucid/onion\nplatform=lucid-tor-proxy\n' > /build/var/run/lucid/onion/.keep \
+    && printf 'dir=var/run/lucid/ssl\nplatform=lucid-tor-proxy\n' > /build/var/run/lucid/ssl/.keep \
+    && printf 'dir=var/run/lucid/ssl/certs\nplatform=lucid-tor-proxy\n' > /build/var/run/lucid/ssl/certs/.keep \
+    && printf 'dir=var/run/lucid/ssl/private\nplatform=lucid-tor-proxy\n' > /build/var/run/lucid/ssl/private/.keep \
+    && printf 'dir=var/run/lucid/ssl/public\nplatform=lucid-tor-proxy\n' > /build/var/run/lucid/ssl/public/.keep \
+    && install -d -o root       -g root       -m 0755 /build/etc \
+    && install -d -o root       -g root       -m 0755 /build/etc/ssl \
+    && install -d -o root       -g root       -m 0755 /build/etc/ssl/certs \
+    && install -d -o root       -g root       -m 0755 /build/etc/ssl/private \
+    && install -d -o root       -g root       -m 0755 /build/etc/tor \
+    && install -d -o root -g root -m 0755 /build/etc/tor/tunnels \
+    && printf 'dir=etc\nplatform=lucid-tor-proxy\n' > /build/etc/.keep \
+    && printf 'dir=etc/ssl\nplatform=lucid-tor-proxy\n' > /build/etc/ssl/.keep \
+    && printf 'dir=etc/ssl/certs\nplatform=lucid-tor-proxy\n' > /build/etc/ssl/certs/.keep \
+    && printf 'dir=etc/ssl/private\nplatform=lucid-tor-proxy\n' > /build/etc/ssl/private/.keep \
+    && printf 'dir=etc/tor\nplatform=lucid-tor-proxy\n' > /build/etc/tor/.keep \
+    && printf 'dir=etc/tor/tunnels\nplatform=lucid-tor-proxy\n' > /build/etc/tor/tunnels/.keep \
+    && printf 'dir=opt\nplatform=lucid-tor-proxy\n' > /build/opt/.keep \
+    && printf 'dir=opt/bin\nplatform=lucid-tor-proxy\n' > /build/opt/bin/.keep \
+    && printf 'dir=opt/sbin\nplatform=lucid-tor-proxy\n' > /build/opt/sbin/.keep \
+    && printf 'dir=opt/lib\nplatform=lucid-tor-proxy\n' > /build/opt/lib/.keep \
+    && printf 'dir=opt/share/tor\nplatform=lucid-tor-proxy\n' > /build/opt/share/tor/.keep \
+    && install -d -o root -g root -m 0755 /build/opt /build/opt/bin /build/opt/sbin /build/opt/lib /build/opt/share /build/opt/share/tor \
+    && printf 'dir=opt\nplatform=lucid-tor=proxy\n'> /build/opt/.keep \
+    && printf 'dir=opt/bin\nplatform=lucid-tor=proxy\n'> /build/opt/bin/.keep \
+    && printf 'dir=opt/sbin\nplatform=lucid-tor=proxy\n'> /build/opt/sbin/.keep \
+    && printf 'dir=opt/lib\nplatform=lucid-tor=proxy\n'> /build/opt/lib/.keep \
+    && printf 'dir=opt/share\nplatform=lucid-tor=proxy\n'> /build/opt/share/.keep \
+    && printf 'dir=opt/share/tor\nplatform=lucid-tor=proxy\n'> /build/opt/share/tor/.keep \
+    && printf 'dir=var/lib\nplatform=lucid-tor-proxy\n' > /build/var/lib/.keep \
+    && printf 'dir=var/lib/tor\nplatform=lucid-tor-proxy\n' > /build/var/lib/tor/.keep \
+    && printf 'dir=var/lib/tor/hidden_service\nplatform=lucid-tor-proxy\n' > /build/var/lib/tor/hidden_service/.keep \
+    && printf 'dir=var/lib/tor/seed\nplatform=lucid-tor-proxy\n' > /build/var/lib/tor/seed/.keep \
+    && chown debian-tor:debian-tor /build/var
+    && install -d -o debian-tor -g debian-tor -m 0755 /build/usr \
+    && printf 'dir=usr\nplatform=lucid-tor-proxy\n' > /build/usr/.keep \
+    && install -d -o debian-tor -g debian-tor -m 0755 /build/usr/bin \
+    && install -d -o debian-tor -g debian-tor -m 0755 /build/usr/bin/tor-gencert \
+    && install -d -o debian-tor -g debian-tor -m 0755 /build/usr/bin/torsocks \
+    && install -d -o debian-tor -g debian-tor -m 0755 /build/usr/bin/tor-resolve \
+    && install -d -o debian-tor -g debian-tor -m 0755 /build/usr/bin/openssl \
+    && install -d -o debian-tor -g debian-tor -m 0755 /build/usr/bin/dnsmasq \
+    && printf 'dir=usr/bin\nplatform=lucid-tor-proxy\n' > /build/usr/bin/.keep \
+    && printf 'dir=usr/bin/tor-gencert/tor-gencert\nplatform=lucid-tor-proxy\n' > /build/usr/bin/tor-gencert/.keep \
+    && printf 'dir=usr/bin/torsocks\nplatform=lucid-tor-proxy\n' > /build/usr/bin/torsocks/.keep \
+    && printf 'dir=usr/bin/tor-resolve\nplatform=lucid-tor-proxy\n' > /build/usr/bin/tor-resolve/.keep \
+    && printf 'dir=usr/bin/openssl\nplatform=lucid-tor-proxy\n' > /build/usr/bin/openssl/.keep \
+    && printf 'dir=usr/bin/dnsmasq\nplatform=lucid-tor-proxy\n' > /build/usr/bin/dnsmasq/.keep \
+    && install -d -o debian-tor -g debian-tor -m 0755 /build/usr/sbin \
+    && install -d -o debian-tor -g debian-tor -m 0755 /build/usr/sbin/tor \
+    && install -d -o debian-tor -g debian-tor -m 0755 /build/usr/sbin/dnsmasq \
+    && install -d -o debian-tor -g debian-tor -m 0755 /build/usr/sbin/tor-instance-create \
+    && install -d -o debian-tor -g debian-tor -m 0755 /build/usr/sbin/tor \
+    && install -d -o debian-tor -g debian-tor -m 0755 /build/usr/sbin/iptunnel \
+    && printf 'dir=usr/sbin\nplatform=lucid-tor-proxy\n' > /build/usr/sbin/.keep \
+    && printf 'dir=usr/sbin/dnsmasq\nplatform=lucid-tor-proxy\n' > /build/usr/sbin/dnsmasq/.keep \
+    && printf 'dir=usr/sbin/tor\nplatform=lucid-tor-proxy\n' > /build/usr/sbin/tor/.keep \
+    && printf 'dir=usr/sbin/tor-instance-create\nplatform=lucid-tor-proxy\n' > /build/usr/sbin/tor-instance-create/.keep \
+    && printf 'dir=usr/sbin/iptunnel\nplatform=lucid-tor-proxy\n' > /build/usr/sbin/iptunnel/.keep \
+    && install -d -o debian-tor -g debian-tor -m 0755 /build/usr/lib \
+    && install -d -o debian-tor -g debian-tor -m 0755 /build/usr/lib/* \
+    && printf 'dir=usr/lib\nplatform=lucid-tor-proxy\n' > /build/usr/lib/.keep \
+    && printf 'dir=usr/lib\nplatform=lucid-tor-proxy\n' > /build/usr/lib/*/.keep \
+    && install -d -o debian-tor -g debian-tor -m 0755 /build/usr/share \
+    && install -d -o debian-tor -g debian-tor -m 0755 /build/usr/share/dns \
+    && install -d -o debian-tor -g debian-tor -m 0755 /build/usr/share/tor \
+    && install -d -o debian-tor -g debian-tor -m 0755 /build/usr/share/ssl-cert \
+    && install -d -o debian-tor -g debian-tor -m 0755 /build/usr/share/ca-certificates \
+    && install -d -o debian-tor -g debian-tor -m -755 /build/usr/local \
+    && install -d -o debian-tor -g debian-tor -m -755 /build/usr/local/share \
+    && install -d -o debian-tor -g debian-tor -m -755 /build/usr/local/share/ca-certificates \
+    && install -d -o debian-tor -g debian-tor -m 0755 /build/usr/share/* \
+    && install -d -o debian-tor -g debian-tor -m 0755 /build/usr/share/keyrings \
+    && install -d -o debian-tor -g debian-tor -m 0755 /build/usr/share/numpy3 \
+    && install -d -o debian-tor -g debian-tor -m 0755 /build/usr/bin/obfs4proxy \
+    && printf 'dir=usr/share\nplatform=lucid-tor-proxy\n' > /build/usr/share/.keep \
+    && printf 'dir=usr/share/dns\nplatform=lucid-tor-proxy\n' > /build/usr/share/dns/.keep \
+    && printf 'dir=usr/share/tor\nplatform=lucid-tor-proxy\n' > /build/usr/share/tor/.keep \
+    && printf 'dir=usr/share/ssl-cert\nplatform=lucid-tor-proxy\n' > /build/usr/share/ssl-cert/.keep \
+    && printf 'dir=usr/share/ca-certificates\nplatform=lucid-tor-proxy\n' > /build/usr/share/ca-certificates/.keep \
+    && printf 'dir=usr/share/*\nplatform=lucid-tor-proxy\n' > /build/usr/share/*/.keep \
+    && printf 'dir=usr/share/keyrings\nplatform=lucid-tor-proxy\n' > /build/usr/share/keyrings/.keep \
+    && printf 'dir=usr/share/numpy3\nplatform=lucid-tor-proxy\n' > /build/usr/share/numpy3/.keep \
+    && printf 'dir=usr/share/obfs4proxy\nplatform=lucid-tor-proxy\n' > /build/usr/share/obfs4proxy/.keep \
+    && printf 'dir=usr/sbin\nplatform=lucid-tor-proxy\n' > /build/usr/sbin/.keep \
+    && printf 'dir=usr/lib\nplatform=lucid-tor-proxy\n' > /build/usr/lib/.keep \
+    && printf 'dir=usr/lib\nplatform=lucid-tor-proxy\n' > /build/usr/.keep \
+    && install -d -o root       -g root       -m 0755 /build/etc/tor /build/etc/tor/tunnels \
+    && printf 'dir=etc/tor/tunnels\nplatform=lucid-tor-proxy\n' > /build/etc/tor/tunnels/.keep \
+    && printf 'dir=etc/tor\nplatform=lucid-tor-proxy\n' > /build/etc/tor/.keep \
+    && printf 'dir=etc\nplatform=lucid-tor-proxy\n' > /build/etc/.keep \
+    && install -d -o root -g root -m 0755 /build/export-dynlink \
+    && install -d -o root -g root -m 0755 /build/export-dynlink/root \
+    && install -d -o root -g root -m 0755 /build/export-dynlink/root/lib \
+    && install -d -o root -g root -m 0755 /build/export-dynlink/root/lib64 \
+    && install -d -o root -g root -m 0755 /build/export-dynlink/root/lib/ld-linux-aarch64.so.1 \
+    && install -o root -g root -m 0755 /build/export-dynlink/root/lib/aarch64-linux-gnu \
+    && printf 'dir=export-dynlink/root\nplatform=lucid-tor-proxy\n' > /build/export-dynlink/root/.keep \
+    && printf 'dir=export-dynlink/root/lib\nplatform=lucid-tor-proxy\n' > /build/export-dynlink/root/lib/.keep \
+    && printf 'dir=export-dynlink/root/lib64\nplatform=lucid-tor-proxy\n' > /build/export-dynlink/root/lib64/.keep \
+    && printf 'dir=export-dynlink/root/lib/ld-linux-aarch64.so.1\nplatform=lucid-tor-proxy\n' > /build/export-dynlink/root/lib/ld-linux-aarch64.so.1/.keep \
+    && printf 'dir=export-dynlink/root/lib/aarch64-linux-gnu\nplatform=lucid-tor-proxy\n' > /build/export-dynlink/root/lib/aarch64-linux-gnu/.keep \
+    && chown root:root /build/export-dynlink/root/.keep /build/export-dynlink/root/lib/.keep /build/export-dynlink/root/lib64/.keep /build/export-dynlink/root/lib/ld-linux-aarch64.so.1/.keep /build/export-dynlink/root/lib/aarch64-linux-gnu/.keep  \
+    && install -d -o debian-tor -g debian-tor -m 0755 /build/02_network_security \
+    && install -d -o debian-tor -g debian-tor -m 0755 /build/02_network_security/tor \
+    && install -d -o debian-tor -g debian-tor -m 0755 /build/02_network_security/tor/scripts \
+    && install -d -o debian-tor -g debian-tor -m 0755 /build/02_network_security/tunnels \
+    && install -d -o debian-tor -g debian-tor -m 0755 /build/02_network_security/tunnels/scripts \
+    && printf 'dir=02_network_security\nplatform=lucid-tor-proxy\n' > /build/02_network_security/.keep \
+    && printf 'dir=02_network_security/tor\nplatform=lucid-tor-proxy\n' > /build/02_network_security/tor/.keep \
+    && printf 'dir=02_network_security/tunnels\nplatform=lucid-tor-proxy\n' > /build/02_network_security/tunnels/.keep \
+    && printf 'dir=02_network_security/tor/scripts\nplatform=lucid-tor-proxy\n' > /build/02_network_security/tor/scripts/.keep \
+    && printf 'dir=02_network_security/tunnels/scripts\nplatform=lucid-tor-proxy\n' > /build/02_network_security/tunnels/scripts/.keep \
+    && chown debian-tor:debian-tor /build/02_network_security/.keep /build/02_network_security/tor/.keep /build/02_network_security/tunnels/.keep /build/02_network_security/tor/scripts/.keep /build/02_network_security/tunnels/scripts/.keep \
+    && install -d -o debian-tor -g debian-tor -m 0755 /build/configs \
+    && install -d -o debian-tor -g debian-tor -m 0755 /build/infrastructure \
+    && install -d -o debian-tor -g debian-tor -m 0755 /build/infrastructure/containers \
+    && install -d -o debian-tor -g debian-tor -m 0755 /build/infrastructure/containers/services \
+    && install -d -o debian-tor -g debian-tor -m 0755 /build/infrastructure/containers/services/tor \
+    && install -d -o debian-tor -g debian-tor -m 0755 /build/infrastructure/containers/services/tor/tor-socks \
+    && install -d -o debian-tor -g debian-tor -m 0755 /build/scripts \
+    && install -d -o debian-tor -g debian-tor -m 0755 /build/scripts/lib \
+    && install -d -o debian-tor -g debian-tor -m 0755 /build/configs \
+    && install -d -o debian-tor -g debian-tor -m 0755 /build/configs/tor \
+    && install -d -o debian-tor -g debian-tor -m 0755 /build/service_configs \
+    && install -d -o debian-tor -g debian-tor -m 0755 /build/service_configs/tor \
+    && install -d -o debian-tor -g debian-tor -m 0755 /build/service_configs/tor/tor-socks \
+    && printf 'dir=configs\nplatform=lucid-tor-proxy\n' > /build/configs/.keep \
+    && printf 'dir=infrastructure\nplatform=lucid-tor-proxy\n' > /build/infrastructure/.keep \
+    && printf 'dir=infrastructure/containers\nplatform=lucid-tor-proxy\n' > /build/infrastructure/containers/.keep \
+    && printf 'dir=infrastructure/containers/services\nplatform=lucid-tor-proxy\n' > /build/infrastructure/containers/services/.keep \
+    && printf 'dir=infrastructure/containers/services/tor\nplatform=lucid-tor-proxy\n' > /build/infrastructure/containers/services/tor/.keep \
+    && printf 'dir=infrastructure/containers/services/tor/tor-socks\nplatform=lucid-tor-proxy\n' > /build/infrastructure/containers/services/tor/tor-socks/.keep \
+    && printf 'dir=scripts\nplatform=lucid-tor-proxy\n' > /build/scripts/.keep \
+    && printf 'dir=scripts/lib\nplatform=lucid-tor-proxy\n' > /build/scripts/lib/.keep \
+    && printf 'dir=configs\nplatform=lucid-tor-proxy\n' > /build/configs/.keep \
+    && printf 'dir=configs/tor\nplatform=lucid-tor-proxy\n' > /build/configs/tor/.keep \
+    && printf 'dir=service_configs\nplatform=lucid-tor-proxy\n' > /build/service_configs/.keep \
+    && printf 'dir=service_configs/tor\nplatform=lucid-tor-proxy\n' > /build/service_configs/tor/.keep \
+    && printf 'dir=service_configs/tor/tor-socks\nplatform=lucid-tor-proxy\n' > /build/service_configs/tor/tor-socks/.keep \
+    && chown debian-tor:debian-tor /build/var/lib/tor/.keep /build/tor/.keep /build/run/lucid/.keep /build/run/lucid/onion/.keep /build/run/lucid/tor/.keep /build/run/lucid/tor/bin/.keep /build/var/run/lucid/.keep /build/var/run/lucid/tor/.keep /build/var/run/lucid/tunnels/.keep /build/var/run/lucid/onion/.keep /build/var/run/lucid/ssl/.keep /build/var/run/lucid/ssl/certs/.keep /build/var/run/lucid/ssl/private/.keep /build/var/run/lucid/ssl/public/.keep /build/etc/tor/tunnels/.keep /build/etc/tor/.keep /build/etc/.keep \
+    && chown debian-tor:debian-tor /build/configs/.keep /build/infrastructure/.keep /build/infrastructure/containers/.keep /build/infrastructure/containers/services/.keep /build/infrastructure/containers/services/tor/.keep /build/infrastructure/containers/services/tor/tor-socks/.keep /build/scripts/.keep /build/scripts/lib/.keep /build/service_configs/.keep /build/service_configs/tor/.keep /build/service_configs/tor/tor-socks/.keep \
+    && chown debian-tor:debian-tor /build/opt/.keep /build/opt/bin/.keep /build/opt/sbin/.keep /build/opt/share/.keep /build/opt/share/tor/.keep \
+    && chown debian-tor:debian-tor /build/var/lib/tor/.keep /build/tor/.keep /build/run/lucid/.keep /build/run/lucid/onion/.keep /build/run/lucid/tor/.keep /build/run/lucid/tor/bin/.keep \
+    && echo "tor-builder OK."
 
 # end of skeleton
-
-COPY /lib/ ./lib/
-COPY /usr/ ./usr/
-COPY /bin/ ./bin/
-COPY /sbin/ ./sbin/
-COPY /opt/ ./opt/
-COPY /etc/ ./etc/
-COPY /tmp/ ./tmp/
-COPY /var/ ./var/
-COPY /lib64/ ./lib64/
-
+RUN set -eux; \
+    for bin in /build/usr/bin/tor /build/usr/bin/tini; do \
+      missing=$(ldd "$bin" 2>&1 | grep "not found" || true); \
+      if [ -n "$missing" ]; then echo "MISSING in $bin:"; echo "$missing"; exit 1; fi; \
+    done; \
+    if ldd /build/usr/bin/obfs4proxy 2>&1 | grep -q "not a dynamic"; then :; \
+    else \
+      missing=$(ldd /build/usr/bin/obfs4proxy 2>&1 | grep "not found" || true); \
+      if [ -n "$missing" ]; then echo "MISSING in obfs4proxy:"; echo "$missing"; exit 1; fi; \
+    fi
+# check for missing files
 
 # Dynamic linker + arch lib dir for TARGETPLATFORM (uname -m inside this stage matches target arch)
 RUN set -eux; \
-    mkdir -p ./export-dynlink/root/lib ./export-dynlink/root/lib64; \
+    mkdir -p /build/export-dynlink/root/lib /build/export-dynlink/root/lib64; \
     arch="$(uname -m)"; \
     case "$arch" in \
       aarch64) \
-        cp -a ./lib/ld-linux-aarch64.so.1 ./export-dynlink/root/lib/; \
-        cp -a ./lib/aarch64-linux-gnu ./export-dynlink/root/lib/; \
+        cp -a /build/lib/ld-linux-aarch64.so.1 /build/export-dynlink/root/lib/; \
+        cp -a /build/lib/aarch64-linux-gnu /build/export-dynlink/root/lib/; \
         ;; \
       x86_64) \
-        if [ -f ./lib64/ld-linux-x86-64.so.2 ]; then \
-          cp -a ./lib64/ld-linux-x86-64.so.2 ./export-dynlink/root/lib64/; \
+        if [ -f /build/lib64/ld-linux-x86-64.so.2 ]; then \
+          cp -a /build/lib64/ld-linux-x86-64.so.2 /build/export-dynlink/root/lib64/; \
         else \
-          cp -a ./lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 ./export-dynlink/root/lib64/; \
+          cp -a /build/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /build/export-dynlink/root/lib64/; \
         fi; \
-        cp -a ./lib/x86_64-linux-gnu ./export-dynlink/root/lib/; \
+        cp -a /build/lib/x86_64-linux-gnu /build/export-dynlink/root/lib/; \
         ;; \
       *) echo "unsupported uname -m=$arch"; exit 1 ;; \
     esac
 
 # torrc, GeoIP paths, entrypoints, scripts; populate /build/bin + /build/sbin
 RUN set -eux; \
-  install -m 0644 ./02_network_security/tor/torrc ./run/lucid/tor/torrc; \
+  install -m 0644 02_network_security/tor/torrc /build/run/lucid/tor/torrc; \
   { printf '\n# Distroless image: GeoIP from tor-geoipdb\n'; \
     printf 'GeoIPFile /app/opt/share/tor/geoip\n'; \
     printf 'GeoIPv6File /app/opt/share/tor/geoip6\n'; \
-  } >> ./run/lucid/tor/torrc; \
-  install -d -m 0755 ./run/lucid/tor/configs; \
+  } >> /build/run/lucid/tor/torrc; \
+  install -d -m 0755 /build/run/lucid/tor/configs; \
   for f in tor_entrypoint.sh tor-health.sh bootstrap-helper.sh t_entrypoint.sh entrypoint.sh tor-show-onion.sh; do \
-    install -m 0755 "./02_network_security/tor/${f}" "./run/lucid/tor/bin/${f}"; \
+    install -m 0755 "02_network_security/tor/${f}" "/build/run/lucid/tor/bin/${f}"; \
   done; \
-  install -m 0755 ./02_network_security/tor/scripts/create_ephemeral_onion.sh ./run/lucid/tunnels/scripts/create-ephemeral-onion.sh; \
-  install -m 0755 ./02_network_security/tor/bootstrap-helper.sh ./run/lucid/tunnels/scripts/bootstrap-helper.sh; \
+  install -m 0755 02_network_security/tor/scripts/create_ephemeral_onion.sh /build/run/lucid/tunnels/scripts/create-ephemeral-onion.sh; \
+  install -m 0755 02_network_security/tor/bootstrap-helper.sh /build/run/lucid/tunnels/scripts/bootstrap-helper.sh; \
   for s in check_tor_bootstrap.sh create_dynamic_onion.sh create_ephemeral_onion.sh demo_onion_usage.sh set_host_config.sh start_tor.sh tor_env.sh; do \
-    install -m 0755 "./02_network_security/tor/scripts/${s}" "./run/lucid/tor/scripts/${s}"; \
+    install -m 0755 "02_network_security/tor/scripts/${s}" "/build/run/lucid/tor/scripts/${s}"; \
   done; \
-  install -d -m 0755 ./02_network_security/tor/scripts/ ./run/lucid/tor/bin/; \
-  install -m 0755 ./02_network_security/tor/scripts/create_dynamic_onion.sh ./run/lucid/tor/bin/create-dynamic-onion.sh; \
-  install -m 0755 ./02_network_security/tor/scripts/check_tor_bootstrap.sh ./run/lucid/tor/bin/check-tor-bootstrap.sh; \
-  install -m 0755 ./02_network_security/tor/scripts/start_tor.sh ./run/lucid/tor/bin/start-tor.sh; \
-  install -m 0755 ./02_network_security/tor/scripts/create_ephemeral_onion.sh ./run/lucid/tor/bin/create-ephemeral-onion.sh; \
-  find ./02_network_security/tor/scripts -type f -name '*.sh' -exec chmod 0755 {} +; \
-  find ./02_network_security/tor -maxdepth 1 -type f -name '*.sh' -exec chmod 0755 {} +; \
-  chmod 0755 ./scripts/lib/*.sh; \
+  install -d -m 0755 02_network_security/tor/scripts/ /build/run/lucid/tor/bin/; \
+  install -m 0755 02_network_security/tor/scripts/create_dynamic_onion.sh /build/run/lucid/tor/bin/create-dynamic-onion.sh; \
+  install -m 0755 02_network_security/tor/scripts/check_tor_bootstrap.sh /build/run/lucid/tor/bin/check-tor-bootstrap.sh; \
+  install -m 0755 02_network_security/tor/scripts/start_tor.sh /build/run/lucid/tor/bin/start-tor.sh; \
+  install -m 0755 02_network_security/tor/scripts/create_ephemeral_onion.sh /build/run/lucid/tor/bin/create-ephemeral-onion.sh; \
+  find 02_network_security/tor/scripts -type f -name '*.sh' -exec chmod 0755 {} +; \
+  find 02_network_security/tor -maxdepth 1 -type f -name '*.sh' -exec chmod 0755 {} +; \
+  chmod 0755 scripts/lib/*.sh; \
   install -d -m 0755 bin sbin opt usr etc tmp build lib lib64; \
-  install -m 0755 ./usr/bin/tor /build/usr/bin/tor; \
-  install -m 0755 ./usr/bin/obfs4proxy /build/usr/bin/obfs4proxy; \
-  install -m 0755 ./usr/bin/tini /build/usr/bin/tini; \
-  install -m 0755 ./usr/sbin/gosu /build/usr/sbin/gosu; \
-  install -m 0755 ./bin/bash /build/bin/bash; \
-  install -m 0755 ./bin/busybox /build/usr/bin/busybox; \
-  install -m 0755 ./bin/cat /build/bin/cat; \
-  install -m 0755 ./bin/chmod /build/bin/chmod; \
-  install -m 0755 ./bin/chown /build/bin/chown; \
-  install -m 0755 ./bin/mkdir /build/bin/mkdir; \
-  install -m 0755 ./bin/rm /build/bin/rm; \
-  install -m 0755 ./bin/sleep /build/bin/sleep; \
-  install -m 0755 ./bin/tail /build/bin/tail; \
-  install -m 0755 ./usr/bin/curl /build/usr/bin/curl; \
-  install -m 0755 ./usr/bin/jq /build/usr/bin/jq; \
-  install -m 0755 ./bin/nc /build/bin/nc; \
-  install -m 0755 ./usr/bin/timeout /build/usr/bin/timeout; \
-  install -m 0755 ./usr/bin/xxd /build/usr/bin/xxd; \
-  install -m 0755 ./usr/bin/mawk /build/usr/bin/awk; \
-  install -m 0755 ./bin/grep /build/bin/grep; \
-  install -m 0755 ./bin/sed /build/bin/sed; \
-  install -m 0755 ./usr/bin/head /build/usr/bin/head; \
-  install -m 0755 ./usr/bin/cut /build/bin/cut; \
-  install -m 0755 ./usr/bin/tr /build/usr/bin/tr; \
-  install -m 0755 ./usr/bin/seq /build/usr/bin/seq; \
+  install -m 0755 /usr/bin/tor /build/usr/bin/tor; \
+  install -m 0755 /usr/bin/tor-gencert /build/usr/bin/tor-gencert; \
+  install -m 0755 /usr/bin/torsocks /build/usr/bin/torsocks; \
+  install -m 0755 /usr/bin/tor-resolve /build/usr/bin/tor-resolve; \
+  install -m 0755 /usr/bin/openssl /build/usr/bin/openssl; \
+  install -m 0755 /usr/bin/dnsmasq /build/usr/bin/dnsmasq; \
+  install -m 0755 /usr/sbin/tor /build/usr/sbin/tor; \
+  install -m 0755 /usr/sbin/dnsmasq /build/usr/sbin/dnsmasq; \
+  install -m 0755 /usr/sbin/tor-instance-create /build/usr/sbin/tor-instance-create; \
+  install -m 0755 /usr/sbin/tor /build/usr/sbin/tor; \
+  install -m 0755 /usr/sbin/iptunnel /build/usr/sbin/iptunnel; \
+  install -m 0755 /usr/bin/obfs4proxy /build/usr/bin/obfs4proxy; \
+  install -m 0755 /usr/bin/tini /build/usr/bin/tini; \
+  install -m 0755 /usr/sbin/gosu /build/usr/sbin/gosu; \
+  install -m 0755 /bin/bash /build/bin/bash; \
+  install -m 0755 /bin/busybox /build/usr/bin/busybox; \
+  install -m 0755 /bin/cat /build/bin/cat; \
+  install -m 0755 /bin/chmod /build/bin/chmod; \
+  install -m 0755 /bin/chown /build/bin/chown; \
+  install -m 0755 /bin/mkdir /build/bin/mkdir; \
+  install -m 0755 /bin/rm /build/bin/rm; \
+  install -m 0755 /bin/sleep /build/bin/sleep; \
+  install -m 0755 /bin/tail /build/bin/tail; \
+  install -m 0755 /bin/curl /build/bin/curl; \
+  install -m 0755 /bin/jq /build/bin/jq; \
+  install -m 0755 /bin/nc /build/bin/nc; \
+  install -m 0755 /bin/timeout /build/bin/timeout; \
+  install -m 0755 /bin/xxd /build/bin/xxd; \
+  install -m 0755 /bin/mawk /build/bin/awk; \
+  install -m 0755 /bin/grep /build/bin/grep; \
+  install -m 0755 /bin/sed /build/bin/sed; \
+  install -m 0755 /bin/head /build/bin/head; \
+  install -m 0755 /bin/cut /build/bin/cut; \
+  install -m 0755 /bin/tr /build/bin/tr; \
+  install -m 0755 /bin/seq /build/bin/seq; \
+  install -m 0755 /usr/local/share/ /build/opt/share/; \
+  install -m 0755 /usr/local/share/ /build/usr/local/share/; \
+  install -m 0755 /usr/local/share/ca-certificates/ /build/usr/local/share/ca-certificates/; \
+  install -m 0755 /usr/local/share/keyrings/ /build/usr/local/share/keyrings/; \
+  install -m 0755 /usr/local/share/numpy3/ /build/usr/local/share/numpy3/; \
+  install -m 0755 /usr/local/share/obfs4proxy/ /build/usr/local/share/obfs4proxy/; \
+  install -d -o debian-tor -g debian-tor -m 0755 /build/opt/share/tor/; \
+  install -d -o debian-tor -g debian-tor -m 0755 /build/opt/share/ssl-cert/; \
+  install -d -o debian-tor -g debian-tor -m 0755 /build/opt/share/ca-certificates/; \
+  install -d -o debian-tor -g debian-tor -m 0755 /build/opt/share/keyrings/; \
+  install -d -o debian-tor -g debian-tor -m 0755 /build/opt/share/numpy3/; \
+  install -d -o debian-tor -g debian-tor -m 0755 /build/opt/share/obfs4proxy/; \
+  printf 'dir=opt/share\nplatform=lucid-tor-proxy\n' > /build/opt/share/.keep \
+  printf 'dir=opt/share/tor\nplatform=lucid-tor-proxy\n' > /build/opt/share/tor/.keep \
+  printf 'dir=opt/share/ssl-cert\nplatform=lucid-tor-proxy\n' > /build/opt/share/ssl-cert/.keep \
+  printf 'dir=opt/share/ca-certificates\nplatform=lucid-tor-proxy\n' > /build/opt/share/ca-certificates/.keep \
+  printf 'dir=opt/share/keyrings\nplatform=lucid-tor-proxy\n' > /build/opt/share/keyrings/.keep \
+  printf 'dir=opt/share/numpy3\nplatform=lucid-tor-proxy\n' > /build/opt/share/numpy3/.keep \
+  printf 'dir=opt/share/obfs4proxy\nplatform=lucid-tor-proxy\n' > /build/opt/share/obfs4proxy/.keep \
+  install -m 0755 /usr/share/local/ca-certificates/ /build/opt/share/ca-certificates/; \
+  install -m 0755 /usr/bin/tor /build/usr/bin/tor; \
+  install -m 0755 /usr/bin/tor-gencert /build/usr/bin/tor-gencert; \
+  install -m 0755 /usr/share/tor/geoip6 /build/opt/share/tor/geoip6; \
+  install -m 0755 /usr/share/tor/geoip /build/opt/share/tor/geoip; \
+  install -m 0755 /usr/share/ssl-cert/ /build/opt/share/ssl-cert/; \
+  install -m 0755 /usr/share/ca-certificates/ /build/opt/share/ca-certificates/; \
+  install -m 0755 /usr/share/keyrings/ /build/opt/share/keyrings/; \
+  install -m 0755 /usr/share/numpy3/ /build/opt/share/numpy3/; \
+  install -m 0755 02_network_security/tor/torrc /build/opt/share/tor/torrc; \
+  install -m 0755 02_network_security/tor/torrc /build/opt/share/tor/configs/torrc; \
+  install -m 0755 02_network_security/tor/scripts/create_ephemeral_onion.sh /build/opt/share/tor/bin/create-ephemeral-onion.sh; \
+  install -m 0755 02_network_security/tor/scripts/create_dynamic_onion.sh /build/opt/share/tor/bin/create-dynamic-onion.sh; \
+  install -m 0755 02_network_security/tor/scripts/check_tor_bootstrap.sh /build/opt/share/tor/bin/check-tor-bootstrap.sh; \
+  install -m 0755 02_network_security/tor/scripts/start_tor.sh /build/opt/share/tor/bin/start-tor.sh; \
+  install -m 0755 02_network_security/tor/scripts/create_ephemeral_onion.sh /build/opt/share/tor/bin/create-ephemeral-onion.sh; \
+  install -m 0755 02_network_security/tor/scripts/create_dynamic_onion.sh /build/opt/share/tor/bin/create-dynamic-onion.sh; \
+  install -m 0755 02_network_security/tor/scripts/check_tor_bootstrap.sh /build/opt/share/tor/bin/check-tor-bootstrap.sh; \
+  install -m 0755 02_network_security/tor/scripts/start_tor.sh /build/opt/share/tor/bin/start-tor.sh; \
+  install -m 0755 02_network_security/tor/scripts/create_ephemeral_onion.sh /build/opt/share/tor/bin/create-ephemeral-onion.sh; \
+  install -m 0755 02_network_security/tor/torrc /build/etc/tor/torrc; \
+  install -m 0755 02_network_security/tor/torrc /build/etc/tor/configs/torrc; \
+  install -m 0755 02_network_security/tor/scripts/create_ephemeral_onion.sh /build/run/lucid/tor/bin/create-ephemeral-onion.sh; \
+  install -m 0755 02_network_security/tor/scripts/create_dynamic_onion.sh /build/run/lucid/tor/bin/create-dynamic-onion.sh; \
+  install -m 0755 02_network_security/tor/scripts/check_tor_bootstrap.sh /build/run/lucid/tor/bin/check-tor-bootstrap.sh; \
+  install -m 0755 02_network_security/tor/scripts/start_tor.sh /build/run/lucid/tor/bin/start-tor.sh; \
+  install -m 0755 02_network_security/tor/scripts/create_ephemeral_onion.sh /build/run/lucid/tor/bin/create-ephemeral-onion.sh; \
+  install -m 0700 infrastructure/containers/host-config.yml /build/infrastructure/containers/services/host-config.yml; \
+  install -m 0700 infrastructure/containers/host-config.yml /build/configs/host-config.yml; \
+  install -m 0700 infrastructure/containers/tor/docker-compose.proxy-systems.yml /build/service_configs/tor/docker-compose.proxy-systems.yml; \
+  install -m 0700 infrastructure/containers/services/tor/tor-operational-layout.yml /build/service_configs/tor/tor-operational-layout.yml; \
+  install -m 0700 infrastructure/containers/services/tor/tunnel-tools.yml /build/service_configs/tor/tunnel-tools.yml; \
+  install -m 0700 infrastructure/containers/services/tor/tor-socks.yml /build/service_configs/tor/tor-socks.yml; \
+  install -m 0700 scripts/lib/lucid-host-config-path.sh /build/scripts/lib/lucid-host-config-path.sh; \
+  install -m 0700 scripts/lib/lucid-x-file-paths.sh /build/scripts/lib/lucid-x-file-paths.sh; \
+  install -m 0700 configs/x-files.json /build/configs/x-files.json; \
+  chown -R debian-tor:debian-tor /build/scripts /build/configs /build/infrastructure /build/02_network_security ; \
+  chown -R debian-tor:debian-tor /build/service_configs /build/scripts/lib; \
+  chown -R debian-tor:debian-tor /build/configs/tor /build/service_configs/tor /build/service_configs/tor/tor-socks; \
+  chown -R debian-tor:debian-tor /build/infrastructure/containers/services/host-config.yml /build/configs/host-config.yml; \
+  chown -R debian-tor:debian-tor /build/service_configs/tor/docker-compose.proxy-systems.yml /build/service_configs/tor/tor-operational-layout.yml /build/service_configs/tor/tunnel-tools.yml /build/service_configs/tor/tor-socks.yml; \
+  chown -R debian-tor:debian-tor /build/scripts/lib/lucid-host-config-path.sh /build/scripts/lib/lucid-x-file-paths.sh; \
+  chown -R debian-tor:debian-tor /build/configs/x-files.json; \
+  chown -R debian-tor:debian-tor /build/infrastructure/containers/services/host-config.yml /build/configs/host-config.yml; \
+  chown -R debian-tor:debian-tor /build/service_configs/tor/docker-compose.proxy-systems.yml /build/service_configs/tor/tor-operational-layout.yml /build/service_configs/tor/tunnel-tools.yml /build/service_configs/tor/tor-socks.yml; \
+  find /build/02_network_security/tor/scripts -type f -name '*.sh' -exec chmod 0755 {} +; \
+  find /build/02_network_security/tor -maxdepth 1 -type f -name '*.sh' -exec chmod 0755 {} +; \
+  chmod 0755 /build/scripts/lib/*.sh; \
   for op in dig host tor-gencert tor-resolve tor-print-ed-signing-cert; do \
-    if [ -x "./usr/bin/${op}" ]; then install -m 0755 "./usr/bin/${op}" "./build/bin/${op}"; fi; \
+    if [ -x "/build/usr/bin/${op}" ]; then install -m 0755 "/build/usr/bin/${op}" "/build/bin/${op}"; fi; \
   done; \
-  install -d -o debian-tor -g debian-tor -m 0755 ./run/lucid/tor/log ./run/lucid/tunnels/scripts ./run/lucid/onion; \
-  chown -R debian-tor:debian-tor ./run/lucid ./var/lib/tor ./tor ./02_network_security/tor; \
-  chown -R debian-tor:debian-tor ./scripts ./configs ./infrastructure ./02_network_security ; \
-  chown -R debian-tor:debian-tor ./tmp/lucid
+  install -d -o debian-tor -g debian-tor -m 0755 /build/run/lucid/tor/log /build/run/lucid/tunnels/scripts /build/run/lucid/onion; \
+  chown -R debian-tor:debian-tor /build/run/lucid /build/var/lib/tor /build/tor /build/02_network_security/tor /build/02_network_security/tunnels; \
+  chown -R debian-tor:debian-tor /build/scripts /build/configs /build/infrastructure /build/02_network_security ; \
+  chown -R debian-tor:debian-tor /build/tmp/lucid; \
+  echo "tor-builder OK."
+# end of install content OK.
 
 RUN set -eux; \
-    test -f ./02_network_security/tor/keep.txt; \
+    test -f /build/02_network_security/tor/.keep; \
     test -x /build/bin/tor && test -x /build/bin/bash && test -x /build/bin/tini && test -x /build/bin/busybox; \
     test -x /build/bin/awk && test -x /build/bin/grep && test -x /build/bin/sed; \
-    for dir in \
-      ./var/lib/tor \
-      ./run/lucid \
-      ./run/lucid/tor \
-      ./run/lucid/tor/scripts \
-      ./run/lucid/tor/tunnels \
-      ./02_network_security/tor/scripts \
-      ./02_network_security/tor; do \
-      test -d "./${dir}" || exit 1; \
-    done; \
-    grep -q "LUCID_TOR_PROXY" ./var/lib/tor/.keep; \
-    test -r ./opt/share/tor/geoip || test -r ./opt/share/tor/geoip6; \
-    test -x ./run/lucid/tor/bin/tor_entrypoint.sh; \
-    test -x ./run/lucid/tor/scripts/set_host_config.sh; \
-    grep -q "GeoIPFile /app/opt/share/tor/geoip" ./run/lucid/tor/torrc; \
+    test -x /build/run/lucid/tunnels/scripts/create-ephemeral-onion.sh; \
+    grep -q "LUCID_TOR_PROXY" /build/var/lib/tor/.keep; \
+    test -r /build/opt/share/tor/geoip || test -r /build/opt/share/tor/geoip6; \
+    test -x /build/run/lucid/tor/bin/tor_entrypoint.sh; \
+    test -x /build/run/lucid/tor/scripts/set_host_config.sh; \
+    grep -q "GeoIPFile /app/opt/share/tor/geoip" /build/run/lucid/tor/torrc; \
     echo "tor-builder OK."
 
 # =============================================================================
@@ -482,17 +614,20 @@ ENV PUBLIC_TOR_IP="${PUBLIC_TOR_IP}" \
 
 WORKDIR /app
 
-COPY --from=tor-builder /build/export-dynlink/ /app/export-dynlink/
-COPY --from=tor-builder /build/usr/ /app/usr/
-COPY --from=tor-builder /build/bin/ /app/bin/
-COPY --from=tor-builder /build/sbin/ /app/sbin/
-COPY --from=tor-builder /build/opt/ /app/opt/
-COPY --from=tor-builder /build/etc/ /app/etc/
-COPY --from=tor-builder /build/tmp/ /app/tmp/
-COPY --from=tor-builder /build/var/ /app/var/
-COPY --from=tor-builder /build/lib/ /app/lib/
-COPY --from=tor-builder /build/lib64/ /app/lib64/
-COPY --from=tor-builder --chown=debian-tor:debian-tor /build/ /app/
+COPY --from=tor-builder --chown=65532:65532 /build/export-dynlink/ /app/export-dynlink/
+COPY --from=tor-builder --chown=65532:65532 /build/opt/ /app/opt/
+COPY --from=tor-builder --chown=65532:65532 /build/etc/ /app/etc/
+COPY --from=tor-builder --chown=65532:65532 /build/tmp/ /app/tmp/
+COPY --from=tor-builder --chown=65532:65532 /build/var/ /app/var/
+COPY --from=tor-builder --chown=65532:65532 /build/lib/ /app/lib/
+COPY --from=tor-builder --chown=65532:65532 /build/lib64/ /app/lib64/
+COPY --from=tor-builder --chown=65532:65532 /build/run/ /app/run/
+COPY --from=tor-builder --chown=65532:65532 /build/02_network_security/ /app/02_network_security/
+COPY --from=tor-builder --chown=65532:65532 /build/scripts/ /app/scripts/
+COPY --from=tor-builder --chown=65532:65532 /build/configs/ /app/configs/
+COPY --from=tor-builder --chown=65532:65532 /build/infrastructure/ /app/infrastructure/
+COPY --from=tor-builder --chown=65532:65532 /build/usr/ /app/usr/
+COPY --from=tor-builder --chown=65532:65532 /build/bin/ /app/bin/
 
 
 EXPOSE 9050 9051 8888
