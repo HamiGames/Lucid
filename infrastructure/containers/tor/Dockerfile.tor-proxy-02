@@ -194,7 +194,13 @@ RUN set -eux; \
     '/build/run/lucid/tor/log' \
     '/build/run/lucid/tunnels/scripts' \
     '/build/run/lucid/onion' \
-    '/build/run/lucid/ssl/certs'; do \
+    '/build/run/lucid/ssl/certs' \
+    '/build/export-dynlink' \
+    '/build/export-dynlink/root' \
+    '/build/export-dynlink/root/lib' \
+    '/build/lib/ld-linux-aarch64.so.1' \
+    '/build/export-dynlink/root/lib64' \
+    '/build/lib/aarch64-linux-gnu'; do \
     mkdir -p "/build/${d}"; printf 'LUCID_X_FILES_%s\n' "$(date +%s)" > "/build/${d}/.keep"; \
   done
 # LUCID_X_FILES_SKELETON_END
