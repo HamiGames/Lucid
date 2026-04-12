@@ -440,20 +440,19 @@ RUN set -eux; \
 
 # Dynamic linker + arch lib dir for TARGETPLATFORM (uname -m inside this stage matches target arch)
 RUN set -eux; \
-    mkdir -p /build/export-dynlink/root/lib /build/export-dynlink/root/lib64; \
     arch="$(uname -m)"; \
     case "$arch" in \
       aarch64) \
-        cp -a /build/lib/ld-linux-aarch64.so.1 /build/export-dynlink/root/lib/; \
-        cp -a /build/lib/aarch64-linux-gnu /build/export-dynlink/root/lib/; \
+        cp -a /lib/ld-linux-aarch64.so.1 /build/export-dynlink/root/lib/; \
+        cp -a /lib/aarch64-linux-gnu /build/export-dynlink/root/lib/; \
         ;; \
       x86_64) \
-        if [ -f /build/lib64/ld-linux-x86-64.so.2 ]; then \
-          cp -a /build/lib64/ld-linux-x86-64.so.2 /build/export-dynlink/root/lib64/; \
+        if [ -f /lib64/ld-linux-x86-64.so.2 ]; then \
+          cp -a /lib64/ld-linux-x86-64.so.2 /build/export-dynlink/root/lib64/; \
         else \
-          cp -a /build/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /build/export-dynlink/root/lib64/; \
+          cp -a /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /build/export-dynlink/root/lib64/; \
         fi; \
-        cp -a /build/lib/x86_64-linux-gnu /build/export-dynlink/root/lib/; \
+        cp -a /lib/x86_64-linux-gnu /build/export-dynlink/root/lib/; \
         ;; \
       *) echo "unsupported uname -m=$arch"; exit 1 ;; \
     esac
