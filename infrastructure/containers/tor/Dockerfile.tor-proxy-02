@@ -440,22 +440,9 @@ RUN set -eux; \
 
 # Dynamic linker + arch lib dir for TARGETPLATFORM (uname -m inside this stage matches target arch)
 RUN set -eux; \
-    arch="$(uname -m)"; \
-    case "$arch" in \
-      aarch64) \
-        cp -a /lib/ld-linux-aarch64.so.1 /build/export-dynlink/root/lib/; \
-        cp -a /lib/aarch64-linux-gnu /build/export-dynlink/root/lib/; \
-        ;; \
-      x86_64) \
-        if [ -f /lib64/ld-linux-x86-64.so.2 ]; then \
-          cp -a /lib64/ld-linux-x86-64.so.2 /build/export-dynlink/root/lib64/; \
-        else \
-          cp -a /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /build/export-dynlink/root/lib64/; \
-        fi; \
-        cp -a /lib/x86_64-linux-gnu /build/export-dynlink/root/lib/; \
-        ;; \
-      *) echo "unsupported uname -m=$arch"; exit 1 ;; \
-    esac
+    install -m 0755 /usr/lib/ld-linux-aarch64.so.1 /build/export-dynlink/root/lib/; \
+    install -m 0755 /lib/aarch64-linux-gnu /build/export-dynlink/root/lib/
+    
 
 # torrc, GeoIP paths, entrypoints, scripts; populate /build/bin + /build/sbin
 RUN set -eux; \
