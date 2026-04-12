@@ -440,9 +440,9 @@ RUN set -eux; \
 
 # Dynamic linker + arch lib dir for TARGETPLATFORM (uname -m inside this stage matches target arch)
 RUN set -eux; \
-    install -m 0755 /usr/lib/ld-linux-aarch64.so.1 /build/export-dynlink/root/lib/; \
-    install -m 0755 /lib/aarch64-linux-gnu /build/export-dynlink/root/lib/
-    
+    install -m 0755 /../lib/*/ld-linux-aarch64.so.1 /build/export-dynlink/root/lib/; \
+    install -m 0755 /../lib/*/aarch64-linux-gnu /build/export-dynlink/root/lib/
+
 
 # torrc, GeoIP paths, entrypoints, scripts; populate /build/bin + /build/sbin
 RUN set -eux; \
