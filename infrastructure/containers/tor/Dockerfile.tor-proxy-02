@@ -80,6 +80,22 @@ RUN set -eux; \
     '/build/opt' \
     '/build/etc' \
     '/build/tmp' \
+    '/build/tmp/tor' \
+    '/build/tmp/tor/hidden_service' \
+    '/build/tmp/tor/seed' \
+    '/build/tmp/tor/seed/authorized_clients' \
+    '/build/tmp/tor/seed/authorized_clients/lucid_admin' \
+    '/build/tmp/tor/seed/authorized_clients/lucid_api' \
+    '/build/tmp/tor/seed/authorized_clients/lucid_auth' \
+    '/build/tmp/tor/seed/authorized_clients/lucid_config' \
+    '/build/tmp/tor/seed/authorized_clients/lucid_dev' \
+    '/build/tmp/tor/seed/authorized_clients/lucid_node' \
+    '/build/tmp/tor/seed/authorized_clients/lucid_blockchain' \
+    '/build/tmp/tor/seed/authorized_clients/lucid_governance' \
+    '/build/tmp/tor/seed/authorized_clients/lucid_payment' \
+    '/build/tmp/tor/seed/authorized_clients/lucid_session' \
+    '/build/tmp/tor/seed/authorized_clients/lucid_vm' \
+    '/build/tmp/seed/control_auth_cookie' \
     '/build/var' \
     '/build/var/lib' \
     '/build/var/lib/tor' \
@@ -97,6 +113,7 @@ RUN set -eux; \
     '/build/var/lib/tor/seed/authorized_clients/lucid_payment' \
     '/build/var/lib/tor/seed/authorized_clients/lucid_session' \
     '/build/var/lib/tor/seed/authorized_clients/lucid_vm' \
+    '/build/var/lib/tor/seed/control_auth_cookie' \
     '/build/run' \
     '/build/run/lucid' \
     '/build/run/lucid/tor' \
@@ -118,12 +135,17 @@ RUN set -eux; \
     '/build/run/lucid/tor/lucid_server' \
     '/build/run/lucid/tunnels' \
     '/build/run/lucid/tunnels/scripts' \
+    '/build/run/lucid/tunnels/control_auth_cookie' \
     '/build/run/lucid/onion' \
+    '/build/run/lucid/onion/control_auth_cookie' \
     '/build/run/lucid/ssl' \
+    '/build/run/lucid/ssl/control_auth_cookie' \
     '/build/run/lucid/ssl/certs' \
+    '/build/run/lucid/ssl/certs/control_auth_cookie'\
     '/build/run/lucid/ssl/private' \
     '/build/run/lucid/ssl/public' \
     '/build/run/lucid/tor/bin' \
+    '/build/run/lucid/tor/bin/control_auth_cookie' \
     '/build/usr/share' \
     '/build/usr/share/tor' \
     '/build/usr/share/ca-certificates' \
@@ -163,12 +185,13 @@ RUN set -eux; \
     '/build/opt/share' \
     '/build/opt/share/tor' \
     '/build/opt/share/ssl-cert' \
+    '/build/opt/share/tor/control_auth_cookie'\
     '/build/opt/share/ca-certificates' \
     '/build/opt/share/keyrings' \
     '/build/opt/share/obfs4proxy' \
     '/build/etc' \
     '/build/etc/tor' \
-    '/build/etc/tor/torrc' \
+    '/build/etc/tor/control_auth_cookie' \
     '/build/etc/tor/tunnels' \
     '/build/etc/tor/tunnels/scripts' \
     '/build/etc/ssl' \
@@ -437,11 +460,13 @@ RUN set -eux; \
       if [ -n "$missing" ]; then echo "MISSING in obfs4proxy:"; echo "$missing"; exit 1; fi; \
     fi
 # check for missing files
+COPY /lib/ /build/lib/
 
 # Dynamic linker + arch lib dir for TARGETPLATFORM (uname -m inside this stage matches target arch)
 RUN set -eux; \
-    install -m 0755 /../lib/*/ld-linux-aarch64.so.1 /build/export-dynlink/root/lib/; \
-    install -m 0755 /../lib/*/aarch64-linux-gnu /build/export-dynlink/root/lib/
+    chown -R 65532:65532 /build/export-dynlink /buildexport-dynlink/root /build/export-dynlink/root/lib; \
+    install -m 0755 /build/lib/*/ld-linux-*.so.1 /build/export-dynlink/root/lib/; \
+    install -m 0755 /build/lib/aarch64-linux-gnu /build/export-dynlink/root/lib/
 
 
 # torrc, GeoIP paths, entrypoints, scripts; populate /build/bin + /build/sbin
@@ -468,48 +493,48 @@ RUN set -eux; \
   find 02_network_security/tor/scripts -type f -name '*.sh' -exec chmod 0755 {} +; \
   find 02_network_security/tor -maxdepth 1 -type f -name '*.sh' -exec chmod 0755 {} +; \
   chmod 0755 scripts/lib/*.sh; \
-  install -d -m 0755 bin sbin opt usr etc tmp build lib lib64; \
-  install -m 0755 /usr/bin/tor /build/usr/bin/tor; \
-  install -m 0755 /usr/bin/tor-gencert /build/usr/bin/tor-gencert; \
-  install -m 0755 /usr/bin/torsocks /build/usr/bin/torsocks; \
-  install -m 0755 /usr/bin/tor-resolve /build/usr/bin/tor-resolve; \
-  install -m 0755 /usr/bin/openssl /build/usr/bin/openssl; \
-  install -m 0755 /usr/bin/dnsmasq /build/usr/bin/dnsmasq; \
-  install -m 0755 /usr/sbin/tor /build/usr/sbin/tor; \
-  install -m 0755 /usr/sbin/dnsmasq /build/usr/sbin/dnsmasq; \
-  install -m 0755 /usr/sbin/tor-instance-create /build/usr/sbin/tor-instance-create; \
-  install -m 0755 /usr/sbin/tor /build/usr/sbin/tor; \
-  install -m 0755 /usr/sbin/iptunnel /build/usr/sbin/iptunnel; \
-  install -m 0755 /usr/bin/obfs4proxy /build/usr/bin/obfs4proxy; \
-  install -m 0755 /usr/bin/tini /build/usr/bin/tini; \
-  install -m 0755 /usr/sbin/gosu /build/usr/sbin/gosu; \
-  install -m 0755 /bin/bash /build/bin/bash; \
-  install -m 0755 /bin/busybox /build/usr/bin/busybox; \
-  install -m 0755 /bin/cat /build/bin/cat; \
-  install -m 0755 /bin/chmod /build/bin/chmod; \
-  install -m 0755 /bin/chown /build/bin/chown; \
-  install -m 0755 /bin/mkdir /build/bin/mkdir; \
-  install -m 0755 /bin/rm /build/bin/rm; \
-  install -m 0755 /bin/sleep /build/bin/sleep; \
-  install -m 0755 /bin/tail /build/bin/tail; \
-  install -m 0755 /bin/curl /build/bin/curl; \
-  install -m 0755 /bin/jq /build/bin/jq; \
-  install -m 0755 /bin/nc /build/bin/nc; \
-  install -m 0755 /bin/timeout /build/bin/timeout; \
-  install -m 0755 /bin/xxd /build/bin/xxd; \
-  install -m 0755 /bin/mawk /build/bin/awk; \
-  install -m 0755 /bin/grep /build/bin/grep; \
-  install -m 0755 /bin/sed /build/bin/sed; \
-  install -m 0755 /bin/head /build/bin/head; \
-  install -m 0755 /bin/cut /build/bin/cut; \
-  install -m 0755 /bin/tr /build/bin/tr; \
-  install -m 0755 /bin/seq /build/bin/seq; \
-  install -m 0755 /usr/local/share/ /build/opt/share/; \
-  install -m 0755 /usr/local/share/ /build/usr/local/share/; \
-  install -m 0755 /usr/local/share/ca-certificates/ /build/usr/local/share/ca-certificates/; \
-  install -m 0755 /usr/local/share/keyrings/ /build/usr/local/share/keyrings/; \
-  install -m 0755 /usr/local/share/numpy3/ /build/usr/local/share/numpy3/; \
-  install -m 0755 /usr/local/share/obfs4proxy/ /build/usr/local/share/obfs4proxy/; \
+  install -d -m 0755 build/bin sbin opt usr etc tmp build lib ; \
+  install -m 0755 usr/bin/tor /build/usr/bin/tor; \
+  install -m 0755 usr/bin/tor-gencert /build/usr/bin/tor-gencert; \
+  install -m 0755 usr/bin/torsocks /build/usr/bin/torsocks; \
+  install -m 0755 usr/bin/tor-resolve /build/usr/bin/tor-resolve; \
+  install -m 0755 usr/bin/openssl /build/usr/bin/openssl; \
+  install -m 0755 usr/bin/dnsmasq /build/usr/bin/dnsmasq; \
+  install -m 0755 usr/sbin/tor /build/usr/sbin/tor; \
+  install -m 0755 usr/sbin/dnsmasq /build/usr/sbin/dnsmasq; \
+  install -m 0755 usr/sbin/tor-instance-create /build/usr/sbin/tor-instance-create; \
+  install -m 0755 usr/sbin/tor /build/usr/sbin/tor; \
+  install -m 0755 usr/sbin/iptunnel /build/usr/sbin/iptunnel; \
+  install -m 0755 usr/bin/obfs4proxy /build/usr/bin/obfs4proxy; \
+  install -m 0755 usr/bin/tini /build/usr/bin/tini; \
+  install -m 0755 usr/sbin/gosu /build/usr/sbin/gosu; \
+  install -m 0755 bin/bash /build/bin/bash; \
+  install -m 0755 bin/busybox /build/usr/bin/busybox; \
+  install -m 0755 bin/cat /build/bin/cat; \
+  install -m 0755 bin/chmod /build/bin/chmod; \
+  install -m 0755 bin/chown /build/bin/chown; \
+  install -m 0755 bin/mkdir /build/bin/mkdir; \
+  install -m 0755 bin/rm /build/bin/rm; \
+  install -m 0755 bin/sleep /build/bin/sleep; \
+  install -m 0755 bin/tail /build/bin/tail; \
+  install -m 0755 bin/curl /build/bin/curl; \
+  install -m 0755 bin/jq /build/bin/jq; \
+  install -m 0755 bin/nc /build/bin/nc; \
+  install -m 0755 bin/timeout /build/bin/timeout; \
+  install -m 0755 bin/xxd /build/bin/xxd; \
+  install -m 0755 bin/mawk /build/bin/awk; \
+  install -m 0755 bin/grep /build/bin/grep; \
+  install -m 0755 bin/sed /build/bin/sed; \
+  install -m 0755 bin/head /build/bin/head; \
+  install -m 0755 bin/cut /build/bin/cut; \
+  install -m 0755 bin/tr /build/bin/tr; \
+  install -m 0755 bin/seq /build/bin/seq; \
+  install -m 0755 usr/local/share/ /build/opt/share/; \
+  install -m 0755 usr/local/share/ /build/usr/local/share/; \
+  install -m 0755 usr/local/share/ca-certificates/ /build/usr/local/share/ca-certificates/; \
+  install -m 0755 usr/local/share/keyrings/ /build/usr/local/share/keyrings/; \
+  install -m 0755 usr/local/share/numpy3/ /build/usr/local/share/numpy3/; \
+  install -m 0755 usr/local/share/obfs4proxy/ /build/usr/local/share/obfs4proxy/; \
   install -d -o debian-tor -g debian-tor -m 0755 /build/opt/share/tor/; \
   install -d -o debian-tor -g debian-tor -m 0755 /build/opt/share/ssl-cert/; \
   install -d -o debian-tor -g debian-tor -m 0755 /build/opt/share/ca-certificates/; \
@@ -523,15 +548,15 @@ RUN set -eux; \
   printf 'dir=opt/share/keyrings\nplatform=lucid-tor-proxy\n' > /build/opt/share/keyrings/.keep \
   printf 'dir=opt/share/numpy3\nplatform=lucid-tor-proxy\n' > /build/opt/share/numpy3/.keep \
   printf 'dir=opt/share/obfs4proxy\nplatform=lucid-tor-proxy\n' > /build/opt/share/obfs4proxy/.keep \
-  install -m 0755 /usr/share/local/ca-certificates/ /build/opt/share/ca-certificates/; \
-  install -m 0755 /usr/bin/tor /build/usr/bin/tor; \
-  install -m 0755 /usr/bin/tor-gencert /build/usr/bin/tor-gencert; \
-  install -m 0755 /usr/share/tor/geoip6 /build/opt/share/tor/geoip6; \
-  install -m 0755 /usr/share/tor/geoip /build/opt/share/tor/geoip; \
-  install -m 0755 /usr/share/ssl-cert/ /build/opt/share/ssl-cert/; \
-  install -m 0755 /usr/share/ca-certificates/ /build/opt/share/ca-certificates/; \
-  install -m 0755 /usr/share/keyrings/ /build/opt/share/keyrings/; \
-  install -m 0755 /usr/share/numpy3/ /build/opt/share/numpy3/; \
+  install -m 0755 usr/share/local/ca-certificates/ /build/opt/share/ca-certificates/; \
+  install -m 0755 usr/bin/tor /build/usr/bin/tor; \
+  install -m 0755 usr/bin/tor-gencert /build/usr/bin/tor-gencert; \
+  install -m 0755 usr/share/tor/geoip6 /build/opt/share/tor/geoip6; \
+  install -m 0755 usr/share/tor/geoip /build/opt/share/tor/geoip; \
+  install -m 0755 usr/share/ssl-cert/ /build/opt/share/ssl-cert/; \
+  install -m 0755 usr/share/ca-certificates/ /build/opt/share/ca-certificates/; \
+  install -m 0755 usr/share/keyrings/ /build/opt/share/keyrings/; \
+  install -m 0755 usr/share/numpy3/ /build/opt/share/numpy3/; \
   install -m 0755 02_network_security/tor/torrc /build/opt/share/tor/torrc; \
   install -m 0755 02_network_security/tor/torrc /build/opt/share/tor/configs/torrc; \
   install -m 0755 02_network_security/tor/scripts/create_ephemeral_onion.sh /build/opt/share/tor/bin/create-ephemeral-onion.sh; \
